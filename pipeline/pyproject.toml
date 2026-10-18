@@ -1,0 +1,44 @@
+[project]
+name = "meeting-pipeline"
+version = "0.1.0"
+description = "AI/Speech pipeline cho Vietnamese Meeting Minutes Assistant: preprocess, VAD, ASR, diarization, merge, summarize"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.7,<3",
+]
+
+[project.optional-dependencies]
+# Các stage dùng model thật. Cài riêng trên máy có GPU, CI không cài.
+asr = ["faster-whisper>=1.1"]
+diarize = ["pyannote.audio>=3.3"]
+llm = ["anthropic>=0.70"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "hypothesis>=6.100",
+    "ruff>=0.6",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["meeting_pipeline"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+markers = [
+    "model: cần model thật hoặc GPU, chỉ chạy thủ công",
+    "ffmpeg: cần ffmpeg/ffprobe trong PATH",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM"]
