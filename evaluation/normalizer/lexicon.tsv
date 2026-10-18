@@ -1,0 +1,11 @@
+# Ánh xạ cách viết phiên âm hoặc biến thể sang dạng gốc: nguồn<TAB>đích
+# Chỉ thêm những cách viết mà người gõ transcript có thể viết hợp lệ.
+# KHÔNG thêm lỗi nhận dạng của model (ví dụ "áp lốt" -> "upload"): như vậy là che lỗi, làm WER đẹp giả.
+# Mỗi lần thêm dòng, ghi lý do vào phần "Changelog lexicon" trong RULES.md.
+a pi ai	api
+ây pi ai	api
+ai ti	it
+ô kê	ok
+oke	ok
+okay	ok
+e mail	email

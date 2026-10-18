@@ -16,9 +16,9 @@ dev = [
 package = false
 
 [tool.pytest.ini_options]
-testpaths = ["datasets/tests"]
-pythonpath = ["datasets"]
-addopts = "-ra --strict-markers --import-mode=importlib"
+testpaths = ["datasets/tests", "normalizer"]
+pythonpath = ["datasets", "normalizer"]
+addopts = "-ra --strict-markers --import-mode=importlib --doctest-modules"
 
 [tool.ruff]
 line-length = 100

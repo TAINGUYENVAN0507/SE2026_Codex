@@ -12,6 +12,20 @@ uv sync
 uv run pytest
 ```
 
+## Chuẩn hóa text cho WER
+
+```python
+import sys
+
+sys.path.insert(0, "evaluation/normalizer")
+from vi_normalize import normalize, strip_diacritics
+
+normalize("Hoà chốt 25% lúc 9h30, ờ, ngày 15/10.")
+# 'hòa chốt hai mươi lăm phần trăm lúc chín giờ ba mươi ngày mười lăm tháng mười'
+```
+
+Quy tắc đầy đủ và các giới hạn đã biết nằm ở `normalizer/RULES.md`.
+
 ## Cấu trúc
 
 | Thư mục | Nội dung | Task |
