@@ -10,6 +10,21 @@ preprocess → vad → asr → diarize → merge → summarize
 
 Package này không truy cập database hay HTTP. Worker của backend gọi pipeline, pipeline ghi kết quả ra file JSON trong thư mục làm việc của job.
 
+## Trạng thái các stage
+
+| Stage | Backend `real` | Task |
+|---|---|---|
+| `preprocess` | Đã có: ffprobe + ffmpeg → `audio.wav` 16 kHz mono, chọn file phát lại | AI-05 |
+| `vad` | Chưa | AI-06 |
+| `asr` | Chưa (chờ spike AI-01 và Gate G1) | AI-06 |
+| `diarize` | Chưa (chờ spike AI-02) | AI-07 |
+| `merge` | Chưa | AI-08 |
+| `summarize` | Chưa | AI-09 |
+
+Stage chưa có bản `real` sẽ báo lỗi `STAGE_NOT_IMPLEMENTED`. Dùng `PIPELINE_BACKEND=fake` để chạy trọn pipeline.
+
+Biến môi trường của `preprocess`: `PIPELINE_MIN_DURATION_SEC` (mặc định 1), `PIPELINE_MAX_DURATION_SEC` (mặc định 3600), `FFMPEG_BIN`, `FFPROBE_BIN`.
+
 ## Cài đặt
 
 Cần [uv](https://docs.astral.sh/uv/) và `ffmpeg`/`ffprobe` trong `PATH`.
