@@ -1,0 +1,38 @@
+# Ghi chú cá nhân, không đưa lên repo
+docs/
+CLAUDE.md
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+*.egg-info/
+dist/
+build/
+
+# Bí mật
+.env
+.env.*
+!.env.example
+
+# Dữ liệu và model (tải bằng script, không commit)
+*.wav
+*.mp3
+*.m4a
+*.ogg
+*.opus
+*.webm
+*.flac
+evaluation/datasets/raw/
+models/
+artifacts/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
