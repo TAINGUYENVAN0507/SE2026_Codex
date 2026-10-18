@@ -1,0 +1,323 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "pipeline/transcript.schema.json",
+  "$defs": {
+    "AudioInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "duration_sec": {
+          "exclusiveMinimum": 0,
+          "title": "Duration Sec",
+          "type": "number"
+        },
+        "sample_rate": {
+          "minimum": 1,
+          "title": "Sample Rate",
+          "type": "integer"
+        },
+        "channels": {
+          "minimum": 1,
+          "title": "Channels",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "duration_sec",
+        "sample_rate",
+        "channels"
+      ],
+      "title": "AudioInfo",
+      "type": "object"
+    },
+    "ModelInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "asr": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Asr"
+        },
+        "diarization": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Diarization"
+        }
+      },
+      "required": [
+        "asr",
+        "diarization"
+      ],
+      "title": "ModelInfo",
+      "type": "object"
+    },
+    "PipelineWarning": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "pattern": "^[A-Z][A-Z0-9_]*$",
+          "title": "Code",
+          "type": "string"
+        },
+        "stage": {
+          "$ref": "#/$defs/Stage"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "stage",
+        "message"
+      ],
+      "title": "PipelineWarning",
+      "type": "object"
+    },
+    "SegmentFlag": {
+      "enum": [
+        "overlap",
+        "low_confidence"
+      ],
+      "title": "SegmentFlag",
+      "type": "string"
+    },
+    "Stage": {
+      "enum": [
+        "preprocess",
+        "vad",
+        "asr",
+        "diarize",
+        "merge",
+        "summarize"
+      ],
+      "title": "Stage",
+      "type": "string"
+    },
+    "TranscriptSegment": {
+      "additionalProperties": false,
+      "properties": {
+        "start_sec": {
+          "minimum": 0,
+          "title": "Start Sec",
+          "type": "number"
+        },
+        "end_sec": {
+          "title": "End Sec",
+          "type": "number"
+        },
+        "index": {
+          "minimum": 0,
+          "title": "Index",
+          "type": "integer"
+        },
+        "speaker_label": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "null khi chưa xác định được speaker",
+          "title": "Speaker Label"
+        },
+        "text": {
+          "maxLength": 5000,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        },
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Confidence"
+        },
+        "flags": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/SegmentFlag"
+          },
+          "title": "Flags",
+          "type": "array"
+        },
+        "words": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Word"
+          },
+          "title": "Words",
+          "type": "array"
+        }
+      },
+      "required": [
+        "start_sec",
+        "end_sec",
+        "index",
+        "speaker_label",
+        "text",
+        "confidence",
+        "flags",
+        "words"
+      ],
+      "title": "TranscriptSegment",
+      "type": "object"
+    },
+    "TranscriptSpeaker": {
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "pattern": "^SPEAKER_\\d{2,}$",
+          "title": "Label",
+          "type": "string"
+        },
+        "first_start_sec": {
+          "minimum": 0,
+          "title": "First Start Sec",
+          "type": "number"
+        },
+        "display_name": {
+          "anyOf": [
+            {
+              "maxLength": 50,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "null khi do merge sinh ra; backend điền tên đã sửa khi chạy lại summarize",
+          "title": "Display Name"
+        }
+      },
+      "required": [
+        "label",
+        "first_start_sec",
+        "display_name"
+      ],
+      "title": "TranscriptSpeaker",
+      "type": "object"
+    },
+    "Word": {
+      "additionalProperties": false,
+      "properties": {
+        "w": {
+          "minLength": 1,
+          "title": "W",
+          "type": "string"
+        },
+        "s": {
+          "minimum": 0,
+          "title": "S",
+          "type": "number"
+        },
+        "e": {
+          "minimum": 0,
+          "title": "E",
+          "type": "number"
+        },
+        "p": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "P"
+        }
+      },
+      "required": [
+        "w",
+        "s",
+        "e",
+        "p"
+      ],
+      "title": "Word",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Output của stage merge (`transcript.json`).",
+  "properties": {
+    "schema_version": {
+      "default": "1.0",
+      "pattern": "^\\d+\\.\\d+$",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "audio": {
+      "$ref": "#/$defs/AudioInfo"
+    },
+    "models": {
+      "$ref": "#/$defs/ModelInfo"
+    },
+    "diarization_status": {
+      "enum": [
+        "ok",
+        "fallback"
+      ],
+      "title": "Diarization Status",
+      "type": "string"
+    },
+    "speakers": {
+      "items": {
+        "$ref": "#/$defs/TranscriptSpeaker"
+      },
+      "title": "Speakers",
+      "type": "array"
+    },
+    "segments": {
+      "items": {
+        "$ref": "#/$defs/TranscriptSegment"
+      },
+      "title": "Segments",
+      "type": "array"
+    },
+    "warnings": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/PipelineWarning"
+      },
+      "title": "Warnings",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "audio",
+    "models",
+    "diarization_status",
+    "speakers",
+    "segments",
+    "warnings"
+  ],
+  "title": "Transcript",
+  "type": "object"
+}

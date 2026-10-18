@@ -1,0 +1,33 @@
+name: pipeline
+
+on:
+  pull_request:
+    paths:
+      - "pipeline/**"
+      - "contracts/pipeline/**"
+      - "contracts/fixtures/pipeline/**"
+      - ".github/workflows/pipeline.yml"
+  push:
+    branches: [main]
+    paths:
+      - "pipeline/**"
+      - "contracts/pipeline/**"
+      - "contracts/fixtures/pipeline/**"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: pipeline
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+      - uses: astral-sh/setup-uv@v6
+      - name: Install dependencies
+        run: uv sync --locked
+      - name: Lint
+        run: uv run ruff check . && uv run ruff format --check .
+      - name: Test (không chạy test cần model thật)
+        run: uv run pytest -m "not model"

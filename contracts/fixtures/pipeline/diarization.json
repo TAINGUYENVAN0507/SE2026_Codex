@@ -1,0 +1,34 @@
+{
+  "schema_version": "1.0",
+  "model": "fake-diarization",
+  "status": "ok",
+  "num_speakers": 2,
+  "turns": [
+    {
+      "start_sec": 0.4,
+      "end_sec": 5.9,
+      "speaker_label": "SPEAKER_00"
+    },
+    {
+      "start_sec": 5.9,
+      "end_sec": 11.3,
+      "speaker_label": "SPEAKER_01"
+    },
+    {
+      "start_sec": 11.3,
+      "end_sec": 17.0,
+      "speaker_label": "SPEAKER_00"
+    },
+    {
+      "start_sec": 17.0,
+      "end_sec": 22.5,
+      "speaker_label": "SPEAKER_01"
+    },
+    {
+      "start_sec": 22.9,
+      "end_sec": 28.8,
+      "speaker_label": "SPEAKER_00"
+    }
+  ],
+  "warnings": []
+}

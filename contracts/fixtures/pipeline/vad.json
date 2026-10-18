@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0",
+  "model": "fake-vad",
+  "speech_regions": [
+    {
+      "start_sec": 0.4,
+      "end_sec": 22.5
+    },
+    {
+      "start_sec": 22.9,
+      "end_sec": 28.8
+    }
+  ],
+  "speech_ratio": 0.933,
+  "warnings": []
+}

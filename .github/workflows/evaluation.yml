@@ -1,0 +1,29 @@
+name: evaluation
+
+on:
+  pull_request:
+    paths:
+      - "evaluation/**"
+      - ".github/workflows/evaluation.yml"
+  push:
+    branches: [main]
+    paths:
+      - "evaluation/**"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: evaluation
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: Install dependencies
+        run: uv sync --locked
+      - name: Lint
+        run: uv run ruff check . && uv run ruff format --check .
+      - name: Test
+        run: uv run pytest
+      - name: Check manifest
+        run: uv run python datasets/check_manifest.py

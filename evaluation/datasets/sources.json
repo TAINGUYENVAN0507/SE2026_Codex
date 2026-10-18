@@ -1,0 +1,20 @@
+{
+  "fleurs_vi_test_tsv": {
+    "dataset": "fleurs",
+    "description": "FLEURS vi_vn, split test: danh sách file và transcript (857 dòng)",
+    "url": "https://huggingface.co/datasets/google/fleurs/resolve/main/data/vi_vn/test.tsv",
+    "sha256": "eb744c2be5f677b49c35527d428a4f647294bd0f67abd790c296e91efaaffb93",
+    "size_bytes": 613728,
+    "license": "CC-BY-4.0",
+    "extract": false
+  },
+  "fleurs_vi_test_audio": {
+    "dataset": "fleurs",
+    "description": "FLEURS vi_vn, split test: audio WAV 16 kHz (khoảng 544 MB)",
+    "url": "https://huggingface.co/datasets/google/fleurs/resolve/main/data/vi_vn/audio/test.tar.gz",
+    "sha256": "b359261216ef14b8eea159abce794e270c2a0be903218cf1e1e8f7c7c1565b5c",
+    "size_bytes": 544139865,
+    "license": "CC-BY-4.0",
+    "extract": true
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "schema_version": "1.0",
+  "stage": "preprocess",
+  "code": "AUDIO_INVALID",
+  "kind": "permanent",
+  "retryable": false,
+  "message": "ffprobe không tìm thấy audio stream",
+  "details": {}
+}

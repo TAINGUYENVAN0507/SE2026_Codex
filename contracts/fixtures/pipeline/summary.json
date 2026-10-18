@@ -1,0 +1,48 @@
+{
+  "schema_version": "1.0",
+  "status": "ready",
+  "model": "fake-llm",
+  "prompt_version": "summary-fake-v1",
+  "overview": "Nhóm chốt phạm vi sprint 42: ưu tiên API upload có chống tạo trùng, lùi export DOCX sang sau MVP.",
+  "key_points": [
+    {
+      "text": "API upload phải chống tạo meeting trùng khi retry.",
+      "evidence_segment_indices": [
+        1
+      ]
+    }
+  ],
+  "decisions": [
+    {
+      "text": "Lùi export DOCX sang sau MVP.",
+      "evidence_segment_indices": [
+        3
+      ]
+    }
+  ],
+  "action_items": [
+    {
+      "description": "Hoàn thiện API upload audio",
+      "assignee_name": "Anh Minh",
+      "assignee_speaker_label": null,
+      "due_date": "2026-10-16",
+      "due_date_text": "thứ Sáu tuần này",
+      "evidence_segment_indices": [
+        2
+      ],
+      "needs_review": false
+    },
+    {
+      "description": "Tìm thêm audio có tiếng ồn để đánh giá",
+      "assignee_name": null,
+      "assignee_speaker_label": null,
+      "due_date": null,
+      "due_date_text": null,
+      "evidence_segment_indices": [
+        5
+      ],
+      "needs_review": false
+    }
+  ],
+  "warnings": []
+}

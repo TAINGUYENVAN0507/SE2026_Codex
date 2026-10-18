@@ -1,0 +1,11 @@
+{
+  "schema_version": "1.0",
+  "stage": "asr",
+  "code": "STAGE_TIMEOUT",
+  "kind": "timeout",
+  "retryable": true,
+  "message": "stage chạy quá 900 s và đã bị dừng",
+  "details": {
+    "timeout_sec": 900
+  }
+}

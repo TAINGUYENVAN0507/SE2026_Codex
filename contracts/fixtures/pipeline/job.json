@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0",
+  "meeting_id": "8f6c2a1e-0000-4000-8000-000000000001",
+  "job_id": "c1d2e3f4-0000-4000-8000-000000000002",
+  "audio_path": "/data/audio/8f6c2a1e-0000-4000-8000-000000000001/original.webm",
+  "from_stage": null,
+  "num_speakers_hint": 2,
+  "meeting_date": "2026-10-15",
+  "language": "vi",
+  "transcript_override_path": null,
+  "attempt": 1,
+  "max_attempts": 3
+}

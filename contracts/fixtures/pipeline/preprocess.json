@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "duration_sec": 30.0,
+  "sample_rate": 16000,
+  "channels": 1,
+  "audio_file": "audio.wav",
+  "source": {
+    "format_name": "matroska,webm",
+    "codec": "opus",
+    "sample_rate": 48000,
+    "channels": 1,
+    "header_duration_sec": null,
+    "size_bytes": 482133
+  },
+  "playback": {
+    "source": "original",
+    "file": null,
+    "mime_type": "audio/webm"
+  },
+  "warnings": []
+}
