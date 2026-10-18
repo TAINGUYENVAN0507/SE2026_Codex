@@ -1,0 +1,11 @@
+{
+  "schema_version": "1.0",
+  "status": "insufficient_content",
+  "model": "fake-llm",
+  "prompt_version": "summary-fake-v1",
+  "overview": null,
+  "key_points": [],
+  "decisions": [],
+  "action_items": [],
+  "warnings": []
+}

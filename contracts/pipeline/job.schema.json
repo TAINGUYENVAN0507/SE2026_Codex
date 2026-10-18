@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "pipeline/job.schema.json",
+  "$defs": {
+    "Stage": {
+      "enum": [
+        "preprocess",
+        "vad",
+        "asr",
+        "diarize",
+        "merge",
+        "summarize"
+      ],
+      "title": "Stage",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Thông tin một job, worker ghi vào `job.json` trước khi chạy pipeline.",
+  "properties": {
+    "schema_version": {
+      "default": "1.0",
+      "pattern": "^\\d+\\.\\d+$",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "meeting_id": {
+      "minLength": 1,
+      "title": "Meeting Id",
+      "type": "string"
+    },
+    "job_id": {
+      "minLength": 1,
+      "title": "Job Id",
+      "type": "string"
+    },
+    "audio_path": {
+      "description": "Đường dẫn tuyệt đối tới file gốc",
+      "minLength": 1,
+      "title": "Audio Path",
+      "type": "string"
+    },
+    "from_stage": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Stage"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "num_speakers_hint": {
+      "anyOf": [
+        {
+          "maximum": 10,
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Num Speakers Hint"
+    },
+    "meeting_date": {
+      "anyOf": [
+        {
+          "format": "date",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Meeting Date"
+    },
+    "language": {
+      "const": "vi",
+      "default": "vi",
+      "title": "Language",
+      "type": "string"
+    },
+    "transcript_override_path": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Transcript đã sửa, dùng khi chạy lại riêng stage summarize",
+      "title": "Transcript Override Path"
+    },
+    "attempt": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Attempt",
+      "type": "integer"
+    },
+    "max_attempts": {
+      "default": 3,
+      "minimum": 1,
+      "title": "Max Attempts",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "meeting_id",
+    "job_id",
+    "audio_path"
+  ],
+  "title": "JobSpec",
+  "type": "object"
+}

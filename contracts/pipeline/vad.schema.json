@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "pipeline/vad.schema.json",
+  "$defs": {
+    "PipelineWarning": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "pattern": "^[A-Z][A-Z0-9_]*$",
+          "title": "Code",
+          "type": "string"
+        },
+        "stage": {
+          "$ref": "#/$defs/Stage"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "stage",
+        "message"
+      ],
+      "title": "PipelineWarning",
+      "type": "object"
+    },
+    "Stage": {
+      "enum": [
+        "preprocess",
+        "vad",
+        "asr",
+        "diarize",
+        "merge",
+        "summarize"
+      ],
+      "title": "Stage",
+      "type": "string"
+    },
+    "TimeSpan": {
+      "additionalProperties": false,
+      "properties": {
+        "start_sec": {
+          "minimum": 0,
+          "title": "Start Sec",
+          "type": "number"
+        },
+        "end_sec": {
+          "title": "End Sec",
+          "type": "number"
+        }
+      },
+      "required": [
+        "start_sec",
+        "end_sec"
+      ],
+      "title": "TimeSpan",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "default": "1.0",
+      "pattern": "^\\d+\\.\\d+$",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "model": {
+      "title": "Model",
+      "type": "string"
+    },
+    "speech_regions": {
+      "items": {
+        "$ref": "#/$defs/TimeSpan"
+      },
+      "title": "Speech Regions",
+      "type": "array"
+    },
+    "speech_ratio": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Speech Ratio",
+      "type": "number"
+    },
+    "warnings": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/PipelineWarning"
+      },
+      "title": "Warnings",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "model",
+    "speech_regions",
+    "speech_ratio",
+    "warnings"
+  ],
+  "title": "VadOutput",
+  "type": "object"
+}

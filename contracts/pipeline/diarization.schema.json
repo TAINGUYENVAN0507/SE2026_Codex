@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "pipeline/diarization.schema.json",
+  "$defs": {
+    "PipelineWarning": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "pattern": "^[A-Z][A-Z0-9_]*$",
+          "title": "Code",
+          "type": "string"
+        },
+        "stage": {
+          "$ref": "#/$defs/Stage"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "stage",
+        "message"
+      ],
+      "title": "PipelineWarning",
+      "type": "object"
+    },
+    "SpeakerTurn": {
+      "additionalProperties": false,
+      "properties": {
+        "start_sec": {
+          "minimum": 0,
+          "title": "Start Sec",
+          "type": "number"
+        },
+        "end_sec": {
+          "title": "End Sec",
+          "type": "number"
+        },
+        "speaker_label": {
+          "pattern": "^SPEAKER_\\d{2,}$",
+          "title": "Speaker Label",
+          "type": "string"
+        }
+      },
+      "required": [
+        "start_sec",
+        "end_sec",
+        "speaker_label"
+      ],
+      "title": "SpeakerTurn",
+      "type": "object"
+    },
+    "Stage": {
+      "enum": [
+        "preprocess",
+        "vad",
+        "asr",
+        "diarize",
+        "merge",
+        "summarize"
+      ],
+      "title": "Stage",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "default": "1.0",
+      "pattern": "^\\d+\\.\\d+$",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "model": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "null khi fallback",
+      "title": "Model"
+    },
+    "status": {
+      "enum": [
+        "ok",
+        "fallback"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "num_speakers": {
+      "minimum": 0,
+      "title": "Num Speakers",
+      "type": "integer"
+    },
+    "turns": {
+      "items": {
+        "$ref": "#/$defs/SpeakerTurn"
+      },
+      "title": "Turns",
+      "type": "array"
+    },
+    "warnings": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/PipelineWarning"
+      },
+      "title": "Warnings",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "model",
+    "status",
+    "num_speakers",
+    "turns",
+    "warnings"
+  ],
+  "title": "DiarizeOutput",
+  "type": "object"
+}

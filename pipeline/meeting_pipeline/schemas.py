@@ -59,7 +59,8 @@ CODE_PATTERN = r"^[A-Z][A-Z0-9_]*$"
 
 
 class _Model(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    # Schema dạng serialization coi mọi field là required, vì output luôn ghi đủ field.
+    model_config = ConfigDict(extra="forbid", json_schema_serialization_defaults_required=True)
 
 
 class Artifact(_Model):

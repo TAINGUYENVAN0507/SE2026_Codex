@@ -1,0 +1,249 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "pipeline/summary.schema.json",
+  "$defs": {
+    "ActionItem": {
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "assignee_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Assignee Name"
+        },
+        "assignee_speaker_label": {
+          "anyOf": [
+            {
+              "pattern": "^SPEAKER_\\d{2,}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Assignee Speaker Label"
+        },
+        "due_date": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Chỉ điền khi transcript có căn cứ rõ ràng",
+          "title": "Due Date"
+        },
+        "due_date_text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Cụm từ gốc trong transcript, ví dụ 'thứ Sáu'",
+          "title": "Due Date Text"
+        },
+        "evidence_segment_indices": {
+          "default": [],
+          "items": {
+            "type": "integer"
+          },
+          "title": "Evidence Segment Indices",
+          "type": "array"
+        },
+        "needs_review": {
+          "title": "Needs Review",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "description",
+        "assignee_name",
+        "assignee_speaker_label",
+        "due_date",
+        "due_date_text",
+        "evidence_segment_indices",
+        "needs_review"
+      ],
+      "title": "ActionItem",
+      "type": "object"
+    },
+    "EvidenceItem": {
+      "additionalProperties": false,
+      "properties": {
+        "text": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        },
+        "evidence_segment_indices": {
+          "default": [],
+          "description": "index trong transcript",
+          "items": {
+            "type": "integer"
+          },
+          "title": "Evidence Segment Indices",
+          "type": "array"
+        }
+      },
+      "required": [
+        "text",
+        "evidence_segment_indices"
+      ],
+      "title": "EvidenceItem",
+      "type": "object"
+    },
+    "PipelineWarning": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "pattern": "^[A-Z][A-Z0-9_]*$",
+          "title": "Code",
+          "type": "string"
+        },
+        "stage": {
+          "$ref": "#/$defs/Stage"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "stage",
+        "message"
+      ],
+      "title": "PipelineWarning",
+      "type": "object"
+    },
+    "Stage": {
+      "enum": [
+        "preprocess",
+        "vad",
+        "asr",
+        "diarize",
+        "merge",
+        "summarize"
+      ],
+      "title": "Stage",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "default": "1.0",
+      "pattern": "^\\d+\\.\\d+$",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "ready",
+        "insufficient_content",
+        "disabled"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "model": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Model"
+    },
+    "prompt_version": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Prompt Version"
+    },
+    "overview": {
+      "anyOf": [
+        {
+          "maxLength": 5000,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Overview"
+    },
+    "key_points": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/EvidenceItem"
+      },
+      "maxItems": 50,
+      "title": "Key Points",
+      "type": "array"
+    },
+    "decisions": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/EvidenceItem"
+      },
+      "maxItems": 50,
+      "title": "Decisions",
+      "type": "array"
+    },
+    "action_items": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ActionItem"
+      },
+      "title": "Action Items",
+      "type": "array"
+    },
+    "warnings": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/PipelineWarning"
+      },
+      "title": "Warnings",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "status",
+    "model",
+    "prompt_version",
+    "overview",
+    "key_points",
+    "decisions",
+    "action_items",
+    "warnings"
+  ],
+  "title": "SummaryOutput",
+  "type": "object"
+}

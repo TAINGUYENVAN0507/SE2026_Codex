@@ -1,0 +1,14 @@
+{
+  "schema_version": "1.0",
+  "model": null,
+  "status": "fallback",
+  "num_speakers": 1,
+  "turns": [],
+  "warnings": [
+    {
+      "code": "DIARIZATION_FALLBACK",
+      "stage": "diarize",
+      "message": "không tách được speaker, gộp thành 1 speaker"
+    }
+  ]
+}

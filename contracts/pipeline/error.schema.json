@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "pipeline/error.schema.json",
+  "$defs": {
+    "ErrorCode": {
+      "enum": [
+        "AUDIO_INVALID",
+        "AUDIO_TOO_SHORT",
+        "AUDIO_TOO_LONG",
+        "NO_SPEECH_DETECTED",
+        "MODEL_UNAVAILABLE",
+        "OUT_OF_MEMORY",
+        "DIARIZATION_FAILED",
+        "LLM_UNAVAILABLE",
+        "LLM_REQUEST_INVALID",
+        "LLM_OUTPUT_INVALID",
+        "STAGE_TIMEOUT",
+        "STAGE_CRASHED",
+        "STAGE_NOT_IMPLEMENTED",
+        "MISSING_INPUT",
+        "PIPELINE_OUTPUT_INVALID",
+        "PIPELINE_CANCELLED",
+        "INTERNAL_ERROR"
+      ],
+      "title": "ErrorCode",
+      "type": "string"
+    },
+    "ErrorKind": {
+      "enum": [
+        "permanent",
+        "transient",
+        "timeout",
+        "cancelled"
+      ],
+      "title": "ErrorKind",
+      "type": "string"
+    },
+    "Stage": {
+      "enum": [
+        "preprocess",
+        "vad",
+        "asr",
+        "diarize",
+        "merge",
+        "summarize"
+      ],
+      "title": "Stage",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Nội dung file `<stage>.error.json`.",
+  "properties": {
+    "schema_version": {
+      "default": "1.0",
+      "pattern": "^\\d+\\.\\d+$",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "stage": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Stage"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "code": {
+      "$ref": "#/$defs/ErrorCode"
+    },
+    "kind": {
+      "$ref": "#/$defs/ErrorKind"
+    },
+    "retryable": {
+      "title": "Retryable",
+      "type": "boolean"
+    },
+    "message": {
+      "maxLength": 2000,
+      "title": "Message",
+      "type": "string"
+    },
+    "details": {
+      "additionalProperties": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "integer"
+          },
+          {
+            "type": "number"
+          },
+          {
+            "type": "boolean"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "default": {},
+      "title": "Details",
+      "type": "object"
+    }
+  },
+  "required": [
+    "schema_version",
+    "stage",
+    "code",
+    "kind",
+    "retryable",
+    "message",
+    "details"
+  ],
+  "title": "ErrorReport",
+  "type": "object"
+}

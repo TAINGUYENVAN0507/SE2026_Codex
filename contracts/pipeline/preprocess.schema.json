@@ -1,0 +1,215 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "pipeline/preprocess.schema.json",
+  "$defs": {
+    "PipelineWarning": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "pattern": "^[A-Z][A-Z0-9_]*$",
+          "title": "Code",
+          "type": "string"
+        },
+        "stage": {
+          "$ref": "#/$defs/Stage"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "stage",
+        "message"
+      ],
+      "title": "PipelineWarning",
+      "type": "object"
+    },
+    "PlaybackInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "enum": [
+            "original",
+            "transcoded"
+          ],
+          "title": "Source",
+          "type": "string"
+        },
+        "file": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Tên file trong workdir khi source=transcoded",
+          "title": "File"
+        },
+        "mime_type": {
+          "title": "Mime Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source",
+        "file",
+        "mime_type"
+      ],
+      "title": "PlaybackInfo",
+      "type": "object"
+    },
+    "SourceAudioInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "format_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Format Name"
+        },
+        "codec": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Codec"
+        },
+        "sample_rate": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Sample Rate"
+        },
+        "channels": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Channels"
+        },
+        "header_duration_sec": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Duration đọc từ header, có thể thiếu hoặc sai (WebM)",
+          "title": "Header Duration Sec"
+        },
+        "size_bytes": {
+          "minimum": 0,
+          "title": "Size Bytes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "format_name",
+        "codec",
+        "sample_rate",
+        "channels",
+        "header_duration_sec",
+        "size_bytes"
+      ],
+      "title": "SourceAudioInfo",
+      "type": "object"
+    },
+    "Stage": {
+      "enum": [
+        "preprocess",
+        "vad",
+        "asr",
+        "diarize",
+        "merge",
+        "summarize"
+      ],
+      "title": "Stage",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "default": "1.0",
+      "pattern": "^\\d+\\.\\d+$",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "duration_sec": {
+      "description": "Tính bằng cách decode, không đọc header",
+      "exclusiveMinimum": 0,
+      "title": "Duration Sec",
+      "type": "number"
+    },
+    "sample_rate": {
+      "const": 16000,
+      "default": 16000,
+      "title": "Sample Rate",
+      "type": "integer"
+    },
+    "channels": {
+      "const": 1,
+      "default": 1,
+      "title": "Channels",
+      "type": "integer"
+    },
+    "audio_file": {
+      "default": "audio.wav",
+      "title": "Audio File",
+      "type": "string"
+    },
+    "source": {
+      "$ref": "#/$defs/SourceAudioInfo"
+    },
+    "playback": {
+      "$ref": "#/$defs/PlaybackInfo"
+    },
+    "warnings": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/PipelineWarning"
+      },
+      "title": "Warnings",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "duration_sec",
+    "sample_rate",
+    "channels",
+    "audio_file",
+    "source",
+    "playback",
+    "warnings"
+  ],
+  "title": "PreprocessOutput",
+  "type": "object"
+}
