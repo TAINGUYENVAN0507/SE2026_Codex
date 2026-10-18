@@ -359,15 +359,22 @@ def run_process(
 
     deadline = time.monotonic() + timeout_sec
     timed_out = False
-    while True:
-        with contextlib.suppress(queue.Empty):
-            on_progress(stage, events.get(timeout=0.1))
-        if proc.poll() is not None:
-            break
-        if time.monotonic() > deadline:
-            timed_out = True
-            _kill_group(proc)
-            break
+    try:
+        while True:
+            with contextlib.suppress(queue.Empty):
+                on_progress(stage, events.get(timeout=0.1))
+            if proc.poll() is not None:
+                break
+            if time.monotonic() > deadline:
+                timed_out = True
+                _kill_group(proc)
+                break
+    except BaseException:
+        # Callback lỗi, KeyboardInterrupt, hoặc worker nhận tín hiệu dừng:
+        # không để stage chạy mồ côi (vẫn giữ GPU) sau khi runner đã thoát.
+        _kill_group(proc)
+        proc.wait()
+        raise
 
     proc.wait()
     for t in readers:

@@ -254,6 +254,31 @@ def test_run_process_kills_whole_process_group(tmp_path):
         pytest.fail("process cháu vẫn còn chạy sau khi timeout")
 
 
+def test_run_process_kills_child_when_callback_raises(tmp_path):
+    """Callback của worker lỗi (ví dụ mất kết nối DB) không được để lại stage mồ côi."""
+    pid_file = tmp_path / "child.pid"
+    script = (
+        "import json, os, time\n"
+        f"open({str(pid_file)!r}, 'w').write(str(os.getpid()))\n"
+        "print(json.dumps({'event': 'progress', 'value': 0.1}), flush=True)\n"
+        "time.sleep(60)\n"
+    )
+
+    def broken_callback(stage, value):
+        raise RuntimeError("DB down")
+
+    with pytest.raises(RuntimeError):
+        run_process(
+            [sys.executable, "-c", script],
+            stage=Stage.ASR,
+            timeout_sec=30,
+            on_progress=broken_callback,
+        )
+    child = int(pid_file.read_text())
+    with pytest.raises(ProcessLookupError):
+        os.kill(child, 0)
+
+
 def test_run_process_forwards_progress_and_ignores_noise():
     script = (
         "import json\n"
