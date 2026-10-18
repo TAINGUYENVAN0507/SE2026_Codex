@@ -72,6 +72,8 @@ ProgressFn = Callable[[Stage, float], None]
 StageDoneFn = Callable[[Stage, Path], None]
 CancelledFn = Callable[[], bool]
 
+INVALIDATION_MARKER = ".from_stage_applied"
+
 # Tỉ trọng ước lượng của từng stage trong tổng thời gian, dùng cho thanh progress.
 STAGE_WEIGHTS: dict[Stage, float] = {
     Stage.PREPROCESS: 0.05,
@@ -211,16 +213,24 @@ def run_job(
 
 
 def _plan(spec: JobSpec, workdir: Path) -> list[Stage]:
-    """Danh sách stage cần xét, và xóa artifact của các stage phải chạy lại."""
+    """Danh sách stage cần xét, và xóa artifact của các stage phải chạy lại.
+
+    Việc xóa chỉ làm một lần cho mỗi job (đánh dấu bằng `INVALIDATION_MARKER`). Nếu
+    không, retry của job `from_stage=asr` sẽ xóa luôn kết quả ASR của lượt trước.
+    Không dựa vào `attempt`, vì job bị requeue sau SIGTERM giữ nguyên attempt.
+    """
     if spec.from_stage is None:
         return list(STAGES)
 
-    start = STAGES.index(spec.from_stage)
-    for stage in STAGES[start:]:
-        artifact_path(workdir, stage).unlink(missing_ok=True)
-        (workdir / error_file(stage)).unlink(missing_ok=True)
-        if stage is Stage.DIARIZE:
-            (workdir / RTTM_FILE).unlink(missing_ok=True)
+    marker = workdir / INVALIDATION_MARKER
+    applied = f"{spec.job_id}:{spec.from_stage.value}"
+    if not marker.exists() or marker.read_text(encoding="utf-8") != applied:
+        for stage in STAGES[STAGES.index(spec.from_stage) :]:
+            artifact_path(workdir, stage).unlink(missing_ok=True)
+            (workdir / error_file(stage)).unlink(missing_ok=True)
+            if stage is Stage.DIARIZE:
+                (workdir / RTTM_FILE).unlink(missing_ok=True)
+        marker.write_text(applied, encoding="utf-8")
 
     # Tạo lại tóm tắt từ transcript đã sửa: không cần các stage trước.
     if spec.from_stage is Stage.SUMMARIZE and spec.transcript_override_path:

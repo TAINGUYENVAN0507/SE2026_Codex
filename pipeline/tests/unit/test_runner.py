@@ -169,6 +169,23 @@ def test_from_stage_reruns_that_stage_and_later(job_spec, tmp_path):
     ]
 
 
+@pytest.mark.parametrize("next_attempt", [2, 1], ids=["retry", "requeue-after-sigterm"])
+def test_from_stage_is_applied_once_per_job(job_spec, tmp_path, next_attempt):
+    """Retry của một job from_stage=asr không được chạy lại ASR đã xong."""
+    wd = tmp_path / "wd"
+    spec = job_spec.model_copy(update={"from_stage": Stage.ASR})
+    with pytest.raises(PermanentPipelineError):
+        run(spec, wd, "summary_fail")
+    asr_mtime = artifact_path(wd, Stage.ASR).stat().st_mtime_ns
+
+    # SIGTERM trả lease mà không tăng attempt (RT-09), nên attempt có thể vẫn là 1.
+    retry = spec.model_copy(update={"attempt": next_attempt})
+    outcome = run(retry, wd, "ok")
+    assert outcome.stage_status[Stage.ASR] == "skipped"
+    assert outcome.stage_status[Stage.SUMMARIZE] == "succeeded"
+    assert artifact_path(wd, Stage.ASR).stat().st_mtime_ns == asr_mtime
+
+
 def test_summarize_only_with_override_skips_other_stages(job_spec, tmp_path):
     override = write_json_atomic(tmp_path / "edited.json", data.transcript())
     spec = job_spec.model_copy(
