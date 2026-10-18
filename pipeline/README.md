@@ -54,6 +54,46 @@ Stdout là các dòng JSON (`progress`, `done`). Stderr là log kỹ thuật, kh
 
 `PIPELINE_BACKEND=fake` dùng dữ liệu mẫu. Chọn kịch bản lỗi bằng `FAKE_SCENARIO`: `ok`, `slow`, `transient_once`, `permanent`, `timeout`, `no_speech`, `diarize_fail`, `summary_fail`, `summary_flaky`, `summary_disabled`. Mô tả chi tiết ở đầu file `meeting_pipeline/fake/stages.py`.
 
+## Gọi pipeline từ worker (dành cho B)
+
+```python
+from meeting_pipeline.runner import run_job, overall_progress
+from meeting_pipeline.schemas import JobSpec
+from meeting_pipeline.errors import (
+    PermanentPipelineError,
+    TransientPipelineError,
+    PipelineCancelledError,
+)
+
+spec = JobSpec(
+    meeting_id=...,
+    job_id=...,
+    audio_path="/data/audio/<id>/original.webm",
+    attempt=job.attempt,
+    max_attempts=job.max_attempts,
+)
+try:
+    outcome = run_job(
+        spec,
+        workdir=Path(f"/data/artifacts/{meeting_id}/{job_id}"),
+        on_progress=lambda stage, v: save_progress(stage, overall_progress(stage, v)),
+        on_stage_done=lambda stage, path: persist(stage, path),  # idempotent theo (job_id, stage)
+        is_cancelled=lambda: job_was_cancelled(job_id),
+    )
+except TransientPipelineError:  # gồm StageTimeoutError: lên lịch retry
+    ...
+except PermanentPipelineError:  # failed ngay
+    ...
+except PipelineCancelledError:
+    ...
+```
+
+- Mỗi stage chạy trong subprocess riêng. Quá timeout thì kill cả process group.
+- Retry dùng lại cùng `workdir`: stage đã có artifact hợp lệ được bỏ qua, nhưng `on_stage_done` vẫn được gọi lại.
+- Diarization lỗi ở lượt cuối (hoặc lỗi permanent) thì fallback 1 speaker, có warning `DIARIZATION_FALLBACK`.
+- `from_stage="summarize"` cùng `transcript_override_path` chỉ chạy lại summarize, không chạy lại ASR.
+- Mọi callback được gọi trên thread của người gọi `run_job()`.
+
 ## Contracts
 
 Schema JSON và fixtures trong `contracts/pipeline/` được sinh từ `meeting_pipeline/schemas.py`:

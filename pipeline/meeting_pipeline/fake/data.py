@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from datetime import date, timedelta
 
+from meeting_pipeline.fallbacks import diarization_fallback
 from meeting_pipeline.schemas import ActionItem as SummaryActionItem
 from meeting_pipeline.schemas import (
     AsrOutput,
@@ -16,13 +17,11 @@ from meeting_pipeline.schemas import (
     DiarizeOutput,
     EvidenceItem,
     ModelInfo,
-    PipelineWarning,
     PlaybackInfo,
     PreprocessOutput,
     SegmentFlag,
     SourceAudioInfo,
     SpeakerTurn,
-    Stage,
     SummaryOutput,
     TimeSpan,
     Transcript,
@@ -142,20 +141,7 @@ def diarize_output() -> DiarizeOutput:
 
 
 def diarize_fallback_output(reason: str = "") -> DiarizeOutput:
-    """Output khi diarization lỗi: không có turn nào, merge gộp thành 1 speaker."""
-    return DiarizeOutput(
-        model=None,
-        status="fallback",
-        num_speakers=1,
-        turns=[],
-        warnings=[
-            PipelineWarning(
-                code="DIARIZATION_FALLBACK",
-                stage=Stage.DIARIZE,
-                message=reason or "không tách được speaker, gộp thành 1 speaker",
-            )
-        ],
-    )
+    return diarization_fallback(reason)
 
 
 def transcript(diarization: DiarizeOutput | None = None) -> Transcript:
