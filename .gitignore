@@ -1,5 +1,6 @@
 # Ghi chú cá nhân, không đưa lên repo
-docs/
+docs/*
+!docs/frontend/
 CLAUDE.md
 
 # Python

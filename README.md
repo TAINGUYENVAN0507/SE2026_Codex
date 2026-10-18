@@ -15,3 +15,35 @@ Dự án môn học SE2026, nhóm 3 người.
 ## Trạng thái
 
 Đang ở giai đoạn khởi động. Mỗi phần có README riêng trong thư mục của mình.
+
+## Frontend (FE-01)
+
+Đã có nền Vite + React + TypeScript strict, router, TanStack Query provider và
+workflow kiểm tra frontend. Giao diện hiện dùng dữ liệu demo trong phiên, chưa
+kết nối đăng nhập, Backend hay AI thật.
+
+Yêu cầu Node.js 24 và npm. Từ thư mục gốc:
+
+```bash
+cd frontend
+npm ci
+npm run dev
+```
+
+Mở địa chỉ Vite in trong terminal (mặc định `http://localhost:5173`).
+Hướng dẫn chi tiết: [frontend/README.md](frontend/README.md).
+Checklist và bằng chứng FE-01: [docs/frontend/FE-01.md](docs/frontend/FE-01.md).
+
+Kiểm tra trước khi bàn giao (chạy trong `frontend/`):
+
+```bash
+npm run lint
+npm run format:check
+npm run typecheck
+npm test
+npm run build
+```
+
+Workflow `.github/workflows/frontend.yml` chạy khi có thay đổi frontend trong PR,
+push vào `main`/`vantuong`, hoặc chạy thủ công. Cấu hình workflow không đồng nghĩa
+CI đã xanh: cần xem kết quả GitHub Actions sau khi được phép push.
