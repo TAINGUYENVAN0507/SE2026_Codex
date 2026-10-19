@@ -13,6 +13,7 @@
     đọc (`read_speech`) không đại diện cho cuộc họp thật.
   - `env.json`: git SHA, version, sha256 của input và của normalizer, metadata của lần
     chạy ASR (`--asr-meta`).
+  - `report.md`: bảng tóm tắt sinh từ ba file trên (`make_report.py`).
 
 `per_sample.csv` và `summary.json` chỉ phụ thuộc input, nên chạy lại cho cùng byte.
 Kết quả không chứa text của transcript: dữ liệu họp nội bộ chỉ dùng theo consent.
@@ -46,6 +47,7 @@ for _sub in ("normalizer", "datasets"):
         sys.path.insert(0, str(EVAL_ROOT / _sub))
 
 import check_manifest  # noqa: E402
+import make_report  # noqa: E402
 import vi_normalize  # noqa: E402
 from metrics import Counts, SampleScore, corpus, score  # noqa: E402
 
@@ -343,6 +345,7 @@ def main(argv: list[str] | None = None) -> int:
     write_per_sample(out / "per_sample.csv", results)
     (out / "summary.json").write_text(_dump(summary), encoding="utf-8")
     (out / "env.json").write_text(_dump(env), encoding="utf-8")
+    make_report.write_report(out)
 
     for kind, g in groups.items():
         print(

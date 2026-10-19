@@ -114,6 +114,9 @@ def test_scores_each_kind_separately(tmp_path, manifest):
     assert rows[0]["wer"] == "0.2222" and rows[0]["hyp_tokens"] == "10"
     assert rows[1]["wer"] == "0.0000"
 
+    report = (tmp_path / "out" / "report.md").read_text(encoding="utf-8")
+    assert "| `meeting` | 1 | 0 | 9 | 1 | 0 | 1 | 22.22 % |" in report
+
 
 def test_rerun_gives_identical_files(tmp_path, manifest):
     assert run(tmp_path, manifest, HYPS, out="a") == 0
