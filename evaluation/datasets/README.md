@@ -11,7 +11,8 @@ Dữ liệu dùng để đánh giá ASR, diarization và tóm tắt (AI-10).
 | `LICENSES.md` | License và hạn chế của từng nguồn |
 | `CONVENTIONS.md` | Quy ước gõ transcript tham chiếu và gán nhãn RTTM (SH-02) |
 | `consent_form.md` | Mẫu phiếu đồng ý cho các buổi ghi âm của nhóm (SH-01) |
-| `refs/` | Transcript tham chiếu `<id>.txt` và nhãn speaker `<id>.rttm` |
+| `refs/` | Transcript tham chiếu `<id>.txt` và nhãn speaker `<id>.rttm` của dữ liệu public, kèm `CHANGELOG.md` |
+| `private/` | Audio, transcript, RTTM của cuộc họp nội bộ theo consent, **không commit** (repo public) |
 | `raw/` | Audio đã tải, **không commit** |
 
 ## Dùng nhanh

@@ -29,6 +29,7 @@ build/
 *.webm
 *.flac
 evaluation/datasets/raw/
+evaluation/datasets/private/
 models/
 artifacts/
 

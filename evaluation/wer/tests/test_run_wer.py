@@ -43,8 +43,10 @@ def write_manifest(path: Path, rows: list[dict[str, str]]) -> Path:
 def manifest(tmp_path: Path) -> Path:
     base = tmp_path / "datasets"
     (base / "refs").mkdir(parents=True)
+    (base / "private" / "refs").mkdir(parents=True)
     for rid, text in REFS.items():
-        (base / "refs" / f"{rid}.txt").write_text(text + "\n", encoding="utf-8")
+        folder = "private/refs" if rid.startswith("meet-") else "refs"
+        (base / folder / f"{rid}.txt").write_text(text + "\n", encoding="utf-8")
     meeting = dict(
         source="internal",
         kind="meeting",
@@ -57,9 +59,20 @@ def manifest(tmp_path: Path) -> Path:
     rows = [
         manifest_row(id="fleurs-1", ref_path="refs/fleurs-1.txt"),
         manifest_row(id="fleurs-2", ref_path="refs/fleurs-2.txt"),
-        manifest_row(id="meet-001", ref_path="refs/meet-001.txt", purpose="wer;der", **meeting),
+        manifest_row(
+            id="meet-001",
+            audio_path="private/audio/meet-001.webm",
+            ref_path="private/refs/meet-001.txt",
+            purpose="wer;der",
+            **meeting,
+        ),
         # Không có purpose wer: không được chấm.
-        manifest_row(id="meet-002", purpose="der", **{**meeting, "ref_reviewed_by": ""}),
+        manifest_row(
+            id="meet-002",
+            audio_path="private/audio/meet-002.webm",
+            purpose="der",
+            **{**meeting, "ref_reviewed_by": ""},
+        ),
     ]
     return write_manifest(base / "manifest.csv", rows)
 
