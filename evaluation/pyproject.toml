@@ -4,7 +4,9 @@ version = "0.1.0"
 description = "Dữ liệu và công cụ đánh giá (WER, noisy, DER, rubric) cho Vietnamese Meeting Minutes Assistant"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "jiwer>=4.0,<5",
+]
 
 [dependency-groups]
 dev = [
@@ -16,8 +18,8 @@ dev = [
 package = false
 
 [tool.pytest.ini_options]
-testpaths = ["datasets/tests", "normalizer"]
-pythonpath = ["datasets", "normalizer"]
+testpaths = ["datasets/tests", "normalizer", "wer"]
+pythonpath = ["datasets", "normalizer", "wer"]
 addopts = "-ra --strict-markers --import-mode=importlib --doctest-modules"
 
 [tool.ruff]
