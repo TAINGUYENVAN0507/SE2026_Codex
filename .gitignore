@@ -1,5 +1,5 @@
 # Ghi chú cá nhân, không đưa lên repo
-docs/
+reports/
 CLAUDE.md
 
 # Python
@@ -29,6 +29,7 @@ build/
 *.webm
 *.flac
 evaluation/datasets/raw/
+evaluation/datasets/private/
 models/
 artifacts/
 
