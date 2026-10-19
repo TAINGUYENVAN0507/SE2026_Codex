@@ -1,21 +1,66 @@
 """Stage merge (AI-08): ghép output ASR với diarization thành transcript có speaker.
 
-Gán speaker cho từng word theo phần overlap lớn nhất với các turn của diarization.
-Word rơi vào khoảng lặng giữa các turn (timestamp của ASR thường lệch vài trăm ms)
-lấy speaker của word gần nhất trong cùng segment ASR. Cả segment ASR không chạm turn
-nào thì speaker là null: người dùng gán tay trên UI.
+1. Gán speaker cho từng word theo phần overlap lớn nhất với các turn của diarization.
+   Word rơi vào khoảng lặng giữa các turn (timestamp của ASR thường lệch vài trăm ms)
+   lấy speaker của word gần nhất trong cùng segment ASR. Cả segment ASR không chạm turn
+   nào thì speaker là null: người dùng gán tay trên UI.
+2. Tách segment ASR khi đổi speaker giữa câu.
+3. Gộp các đoạn ngắn liền nhau của cùng một speaker.
+4. Gắn cờ `overlap` khi đoạn có nhiều người nói cùng lúc (hoặc chồng lên đoạn trước do
+   timestamp của ASR lệch), `low_confidence` khi confidence thấp.
+5. Đánh số lại speaker theo thứ tự xuất hiện: người nói đầu tiên là `SPEAKER_00`.
+
+Diarization fallback (hoặc không có turn nào) thì gộp toàn bộ thành 1 speaker.
 
 Mọi hàm ở đây là pure function và deterministic: không đọc môi trường, không gọi model.
+Thời gian được clamp vào `[0, duration_sec]` và làm tròn ms, nên output luôn thỏa các
+bất biến của `Transcript` dù ASR trả timestamp lệch.
 """
 
 from __future__ import annotations
 
 import bisect
+import math
+import unicodedata
 from collections import Counter
 from collections.abc import Sequence
-from itertools import accumulate
+from dataclasses import dataclass, field
+from itertools import accumulate, groupby
 
-from meeting_pipeline.schemas import SpeakerTurn, Word
+from meeting_pipeline.fallbacks import DIARIZATION_FALLBACK
+from meeting_pipeline.schemas import (
+    AsrOutput,
+    AsrSegment,
+    AudioInfo,
+    DiarizeOutput,
+    ModelInfo,
+    PipelineWarning,
+    SegmentFlag,
+    SpeakerTurn,
+    Stage,
+    Transcript,
+    TranscriptSegment,
+    TranscriptSpeaker,
+    Word,
+)
+
+MAX_TEXT_CHARS = 5000  # giới hạn `text` của TranscriptSegment
+TEXT_TRUNCATED = "SEGMENT_TEXT_TRUNCATED"
+_ONE_SPEAKER = "SPEAKER_00"
+
+
+@dataclass(frozen=True)
+class MergeConfig:
+    """Giá trị khởi tạo, chưa đo trên audio họp thật. Hiệu chỉnh ở AI-13."""
+
+    # Chỉ gộp hai đoạn cùng speaker khi cách nhau không quá max_gap_sec, một trong hai
+    # ngắn hơn short_segment_sec, và đoạn sau khi gộp không dài quá max_segment_sec.
+    max_gap_sec: float = 1.0
+    short_segment_sec: float = 1.5
+    max_segment_sec: float = 30.0
+    # Gắn cờ overlap khi thời gian nói chồng trong đoạn đạt mức này (hoặc nửa đoạn).
+    crosstalk_min_sec: float = 0.3
+    low_confidence: float = 0.5
 
 
 def _overlap(a_start: float, a_end: float, b_start: float, b_end: float) -> float:
@@ -138,3 +183,233 @@ class Crosstalk:
                 break
             total += _overlap(start, end, r_start, r_end)
         return total
+
+
+# ------------------------------------------------------------------ transcript
+
+
+@dataclass
+class _Piece:
+    """Một đoạn liên tục của cùng một speaker, trước khi thành TranscriptSegment."""
+
+    start: float
+    end: float
+    label: str | None
+    text: str
+    words: list[Word]
+    # (confidence, trọng số theo thời lượng) của từng phần đã gộp vào đoạn này.
+    scores: list[tuple[float, float]] = field(default_factory=list)
+
+    @property
+    def duration(self) -> float:
+        return self.end - self.start
+
+    def confidence(self) -> float | None:
+        total = sum(weight for _, weight in self.scores)
+        if total <= 0:
+            return None
+        return round(sum(c * weight for c, weight in self.scores) / total, 3)
+
+
+def _span(start: float, end: float, duration: float) -> tuple[float, float]:
+    """Clamp vào `[0, duration]`, làm tròn ms và bảo đảm `start < end`."""
+    start = round(min(max(start, 0.0), duration), 3)
+    end = round(min(max(end, start), duration), 3)
+    if end <= start:
+        if round(start + 0.001, 3) <= duration:
+            end = round(start + 0.001, 3)
+        else:
+            start, end = round(duration - 0.001, 3), duration
+    return start, end
+
+
+def _clean_words(words: Sequence[Word], duration: float) -> list[Word]:
+    cleaned = []
+    for w in words:
+        token = w.w.strip()
+        if not token:
+            continue
+        s = min(max(w.s, 0.0), duration)
+        cleaned.append(Word(w=token, s=s, e=min(max(w.e, s), duration), p=w.p))
+    return sorted(cleaned, key=lambda w: (w.s, w.e))
+
+
+def _is_punct(token: str) -> bool:
+    return all(unicodedata.category(ch).startswith("P") for ch in token)
+
+
+def _join(words: Sequence[Word]) -> str:
+    """Ghép word thành câu. Token chỉ gồm dấu câu dính vào token trước, không cách."""
+    text = ""
+    for w in words:
+        text += w.w if not text or _is_punct(w.w) else f" {w.w}"
+    return text
+
+
+def _confidence(words: Sequence[Word], seg: AsrSegment) -> float | None:
+    """Trung bình xác suất của word; thiếu thì lấy exp(avg_logprob) của segment ASR."""
+    probs = [w.p for w in words if w.p is not None]
+    if words and len(probs) == len(words):
+        return sum(probs) / len(probs)
+    if seg.avg_logprob is not None:
+        return min(1.0, math.exp(seg.avg_logprob))
+    return None
+
+
+def _pieces(seg: AsrSegment, index: TurnIndex, one_speaker: bool, duration: float) -> list[_Piece]:
+    """Tách một segment ASR thành các đoạn, mỗi đoạn một speaker."""
+
+    def piece(start: float, end: float, label: str | None, text: str, words: list[Word]):
+        start, end = _span(start, end, duration)
+        conf = _confidence(words, seg)
+        scores = [] if conf is None else [(conf, max(end - start, 0.001))]
+        return _Piece(start, end, label, text, words, scores)
+
+    words = _clean_words(seg.words, duration)
+    text = seg.text.strip()
+    if not words:
+        if not text:
+            return []
+        start, end = _span(seg.start_sec, seg.end_sec, duration)
+        label = _ONE_SPEAKER if one_speaker else index.speaker_for(start, end)
+        return [piece(start, end, label, text, [])]
+
+    labels = [_ONE_SPEAKER] * len(words) if one_speaker else label_words(words, index)
+    runs = [
+        (label, [w for _, w in group])
+        for label, group in groupby(zip(labels, words, strict=True), key=lambda lw: lw[0])
+    ]
+    return [
+        # Không phải tách thì giữ nguyên text của ASR (dấu câu, khoảng trắng).
+        piece(
+            run[0].s,
+            max(w.e for w in run),
+            label,
+            text if len(runs) == 1 and text else _join(run),
+            run,
+        )
+        for label, run in runs
+    ]
+
+
+def _can_join(a: _Piece, b: _Piece, config: MergeConfig) -> bool:
+    return (
+        a.label is not None
+        and a.label == b.label
+        and b.start - a.end <= config.max_gap_sec
+        and min(a.duration, b.duration) < config.short_segment_sec
+        and max(a.end, b.end) - a.start <= config.max_segment_sec
+        and len(a.text) + 1 + len(b.text) <= MAX_TEXT_CHARS
+    )
+
+
+def _join_short(pieces: Sequence[_Piece], config: MergeConfig) -> list[_Piece]:
+    joined: list[_Piece] = []
+    for p in pieces:
+        if joined and _can_join(joined[-1], p, config):
+            last = joined[-1]
+            last.end = max(last.end, p.end)
+            last.text = f"{last.text} {p.text}"
+            last.words = sorted([*last.words, *p.words], key=lambda w: (w.s, w.e))
+            last.scores.extend(p.scores)
+        else:
+            joined.append(p)
+    return joined
+
+
+def _truncate(text: str) -> str:
+    cut = text[:MAX_TEXT_CHARS]
+    space = cut.rfind(" ")
+    return (cut[:space] if space > 0 else cut).rstrip()
+
+
+def _dedupe(warnings: Sequence[PipelineWarning]) -> list[PipelineWarning]:
+    seen: set[tuple[str, Stage]] = set()
+    result = []
+    for w in warnings:
+        if (w.code, w.stage) not in seen:
+            seen.add((w.code, w.stage))
+            result.append(w)
+    return result
+
+
+def merge(
+    asr: AsrOutput,
+    diarization: DiarizeOutput,
+    audio: AudioInfo,
+    config: MergeConfig | None = None,
+) -> Transcript:
+    """Ghép `asr` và `diarization` thành `Transcript`. Pure function."""
+    config = config or MergeConfig()
+    duration = round(audio.duration_sec, 3)
+    warnings = [*asr.warnings, *diarization.warnings]
+
+    one_speaker = diarization.status == "fallback" or not diarization.turns
+    if diarization.status == "ok" and not diarization.turns:
+        warnings.append(
+            PipelineWarning(
+                code=DIARIZATION_FALLBACK,
+                stage=Stage.MERGE,
+                message="diarization không tìm thấy lượt nói nào, gộp thành 1 speaker",
+            )
+        )
+    index = TurnIndex(diarization.turns)
+    crosstalk = Crosstalk(diarization.turns)
+
+    pieces = [p for seg in asr.segments for p in _pieces(seg, index, one_speaker, duration)]
+    pieces.sort(key=lambda p: (p.start, p.end))
+    pieces = _join_short(pieces, config)
+
+    flags: list[set[SegmentFlag]] = [set() for _ in pieces]
+    reach = 0  # vị trí của đoạn có end lớn nhất tính tới đoạn đang xét
+    for i, p in enumerate(pieces):
+        conf = p.confidence()
+        if conf is not None and conf < config.low_confidence:
+            flags[i].add(SegmentFlag.LOW_CONFIDENCE)
+        if crosstalk.seconds_within(p.start, p.end) >= min(
+            config.crosstalk_min_sec, p.duration / 2
+        ):
+            flags[i].add(SegmentFlag.OVERLAP)
+        if i > 0 and p.start < pieces[reach].end:
+            flags[i].add(SegmentFlag.OVERLAP)
+            flags[reach].add(SegmentFlag.OVERLAP)
+        if p.end > pieces[reach].end:
+            reach = i
+
+    names: dict[str, str] = {}
+    speakers: list[TranscriptSpeaker] = []
+    for p in pieces:
+        if p.label is not None and p.label not in names:
+            names[p.label] = f"SPEAKER_{len(names):02d}"
+            speakers.append(TranscriptSpeaker(label=names[p.label], first_start_sec=p.start))
+
+    truncated = sum(len(p.text) > MAX_TEXT_CHARS for p in pieces)
+    if truncated:
+        warnings.append(
+            PipelineWarning(
+                code=TEXT_TRUNCATED,
+                stage=Stage.MERGE,
+                message=f"{truncated} đoạn dài quá {MAX_TEXT_CHARS} ký tự, đã cắt bớt",
+            )
+        )
+
+    return Transcript(
+        audio=audio,
+        models=ModelInfo(asr=asr.model, diarization=diarization.model),
+        diarization_status="fallback" if one_speaker else "ok",
+        speakers=speakers,
+        segments=[
+            TranscriptSegment(
+                index=i,
+                start_sec=p.start,
+                end_sec=p.end,
+                speaker_label=names[p.label] if p.label is not None else None,
+                text=_truncate(p.text) if len(p.text) > MAX_TEXT_CHARS else p.text,
+                confidence=p.confidence(),
+                flags=[f for f in SegmentFlag if f in flags[i]],
+                words=p.words,
+            )
+            for i, p in enumerate(pieces)
+        ],
+        warnings=_dedupe(warnings),
+    )
