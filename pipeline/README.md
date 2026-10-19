@@ -18,12 +18,14 @@ Package này không truy cập database hay HTTP. Worker của backend gọi pip
 | `vad` | Chưa | AI-06 |
 | `asr` | Chưa (chờ spike AI-01 và Gate G1) | AI-06 |
 | `diarize` | Chưa (chờ spike AI-02) | AI-07 |
-| `merge` | Chưa | AI-08 |
+| `merge` | Đã có: gán speaker cho từng word theo overlap lớn nhất, tách và gộp đoạn, cờ `overlap`/`low_confidence`, đánh số speaker theo thứ tự xuất hiện | AI-08 |
 | `summarize` | Chưa | AI-09 |
 
 Stage chưa có bản `real` sẽ báo lỗi `STAGE_NOT_IMPLEMENTED`. Dùng `PIPELINE_BACKEND=fake` để chạy trọn pipeline.
 
 Biến môi trường của `preprocess`: `PIPELINE_MIN_DURATION_SEC` (mặc định 1), `PIPELINE_MAX_DURATION_SEC` (mặc định 3600), `FFMPEG_BIN`, `FFPROBE_BIN`.
+
+`merge` là pure function, không cần model: `stages/merge.py::merge(asr, diarization, audio)`. Các ngưỡng nằm trong `MergeConfig` và là giá trị khởi tạo, sẽ hiệu chỉnh sau benchmark AI-13. Output luôn thỏa bất biến của `transcript.schema.json`, kể cả khi ASR trả timestamp lệch (có property test bằng hypothesis).
 
 ## Cài đặt
 
