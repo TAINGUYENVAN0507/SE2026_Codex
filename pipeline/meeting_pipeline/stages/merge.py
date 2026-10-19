@@ -35,6 +35,7 @@ from meeting_pipeline.schemas import (
     DiarizeOutput,
     ModelInfo,
     PipelineWarning,
+    PreprocessOutput,
     SegmentFlag,
     SpeakerTurn,
     Stage,
@@ -43,6 +44,7 @@ from meeting_pipeline.schemas import (
     TranscriptSpeaker,
     Word,
 )
+from meeting_pipeline.stages.base import StageContext
 
 MAX_TEXT_CHARS = 5000  # giới hạn `text` của TranscriptSegment
 TEXT_TRUNCATED = "SEGMENT_TEXT_TRUNCATED"
@@ -413,3 +415,17 @@ def merge(
         ],
         warnings=_dedupe(warnings),
     )
+
+
+def run(ctx: StageContext) -> Transcript:
+    pre = ctx.input(Stage.PREPROCESS)
+    asr = ctx.input(Stage.ASR)
+    diarization = ctx.input(Stage.DIARIZE)
+    assert isinstance(pre, PreprocessOutput)
+    assert isinstance(asr, AsrOutput)
+    assert isinstance(diarization, DiarizeOutput)
+    ctx.progress(0.1)
+    audio = AudioInfo(
+        duration_sec=pre.duration_sec, sample_rate=pre.sample_rate, channels=pre.channels
+    )
+    return merge(asr, diarization, audio)

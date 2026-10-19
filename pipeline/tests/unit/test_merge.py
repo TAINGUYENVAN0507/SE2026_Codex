@@ -2,10 +2,16 @@
 
 import math
 import random
+from collections import Counter
 
 import pytest
+from hypothesis import given, settings
+from hypothesis import strategies as st
 
+from meeting_pipeline.errors import ErrorCode, PermanentPipelineError
+from meeting_pipeline.fake.stages import FAKE_STAGES
 from meeting_pipeline.fallbacks import DIARIZATION_FALLBACK, diarization_fallback
+from meeting_pipeline.registry import get_stage
 from meeting_pipeline.schemas import (
     AsrOutput,
     AsrSegment,
@@ -15,8 +21,10 @@ from meeting_pipeline.schemas import (
     SegmentFlag,
     SpeakerTurn,
     Stage,
+    Transcript,
     Word,
 )
+from meeting_pipeline.stages.base import execute_stage
 from meeting_pipeline.stages.merge import (
     MAX_TEXT_CHARS,
     TEXT_TRUNCATED,
@@ -449,3 +457,107 @@ def test_merge_is_deterministic():
     )
     assert merge(*inputs) == merge(*inputs)
     assert merge(*inputs, MergeConfig()) == merge(*inputs)
+
+
+# ------------------------------------------------------------- property test
+
+LABELS = [A, B, C, "SPEAKER_03"]
+TOKENS = ["một", "hai", "Ba", "upload,", ".", "ừ", "  ", "API"]
+
+
+@st.composite
+def merge_inputs(draw) -> tuple[AsrOutput, DiarizeOutput, AudioInfo]:
+    """Input ngẫu nhiên, gồm cả timestamp vượt duration, word dài 0 s, turn chồng lấn."""
+    duration = round(draw(st.floats(1.0, 120.0)), 3)
+    segments = []
+    for _ in range(draw(st.integers(0, 8))):
+        start = draw(st.floats(0, duration))
+        words = []
+        for _ in range(draw(st.integers(0, 8))):
+            s = draw(st.floats(0, duration + 1))
+            p = draw(st.none() | st.floats(0, 1))
+            words.append(
+                Word(w=draw(st.sampled_from(TOKENS)), s=s, e=s + draw(st.floats(0, 2)), p=p)
+            )
+        segments.append(
+            AsrSegment(
+                start_sec=start,
+                end_sec=start + draw(st.floats(0.01, 10)),
+                text=draw(st.sampled_from(["", "  ", "câu nói", "Xin chào."])),
+                avg_logprob=draw(st.none() | st.floats(-5, 0)),
+                no_speech_prob=None,
+                compression_ratio=None,
+                words=words,
+            )
+        )
+    segments.sort(key=lambda s: (s.start_sec, s.end_sec))
+
+    if draw(st.booleans()):
+        diarization = diarization_fallback()
+    else:
+        turns = []
+        for _ in range(draw(st.integers(0, 10))):
+            start = draw(st.floats(0, duration))
+            end = min(start + draw(st.floats(0.01, 20)), duration + 0.5)
+            turns.append(turn(start, end, draw(st.sampled_from(LABELS))))
+        diarization = diar(*turns)
+
+    asr_output = AsrOutput(model="test-asr", language="vi", segments=segments)
+    return asr_output, diarization, AudioInfo(duration_sec=duration, sample_rate=16000, channels=1)
+
+
+@settings(max_examples=300, deadline=None)
+@given(merge_inputs())
+def test_merge_output_always_satisfies_transcript_invariants(inputs):
+    asr_output, diarization, audio = inputs
+    t = merge(asr_output, diarization, audio)
+
+    # Dựng lại từ dict để chạy lại toàn bộ validator của Transcript.
+    assert Transcript.model_validate(t.model_dump()) == t
+    assert merge(asr_output, diarization, audio) == t
+
+    # Mọi word không rỗng của ASR có mặt đúng một lần, không sinh thêm word.
+    expected = Counter(w.w.strip() for s in asr_output.segments for w in s.words if w.w.strip())
+    assert Counter(w.w for s in t.segments for w in s.words) == expected
+    for s in t.segments:
+        assert all(0 <= w.s <= w.e <= audio.duration_sec for w in s.words)
+
+    # Speaker đánh số theo thứ tự xuất hiện, first_start_sec là đoạn đầu tiên của họ.
+    first_seen: dict[str, float] = {}
+    for s in t.segments:
+        if s.speaker_label is not None:
+            first_seen.setdefault(s.speaker_label, s.start_sec)
+    assert [(sp.label, sp.first_start_sec) for sp in t.speakers] == list(first_seen.items())
+    assert [sp.label for sp in t.speakers] == [f"SPEAKER_{i:02d}" for i in range(len(t.speakers))]
+
+    if t.diarization_status == "fallback":
+        assert {s.speaker_label for s in t.segments} <= {A}
+
+
+# ------------------------------------------------------------ stage thật
+
+
+def write_fake_inputs(workdir, *stages: Stage) -> None:
+    for stage in stages:
+        execute_stage(stage, workdir, FAKE_STAGES[stage])
+
+
+def test_real_merge_stage_writes_valid_transcript(workdir):
+    write_fake_inputs(workdir, Stage.PREPROCESS, Stage.VAD, Stage.ASR, Stage.DIARIZE)
+    path = execute_stage(Stage.MERGE, workdir, get_stage(Stage.MERGE, "real"))
+
+    t = Transcript.model_validate_json(path.read_text(encoding="utf-8"))
+    assert t.models.asr == "fake-asr"
+    assert t.diarization_status == "ok"
+    assert [s.label for s in t.speakers] == [A, B]
+    assert t.segments[0].text.startswith("Chào mọi người")
+    # "Ừ, được." nằm trong lượt của SPEAKER_01 và ngắn, nên được gộp vào đoạn trước.
+    assert [s.speaker_label for s in t.segments] == [A, B, A, B, A]
+
+
+def test_real_merge_stage_needs_preprocess(workdir):
+    write_fake_inputs(workdir, Stage.PREPROCESS, Stage.VAD, Stage.ASR, Stage.DIARIZE)
+    (workdir / "preprocess.json").unlink()
+    with pytest.raises(PermanentPipelineError) as exc:
+        execute_stage(Stage.MERGE, workdir, get_stage(Stage.MERGE, "real"))
+    assert exc.value.code is ErrorCode.MISSING_INPUT
