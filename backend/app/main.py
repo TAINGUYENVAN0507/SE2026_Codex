@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from app.api.v1.health import router as health_router
 from app.core.config import get_settings
 from app.core.errors import setup_exception_handlers
+from app.core.middleware import RequestIDAndLoggingMiddleware
 
 
 def create_app() -> FastAPI:
@@ -18,6 +19,9 @@ def create_app() -> FastAPI:
         redoc_url="/redoc",
         openapi_url="/openapi.json",
     )
+
+    # Đăng ký middleware request_id và logging
+    application.add_middleware(RequestIDAndLoggingMiddleware)
 
     # Đăng ký exception handlers chuẩn hóa error envelope
     setup_exception_handlers(application)
