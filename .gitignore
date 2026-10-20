@@ -37,3 +37,6 @@ artifacts/
 .vscode/
 .idea/
 .DS_Store
+
+backend-only.md
+plan.md
