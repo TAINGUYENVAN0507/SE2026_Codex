@@ -241,3 +241,24 @@ def test_results_contain_no_transcript_text(tmp_path, manifest):
         content = (tmp_path / "out" / name).read_text(encoding="utf-8").lower()
         for word in ("minh", "upload", "tuyết", "giao thông"):
             assert word not in content, (name, word)
+
+
+def test_dirty_flag_ignores_untracked_files(tmp_path, monkeypatch):
+    import subprocess
+
+    repo = tmp_path / "repo"
+    repo.mkdir()
+
+    def git(*args):
+        subprocess.run(["git", *args], cwd=repo, check=True, capture_output=True)
+
+    git("init", "-q")
+    (repo / "code.py").write_text("x = 1\n")
+    git("add", "code.py")
+    git("-c", "user.name=t", "-c", "user.email=t@example.com", "commit", "-qm", "init")
+    monkeypatch.setattr(run_wer, "REPO_ROOT", repo)
+
+    (repo / "results.csv").write_text("chưa commit\n")
+    assert run_wer._git()["dirty"] is False
+    (repo / "code.py").write_text("x = 2\n")
+    assert run_wer._git()["dirty"] is True
