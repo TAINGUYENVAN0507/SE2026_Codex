@@ -1,0 +1,25 @@
+{
+  "model": "small",
+  "compute_type": "int8",
+  "device": "cuda",
+  "gpu": "NVIDIA GeForce GTX 1650 Ti, 4096 MiB, 580.178.04",
+  "params": {
+    "beam_size": 5,
+    "vad_filter": true,
+    "condition_on_previous_text": false,
+    "language": "vi",
+    "no_speech_threshold": 0.6,
+    "compression_ratio_threshold": 2.4,
+    "log_prob_threshold": -1.0
+  },
+  "faster_whisper": "1.2.1",
+  "ctranslate2": "4.8.3",
+  "python": "3.13.9",
+  "samples": 40,
+  "errors": 0,
+  "audio_sec": 537.36,
+  "proc_sec": 33.983,
+  "rtf": 0.0632,
+  "model_load_sec": 1.052,
+  "vram_peak_mib": 487
+}
