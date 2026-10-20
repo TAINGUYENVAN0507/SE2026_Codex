@@ -1,0 +1,850 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Vietnamese Meeting Minutes Assistant",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "summary": "Health Check",
+        "description": "Liveness probe: luôn trả về HTTP 200 khi tiến trình server đang chạy.",
+        "operationId": "health_check_api_v1_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Health Check Api V1 Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ready": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "summary": "Readiness Check",
+        "description": "Readiness probe: kiểm tra kết nối cơ sở dữ liệu.\n\nTrả về 200 nếu kết nối cơ sở dữ liệu hoạt động bình thường;\ntrả về 503 Service Unavailable nếu mất kết nối DB.",
+        "operationId": "readiness_check_api_v1_ready_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Readiness Check Api V1 Ready Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/meetings/{meeting_id}": {
+      "get": {
+        "tags": [
+          "Meetings"
+        ],
+        "summary": "Lấy chi tiết cuộc họp",
+        "description": "Trả về chi tiết cuộc họp (stub contract v0 phục vụ phát triển frontend).",
+        "operationId": "get_meeting_api_v1_meetings__meeting_id__get",
+        "parameters": [
+          {
+            "name": "meeting_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "UUID của cuộc họp cần lấy thông tin",
+              "title": "Meeting Id"
+            },
+            "description": "UUID của cuộc họp cần lấy thông tin"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeetingDetailOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Không tìm thấy cuộc họp",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/jobs/{job_id}": {
+      "get": {
+        "tags": [
+          "Jobs"
+        ],
+        "summary": "Lấy trạng thái tiến trình xử lý",
+        "description": "Trả về trạng thái tiến trình job (stub contract v0).",
+        "operationId": "get_job_api_v1_jobs__job_id__get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "UUID của job cần lấy trạng thái",
+              "title": "Job Id"
+            },
+            "description": "UUID của job cần lấy trạng thái"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Không tìm thấy job",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "summary": "Health Check",
+        "description": "Liveness probe: luôn trả về HTTP 200 khi tiến trình server đang chạy.",
+        "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Health Check Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ready": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "summary": "Readiness Check",
+        "description": "Readiness probe: kiểm tra kết nối cơ sở dữ liệu.\n\nTrả về 200 nếu kết nối cơ sở dữ liệu hoạt động bình thường;\ntrả về 503 Service Unavailable nếu mất kết nối DB.",
+        "operationId": "readiness_check_ready_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Readiness Check Ready Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ErrorDetail": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code",
+            "description": "Mã lỗi dạng UPPER_SNAKE ổn định theo hợp đồng"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Thông điệp lỗi thân thiện bằng tiếng Việt"
+          },
+          "details": {
+            "title": "Details",
+            "description": "Chi tiết lỗi (danh sách validation hoặc metadata)"
+          },
+          "request_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Id",
+            "description": "Mã định danh request"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ErrorDetail",
+        "description": "Thông tin chi tiết của lỗi trong error envelope."
+      },
+      "ErrorResponse": {
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorDetail"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "title": "ErrorResponse",
+        "description": "Cấu trúc Error Envelope chuẩn theo contracts/error_codes.md."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "JobErrorOut": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code",
+            "description": "Mã lỗi của pipeline hoặc hệ thống"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Mô tả lỗi"
+          },
+          "retryable": {
+            "type": "boolean",
+            "title": "Retryable",
+            "description": "Cờ xác định lỗi có thể retry tự động hay không"
+          },
+          "stage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stage",
+            "description": "Stage phát sinh lỗi"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "code",
+          "message",
+          "retryable"
+        ],
+        "title": "JobErrorOut",
+        "description": "Thông tin lỗi khi stage hoặc job gặp sự cố."
+      },
+      "JobOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "UUID của job"
+          },
+          "meeting_id": {
+            "type": "string",
+            "title": "Meeting Id",
+            "description": "UUID của cuộc họp tương ứng"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "retry_scheduled",
+              "succeeded",
+              "failed",
+              "cancelled"
+            ],
+            "title": "Status",
+            "description": "Trạng thái hiện tại của job"
+          },
+          "stage": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "preprocess",
+                  "vad",
+                  "asr",
+                  "diarize",
+                  "merge",
+                  "summarize"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stage",
+            "description": "Stage đang chạy hoặc vừa chạy"
+          },
+          "from_stage": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "preprocess",
+                  "vad",
+                  "asr",
+                  "diarize",
+                  "merge",
+                  "summarize"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "From Stage",
+            "description": "Stage bắt đầu chạy lại nếu có"
+          },
+          "progress": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Progress",
+            "description": "Tiến độ tổng thể từ 0.0 đến 1.0"
+          },
+          "stages": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Stages",
+            "description": "Trạng thái chi tiết của từng stage trong pipeline"
+          },
+          "attempt": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Attempt",
+            "description": "Lượt chạy hiện tại (bắt đầu từ 1)"
+          },
+          "max_attempts": {
+            "type": "integer",
+            "title": "Max Attempts",
+            "description": "Số lượt chạy tối đa cho phép",
+            "default": 3
+          },
+          "next_run_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Run At",
+            "description": "Thời điểm ISO 8601 UTC dự kiến chạy lượt tiếp theo"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JobErrorOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Thông tin lỗi nếu trạng thái là retry_scheduled hoặc failed"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Created At",
+            "description": "Thời điểm tạo job theo chuẩn ISO 8601 UTC"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At",
+            "description": "Thời điểm bắt đầu chạy job"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At",
+            "description": "Thời điểm hoàn tất hoặc dừng job"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "meeting_id",
+          "status",
+          "progress",
+          "attempt",
+          "created_at"
+        ],
+        "title": "JobOut",
+        "description": "Schema thông tin Job xử lý bất đồng bộ theo hợp đồng REST API."
+      },
+      "MeetingArtifactsOut": {
+        "properties": {
+          "transcript": {
+            "type": "string",
+            "title": "Transcript",
+            "description": "Trạng thái transcript (pending/ready/failed)"
+          },
+          "diarization": {
+            "type": "string",
+            "title": "Diarization",
+            "description": "Trạng thái diarization (ok/fallback/pending/failed)"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary",
+            "description": "Trạng thái summary (pending/ready/failed/insufficient_content/disabled)"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "transcript",
+          "diarization",
+          "summary"
+        ],
+        "title": "MeetingArtifactsOut",
+        "description": "Trạng thái các artifact AI của cuộc họp."
+      },
+      "MeetingAudioOut": {
+        "properties": {
+          "available": {
+            "type": "boolean",
+            "title": "Available",
+            "description": "Cờ xác định file audio có sẵn để nghe/tải không"
+          },
+          "mime_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mime Type",
+            "description": "MIME type của file audio"
+          },
+          "size_bytes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Size Bytes",
+            "description": "Dung lượng file tính bằng bytes"
+          },
+          "retention_until": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retention Until",
+            "description": "Thời điểm hết hạn lưu trữ audio theo retention policy"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "available"
+        ],
+        "title": "MeetingAudioOut",
+        "description": "Thông tin file audio của cuộc họp."
+      },
+      "MeetingDetailOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "UUID của cuộc họp"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "description": "Tiêu đề cuộc họp"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "upload",
+              "recording"
+            ],
+            "title": "Source",
+            "description": "Nguồn audio (upload hoặc recording)"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "processing",
+              "ready",
+              "partial",
+              "failed"
+            ],
+            "title": "Status",
+            "description": "Trạng thái xử lý tổng thể của cuộc họp"
+          },
+          "language": {
+            "type": "string",
+            "title": "Language",
+            "description": "Ngôn ngữ chính (mặc định 'vi')",
+            "default": "vi"
+          },
+          "meeting_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meeting Date",
+            "description": "Ngày diễn ra cuộc họp định dạng YYYY-MM-DD"
+          },
+          "duration_sec": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Sec",
+            "description": "Thời lượng audio tính bằng giây"
+          },
+          "num_speakers_hint": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Num Speakers Hint",
+            "description": "Số lượng người nói gợi ý từ người dùng"
+          },
+          "audio": {
+            "$ref": "#/components/schemas/MeetingAudioOut",
+            "description": "Thông tin tệp âm thanh"
+          },
+          "artifacts": {
+            "$ref": "#/components/schemas/MeetingArtifactsOut",
+            "description": "Trạng thái các artifacts được sinh ra"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings",
+            "description": "Danh sách các cảnh báo xử lý"
+          },
+          "latest_job_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Job Id",
+            "description": "UUID của job xử lý gần nhất"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Created At",
+            "description": "Thời điểm tạo cuộc họp ISO 8601 UTC"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Updated At",
+            "description": "Thời điểm cập nhật gần nhất ISO 8601 UTC"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version",
+            "description": "Phiên bản phục vụ optimistic locking",
+            "default": 1
+          },
+          "latest_job": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JobOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Chi tiết job xử lý gần nhất"
+          },
+          "speakers": {
+            "items": {
+              "$ref": "#/components/schemas/SpeakerOut"
+            },
+            "type": "array",
+            "title": "Speakers",
+            "description": "Danh sách người nói"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "source",
+          "status",
+          "audio",
+          "artifacts",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "MeetingDetailOut",
+        "description": "Schema chi tiết cuộc họp kèm job gần nhất và danh sách người nói."
+      },
+      "SpeakerOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "UUID của speaker"
+          },
+          "meeting_id": {
+            "type": "string",
+            "title": "Meeting Id",
+            "description": "UUID của cuộc họp"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label",
+            "description": "Nhãn thô từ diarization, ví dụ SPEAKER_00"
+          },
+          "default_name": {
+            "type": "string",
+            "title": "Default Name",
+            "description": "Tên mặc định có thứ tự xuất hiện, ví dụ Speaker 1"
+          },
+          "display_name": {
+            "type": "string",
+            "title": "Display Name",
+            "description": "Tên hiển thị do người dùng đặt hoặc mặc định"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version",
+            "description": "Phiên bản phục vụ optimistic locking",
+            "default": 1
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "meeting_id",
+          "label",
+          "default_name",
+          "display_name"
+        ],
+        "title": "SpeakerOut",
+        "description": "Thông tin người nói trong cuộc họp."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}
