@@ -10,6 +10,7 @@
 ├── AGENTS.md             ✓ hướng dẫn cho AI coding assistant: đọc structure/ và rules/ trước
 ├── structure/            ✓ cấu trúc chung (thư mục này)
 ├── rules/                ✓ quy tắc làm việc chung
+├── tasks/                ✓ phân công theo ngày: tasks/<YYYY-MM-DD>/member-{a,b,c}.md
 ├── docs/                 ✓ tài liệu chung theo khu vực (docs/README.md)
 ├── contracts/            ✓ contract giữa các module (contracts.md)
 ├── frontend/             ◐ A, nhánh vantuong
@@ -45,6 +46,7 @@ Owner chịu trách nhiệm về nội dung và quyết định cấu trúc bên
 | `infra/`, `docker-compose*.yml`, `Makefile` | B | C viết Dockerfile của worker (AI-16) |
 | `.github/workflows/<module>.yml` | Owner của module | |
 | `structure/`, `rules/`, `README.md`, `AGENTS.md`, `.github/` (ngoài workflows) | Nhóm trưởng (C) | Ai cũng được đề xuất sửa qua PR |
+| `tasks/` | Nhóm trưởng tạo file mỗi ngày | Mỗi thành viên tick việc và ghi hash commit vào file của mình |
 
 Sửa file trong thư mục của người khác: báo owner trước, ghi rõ trong mô tả PR để owner đọc lại.
 
