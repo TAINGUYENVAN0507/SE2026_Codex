@@ -41,7 +41,8 @@ uv run python wer/run_wer.py --hyp hyp.jsonl --tag whisper-small-int8 --asr-meta
 | `datasets/` | Manifest, license, quy ước gán nhãn, mẫu consent, script tải dữ liệu | AI-10, SH-01, SH-02 |
 | `normalizer/` | Chuẩn hóa text tiếng Việt trước khi tính WER | AI-11 |
 | `wer/` | Chấm WER, CER, WER không dấu cho một lần chạy ASR, sinh report | AI-11 |
-| `spikes/` | Thử nghiệm chọn model ASR và diarization | AI-01, AI-02 |
+| `spikes/asr/` | Spike chọn cấu hình ASR: chạy faster-whisper trên manifest, đo RTF và VRAM | AI-01 |
+| `spikes/diarization/` | Spike diarization (chưa có) | AI-02 |
 | `noisy_audio/`, `diarization/`, `performance/`, `summary_rubric/` | Các bộ đánh giá còn lại | AI-12 đến AI-14 |
 
 Thư mục nào chưa có nghĩa là task đó chưa bắt đầu.

@@ -6,7 +6,8 @@ Hướng dẫn cho AI coding assistant (Codex, Claude Code, Cursor,Antigravity�
 
 1. Đọc `structure/README.md`, `structure/repository.md`, `structure/architecture.md`, `structure/contracts.md`.
 2. Đọc `rules/README.md` và các file còn lại trong `rules/`.
-3. Đọc README của module sắp sửa.
+3. Đọc file phân công trong ngày của người dùng: `tasks/<YYYY-MM-DD>/member-<a|b|c>.md`. Làm đúng các commit được giao, tick việc đã xong và ghi hash commit vào file đó.
+4. Đọc README của module sắp sửa.
 
 ## Quy tắc tối thiểu
 

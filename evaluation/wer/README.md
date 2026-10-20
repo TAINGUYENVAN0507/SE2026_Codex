@@ -34,7 +34,7 @@ uv run python wer/make_report.py wer/results/2026-10-19_whisper-small-int8
 |---|---|
 | `per_sample.csv` | Mỗi sample một dòng: số token, hits/S/D/I, WER, CER, WER không dấu, cờ `missing`. Không chứa text. |
 | `summary.json` | WER cấp corpus cho **từng `kind`**, kèm bộ lọc đã dùng. |
-| `env.json` | Thời điểm chạy, git SHA (và có thay đổi chưa commit không), version Python/jiwer, sha256 của manifest, hypothesis và normalizer, metadata ASR. |
+| `env.json` | Thời điểm chạy, git SHA (và file đã track có bị sửa mà chưa commit không), version Python/jiwer, sha256 của manifest, hypothesis và normalizer, metadata ASR. |
 | `report.md` | Bảng tóm tắt, 10 sample nhiều lỗi nhất, môi trường, lệnh chạy lại. Sinh từ ba file trên. |
 
 `per_sample.csv` và `summary.json` chỉ phụ thuộc input, nên chạy lại cho cùng byte.

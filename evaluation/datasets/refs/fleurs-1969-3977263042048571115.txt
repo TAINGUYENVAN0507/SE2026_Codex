@@ -1,0 +1,1 @@
+Theo quy tắc này, vị trí hữu hiệu nhất dành cho chủ thể chính là giao điểm của các đường phân chia hình ảnh thành ba phần theo chiều dọc và chiều ngang (xem ví dụ).

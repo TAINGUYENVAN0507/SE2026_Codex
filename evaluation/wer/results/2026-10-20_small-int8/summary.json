@@ -1,0 +1,25 @@
+{
+  "tag": "small-int8",
+  "selection": {
+    "source": "fleurs",
+    "kind": null,
+    "split": null,
+    "allow_missing": false
+  },
+  "groups": {
+    "read_speech": {
+      "samples": 40,
+      "missing": 0,
+      "ref_tokens": 1322,
+      "hits": 1084,
+      "substitutions": 230,
+      "deletions": 8,
+      "insertions": 16,
+      "wer": 0.192133,
+      "mean_sample_wer": 0.202084,
+      "ref_chars": 5943,
+      "cer": 0.087498,
+      "wer_nodiac": 0.15885
+    }
+  }
+}

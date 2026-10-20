@@ -7,6 +7,7 @@ Dữ liệu dùng để đánh giá ASR, diarization và tóm tắt (AI-10).
 | `manifest.csv` | Mỗi file đánh giá một dòng: nguồn, loại, license, mục đích, điều kiện ghi, consent |
 | `sources.json` | Nguồn public tải được tự động, kèm URL và sha256 |
 | `download.py` | Tải nguồn trong `sources.json` vào `raw/`, kiểm tra sha256 |
+| `import_fleurs.py` | Thêm tập con cố định của FLEURS `vi_vn` test (mỗi câu một clip, chọn bằng seed) vào manifest và `refs/` |
 | `check_manifest.py` | Kiểm tra `manifest.csv` trước khi commit |
 | `LICENSES.md` | License và hạn chế của từng nguồn |
 | `CONVENTIONS.md` | Quy ước gõ transcript tham chiếu và gán nhãn RTTM (SH-02) |
@@ -22,6 +23,7 @@ cd evaluation
 uv run python datasets/download.py --list
 uv run python datasets/download.py fleurs_vi_test_tsv     # khoảng 0.6 MB
 uv run python datasets/download.py fleurs_vi_test_audio   # khoảng 544 MB
+uv run python datasets/import_fleurs.py --n 40          # 40 câu, khoảng 9 phút, đã có trong manifest
 uv run python datasets/check_manifest.py --check-files
 ```
 

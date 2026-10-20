@@ -258,7 +258,10 @@ def _git() -> dict[str, object] | None:
         ).stdout.strip()
 
     try:
-        return {"sha": git("rev-parse", "HEAD"), "dirty": bool(git("status", "--porcelain"))}
+        # Chỉ tính file đã track: thư mục kết quả của lần chấm trước (chưa commit) không
+        # làm lần chấm sau bị coi là chạy trên code chưa commit. Input có sha256 riêng.
+        dirty = git("status", "--porcelain", "--untracked-files=no")
+        return {"sha": git("rev-parse", "HEAD"), "dirty": bool(dirty)}
     except (OSError, subprocess.CalledProcessError):
         return None
 
