@@ -9,7 +9,10 @@ import { UploadSimpleIcon } from '@phosphor-icons/react/dist/csr/UploadSimple'
 import { Link, useNavigate } from 'react-router-dom'
 import { Topbar } from '../components/Topbar'
 import { useObjectUrl } from '../features/audio/useObjectUrl'
-import { MAX_AUDIO_BYTES, validateAudio } from '../features/audio/validation'
+import {
+  DEFAULT_UPLOAD_CONFIG,
+  validateAudio,
+} from '../features/audio/validation'
 import { useMeetings } from '../features/meetings/DemoStore'
 import { formatTime } from '../features/meetings/model'
 
@@ -108,7 +111,11 @@ export function NewMeetingPage() {
         if (e.data.size) {
           chunks.push(e.data)
           size += e.data.size
-          if (size >= MAX_AUDIO_BYTES && r.state === 'recording') r.stop()
+          if (
+            size >= DEFAULT_UPLOAD_CONFIG.max_upload_mb * 1024 * 1024 &&
+            r.state === 'recording'
+          )
+            r.stop()
         }
       }
       r.onerror = () => {
@@ -228,7 +235,9 @@ export function NewMeetingPage() {
               type="file"
               hidden
               ref={picker}
-              accept=".mp3,.wav,.m4a,.aac,.ogg,.opus,.webm,.mp4,.flac"
+              accept={DEFAULT_UPLOAD_CONFIG.allowed_extensions
+                .map((extension) => `.${extension.replace(/^\./, '')}`)
+                .join(',')}
               aria-label="Chọn file audio"
               onChange={(e) => {
                 const selected = e.target.files?.[0]
@@ -337,7 +346,12 @@ export function NewMeetingPage() {
                     <UploadSimpleIcon size={27} />
                   </span>
                   <h2>Kéo file audio vào đây</h2>
-                  <p>MP3, WAV, M4A, OGG, WebM hoặc MP4 · tối đa 200 MB</p>
+                  <p>
+                    {DEFAULT_UPLOAD_CONFIG.allowed_extensions
+                      .map((extension) => extension.toUpperCase())
+                      .join(', ')}{' '}
+                    · tối đa {DEFAULT_UPLOAD_CONFIG.max_upload_mb} MB
+                  </p>
                   <button
                     className="button secondary"
                     type="button"

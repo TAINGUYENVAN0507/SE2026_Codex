@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { exportMeeting, formatTime, seedMeetings } from './model'
-import { MAX_AUDIO_BYTES, validateAudio } from '../audio/validation'
+import { DEFAULT_UPLOAD_CONFIG, validateAudio } from '../audio/validation'
 
 describe('meeting exports and audio validation', () => {
   it('exports current edits and unknown assignees/deadlines', () => {
@@ -28,7 +28,9 @@ describe('meeting exports and audio validation', () => {
   it('rejects empty, oversized and unsupported files', () => {
     expect(validateAudio(new File([], 'empty.mp3'))).toContain('trống')
     const large = new File(['a'], 'large.mp3')
-    Object.defineProperty(large, 'size', { value: MAX_AUDIO_BYTES + 1 })
+    Object.defineProperty(large, 'size', {
+      value: DEFAULT_UPLOAD_CONFIG.max_upload_mb * 1024 * 1024 + 1,
+    })
     expect(validateAudio(large)).toContain('200 MB')
     expect(validateAudio(new File(['audio'], 'meeting.WAV'))).toBeNull()
   })
