@@ -8,6 +8,7 @@ Quy tắc làm việc chung của nhóm. Áp dụng cho mọi thành viên, kể
 
 - [ ] Đã đọc `structure/` và các file trong `rules/`.
 - [ ] Đã đọc README của module sắp sửa.
+- [ ] Đã đọc file phân công của mình hôm nay: `tasks/<YYYY-MM-DD>/member-<a|b|c>.md` (5 commit mỗi ngày, [`tasks/README.md`](../tasks/README.md)).
 - [ ] Biết Task ID đang làm, theo kế hoạch triển khai. Việc nằm ngoài kế hoạch thì hỏi nhóm trưởng để có ID.
 - [ ] Đang ở nhánh cá nhân, đã cập nhật theo `main`: `git fetch origin && git merge origin/main`.
 - [ ] Việc này đụng contract hoặc thư mục của người khác: đã báo owner hoặc consumer.
