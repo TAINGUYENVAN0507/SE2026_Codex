@@ -30,7 +30,8 @@ def test_valid_rows_pass():
         purpose="wer;der;rubric",
         num_speakers="3",
         consent_ref="CF-2026-001",
-        ref_path="refs/meet-001.txt",
+        audio_path="private/audio/meet-001.webm",
+        ref_path="private/refs/meet-001.txt",
         ref_reviewed_by="B",
     )
     assert cm.check_rows([row(), internal]) == []
@@ -55,6 +56,17 @@ def test_valid_rows_pass():
         ({"audio_path": "../secret.wav"}, "tương đối"),
         ({"audio_path": ""}, "thiếu audio_path"),
         ({"ref_path": "refs/x.txt"}, "ref_reviewed_by"),
+        (
+            {
+                "source": "internal",
+                "consent_ref": "CF-2026-001",
+                "audio_path": "private/audio/meet-001.webm",
+                "ref_path": "refs/meet-001.txt",
+                "ref_reviewed_by": "B",
+            },
+            "ref_path của dữ liệu tự ghi phải nằm trong private/",
+        ),
+        ({"source": "internal", "consent_ref": "CF-2026-001"}, "audio_path của dữ liệu tự ghi"),
     ],
 )
 def test_invalid_rows(overrides, fragment):

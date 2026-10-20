@@ -38,6 +38,7 @@ KINDS = {"read_speech", "meeting", "noisy_real", "noisy_synthetic"}
 PURPOSES = {"wer", "der", "noisy", "rubric", "edge", "demo"}
 NON_COMMERCIAL = {"CC-BY-NC-SA-4.0", "CC-BY-NC-4.0"}
 ID_PATTERN = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
+PRIVATE_DIR = "private"
 
 
 def _relative(value: str) -> bool:
@@ -78,6 +79,12 @@ def check_rows(rows: list[dict[str, str]], base: Path | None = None) -> list[str
 
         if row.get("source") == "internal" and not row.get("consent_ref"):
             err("dữ liệu tự ghi phải có consent_ref")
+        if row.get("source") == "internal":
+            # Repo public: audio, transcript và RTTM của cuộc họp nội bộ không được commit.
+            for col in ("audio_path", "ref_path", "rttm_path"):
+                value = row.get(col, "")
+                if value and PurePosixPath(value).parts[:1] != (PRIVATE_DIR,):
+                    err(f"{col} của dữ liệu tự ghi phải nằm trong {PRIVATE_DIR}/ (không commit)")
         if row.get("kind") in {"noisy_real", "noisy_synthetic"} and not row.get("condition"):
             err("dữ liệu noisy phải ghi condition")
 

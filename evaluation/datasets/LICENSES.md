@@ -8,7 +8,7 @@ Kiểm tra lại license trên trang gốc mỗi khi tải. Bảng này ghi đi�
 | Common Voice (vi) | CC0 | https://commonvoice.mozilla.org/vi/datasets | WER, đa dạng giọng | Phải tự tải trên trang Mozilla (cần đồng ý điều khoản). Không được tìm cách xác định danh tính người đọc. |
 | VIVOS | CC BY-NC-SA 4.0 | https://huggingface.co/datasets/AILAB-VNUHCM/vivos (trang cũ ailab.hcmus.edu.vn/vivos không truy cập được ngày 2026-10-18) | WER, chỉ cho mục đích học thuật | **Phi thương mại.** Không dùng trong demo công khai. Sản phẩm phái sinh phải cùng license. |
 | MUSAN (nhiễu) | Tùy từng phần, kiểm tra từng thư mục | https://www.openslr.org/17/ | Tạo dữ liệu noisy synthetic | Chỉ dùng phần có license cho phép, ghi rõ phần đã dùng. |
-| Cuộc họp tự ghi (SH-01) | Theo consent form | — | WER hội thoại, DER, noisy thật, rubric | Mặc định chỉ dùng nội bộ. **Không commit audio, không phân phối.** |
+| Cuộc họp tự ghi (SH-01) | Theo consent form | — | WER hội thoại, DER, noisy thật, rubric | Mặc định chỉ dùng nội bộ. **Không commit audio, transcript hay RTTM** (repo public, để trong `private/`), không phân phối. |
 
 Hiện mới có checksum cho FLEURS trong `sources.json`. Các nguồn khác phải tải thủ công, sau đó ghi vào `manifest.csv`.
 

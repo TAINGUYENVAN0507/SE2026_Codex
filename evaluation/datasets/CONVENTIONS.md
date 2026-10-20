@@ -2,7 +2,16 @@
 
 Cả 3 thành viên cùng làm theo quy ước này. Mỗi file do một người gõ và một người khác soát lại. Người soát ghi tên vào cột `ref_reviewed_by` trong `manifest.csv`.
 
-## 1. Transcript tham chiếu (`refs/<id>.txt`)
+**Nơi lưu file.** Repo là public, còn consent form chỉ cho 3 thành viên truy cập dữ liệu ghi âm. Vì vậy:
+
+| Dữ liệu | Thư mục (tính từ `datasets/`) | Commit? |
+|---|---|---|
+| Cuộc họp tự ghi và bản thu ồn thật (`meet-*`, `noisy-*`): audio, transcript, RTTM | `private/audio/`, `private/refs/` | **Không.** Thư mục nằm trong `.gitignore`, chia sẻ qua kênh riêng của nhóm. |
+| Dữ liệu public (FLEURS, Common Voice…): transcript tham chiếu | `refs/` | Có, kèm ghi nguồn theo `LICENSES.md` |
+
+`manifest.csv` vẫn có dòng cho dữ liệu nội bộ (chỉ gồm mã, thời lượng, điều kiện ghi, mã phiếu consent), và `check_manifest.py` báo lỗi nếu đường dẫn của dòng `internal` không nằm trong `private/`.
+
+## 1. Transcript tham chiếu (`<id>.txt`)
 
 - **Mã hóa:** UTF-8, Unicode NFC. Bộ gõ Unikey/EVKey để mặc định là đúng.
 - **Bố cục:** mỗi câu hoặc lượt nói một dòng. Không ghi tên speaker, không ghi timestamp.
@@ -13,9 +22,9 @@ Cả 3 thành viên cùng làm theo quy ước này. Mỗi file do một ngườ
 - **Đoạn không nghe rõ:** ghi `[không rõ]`. Không đoán.
 - **Nói chồng lấn:** ghi lời của người nói chính trước, rồi đến người chen vào, mỗi người một dòng.
 - **Tiếng ồn, tiếng cười:** không ghi.
-- **Tên riêng của người thật trong cuộc họp nội bộ:** ghi như nghe được. File chỉ dùng nội bộ, theo consent form.
+- **Tên riêng của người thật trong cuộc họp nội bộ:** ghi như nghe được. File nằm trong `private/`, chỉ dùng nội bộ theo consent form.
 
-## 2. Nhãn speaker (`refs/<id>.rttm`)
+## 2. Nhãn speaker (`<id>.rttm`)
 
 Định dạng RTTM chuẩn, mỗi dòng là một lượt nói liên tục của một người:
 
@@ -38,7 +47,7 @@ SPEAKER meet-001 1 6.120 3.050 <NA> <NA> spk2 <NA> <NA>
 
 ## 3. Không sửa reference sau khi đã xem output của model
 
-Mọi chỉnh sửa reference sau lần commit đầu phải ghi vào `refs/CHANGELOG.md`: ngày, file, lý do, người sửa. Lý do hợp lệ là gõ sai so với audio, không phải "model nghe khác".
+Mọi chỉnh sửa reference sau lần chốt đầu tiên phải ghi vào `refs/CHANGELOG.md`: ngày, file, lý do, người sửa. Lý do hợp lệ là gõ sai so với audio, không phải "model nghe khác".
 
 ## 4. Đặt tên file
 

@@ -7,11 +7,13 @@ Dữ liệu dùng để đánh giá ASR, diarization và tóm tắt (AI-10).
 | `manifest.csv` | Mỗi file đánh giá một dòng: nguồn, loại, license, mục đích, điều kiện ghi, consent |
 | `sources.json` | Nguồn public tải được tự động, kèm URL và sha256 |
 | `download.py` | Tải nguồn trong `sources.json` vào `raw/`, kiểm tra sha256 |
+| `import_fleurs.py` | Thêm tập con cố định của FLEURS `vi_vn` test (mỗi câu một clip, chọn bằng seed) vào manifest và `refs/` |
 | `check_manifest.py` | Kiểm tra `manifest.csv` trước khi commit |
 | `LICENSES.md` | License và hạn chế của từng nguồn |
 | `CONVENTIONS.md` | Quy ước gõ transcript tham chiếu và gán nhãn RTTM (SH-02) |
 | `consent_form.md` | Mẫu phiếu đồng ý cho các buổi ghi âm của nhóm (SH-01) |
-| `refs/` | Transcript tham chiếu `<id>.txt` và nhãn speaker `<id>.rttm` |
+| `refs/` | Transcript tham chiếu `<id>.txt` và nhãn speaker `<id>.rttm` của dữ liệu public, kèm `CHANGELOG.md` |
+| `private/` | Audio, transcript, RTTM của cuộc họp nội bộ theo consent, **không commit** (repo public) |
 | `raw/` | Audio đã tải, **không commit** |
 
 ## Dùng nhanh
@@ -21,6 +23,7 @@ cd evaluation
 uv run python datasets/download.py --list
 uv run python datasets/download.py fleurs_vi_test_tsv     # khoảng 0.6 MB
 uv run python datasets/download.py fleurs_vi_test_audio   # khoảng 544 MB
+uv run python datasets/import_fleurs.py --n 40          # 40 câu, khoảng 9 phút, đã có trong manifest
 uv run python datasets/check_manifest.py --check-files
 ```
 

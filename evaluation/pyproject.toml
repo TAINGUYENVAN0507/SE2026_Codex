@@ -4,20 +4,28 @@ version = "0.1.0"
 description = "Dữ liệu và công cụ đánh giá (WER, noisy, DER, rubric) cho Vietnamese Meeting Minutes Assistant"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "jiwer>=4.0,<5",
+]
 
 [dependency-groups]
 dev = [
     "pytest>=8.3",
     "ruff>=0.6",
 ]
+# Spike ASR (AI-01), chỉ cài trên máy chạy model: uv sync --group asr-spike. CI không cài.
+asr-spike = [
+    "faster-whisper>=1.2,<2",
+    "nvidia-cublas-cu12>=12,<13; sys_platform == 'linux'",
+    "nvidia-cudnn-cu12>=9,<10; sys_platform == 'linux'",
+]
 
 [tool.uv]
 package = false
 
 [tool.pytest.ini_options]
-testpaths = ["datasets/tests", "normalizer"]
-pythonpath = ["datasets", "normalizer"]
+testpaths = ["datasets/tests", "normalizer", "wer", "spikes"]
+pythonpath = ["datasets", "normalizer", "wer", "spikes/asr"]
 addopts = "-ra --strict-markers --import-mode=importlib --doctest-modules"
 
 [tool.ruff]

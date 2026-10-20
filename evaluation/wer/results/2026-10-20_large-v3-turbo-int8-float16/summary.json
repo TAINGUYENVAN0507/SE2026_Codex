@@ -1,0 +1,25 @@
+{
+  "tag": "large-v3-turbo-int8-float16",
+  "selection": {
+    "source": "fleurs",
+    "kind": null,
+    "split": null,
+    "allow_missing": false
+  },
+  "groups": {
+    "read_speech": {
+      "samples": 40,
+      "missing": 0,
+      "ref_tokens": 1322,
+      "hits": 1239,
+      "substitutions": 79,
+      "deletions": 4,
+      "insertions": 5,
+      "wer": 0.066566,
+      "mean_sample_wer": 0.070446,
+      "ref_chars": 5943,
+      "cer": 0.032643,
+      "wer_nodiac": 0.054463
+    }
+  }
+}
