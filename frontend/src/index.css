@@ -2342,3 +2342,89 @@ mark {
     scroll-behavior: auto !important;
   }
 }
+
+.job-status-card {
+  border: 1px solid var(--line, #d9dee7);
+  border-radius: 14px;
+  background: var(--surface, #fff);
+  padding: 20px;
+}
+.job-status-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.job-status-header h2 {
+  margin: 0;
+  font-size: 18px;
+}
+.job-status-header p {
+  margin: 5px 0 0;
+  color: var(--muted, #64748b);
+  font-size: 14px;
+}
+.job-attempt {
+  border-radius: 999px;
+  background: var(--surface-muted, #f1f3f6);
+  padding: 5px 10px;
+  color: var(--muted, #64748b);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.job-stage-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.job-stage {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 34px;
+  color: var(--muted, #64748b);
+  font-size: 14px;
+}
+.job-stage-marker {
+  width: 9px;
+  height: 9px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+}
+.job-stage-state {
+  font-size: 12px;
+}
+.job-stage[data-state='completed'] {
+  color: #16836a;
+}
+.job-stage[data-state='completed'] .job-stage-marker {
+  background: currentColor;
+}
+.job-stage[data-state='current'],
+.job-stage[data-state='retry'] {
+  color: #c65d35;
+  font-weight: 600;
+}
+.job-stage[data-state='current'] .job-stage-marker,
+.job-stage[data-state='retry'] .job-stage-marker {
+  background: currentColor;
+  box-shadow: 0 0 0 4px rgb(198 93 53 / 12%);
+}
+.job-stage[data-state='failed'] {
+  color: #bd3b36;
+}
+.job-stage[data-state='cancelled'] {
+  color: #64748b;
+}
+.job-error {
+  margin: 14px 0 0;
+  border-radius: 9px;
+  background: #fff1ee;
+  padding: 10px 12px;
+  color: #a4332b;
+  font-size: 14px;
+}
