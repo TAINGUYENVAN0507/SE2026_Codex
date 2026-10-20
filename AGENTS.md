@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Hướng dẫn cho AI coding assistant (Codex, Claude Code, Cursor…) khi làm việc trong repo này.
+Hướng dẫn cho AI coding assistant (Codex, Claude Code, Cursor,Antigravity…) khi làm việc trong repo này.
 
 ## Trước khi sửa code
 
