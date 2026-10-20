@@ -4,6 +4,7 @@ from fastapi import FastAPI
 
 from app.api.v1.health import router as health_router
 from app.core.config import get_settings
+from app.core.errors import setup_exception_handlers
 
 
 def create_app() -> FastAPI:
@@ -17,6 +18,9 @@ def create_app() -> FastAPI:
         redoc_url="/redoc",
         openapi_url="/openapi.json",
     )
+
+    # Đăng ký exception handlers chuẩn hóa error envelope
+    setup_exception_handlers(application)
 
     # Đăng ký router health dưới prefix /api/v1 và root
     application.include_router(health_router, prefix=settings.API_V1_PREFIX)
