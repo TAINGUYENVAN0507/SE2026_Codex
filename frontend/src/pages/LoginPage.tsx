@@ -2,12 +2,15 @@ import { EyeIcon } from '@phosphor-icons/react/dist/csr/Eye'
 import { EyeSlashIcon } from '@phosphor-icons/react/dist/csr/EyeSlash'
 import { ArrowRightIcon } from '@phosphor-icons/react/dist/csr/ArrowRight'
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Brand } from '../components/Brand'
+import { DEMO_AUTH_KEY } from '../app/RequireAuth'
+import { safeNext } from '../app/safeNext'
 
 export function LoginPage() {
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [visible, setVisible] = useState(false)
-  const [message, setMessage] = useState('')
   return (
     <main className="login-page">
       <section className="login-story">
@@ -41,9 +44,8 @@ export function LoginPage() {
           onSubmit={(e) => {
             e.preventDefault()
             e.currentTarget.reset()
-            setMessage(
-              'Đăng nhập chưa được kết nối. Bạn có thể mở bản xem thử bên dưới.',
-            )
+            sessionStorage.setItem(DEMO_AUTH_KEY, 'true')
+            navigate(safeNext(searchParams.get('next')), { replace: true })
           }}
         >
           <h2>Chào mừng trở lại</h2>
@@ -81,13 +83,12 @@ export function LoginPage() {
           <button className="button primary login-submit" type="submit">
             Đăng nhập <ArrowRightIcon />
           </button>
-          {message && (
-            <p className="inline-notice" role="status">
-              {message}
-            </p>
-          )}
           <p className="login-help">Tài khoản do quản trị viên cung cấp.</p>
-          <Link className="text-link preview-link" to="/meetings">
+          <Link
+            className="text-link preview-link"
+            to="/meetings"
+            onClick={() => sessionStorage.setItem(DEMO_AUTH_KEY, 'true')}
+          >
             Xem thử giao diện <ArrowRightIcon />
           </Link>
         </form>

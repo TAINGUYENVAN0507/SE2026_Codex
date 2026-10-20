@@ -2,6 +2,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { DEMO_AUTH_KEY } from './app/RequireAuth'
 import App from './App'
 
 function renderAt(path: string) {
@@ -14,6 +15,7 @@ function renderAt(path: string) {
 
 beforeEach(() => {
   vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(() => {})
+  sessionStorage.setItem(DEMO_AUTH_KEY, 'true')
 })
 
 describe('meeting workspace', () => {
@@ -132,11 +134,32 @@ describe('meeting workspace', () => {
       'demo-password',
     )
     await user.click(screen.getByRole('button', { name: 'Đăng nhập' }))
-    expect(screen.getByRole('status')).toHaveTextContent(
-      'Đăng nhập chưa được kết nối',
-    )
     expect(fetchSpy).not.toHaveBeenCalled()
     fetchSpy.mockRestore()
+  })
+
+  it('redirects a protected route to login and returns after demo sign-in', async () => {
+    sessionStorage.removeItem(DEMO_AUTH_KEY)
+    const user = userEvent.setup()
+    renderAt('/meetings/new?source=shortcut')
+
+    expect(
+      screen.getByRole('heading', { name: 'Chào mừng trở lại' }),
+    ).toBeInTheDocument()
+
+    await user.type(
+      screen.getByRole('textbox', { name: 'Email' }),
+      'demo@example.com',
+    )
+    await user.type(
+      screen.getByLabelText('Mật khẩu', { selector: 'input' }),
+      'demo-password',
+    )
+    await user.click(screen.getByRole('button', { name: 'Đăng nhập' }))
+
+    expect(
+      screen.getByRole('heading', { name: 'Tạo cuộc họp mới' }),
+    ).toBeInTheDocument()
   })
 
   it('shows a missing meeting without substituting unrelated demo data', () => {

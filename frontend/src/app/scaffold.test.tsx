@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { MemoryRouter, useLocation } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from '../App'
+import { DEMO_AUTH_KEY } from './RequireAuth'
 import { AppProviders } from './AppProviders'
 
 function LocationProbe() {
@@ -15,6 +16,7 @@ function LocationProbe() {
 beforeEach(() => {
   // jsdom does not implement media playback; route unmount still calls cleanup.
   vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(() => {})
+  sessionStorage.setItem(DEMO_AUTH_KEY, 'true')
 })
 
 describe('FE-01 route scaffold', () => {
