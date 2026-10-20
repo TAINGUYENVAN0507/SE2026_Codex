@@ -16,6 +16,16 @@ uv run python wer/run_wer.py --hyp spikes/asr/runs/small-int8/hyp.jsonl --tag sm
 
 `--limit 3` để thử nhanh, `--device cpu` để chạy trên CPU, `--no-vad` để tắt lọc VAD.
 
+## Kết quả ngày 2026-10-20
+
+40 câu FLEURS `vi_vn` test, GTX 1650 Ti 4 GB. Phân tích và đề xuất ở [`docs/adr/0001-asr.md`](../../../docs/adr/0001-asr.md).
+
+| Cấu hình (`--tag`) | WER | CER | WER không dấu | RTF | Kết quả |
+|---|---|---|---|---|---|
+| `small-int8` | 19.21 % | 8.75 % | 15.89 % | 0.063 | `wer/results/2026-10-20_small-int8/` |
+| `medium-int8` | 9.46 % | 4.58 % | 7.87 % | 0.137 | `wer/results/2026-10-20_medium-int8/` |
+| `large-v3-turbo-int8-float16` | 6.66 % | 3.26 % | 5.45 % | 0.134 | `wer/results/2026-10-20_large-v3-turbo-int8-float16/` |
+
 ## Cách đo
 
 | Đại lượng | Cách đo |
