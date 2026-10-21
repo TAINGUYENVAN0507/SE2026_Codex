@@ -7,7 +7,7 @@
 | `main` | Chỉ nhóm trưởng merge vào | Luôn chạy được, CI xanh. Không ai push thẳng. |
 | `tainguyen` | C, nhóm trưởng (`@TAINGUYENVAN0507`) | |
 | `vantuong` | A (`@mactuongmvt`) | |
-| Nhánh của B | B (`@minhquangha`) | Đặt tên không dấu, viết liền như hai nhánh trên, ví dụ `minhquang` |
+| `haquang` | B (`@minhquangha`) | |
 
 - Mỗi người chỉ commit vào nhánh của mình. Không push vào nhánh của người khác.
 - Đầu mỗi buổi làm việc, cập nhật theo `main`, giải quyết conflict ngay trên nhánh của mình:

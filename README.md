@@ -18,7 +18,7 @@ Mọi thành viên, kể cả AI coding assistant của từng người, đọc 
 | Member | Phần việc | Thư mục chính | GitHub | Nhánh |
 |---|---|---|---|---|
 | A | Frontend, UX, chỉnh sửa, export | `frontend/`, `backend/app/services/export/` | `@mactuongmvt` | `vantuong` |
-| B | Backend, API, DB, job orchestration, tích hợp | `backend/`, `contracts/openapi.json`, `tests/`, Docker, CI | `@minhquangha` | chưa tạo |
+| B | Backend, API, DB, job orchestration, tích hợp | `backend/`, `contracts/openapi.json`, `tests/`, Docker, CI | `@minhquangha` | `haquang` |
 | C, nhóm trưởng | AI/Speech pipeline và evaluation; review và merge mọi PR | `pipeline/`, `contracts/pipeline/`, `evaluation/` | `@TAINGUYENVAN0507` | `tainguyen` |
 
 ## Trạng thái
