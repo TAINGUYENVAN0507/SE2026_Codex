@@ -24,7 +24,39 @@ Mọi thành viên, kể cả AI coding assistant của từng người, đọc 
 ## Trạng thái
 
 - Đã có trong `main`: pipeline (khung chạy, contracts, stage `preprocess` và `merge` thật, các stage khác có bản fake) và bộ đánh giá (datasets, normalizer, chấm WER).
-- Frontend: đã có scaffold FE-01 ở nhánh `vantuong`, chưa vào `main`.
+- Frontend: đã có scaffold FE-01 ở nhánh `vantuong`, đang chờ review và merge PR #5.
 - Backend: chưa bắt đầu.
 
 Chi tiết từng thư mục ở [`structure/repository.md`](structure/repository.md). Mỗi module có README riêng.
+
+## Frontend (FE-01)
+
+Đã có nền Vite + React + TypeScript strict, router, TanStack Query provider và
+workflow kiểm tra frontend. Giao diện hiện dùng dữ liệu demo trong phiên, chưa
+kết nối đăng nhập, Backend hay AI thật.
+
+Yêu cầu Node.js 24 và npm. Từ thư mục gốc:
+
+```bash
+cd frontend
+npm ci
+npm run dev
+```
+
+Mở địa chỉ Vite in trong terminal (mặc định `http://localhost:5173`).
+Hướng dẫn chi tiết: [frontend/README.md](frontend/README.md).
+Checklist và bằng chứng FE-01: [docs/frontend/FE-01.md](docs/frontend/FE-01.md).
+
+Kiểm tra trước khi bàn giao (chạy trong `frontend/`):
+
+```bash
+npm run lint
+npm run format:check
+npm run typecheck
+npm test
+npm run build
+```
+
+Workflow `.github/workflows/frontend.yml` chạy khi có thay đổi frontend trong PR,
+push vào `main`/`vantuong`, hoặc chạy thủ công. Cấu hình workflow không đồng nghĩa
+CI đã xanh: cần xem kết quả GitHub Actions sau khi được phép push.
