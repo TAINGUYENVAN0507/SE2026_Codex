@@ -23,6 +23,8 @@ Package này không truy cập database hay HTTP. Worker của backend gọi pip
 
 Stage chưa có bản `real` sẽ báo lỗi `STAGE_NOT_IMPLEMENTED`. Dùng `PIPELINE_BACKEND=fake` để chạy trọn pipeline.
 
+Stage dùng model (`vad`, `asr`) gọi model qua adapter trong `meeting_pipeline/engines/`, có bản fake cho test. Cài model thật bằng `uv sync --extra asr` (faster-whisper, cuBLAS, cuDNN; CI không cài). Biến môi trường của ASR, mặc định theo `docs/adr/0001-asr.md`: `ASR_MODEL` (`large-v3-turbo`), `ASR_COMPUTE_TYPE` (`int8_float16`), `ASR_DEVICE` (`cuda`), `ASR_BEAM_SIZE` (`5`).
+
 Biến môi trường của `preprocess`: `PIPELINE_MIN_DURATION_SEC` (mặc định 1), `PIPELINE_MAX_DURATION_SEC` (mặc định 3600), `FFMPEG_BIN`, `FFPROBE_BIN`.
 
 `merge` là pure function, không cần model: `stages/merge.py::merge(asr, diarization, audio)`. Các ngưỡng nằm trong `MergeConfig` và là giá trị khởi tạo, sẽ hiệu chỉnh sau benchmark AI-13. Output luôn thỏa bất biến của `transcript.schema.json`, kể cả khi ASR trả timestamp lệch (có property test bằng hypothesis).
