@@ -15,13 +15,15 @@ Package này không truy cập database hay HTTP. Worker của backend gọi pip
 | Stage | Backend `real` | Task |
 |---|---|---|
 | `preprocess` | Đã có: ffprobe + ffmpeg → `audio.wav` 16 kHz mono, chọn file phát lại | AI-05 |
-| `vad` | Chưa | AI-06 |
-| `asr` | Chưa (chờ spike AI-01 và Gate G1) | AI-06 |
+| `vad` | Đã có: Silero VAD (qua faster-whisper), gộp region, `NO_SPEECH_DETECTED` khi dưới 0.5 s lời nói | AI-06 |
+| `asr` | Đã có: faster-whisper `large-v3-turbo` int8_float16 (ADR-0001), chuẩn hóa timestamp, lọc hallucination; OOM là transient | AI-06 |
 | `diarize` | Chưa (chờ spike AI-02) | AI-07 |
 | `merge` | Đã có: gán speaker cho từng word theo overlap lớn nhất, tách và gộp đoạn, cờ `overlap`/`low_confidence`, đánh số speaker theo thứ tự xuất hiện | AI-08 |
 | `summarize` | Chưa | AI-09 |
 
 Stage chưa có bản `real` sẽ báo lỗi `STAGE_NOT_IMPLEMENTED`. Dùng `PIPELINE_BACKEND=fake` để chạy trọn pipeline.
+
+Stage dùng model (`vad`, `asr`) gọi model qua adapter trong `meeting_pipeline/engines/`, có bản fake cho test. Cài model thật bằng `uv sync --extra asr` (faster-whisper, cuBLAS, cuDNN; CI không cài). Biến môi trường của ASR, mặc định theo `docs/adr/0001-asr.md`: `ASR_MODEL` (`large-v3-turbo`), `ASR_COMPUTE_TYPE` (`int8_float16`), `ASR_DEVICE` (`cuda`), `ASR_BEAM_SIZE` (`5`).
 
 Biến môi trường của `preprocess`: `PIPELINE_MIN_DURATION_SEC` (mặc định 1), `PIPELINE_MAX_DURATION_SEC` (mặc định 3600), `FFMPEG_BIN`, `FFPROBE_BIN`.
 

@@ -102,6 +102,7 @@ pipeline/
 │   ├── cli.py         # python -m meeting_pipeline run-stage ...
 │   ├── registry.py    # chọn stage thật hay fake theo PIPELINE_BACKEND
 │   ├── stages/        # mỗi stage một file: preprocess.py, merge.py...
+│   ├── engines/       # adapter model AI (faster-whisper, Silero VAD) và bản fake cho test
 │   ├── fake/          # fake pipeline và dữ liệu mẫu cho test, dev của A và B
 │   └── llm/           ○ LLMProvider: anthropic, fake (AI-09)
 └── tests/{unit,edge,model}/
