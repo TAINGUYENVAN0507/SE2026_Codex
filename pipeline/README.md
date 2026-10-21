@@ -15,8 +15,8 @@ Package này không truy cập database hay HTTP. Worker của backend gọi pip
 | Stage | Backend `real` | Task |
 |---|---|---|
 | `preprocess` | Đã có: ffprobe + ffmpeg → `audio.wav` 16 kHz mono, chọn file phát lại | AI-05 |
-| `vad` | Chưa | AI-06 |
-| `asr` | Chưa (chờ spike AI-01 và Gate G1) | AI-06 |
+| `vad` | Đã có: Silero VAD (qua faster-whisper), gộp region, `NO_SPEECH_DETECTED` khi dưới 0.5 s lời nói | AI-06 |
+| `asr` | Đã có: faster-whisper `large-v3-turbo` int8_float16 (ADR-0001), chuẩn hóa timestamp, lọc hallucination; OOM là transient | AI-06 |
 | `diarize` | Chưa (chờ spike AI-02) | AI-07 |
 | `merge` | Đã có: gán speaker cho từng word theo overlap lớn nhất, tách và gộp đoạn, cờ `overlap`/`low_confidence`, đánh số speaker theo thứ tự xuất hiện | AI-08 |
 | `summarize` | Chưa | AI-09 |

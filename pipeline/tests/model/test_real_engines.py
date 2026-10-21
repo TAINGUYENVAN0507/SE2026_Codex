@@ -76,3 +76,29 @@ def test_real_vad_finds_speech(tmp_path, speech):
     out = VadOutput.model_validate_json(path.read_text(encoding="utf-8"))
     assert out.speech_regions and out.speech_ratio > 0.5
     assert out.model.startswith("silero-vad")
+
+
+def cuda_available() -> bool:
+    import ctranslate2
+
+    from meeting_pipeline.engines.whisper import preload_cuda_libs
+
+    preload_cuda_libs()
+    return ctranslate2.get_cuda_device_count() > 0
+
+
+def test_real_asr_on_fleurs_clip(tmp_path, speech):
+    import os
+
+    from meeting_pipeline.schemas import AsrOutput
+
+    if os.environ.get("ASR_DEVICE", "cuda") == "cuda" and not cuda_available():
+        pytest.skip("không có GPU CUDA")
+    workdir = prepare(tmp_path, speech)
+    execute_stage(Stage.VAD, workdir, get_stage(Stage.VAD, "real"))
+    path = execute_stage(Stage.ASR, workdir, get_stage(Stage.ASR, "real"))
+    out = AsrOutput.model_validate_json(path.read_text(encoding="utf-8"))
+    text = " ".join(s.text for s in out.segments).lower()
+    # Reference: "...dựa vào kết quả của nền kinh tế Trung Quốc."
+    assert "trung quốc" in text
+    assert all(s.words for s in out.segments)

@@ -193,7 +193,7 @@ def test_wrong_output_type_is_rejected(workdir):
 
 def test_real_backend_reports_not_implemented(workdir):
     with pytest.raises(PermanentPipelineError) as exc:
-        execute_stage(Stage.ASR, workdir, get_stage(Stage.ASR, "real"))
+        execute_stage(Stage.DIARIZE, workdir, get_stage(Stage.DIARIZE, "real"))
     assert exc.value.code is ErrorCode.STAGE_NOT_IMPLEMENTED
 
 
