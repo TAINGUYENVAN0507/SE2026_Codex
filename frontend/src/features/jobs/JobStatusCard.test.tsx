@@ -1,28 +1,62 @@
-import { render, screen, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
-import { ApiError } from '../../api/errors'
+import { act, render, screen, within } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { http, HttpResponse } from 'msw'
+import { setupServer } from 'msw/node'
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest'
+import jobRetryScheduled from '../../../../contracts/fixtures/api/job_retry_scheduled.json'
+import type { Job } from '../../api/client'
+import { handlers } from '../../mocks/handlers'
 import { JobStatusCard } from './JobStatusCard'
-import { PIPELINE_STAGES, type JobStatus, type JobStatusData } from './model'
+import { PIPELINE_STAGES, type JobStatus } from './model'
 
-function fixture(status: JobStatus): JobStatusData {
+const jobId = jobRetryScheduled.id
+const server = setupServer(...handlers)
+
+beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
+afterEach(() => {
+  vi.useRealTimers()
+  server.resetHandlers()
+})
+afterAll(() => server.close())
+
+function renderCard() {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: 0 } },
+  })
+  return render(
+    <QueryClientProvider client={client}>
+      <JobStatusCard jobId={jobId} />
+    </QueryClientProvider>,
+  )
+}
+
+function jobWithStatus(status: JobStatus): Job {
   return {
+    ...jobRetryScheduled,
     status,
-    current_stage: status === 'queued' ? null : 'asr',
-    completed_stages: status === 'queued' ? [] : ['preprocess', 'vad'],
-    attempt: status === 'retry_scheduled' ? 2 : 1,
-    max_attempts: 3,
+    stage: status === 'queued' ? null : 'summarize',
     error:
       status === 'failed'
-        ? new ApiError('AUDIO_INVALID', 'File audio không hợp lệ.')
+        ? { code: 'AUDIO_INVALID', message: 'File audio không hợp lệ.' }
         : null,
-  }
+  } as Job
 }
 
 describe('JobStatusCard', () => {
-  it('shows all six pipeline stages', () => {
-    render(<JobStatusCard job={fixture('running')} />)
-    const list = screen.getByRole('list')
-    expect(within(list).getAllByRole('listitem')).toHaveLength(6)
+  it('shows all six stages from the contract fixture', async () => {
+    renderCard()
+    await screen.findByText('Đã lên lịch thử lại')
+    expect(
+      within(screen.getByRole('list')).getAllByRole('listitem'),
+    ).toHaveLength(6)
     expect(PIPELINE_STAGES).toEqual([
       'preprocess',
       'vad',
@@ -31,6 +65,8 @@ describe('JobStatusCard', () => {
       'merge',
       'summarize',
     ])
+    expect(screen.getByText('Lượt thử 2/3')).toBeInTheDocument()
+    expect(screen.getByText('Chờ thử lại')).toBeInTheDocument()
   })
 
   it.each([
@@ -40,21 +76,50 @@ describe('JobStatusCard', () => {
     ['succeeded', 'Hoàn tất xử lý'],
     ['failed', 'Xử lý thất bại'],
     ['cancelled', 'Đã hủy xử lý'],
-  ] as const)('renders job status %s', (status, label) => {
-    render(<JobStatusCard job={fixture(status)} />)
-    expect(screen.getByRole('status')).toHaveTextContent(label)
+  ] as const)('renders job status %s', async (status, label) => {
+    server.use(
+      http.get('*/api/v1/jobs/:jobId', () =>
+        HttpResponse.json(jobWithStatus(status)),
+      ),
+    )
+    renderCard()
+    expect(await screen.findByText(label)).toBeInTheDocument()
+    if (status === 'failed')
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'File audio không hợp lệ.',
+      )
   })
 
-  it('shows retry attempt and maximum attempts', () => {
-    render(<JobStatusCard job={fixture('retry_scheduled')} />)
-    expect(screen.getByText('Lượt thử 2/3')).toBeInTheDocument()
-    expect(screen.getByText('Chờ thử lại')).toBeInTheDocument()
+  it('polls active jobs every 2 seconds and stops after success', async () => {
+    let requests = 0
+    server.use(
+      http.get('*/api/v1/jobs/:jobId', () => {
+        requests += 1
+        return HttpResponse.json(
+          jobWithStatus(requests >= 3 ? 'succeeded' : 'running'),
+        )
+      }),
+    )
+    vi.useFakeTimers()
+    renderCard()
+    await act(async () => vi.advanceTimersByTimeAsync(100))
+    expect(screen.getByText('Đang xử lý')).toBeInTheDocument()
+    expect(requests).toBe(1)
+
+    await act(async () => vi.advanceTimersByTimeAsync(2_000))
+    expect(requests).toBe(2)
+    await act(async () => vi.advanceTimersByTimeAsync(2_000))
+    expect(requests).toBe(3)
+    expect(screen.getByText('Hoàn tất xử lý')).toBeInTheDocument()
+    await act(async () => vi.advanceTimersByTimeAsync(6_000))
+    expect(requests).toBe(3)
   })
 
-  it('shows the localized ApiError message when a job fails', () => {
-    render(<JobStatusCard job={fixture('failed')} />)
-    expect(screen.getByRole('alert')).toHaveTextContent(
-      'File audio không hợp lệ.',
+  it('shows a localized ApiError when the network fails', async () => {
+    server.use(http.get('*/api/v1/jobs/:jobId', () => HttpResponse.error()))
+    renderCard()
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Không thể kết nối máy chủ.',
     )
   })
 })
