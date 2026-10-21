@@ -94,6 +94,18 @@ describe('meeting workspace', () => {
     )
   })
 
+  it('updates the player speaker when seeking to another segment', () => {
+    renderAt('/meetings/sprint-42')
+    const player = screen.getByRole('region', { name: 'Player audio cuộc họp' })
+    fireEvent.change(
+      within(player).getByRole('slider', { name: 'Tua bản ghi' }),
+      {
+        target: { value: '620' },
+      },
+    )
+    expect(within(player).getByText('Minh Quang')).toBeInTheDocument()
+  })
+
   it('does not request microphone on page load or switching recording mode', async () => {
     const getUserMedia = vi.fn()
     Object.defineProperty(navigator, 'mediaDevices', {

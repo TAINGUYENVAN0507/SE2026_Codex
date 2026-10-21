@@ -55,7 +55,7 @@ git merge origin/main
 - **Việc:** hook (hoặc hàm thuần kèm hook) nhận `currentTime` và danh sách segment đã sắp theo `start_sec`, trả về segment đang phát bằng binary search. Segment chồng lấn (có cờ `overlap`) thì chọn segment bắt đầu muộn nhất mà vẫn chứa `currentTime`. Ở khoảng lặng giữa hai segment thì trả `null`.
 - **Xong khi:** test cho danh sách rỗng, `currentTime` trước segment đầu, sau segment cuối, đúng biên `start_sec` và `end_sec`, chồng lấn, khoảng lặng; 1000 segment vẫn nhanh.
 - **Message:** `feat(frontend): find the playing segment with binary search (FE-08)`
-- **Hash:** commit chứa dòng này; xem `git log -1 --oneline` sau khi commit.
+- **Hash:** `5a6cce8`
 
 ## Việc chung (không phải commit)
 
@@ -63,5 +63,5 @@ git merge origin/main
 
 ## Cuối ngày
 
-- [x] Tick các ô ở trên và cập nhật `docs/frontend/FE-02.md`, `FE-07.md`, thêm `FE-08.md`. Hash commit cuối xem `git log -1` vì không thể tự ghi hash của chính commit vào nội dung commit đó.
+- [x] Tick các ô ở trên, ghi hash và cập nhật `docs/frontend/FE-02.md`, `FE-07.md`, thêm `FE-08.md`.
 - [ ] Push `vantuong`, mở PR vào `main` theo template. **Không tự merge:** nhóm trưởng review và merge.

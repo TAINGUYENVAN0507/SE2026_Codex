@@ -115,6 +115,44 @@ describe('JobStatusCard', () => {
     expect(requests).toBe(3)
   })
 
+  it.each(['queued', 'retry_scheduled'] as const)(
+    'continues polling while the job is %s',
+    async (status) => {
+      let requests = 0
+      server.use(
+        http.get('*/api/v1/jobs/:jobId', () => {
+          requests += 1
+          return HttpResponse.json(jobWithStatus(status))
+        }),
+      )
+      vi.useFakeTimers()
+      renderCard()
+      await act(async () => vi.advanceTimersByTimeAsync(100))
+      expect(requests).toBe(1)
+      await act(async () => vi.advanceTimersByTimeAsync(2_000))
+      expect(requests).toBe(2)
+    },
+  )
+
+  it.each(['failed', 'cancelled'] as const)(
+    'stops polling when the job is %s',
+    async (status) => {
+      let requests = 0
+      server.use(
+        http.get('*/api/v1/jobs/:jobId', () => {
+          requests += 1
+          return HttpResponse.json(jobWithStatus(status))
+        }),
+      )
+      vi.useFakeTimers()
+      renderCard()
+      await act(async () => vi.advanceTimersByTimeAsync(100))
+      expect(requests).toBe(1)
+      await act(async () => vi.advanceTimersByTimeAsync(6_000))
+      expect(requests).toBe(1)
+    },
+  )
+
   it('shows a localized ApiError when the network fails', async () => {
     server.use(http.get('*/api/v1/jobs/:jobId', () => HttpResponse.error()))
     renderCard()

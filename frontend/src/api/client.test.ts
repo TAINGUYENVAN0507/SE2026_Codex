@@ -13,12 +13,35 @@ afterAll(() => server.close())
 
 describe('typed API client', () => {
   it('returns the committed contract fixtures', async () => {
-    await expect(getMeeting(meetingProcessing.id)).resolves.toEqual(
-      meetingProcessing,
-    )
-    await expect(getJob(jobRetryScheduled.id)).resolves.toEqual(
-      jobRetryScheduled,
-    )
+    const meeting = await getMeeting(meetingProcessing.id)
+    const job = await getJob(jobRetryScheduled.id)
+    expect(meeting).toEqual(meetingProcessing)
+    expect(job).toEqual(jobRetryScheduled)
+
+    // Kiểm tra các field bắt buộc, không chỉ so fixture với chính nó.
+    expect(meeting).toMatchObject({
+      id: meetingProcessing.id,
+      title: expect.any(String),
+      source: expect.stringMatching(/^(upload|recording)$/),
+      status: expect.stringMatching(
+        /^(queued|processing|ready|partial|failed)$/,
+      ),
+      audio: expect.objectContaining({ available: expect.any(Boolean) }),
+      artifacts: expect.objectContaining({ transcript: expect.any(String) }),
+      created_at: expect.any(String),
+      version: expect.any(Number),
+    })
+    expect(job).toMatchObject({
+      id: jobRetryScheduled.id,
+      meeting_id: meeting.id,
+      status: expect.stringMatching(
+        /^(queued|running|retry_scheduled|succeeded|failed|cancelled)$/,
+      ),
+      progress: expect.any(Number),
+      attempt: expect.any(Number),
+      max_attempts: expect.any(Number),
+      created_at: expect.any(String),
+    })
   })
 
   it('maps a 404 error envelope to ApiError', async () => {

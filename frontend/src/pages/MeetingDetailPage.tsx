@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowLeftIcon } from '@phosphor-icons/react/dist/csr/ArrowLeft'
 import { CaretDownIcon } from '@phosphor-icons/react/dist/csr/CaretDown'
 import { CheckIcon } from '@phosphor-icons/react/dist/csr/Check'
@@ -17,6 +17,7 @@ import {
 } from '../features/meetings/model'
 import { Transcript } from '../features/meetings/Transcript'
 import { NotesPanel } from '../features/meetings/NotesPanel'
+import { useActiveSegment } from '../features/meetings/useActiveSegment'
 
 export function MeetingDetailPage() {
   const { meetingId } = useParams()
@@ -64,9 +65,16 @@ function Detail({
   const player = useRef<PlayerHandle>(null)
   const dropdown = useRef<HTMLDivElement>(null)
   const onPosition = useCallback((value: number) => setPosition(value), [])
-  const active = meeting.segments.find(
-    (s) => position >= s.start && position < s.end,
+  const timedSegments = useMemo(
+    () =>
+      meeting.segments.map((segment) => ({
+        ...segment,
+        start_sec: segment.start,
+        end_sec: segment.end,
+      })),
+    [meeting.segments],
   )
+  const active = useActiveSegment(timedSegments, position)
   const name = meeting.speakers.find((s) => s.id === active?.speakerId)?.name
   useEffect(() => {
     const close = (e: PointerEvent) => {
