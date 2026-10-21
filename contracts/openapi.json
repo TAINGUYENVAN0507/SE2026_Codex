@@ -511,6 +511,423 @@
         }
       }
     },
+    "/api/v1/meetings/{meeting_id}/summary": {
+      "get": {
+        "tags": [
+          "Meetings"
+        ],
+        "summary": "Lấy tóm tắt cuộc họp",
+        "description": "Lấy thông tin tóm tắt cuộc họp (stub contract v0).",
+        "operationId": "get_meeting_summary_api_v1_meetings__meeting_id__summary_get",
+        "parameters": [
+          {
+            "name": "meeting_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "UUID của cuộc họp",
+              "title": "Meeting Id"
+            },
+            "description": "UUID của cuộc họp"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SummaryOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Không tìm thấy tóm tắt cuộc họp",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Meetings"
+        ],
+        "summary": "Chỉnh sửa nội dung tóm tắt cuộc họp",
+        "description": "Cập nhật tóm tắt cuộc họp với optimistic locking.",
+        "operationId": "update_meeting_summary_api_v1_meetings__meeting_id__summary_put",
+        "parameters": [
+          {
+            "name": "meeting_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "UUID của cuộc họp",
+              "title": "Meeting Id"
+            },
+            "description": "UUID của cuộc họp"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SummaryUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SummaryOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Không tìm thấy tóm tắt cuộc họp",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Xung đột phiên bản version của tóm tắt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/meetings/{meeting_id}/action-items": {
+      "get": {
+        "tags": [
+          "Meetings"
+        ],
+        "summary": "Lấy danh sách các action items của cuộc họp",
+        "description": "Lấy danh sách các action item (công việc cần làm) của cuộc họp.",
+        "operationId": "list_meeting_action_items_api_v1_meetings__meeting_id__action_items_get",
+        "parameters": [
+          {
+            "name": "meeting_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "UUID của cuộc họp",
+              "title": "Meeting Id"
+            },
+            "description": "UUID của cuộc họp"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionItemListOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Không tìm thấy cuộc họp",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Meetings"
+        ],
+        "summary": "Tạo action item mới do người dùng thêm thủ công",
+        "description": "Tạo mới một action item với nguồn gốc source='user'.",
+        "operationId": "create_meeting_action_item_api_v1_meetings__meeting_id__action_items_post",
+        "parameters": [
+          {
+            "name": "meeting_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "UUID của cuộc họp",
+              "title": "Meeting Id"
+            },
+            "description": "UUID của cuộc họp"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActionItemCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionItemOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Không tìm thấy cuộc họp",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dữ liệu không hợp lệ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/meetings/{meeting_id}/action-items/{item_id}": {
+      "patch": {
+        "tags": [
+          "Meetings"
+        ],
+        "summary": "Chỉnh sửa action item",
+        "description": "Chỉnh sửa thông tin action item có kiểm tra optimistic locking.",
+        "operationId": "patch_meeting_action_item_api_v1_meetings__meeting_id__action_items__item_id__patch",
+        "parameters": [
+          {
+            "name": "meeting_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "UUID của cuộc họp",
+              "title": "Meeting Id"
+            },
+            "description": "UUID của cuộc họp"
+          },
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "UUID của action item",
+              "title": "Item Id"
+            },
+            "description": "UUID của action item"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActionItemPatch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionItemOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Không tìm thấy action item",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Xung đột phiên bản version của action item",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Meetings"
+        ],
+        "summary": "Xóa action item (xóa mềm có audit)",
+        "description": "Xóa action item (xóa mềm) có kiểm tra version nếu được cung cấp.",
+        "operationId": "delete_meeting_action_item_api_v1_meetings__meeting_id__action_items__item_id__delete",
+        "parameters": [
+          {
+            "name": "meeting_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "UUID của cuộc họp",
+              "title": "Meeting Id"
+            },
+            "description": "UUID của cuộc họp"
+          },
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "UUID của action item",
+              "title": "Item Id"
+            },
+            "description": "UUID của action item"
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Phiên bản của action item",
+              "title": "Version"
+            },
+            "description": "Phiên bản của action item"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "Không tìm thấy action item",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Xung đột phiên bản version khi xóa",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/jobs/{job_id}": {
       "get": {
         "tags": [
@@ -621,6 +1038,372 @@
   },
   "components": {
     "schemas": {
+      "ActionItemAiOriginal": {
+        "properties": {
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "description": "Mô tả công việc gốc"
+          },
+          "assignee_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assignee Name",
+            "description": "Tên người nhận việc gốc"
+          },
+          "due_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Date",
+            "description": "Hạn chót YYYY-MM-DD gốc"
+          },
+          "due_date_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Date Text",
+            "description": "Cụm từ hạn chót gốc"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "description"
+        ],
+        "title": "ActionItemAiOriginal",
+        "description": "Thông tin trích xuất gốc do AI sinh (bất biến)."
+      },
+      "ActionItemCreate": {
+        "properties": {
+          "description": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Description",
+            "description": "Mô tả công việc cần làm (1-1000 ký tự)"
+          },
+          "assignee_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assignee Name",
+            "description": "Tên người được giao việc"
+          },
+          "assignee_speaker_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assignee Speaker Id",
+            "description": "UUID speaker tương ứng"
+          },
+          "due_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Date",
+            "description": "Hạn hoàn thành định dạng YYYY-MM-DD"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Trạng thái khởi tạo (mặc định 'open')",
+            "default": "open"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "description"
+        ],
+        "title": "ActionItemCreate",
+        "description": "Schema tạo mới Action Item từ người dùng."
+      },
+      "ActionItemListOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ActionItemOut"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "Danh sách các công việc cần làm"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "ActionItemListOut",
+        "description": "Danh sách các Action Items của cuộc họp."
+      },
+      "ActionItemOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "UUID của action item"
+          },
+          "meeting_id": {
+            "type": "string",
+            "title": "Meeting Id",
+            "description": "UUID của cuộc họp tương ứng"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "description": "Mô tả công việc cần làm"
+          },
+          "assignee_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assignee Name",
+            "description": "Tên người được giao việc"
+          },
+          "assignee_speaker_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assignee Speaker Id",
+            "description": "UUID người nói tương ứng với người nhận việc"
+          },
+          "due_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Date",
+            "description": "Hạn chót hoàn thành định dạng YYYY-MM-DD"
+          },
+          "due_date_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Date Text",
+            "description": "Cụm từ chỉ thời hạn trong hội thoại"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Trạng thái công việc (open/done/cancelled)",
+            "default": "open"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "ai",
+              "user"
+            ],
+            "title": "Source",
+            "description": "Nguồn gốc action item (ai hoặc user)",
+            "default": "ai"
+          },
+          "is_edited": {
+            "type": "boolean",
+            "title": "Is Edited",
+            "description": "Cờ đánh dấu công việc đã được người dùng sửa",
+            "default": false
+          },
+          "needs_review": {
+            "type": "boolean",
+            "title": "Needs Review",
+            "description": "Cờ đánh dấu cần người dùng rà soát lại",
+            "default": false
+          },
+          "evidence_segment_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Evidence Segment Ids",
+            "description": "Danh sách UUID các segment làm căn cứ trích xuất"
+          },
+          "ai_original": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ActionItemAiOriginal"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Bản dữ liệu trích xuất ban đầu của AI"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version",
+            "description": "Phiên bản phục vụ optimistic locking",
+            "default": 1
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Created At",
+            "description": "Thời điểm tạo action item ISO 8601 UTC"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Updated At",
+            "description": "Thời điểm cập nhật gần nhất ISO 8601 UTC"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "meeting_id",
+          "description",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ActionItemOut",
+        "description": "Hợp đồng dữ liệu của một Action Item."
+      },
+      "ActionItemPatch": {
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "description": "Mô tả công việc cần làm"
+          },
+          "assignee_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assignee Name",
+            "description": "Tên người được giao việc"
+          },
+          "assignee_speaker_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assignee Speaker Id",
+            "description": "UUID speaker tương ứng"
+          },
+          "due_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Date",
+            "description": "Hạn hoàn thành định dạng YYYY-MM-DD"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status",
+            "description": "Trạng thái công việc mới"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Version",
+            "description": "Phiên bản hiện tại của item ở client"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "version"
+        ],
+        "title": "ActionItemPatch",
+        "description": "Schema cập nhật thông tin Action Item."
+      },
       "Body_create_meeting_api_v1_meetings_post": {
         "properties": {
           "file": {
@@ -1578,6 +2361,183 @@
         ],
         "title": "SpeakerPatch",
         "description": "Schema cập nhật tên hiển thị của người nói."
+      },
+      "SummaryContentOut": {
+        "properties": {
+          "overview": {
+            "type": "string",
+            "maxLength": 5000,
+            "title": "Overview",
+            "description": "Tổng quan cuộc họp (tối đa 5000 ký tự)"
+          },
+          "key_points": {
+            "items": {
+              "$ref": "#/components/schemas/SummaryPointOut"
+            },
+            "type": "array",
+            "maxItems": 50,
+            "title": "Key Points",
+            "description": "Danh sách điểm chính trao đổi"
+          },
+          "decisions": {
+            "items": {
+              "$ref": "#/components/schemas/SummaryPointOut"
+            },
+            "type": "array",
+            "maxItems": 50,
+            "title": "Decisions",
+            "description": "Danh sách các quyết định đã chốt"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "overview"
+        ],
+        "title": "SummaryContentOut",
+        "description": "Nội dung chi tiết tóm tắt cuộc họp."
+      },
+      "SummaryOut": {
+        "properties": {
+          "meeting_id": {
+            "type": "string",
+            "title": "Meeting Id",
+            "description": "UUID của cuộc họp"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Trạng thái tóm tắt (pending/ready/failed/insufficient_content/disabled)"
+          },
+          "content": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SummaryContentOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Nội dung tóm tắt hiện tại"
+          },
+          "ai_content": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SummaryContentOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Nội dung tóm tắt gốc do AI tạo ra (bất biến)"
+          },
+          "is_edited": {
+            "type": "boolean",
+            "title": "Is Edited",
+            "description": "Cờ đánh dấu tóm tắt đã được người dùng chỉnh sửa",
+            "default": false
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model",
+            "description": "Tên model AI sinh tóm tắt"
+          },
+          "prompt_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prompt Version",
+            "description": "Phiên bản prompt được dùng"
+          },
+          "generated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated At",
+            "description": "Thời điểm sinh tóm tắt ISO 8601 UTC"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version",
+            "description": "Phiên bản phục vụ optimistic locking",
+            "default": 1
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "meeting_id",
+          "status"
+        ],
+        "title": "SummaryOut",
+        "description": "Hợp đồng dữ liệu tóm tắt cuộc họp."
+      },
+      "SummaryPointOut": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "title": "Text",
+            "description": "Nội dung điểm chính hoặc quyết định"
+          },
+          "evidence_segment_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Evidence Segment Ids",
+            "description": "Danh sách UUID các segment làm bằng chứng trích xuất"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "title": "SummaryPointOut",
+        "description": "Điểm chính hoặc quyết định trong tóm tắt cuộc họp kèm ID các đoạn bằng chứng."
+      },
+      "SummaryUpdate": {
+        "properties": {
+          "content": {
+            "$ref": "#/components/schemas/SummaryContentOut",
+            "description": "Nội dung tóm tắt mới"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Version",
+            "description": "Phiên bản hiện tại của summary ở client"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "content",
+          "version"
+        ],
+        "title": "SummaryUpdate",
+        "description": "Schema cập nhật nội dung tóm tắt cuộc họp."
       },
       "TranscriptOut": {
         "properties": {

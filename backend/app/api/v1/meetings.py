@@ -4,10 +4,16 @@ import json
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import APIRouter, File, Form, Header, Query, UploadFile, status
+from fastapi import APIRouter, File, Form, Header, Query, Response, UploadFile, status
 from fastapi import Path as FastApiPath
 
 from app.core.errors import APIError
+from app.schemas.action_item import (
+    ActionItemCreate,
+    ActionItemListOut,
+    ActionItemOut,
+    ActionItemPatch,
+)
 from app.schemas.common import ErrorResponse
 from app.schemas.meeting import (
     MeetingCreateOut,
@@ -17,6 +23,7 @@ from app.schemas.meeting import (
     MeetingStatus,
     SpeakerOut,
 )
+from app.schemas.summary import SummaryOut, SummaryUpdate
 from app.schemas.transcript import (
     SegmentPatch,
     SpeakerPatch,
@@ -386,3 +393,279 @@ def patch_meeting_speaker(
         matched["version"] = payload.version + 1
 
     return SpeakerOut.model_validate(matched)
+
+
+SUMMARY_READY_FIXTURE_PATH = FIXTURES_DIR / "summary_ready.json"
+SUMMARY_DISABLED_FIXTURE_PATH = FIXTURES_DIR / "summary_disabled.json"
+ACTION_ITEMS_FIXTURE_PATH = FIXTURES_DIR / "action_items.json"
+
+
+def load_summary_ready_fixture() -> dict:
+    """Đọc dữ liệu fixture summary ở trạng thái sẵn sàng."""
+    if SUMMARY_READY_FIXTURE_PATH.is_file():
+        with open(SUMMARY_READY_FIXTURE_PATH, encoding="utf-8") as f:
+            return json.load(f)
+    return {
+        "meeting_id": "test-id",
+        "status": "ready",
+        "content": None,
+        "ai_content": None,
+        "is_edited": False,
+        "model": None,
+        "prompt_version": None,
+        "generated_at": None,
+        "version": 1,
+    }
+
+
+def load_summary_disabled_fixture() -> dict:
+    """Đọc dữ liệu fixture summary ở trạng thái disabled."""
+    if SUMMARY_DISABLED_FIXTURE_PATH.is_file():
+        with open(SUMMARY_DISABLED_FIXTURE_PATH, encoding="utf-8") as f:
+            return json.load(f)
+    return {
+        "meeting_id": "test-id",
+        "status": "disabled",
+        "content": None,
+        "ai_content": None,
+        "is_edited": False,
+        "model": None,
+        "prompt_version": None,
+        "generated_at": None,
+        "version": 1,
+    }
+
+
+def load_action_items_fixture() -> dict:
+    """Đọc dữ liệu fixture danh sách action items."""
+    if ACTION_ITEMS_FIXTURE_PATH.is_file():
+        with open(ACTION_ITEMS_FIXTURE_PATH, encoding="utf-8") as f:
+            return json.load(f)
+    return {"items": []}
+
+
+@router.get(
+    "/{meeting_id}/summary",
+    response_model=SummaryOut,
+    status_code=status.HTTP_200_OK,
+    responses={
+        404: {
+            "model": ErrorResponse,
+            "description": "Không tìm thấy tóm tắt cuộc họp",
+        },
+    },
+    summary="Lấy tóm tắt cuộc họp",
+)
+def get_meeting_summary(
+    meeting_id: str = FastApiPath(..., description="UUID của cuộc họp"),
+) -> SummaryOut:
+    """Lấy thông tin tóm tắt cuộc họp (stub contract v0)."""
+    if "disabled" in meeting_id.lower():
+        data = load_summary_disabled_fixture()
+    else:
+        data = load_summary_ready_fixture()
+    data["meeting_id"] = meeting_id
+    return SummaryOut.model_validate(data)
+
+
+@router.put(
+    "/{meeting_id}/summary",
+    response_model=SummaryOut,
+    status_code=status.HTTP_200_OK,
+    responses={
+        404: {
+            "model": ErrorResponse,
+            "description": "Không tìm thấy tóm tắt cuộc họp",
+        },
+        409: {
+            "model": ErrorResponse,
+            "description": "Xung đột phiên bản version của tóm tắt",
+        },
+    },
+    summary="Chỉnh sửa nội dung tóm tắt cuộc họp",
+)
+def update_meeting_summary(
+    meeting_id: str = FastApiPath(..., description="UUID của cuộc họp"),
+    payload: SummaryUpdate = ...,
+) -> SummaryOut:
+    """Cập nhật tóm tắt cuộc họp với optimistic locking."""
+    if payload.version != 2:
+        raise APIError(
+            code="VERSION_CONFLICT",
+            message="Tóm tắt cuộc họp đã được cập nhật ở nơi khác. Vui lòng tải lại.",
+            status_code=status.HTTP_409_CONFLICT,
+            details={
+                "entity": "summary",
+                "current": {"meeting_id": meeting_id, "version": 2},
+            },
+        )
+
+    data = load_summary_ready_fixture()
+    data["meeting_id"] = meeting_id
+    data["content"] = payload.content.model_dump()
+    data["is_edited"] = True
+    data["version"] = payload.version + 1
+    return SummaryOut.model_validate(data)
+
+
+@router.get(
+    "/{meeting_id}/action-items",
+    response_model=ActionItemListOut,
+    status_code=status.HTTP_200_OK,
+    responses={
+        404: {"model": ErrorResponse, "description": "Không tìm thấy cuộc họp"},
+    },
+    summary="Lấy danh sách các action items của cuộc họp",
+)
+def list_meeting_action_items(
+    meeting_id: str = FastApiPath(..., description="UUID của cuộc họp"),
+) -> ActionItemListOut:
+    """Lấy danh sách các action item (công việc cần làm) của cuộc họp."""
+    data = load_action_items_fixture()
+    return ActionItemListOut.model_validate(data)
+
+
+@router.post(
+    "/{meeting_id}/action-items",
+    response_model=ActionItemOut,
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        404: {"model": ErrorResponse, "description": "Không tìm thấy cuộc họp"},
+        422: {"model": ErrorResponse, "description": "Dữ liệu không hợp lệ"},
+    },
+    summary="Tạo action item mới do người dùng thêm thủ công",
+)
+def create_meeting_action_item(
+    meeting_id: str = FastApiPath(..., description="UUID của cuộc họp"),
+    payload: ActionItemCreate = ...,
+) -> ActionItemOut:
+    """Tạo mới một action item với nguồn gốc source='user'."""
+    new_item = {
+        "id": "new-action-item-uuid-1",
+        "meeting_id": meeting_id,
+        "description": payload.description,
+        "assignee_name": payload.assignee_name,
+        "assignee_speaker_id": payload.assignee_speaker_id,
+        "due_date": payload.due_date,
+        "due_date_text": None,
+        "status": payload.status,
+        "source": "user",
+        "is_edited": False,
+        "needs_review": False,
+        "evidence_segment_ids": [],
+        "ai_original": None,
+        "version": 1,
+        "created_at": "2026-10-15T09:00:00Z",
+        "updated_at": "2026-10-15T09:00:00Z",
+    }
+    return ActionItemOut.model_validate(new_item)
+
+
+@router.patch(
+    "/{meeting_id}/action-items/{item_id}",
+    response_model=ActionItemOut,
+    status_code=status.HTTP_200_OK,
+    responses={
+        404: {
+            "model": ErrorResponse,
+            "description": "Không tìm thấy action item",
+        },
+        409: {
+            "model": ErrorResponse,
+            "description": "Xung đột phiên bản version của action item",
+        },
+    },
+    summary="Chỉnh sửa action item",
+)
+def patch_meeting_action_item(
+    meeting_id: str = FastApiPath(..., description="UUID của cuộc họp"),
+    item_id: str = FastApiPath(..., description="UUID của action item"),
+    payload: ActionItemPatch = ...,
+) -> ActionItemOut:
+    """Chỉnh sửa thông tin action item có kiểm tra optimistic locking."""
+    if payload.version != 1:
+        raise APIError(
+            code="VERSION_CONFLICT",
+            message="Action item đã được cập nhật ở nơi khác. Vui lòng tải lại.",
+            status_code=status.HTTP_409_CONFLICT,
+            details={
+                "entity": "action_item",
+                "current": {"id": item_id, "version": 2},
+            },
+        )
+
+    data = load_action_items_fixture()
+    matched = None
+    for item in data.get("items", []):
+        if item.get("id") == item_id:
+            matched = dict(item)
+            break
+
+    if not matched:
+        matched = {
+            "id": item_id,
+            "meeting_id": meeting_id,
+            "description": payload.description or "Công việc cần làm",
+            "assignee_name": payload.assignee_name,
+            "assignee_speaker_id": payload.assignee_speaker_id,
+            "due_date": payload.due_date,
+            "due_date_text": None,
+            "status": payload.status or "open",
+            "source": "ai",
+            "is_edited": True,
+            "needs_review": False,
+            "evidence_segment_ids": [],
+            "ai_original": None,
+            "version": payload.version + 1,
+            "created_at": "2026-10-15T08:55:02Z",
+            "updated_at": "2026-10-15T09:10:00Z",
+        }
+    else:
+        if payload.description is not None:
+            matched["description"] = payload.description
+        if payload.assignee_name is not None:
+            matched["assignee_name"] = payload.assignee_name
+        if payload.assignee_speaker_id is not None:
+            matched["assignee_speaker_id"] = payload.assignee_speaker_id
+        if payload.due_date is not None:
+            matched["due_date"] = payload.due_date
+        if payload.status is not None:
+            matched["status"] = payload.status
+        matched["is_edited"] = True
+        matched["version"] = payload.version + 1
+
+    return ActionItemOut.model_validate(matched)
+
+
+@router.delete(
+    "/{meeting_id}/action-items/{item_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={
+        404: {
+            "model": ErrorResponse,
+            "description": "Không tìm thấy action item",
+        },
+        409: {
+            "model": ErrorResponse,
+            "description": "Xung đột phiên bản version khi xóa",
+        },
+    },
+    summary="Xóa action item (xóa mềm có audit)",
+)
+def delete_meeting_action_item(
+    meeting_id: str = FastApiPath(..., description="UUID của cuộc họp"),
+    item_id: str = FastApiPath(..., description="UUID của action item"),
+    version: Annotated[int | None, Query(description="Phiên bản của action item")] = None,
+) -> Response:
+    """Xóa action item (xóa mềm) có kiểm tra version nếu được cung cấp."""
+    if version is not None and version != 1:
+        raise APIError(
+            code="VERSION_CONFLICT",
+            message="Action item đã được cập nhật ở nơi khác. Vui lòng tải lại.",
+            status_code=status.HTTP_409_CONFLICT,
+            details={
+                "entity": "action_item",
+                "current": {"id": item_id, "version": 2},
+            },
+        )
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

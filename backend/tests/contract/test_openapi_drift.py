@@ -6,6 +6,7 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 from app.main import create_app
+from app.schemas.action_item import ActionItemListOut, ActionItemOut
 from app.schemas.common import ErrorResponse
 from app.schemas.job import JobOut
 from app.schemas.meeting import (
@@ -15,6 +16,7 @@ from app.schemas.meeting import (
     MeetingOut,
     SpeakerOut,
 )
+from app.schemas.summary import SummaryOut
 from app.schemas.transcript import (
     TranscriptOut,
     TranscriptSegmentOut,
@@ -316,3 +318,186 @@ def test_patch_speaker_success() -> None:
         assert spk.display_name == "Chị Lan (Lead PM)"
         assert spk.version == 3
         assert spk.is_edited is True
+
+
+def test_summary_ready_fixture_validates() -> None:
+    """Kiểm tra summary_ready.json hợp lệ theo SummaryOut."""
+    fixture_file = get_contracts_root() / "fixtures" / "api" / "summary_ready.json"
+    assert fixture_file.is_file(), f"Không tìm thấy fixture {fixture_file}"
+
+    with open(fixture_file, encoding="utf-8") as f:
+        data = json.load(f)
+
+    result = SummaryOut.model_validate(data)
+    assert result.status == "ready"
+    assert result.content is not None
+    assert len(result.content.key_points) > 0
+
+
+def test_summary_disabled_fixture_validates() -> None:
+    """Kiểm tra summary_disabled.json hợp lệ theo SummaryOut."""
+    fixture_file = get_contracts_root() / "fixtures" / "api" / "summary_disabled.json"
+    assert fixture_file.is_file(), f"Không tìm thấy fixture {fixture_file}"
+
+    with open(fixture_file, encoding="utf-8") as f:
+        data = json.load(f)
+
+    result = SummaryOut.model_validate(data)
+    assert result.status == "disabled"
+    assert result.content is None
+
+
+def test_action_items_fixture_validates() -> None:
+    """Kiểm tra action_items.json: một item có hạn và một item không có hạn."""
+    fixture_file = get_contracts_root() / "fixtures" / "api" / "action_items.json"
+    assert fixture_file.is_file(), f"Không tìm thấy fixture {fixture_file}"
+
+    with open(fixture_file, encoding="utf-8") as f:
+        data = json.load(f)
+
+    result = ActionItemListOut.model_validate(data)
+    assert len(result.items) == 2
+
+    with_due = [item for item in result.items if item.due_date is not None]
+    without_due = [item for item in result.items if item.due_date is None]
+    assert len(with_due) >= 1
+    assert len(without_due) >= 1
+
+
+def test_get_summary_ready() -> None:
+    """Kiểm tra GET /api/v1/meetings/{id}/summary trả về 200 trạng thái ready."""
+    app = create_app()
+    with TestClient(app) as client:
+        response = client.get("/api/v1/meetings/meeting-1/summary")
+        assert response.status_code == 200
+        data = response.json()
+        result = SummaryOut.model_validate(data)
+        assert result.status == "ready"
+
+
+def test_get_summary_disabled() -> None:
+    """Kiểm tra GET /api/v1/meetings/{id}/summary khi disabled trả về 200 trạng thái disabled."""
+    app = create_app()
+    with TestClient(app) as client:
+        response = client.get("/api/v1/meetings/meeting-disabled-1/summary")
+        assert response.status_code == 200
+        data = response.json()
+        result = SummaryOut.model_validate(data)
+        assert result.status == "disabled"
+
+
+def test_put_summary_success() -> None:
+    """Kiểm tra PUT /api/v1/meetings/{id}/summary với đúng version trả về 200."""
+    app = create_app()
+    with TestClient(app) as client:
+        payload = {
+            "content": {
+                "overview": "Tổng quan cuộc họp sau khi chỉnh sửa.",
+                "key_points": [
+                    {
+                        "text": "Đã thống nhất hoàn thiện upload audio.",
+                        "evidence_segment_ids": ["5b1e7c2a-b2c3-4d4e-8f9a-0b1c2d3e4f5a"],
+                    }
+                ],
+                "decisions": [],
+            },
+            "version": 2,
+        }
+        response = client.put("/api/v1/meetings/meeting-1/summary", json=payload)
+        assert response.status_code == 200
+        data = response.json()
+        result = SummaryOut.model_validate(data)
+        assert result.version == 3
+        assert result.is_edited is True
+
+
+def test_put_summary_version_conflict() -> None:
+    """Kiểm tra PUT /api/v1/meetings/{id}/summary với version sai trả về 409."""
+    app = create_app()
+    with TestClient(app) as client:
+        payload = {
+            "content": {
+                "overview": "Nội dung mới",
+                "key_points": [],
+                "decisions": [],
+            },
+            "version": 1,
+        }
+        response = client.put("/api/v1/meetings/meeting-1/summary", json=payload)
+        assert response.status_code == 409
+        assert response.json()["error"]["code"] == "VERSION_CONFLICT"
+
+
+def test_get_action_items() -> None:
+    """Kiểm tra GET /api/v1/meetings/{id}/action-items trả về danh sách items."""
+    app = create_app()
+    with TestClient(app) as client:
+        response = client.get("/api/v1/meetings/meeting-1/action-items")
+        assert response.status_code == 200
+        data = response.json()
+        result = ActionItemListOut.model_validate(data)
+        assert len(result.items) == 2
+
+
+def test_post_action_item() -> None:
+    """Kiểm tra POST /api/v1/meetings/{id}/action-items trả về 201 với source='user'."""
+    app = create_app()
+    with TestClient(app) as client:
+        payload = {
+            "description": "Thêm kiểm thử tự động cho action items",
+            "assignee_name": "Quang Ha",
+            "due_date": "2026-10-25",
+            "status": "open",
+        }
+        response = client.post("/api/v1/meetings/meeting-1/action-items", json=payload)
+        assert response.status_code == 201
+        data = response.json()
+        result = ActionItemOut.model_validate(data)
+        assert result.source == "user"
+        assert result.description == "Thêm kiểm thử tự động cho action items"
+
+
+def test_patch_action_item_success() -> None:
+    """Kiểm tra PATCH /api/v1/meetings/{id}/action-items/{id} đúng version trả về 200."""
+    app = create_app()
+    with TestClient(app) as client:
+        payload = {
+            "description": "Cập nhật mô tả công việc",
+            "status": "done",
+            "version": 1,
+        }
+        response = client.patch(
+            "/api/v1/meetings/meeting-1/action-items/a1f0a2b3-c4d5-4e6f-8a9b-0c1d2e3f4a5b",
+            json=payload,
+        )
+        assert response.status_code == 200
+        data = response.json()
+        result = ActionItemOut.model_validate(data)
+        assert result.version == 2
+        assert result.is_edited is True
+
+
+def test_patch_action_item_conflict() -> None:
+    """Kiểm tra PATCH /api/v1/meetings/{id}/action-items/{id} sai version trả về 409."""
+    app = create_app()
+    with TestClient(app) as client:
+        payload = {
+            "description": "Mô tả mới",
+            "version": 99,
+        }
+        response = client.patch(
+            "/api/v1/meetings/meeting-1/action-items/a1f0a2b3-c4d5-4e6f-8a9b-0c1d2e3f4a5b",
+            json=payload,
+        )
+        assert response.status_code == 409
+        assert response.json()["error"]["code"] == "VERSION_CONFLICT"
+
+
+def test_delete_action_item() -> None:
+    """Kiểm tra DELETE /api/v1/meetings/{id}/action-items/{id} trả về 204."""
+    app = create_app()
+    with TestClient(app) as client:
+        response = client.delete(
+            "/api/v1/meetings/meeting-1/action-items/a1f0a2b3-c4d5-4e6f-8a9b-0c1d2e3f4a5b?version=1"
+        )
+        assert response.status_code == 204
