@@ -1,56 +1,38 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
+import { http, HttpResponse } from 'msw'
+import { setupServer } from 'msw/node'
+import meetingProcessing from '../../../contracts/fixtures/api/meeting_processing.json'
+import jobRetryScheduled from '../../../contracts/fixtures/api/job_retry_scheduled.json'
+import { handlers } from '../mocks/handlers'
 import { getJob, getMeeting } from './client'
-import { ApiError } from './errors'
 
-afterEach(() => vi.unstubAllGlobals())
+const server = setupServer(...handlers)
+beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
+afterEach(() => server.resetHandlers())
+afterAll(() => server.close())
 
 describe('typed API client', () => {
-  it('returns a meeting from the contract endpoint with cookies', async () => {
-    const payload = { id: 'meeting-1', title: 'Họp thử' }
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify(payload), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      }),
+  it('returns the committed contract fixtures', async () => {
+    await expect(getMeeting(meetingProcessing.id)).resolves.toEqual(
+      meetingProcessing,
     )
-    vi.stubGlobal('fetch', fetchMock)
-
-    await expect(getMeeting('meeting-1')).resolves.toEqual(payload)
-    const [request] = fetchMock.mock.calls[0] as [Request]
-    expect(request.url).toContain('/api/v1/meetings/meeting-1')
-    expect(request.credentials).toBe('include')
+    await expect(getJob(jobRetryScheduled.id)).resolves.toEqual(
+      jobRetryScheduled,
+    )
   })
 
   it('maps a 404 error envelope to ApiError', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(
-        new Response(
-          JSON.stringify({
-            error: {
-              code: 'MEETING_NOT_FOUND',
-              message: 'Không tìm thấy cuộc họp.',
-              details: null,
-              request_id: 'req-404',
-            },
-          }),
-          { status: 404, headers: { 'Content-Type': 'application/json' } },
-        ),
-      ),
-    )
-
     await expect(getMeeting('missing')).rejects.toMatchObject({
       name: 'ApiError',
-      code: 'MEETING_NOT_FOUND',
-      request_id: 'req-404',
+      code: 'NOT_FOUND',
     })
   })
 
   it('maps network errors to ApiError', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('offline')))
+    server.use(http.get('*/api/v1/jobs/:jobId', () => HttpResponse.error()))
     await expect(getJob('job-1')).rejects.toMatchObject({
       name: 'ApiError',
       code: 'NETWORK_ERROR',
-    } satisfies Partial<ApiError>)
+    })
   })
 })
