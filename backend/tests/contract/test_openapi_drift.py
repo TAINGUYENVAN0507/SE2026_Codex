@@ -7,7 +7,12 @@ from fastapi.testclient import TestClient
 
 from app.main import create_app
 from app.schemas.job import JobOut
-from app.schemas.meeting import MeetingDetailOut, MeetingOut
+from app.schemas.meeting import (
+    MeetingCreateOut,
+    MeetingDetailOut,
+    MeetingListOut,
+    MeetingOut,
+)
 
 
 def get_contracts_root() -> Path:
@@ -91,3 +96,89 @@ def test_get_job_endpoint_stub() -> None:
         job = JobOut.model_validate(data)
         assert job.id == test_id
         assert job.status == "retry_scheduled"
+
+
+def test_meeting_list_fixture_validates() -> None:
+    """Kiểm tra fixture meeting_list.json hợp lệ theo MeetingListOut."""
+    fixture_file = get_contracts_root() / "fixtures" / "api" / "meeting_list.json"
+    assert fixture_file.is_file(), f"Không tìm thấy fixture {fixture_file}"
+
+    with open(fixture_file, encoding="utf-8") as f:
+        data = json.load(f)
+
+    result = MeetingListOut.model_validate(data)
+    assert len(result.items) == 1
+    assert result.page == 1
+    assert result.total == 1
+
+
+def test_meeting_created_fixture_validates() -> None:
+    """Kiểm tra fixture meeting_created.json hợp lệ theo MeetingCreateOut."""
+    fixture_file = get_contracts_root() / "fixtures" / "api" / "meeting_created.json"
+    assert fixture_file.is_file(), f"Không tìm thấy fixture {fixture_file}"
+
+    with open(fixture_file, encoding="utf-8") as f:
+        data = json.load(f)
+
+    result = MeetingCreateOut.model_validate(data)
+    assert result.meeting.status == "queued"
+    assert result.job.status == "queued"
+
+
+def test_list_meetings_endpoint_stub() -> None:
+    """Kiểm tra endpoint GET /api/v1/meetings trả về danh sách cuộc họp đúng schema."""
+    app = create_app()
+    with TestClient(app) as client:
+        response = client.get("/api/v1/meetings?page=1&page_size=10")
+        assert response.status_code == 200
+
+        data = response.json()
+        result = MeetingListOut.model_validate(data)
+        assert result.page == 1
+        assert len(result.items) >= 1
+
+
+def test_create_meeting_missing_idempotency_key() -> None:
+    """Kiểm tra POST /api/v1/meetings thiếu Idempotency-Key trả về 400."""
+    app = create_app()
+    with TestClient(app) as client:
+        response = client.post(
+            "/api/v1/meetings",
+            files={"file": ("sample.wav", b"fake audio bytes", "audio/wav")},
+            data={"consent_confirmed": "true"},
+        )
+        assert response.status_code == 400
+        error = response.json().get("error", {})
+        assert error.get("code") == "IDEMPOTENCY_KEY_REQUIRED"
+
+
+def test_create_meeting_missing_consent() -> None:
+    """Kiểm tra POST /api/v1/meetings thiếu consent_confirmed trả về 422."""
+    app = create_app()
+    with TestClient(app) as client:
+        response = client.post(
+            "/api/v1/meetings",
+            headers={"Idempotency-Key": "test-key-123"},
+            files={"file": ("sample.wav", b"fake audio bytes", "audio/wav")},
+            data={"consent_confirmed": "false"},
+        )
+        assert response.status_code == 422
+        error = response.json().get("error", {})
+        assert error.get("code") == "CONSENT_REQUIRED"
+
+
+def test_create_meeting_success() -> None:
+    """Kiểm tra POST /api/v1/meetings hợp lệ trả về 201 kèm meeting và job."""
+    app = create_app()
+    with TestClient(app) as client:
+        response = client.post(
+            "/api/v1/meetings",
+            headers={"Idempotency-Key": "test-key-123"},
+            files={"file": ("sample.wav", b"fake audio bytes", "audio/wav")},
+            data={"consent_confirmed": "true", "title": "Họp thảo luận sprint mới"},
+        )
+        assert response.status_code == 201
+        data = response.json()
+        result = MeetingCreateOut.model_validate(data)
+        assert result.meeting.title == "Họp thảo luận sprint mới"
+        assert result.job.status == "queued"

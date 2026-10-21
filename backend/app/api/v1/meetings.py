@@ -2,28 +2,33 @@
 
 import json
 from pathlib import Path
+from typing import Annotated
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, File, Form, Header, Query, UploadFile, status
 from fastapi import Path as FastApiPath
 
+from app.core.errors import APIError
 from app.schemas.common import ErrorResponse
-from app.schemas.meeting import MeetingDetailOut
+from app.schemas.meeting import (
+    MeetingCreateOut,
+    MeetingDetailOut,
+    MeetingListOut,
+    MeetingSource,
+    MeetingStatus,
+)
 
 router = APIRouter(prefix="/meetings", tags=["Meetings"])
 
-FIXTURE_PATH = (
-    Path(__file__).resolve().parents[4]
-    / "contracts"
-    / "fixtures"
-    / "api"
-    / "meeting_processing.json"
-)
+FIXTURES_DIR = Path(__file__).resolve().parents[4] / "contracts" / "fixtures" / "api"
+MEETING_FIXTURE_PATH = FIXTURES_DIR / "meeting_processing.json"
+MEETING_LIST_FIXTURE_PATH = FIXTURES_DIR / "meeting_list.json"
+MEETING_CREATED_FIXTURE_PATH = FIXTURES_DIR / "meeting_created.json"
 
 
 def load_meeting_fixture() -> dict:
     """Đọc dữ liệu fixture meeting mẫu."""
-    if FIXTURE_PATH.is_file():
-        with open(FIXTURE_PATH, encoding="utf-8") as f:
+    if MEETING_FIXTURE_PATH.is_file():
+        with open(MEETING_FIXTURE_PATH, encoding="utf-8") as f:
             return json.load(f)
     # Dữ liệu fallback nếu fixture chưa được gắn kết
     return {
@@ -48,6 +53,137 @@ def load_meeting_fixture() -> dict:
         "updated_at": "2026-10-15T08:52:10Z",
         "version": 1,
     }
+
+
+def load_meeting_list_fixture() -> dict:
+    """Đọc dữ liệu fixture danh sách meeting mẫu."""
+    if MEETING_LIST_FIXTURE_PATH.is_file():
+        with open(MEETING_LIST_FIXTURE_PATH, encoding="utf-8") as f:
+            return json.load(f)
+    return {
+        "items": [load_meeting_fixture()],
+        "page": 1,
+        "page_size": 10,
+        "total": 1,
+    }
+
+
+def load_meeting_created_fixture() -> dict:
+    """Đọc dữ liệu fixture kết quả tạo meeting mẫu."""
+    if MEETING_CREATED_FIXTURE_PATH.is_file():
+        with open(MEETING_CREATED_FIXTURE_PATH, encoding="utf-8") as f:
+            return json.load(f)
+    return {
+        "meeting": load_meeting_fixture(),
+        "job": {
+            "id": "c1d2e3f4-a5b6-4c7d-8e9f-0a1b2c3d4e5f",
+            "meeting_id": "8f6c2a1e-b2c3-4d4e-8f9a-0b1c2d3e4f5a",
+            "status": "queued",
+            "stage": "preprocess",
+            "from_stage": None,
+            "progress": 0.0,
+            "stages": {
+                "preprocess": "queued",
+                "vad": "queued",
+                "asr": "queued",
+                "diarize": "queued",
+                "merge": "queued",
+                "summarize": "queued",
+            },
+            "attempt": 1,
+            "max_attempts": 3,
+            "next_run_at": None,
+            "error": None,
+            "created_at": "2026-10-15T08:30:01Z",
+            "started_at": None,
+            "finished_at": None,
+        },
+    }
+
+
+@router.get(
+    "",
+    response_model=MeetingListOut,
+    status_code=status.HTTP_200_OK,
+    summary="Lấy danh sách cuộc họp có phân trang và lọc",
+)
+def list_meetings(
+    page: Annotated[int, Query(ge=1, description="Số thứ tự trang (bắt đầu từ 1)")] = 1,
+    page_size: Annotated[int, Query(ge=1, le=100, description="Số lượng mục trên mỗi trang")] = 10,
+    status_filter: Annotated[
+        MeetingStatus | None, Query(alias="status", description="Lọc theo trạng thái")
+    ] = None,
+    q: Annotated[str | None, Query(description="Tìm kiếm theo tiêu đề cuộc họp")] = None,
+) -> MeetingListOut:
+    """Lấy danh sách cuộc họp có phân trang và lọc theo trạng thái."""
+    data = load_meeting_list_fixture()
+    items = data.get("items", [])
+    if status_filter is not None:
+        items = [item for item in items if item.get("status") == status_filter]
+    return MeetingListOut(
+        items=items,
+        page=page,
+        page_size=page_size,
+        total=len(items) if status_filter is not None else data.get("total", len(items)),
+    )
+
+
+@router.post(
+    "",
+    response_model=MeetingCreateOut,
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        400: {"model": ErrorResponse, "description": "Thiếu header Idempotency-Key"},
+        422: {
+            "model": ErrorResponse,
+            "description": "Chưa xác nhận consent hoặc dữ liệu không hợp lệ",
+        },
+    },
+    summary="Tải lên tệp âm thanh và tạo cuộc họp mới",
+)
+def create_meeting(
+    file: Annotated[UploadFile, File(description="Tệp âm thanh cuộc họp")],
+    title: Annotated[str | None, Form(description="Tiêu đề cuộc họp tùy chọn")] = None,
+    source: Annotated[
+        MeetingSource, Form(description="Nguồn âm thanh: upload hoặc recording")
+    ] = "upload",
+    num_speakers: Annotated[
+        int | None, Form(ge=1, le=10, description="Gợi ý số lượng người nói (1-10)")
+    ] = None,
+    meeting_date: Annotated[
+        str | None, Form(description="Ngày diễn ra cuộc họp YYYY-MM-DD")
+    ] = None,
+    consent_confirmed: Annotated[
+        bool, Form(description="Xác nhận người tham gia đã đồng ý ghi âm")
+    ] = False,
+    idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
+) -> MeetingCreateOut:
+    """Tải lên file âm thanh và khởi tạo cuộc họp kèm job xử lý."""
+    if not idempotency_key or not idempotency_key.strip():
+        raise APIError(
+            code="IDEMPOTENCY_KEY_REQUIRED",
+            message="Header Idempotency-Key là bắt buộc khi tạo cuộc họp.",
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if not consent_confirmed:
+        raise APIError(
+            code="CONSENT_REQUIRED",
+            message="Cần xác nhận đồng ý xử lý dữ liệu trước khi tải lên.",
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        )
+
+    data = load_meeting_created_fixture()
+    if title:
+        data["meeting"]["title"] = title
+    if source:
+        data["meeting"]["source"] = source
+    if num_speakers is not None:
+        data["meeting"]["num_speakers_hint"] = num_speakers
+    if meeting_date:
+        data["meeting"]["meeting_date"] = meeting_date
+
+    return MeetingCreateOut.model_validate(data)
 
 
 @router.get(

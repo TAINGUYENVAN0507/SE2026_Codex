@@ -85,3 +85,23 @@ class MeetingDetailOut(MeetingOut):
     speakers: list[SpeakerOut] = Field(default_factory=list, description="Danh sách người nói")
 
     model_config = ConfigDict(extra="forbid")
+
+
+class MeetingListOut(BaseModel):
+    """Danh sách cuộc họp có phân trang."""
+
+    items: list[MeetingOut] = Field(..., description="Danh sách các cuộc họp")
+    page: int = Field(..., description="Số thứ tự trang hiện tại (bắt đầu từ 1)")
+    page_size: int = Field(..., description="Số lượng mục trên mỗi trang")
+    total: int = Field(..., description="Tổng số cuộc họp thỏa mãn điều kiện lọc")
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class MeetingCreateOut(BaseModel):
+    """Kết quả tạo mới cuộc họp và job xử lý đi kèm."""
+
+    meeting: MeetingOut = Field(..., description="Thông tin cuộc họp vừa tạo")
+    job: JobOut = Field(..., description="Thông tin job xử lý được tạo đồng thời")
+
+    model_config = ConfigDict(extra="forbid")

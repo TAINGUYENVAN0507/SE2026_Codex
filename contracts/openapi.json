@@ -57,6 +57,178 @@
         }
       }
     },
+    "/api/v1/meetings": {
+      "get": {
+        "tags": [
+          "Meetings"
+        ],
+        "summary": "Lấy danh sách cuộc họp có phân trang và lọc",
+        "description": "Lấy danh sách cuộc họp có phân trang và lọc theo trạng thái.",
+        "operationId": "list_meetings_api_v1_meetings_get",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Số thứ tự trang (bắt đầu từ 1)",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "Số thứ tự trang (bắt đầu từ 1)"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Số lượng mục trên mỗi trang",
+              "default": 10,
+              "title": "Page Size"
+            },
+            "description": "Số lượng mục trên mỗi trang"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "queued",
+                    "processing",
+                    "ready",
+                    "partial",
+                    "failed"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Lọc theo trạng thái",
+              "title": "Status"
+            },
+            "description": "Lọc theo trạng thái"
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Tìm kiếm theo tiêu đề cuộc họp",
+              "title": "Q"
+            },
+            "description": "Tìm kiếm theo tiêu đề cuộc họp"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeetingListOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Meetings"
+        ],
+        "summary": "Tải lên tệp âm thanh và tạo cuộc họp mới",
+        "description": "Tải lên file âm thanh và khởi tạo cuộc họp kèm job xử lý.",
+        "operationId": "create_meeting_api_v1_meetings_post",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_create_meeting_api_v1_meetings_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeetingCreateOut"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Thiếu header Idempotency-Key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Chưa xác nhận consent hoặc dữ liệu không hợp lệ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/meetings/{meeting_id}": {
       "get": {
         "tags": [
@@ -222,6 +394,75 @@
   },
   "components": {
     "schemas": {
+      "Body_create_meeting_api_v1_meetings_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "Tệp âm thanh cuộc họp"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title",
+            "description": "Tiêu đề cuộc họp tùy chọn"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "upload",
+              "recording"
+            ],
+            "title": "Source",
+            "description": "Nguồn âm thanh: upload hoặc recording",
+            "default": "upload"
+          },
+          "num_speakers": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Num Speakers",
+            "description": "Gợi ý số lượng người nói (1-10)"
+          },
+          "meeting_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meeting Date",
+            "description": "Ngày diễn ra cuộc họp YYYY-MM-DD"
+          },
+          "consent_confirmed": {
+            "type": "boolean",
+            "title": "Consent Confirmed",
+            "description": "Xác nhận người tham gia đã đồng ý ghi âm",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_create_meeting_api_v1_meetings_post"
+      },
       "ErrorDetail": {
         "properties": {
           "code": {
@@ -589,6 +830,26 @@
         "title": "MeetingAudioOut",
         "description": "Thông tin file audio của cuộc họp."
       },
+      "MeetingCreateOut": {
+        "properties": {
+          "meeting": {
+            "$ref": "#/components/schemas/MeetingOut",
+            "description": "Thông tin cuộc họp vừa tạo"
+          },
+          "job": {
+            "$ref": "#/components/schemas/JobOut",
+            "description": "Thông tin job xử lý được tạo đồng thời"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "meeting",
+          "job"
+        ],
+        "title": "MeetingCreateOut",
+        "description": "Kết quả tạo mới cuộc họp và job xử lý đi kèm."
+      },
       "MeetingDetailOut": {
         "properties": {
           "id": {
@@ -758,6 +1019,194 @@
         ],
         "title": "MeetingDetailOut",
         "description": "Schema chi tiết cuộc họp kèm job gần nhất và danh sách người nói."
+      },
+      "MeetingListOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/MeetingOut"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "Danh sách các cuộc họp"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page",
+            "description": "Số thứ tự trang hiện tại (bắt đầu từ 1)"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size",
+            "description": "Số lượng mục trên mỗi trang"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "Tổng số cuộc họp thỏa mãn điều kiện lọc"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items",
+          "page",
+          "page_size",
+          "total"
+        ],
+        "title": "MeetingListOut",
+        "description": "Danh sách cuộc họp có phân trang."
+      },
+      "MeetingOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "UUID của cuộc họp"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "description": "Tiêu đề cuộc họp"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "upload",
+              "recording"
+            ],
+            "title": "Source",
+            "description": "Nguồn audio (upload hoặc recording)"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "processing",
+              "ready",
+              "partial",
+              "failed"
+            ],
+            "title": "Status",
+            "description": "Trạng thái xử lý tổng thể của cuộc họp"
+          },
+          "language": {
+            "type": "string",
+            "title": "Language",
+            "description": "Ngôn ngữ chính (mặc định 'vi')",
+            "default": "vi"
+          },
+          "meeting_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meeting Date",
+            "description": "Ngày diễn ra cuộc họp định dạng YYYY-MM-DD"
+          },
+          "duration_sec": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Sec",
+            "description": "Thời lượng audio tính bằng giây"
+          },
+          "num_speakers_hint": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Num Speakers Hint",
+            "description": "Số lượng người nói gợi ý từ người dùng"
+          },
+          "audio": {
+            "$ref": "#/components/schemas/MeetingAudioOut",
+            "description": "Thông tin tệp âm thanh"
+          },
+          "artifacts": {
+            "$ref": "#/components/schemas/MeetingArtifactsOut",
+            "description": "Trạng thái các artifacts được sinh ra"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings",
+            "description": "Danh sách các cảnh báo xử lý"
+          },
+          "latest_job_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Job Id",
+            "description": "UUID của job xử lý gần nhất"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Created At",
+            "description": "Thời điểm tạo cuộc họp ISO 8601 UTC"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Updated At",
+            "description": "Thời điểm cập nhật gần nhất ISO 8601 UTC"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version",
+            "description": "Phiên bản phục vụ optimistic locking",
+            "default": 1
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "source",
+          "status",
+          "audio",
+          "artifacts",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "MeetingOut",
+        "description": "Schema thông tin Cuộc họp theo hợp đồng REST API."
       },
       "SpeakerOut": {
         "properties": {
