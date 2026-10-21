@@ -45,7 +45,7 @@ async function unwrap<T>(
   }
 }
 
-export function getMeeting(id: string): Promise<MeetingDetail> {
+export function getMeeting(id: MeetingDetail['id']): Promise<MeetingDetail> {
   return unwrap(
     client.GET('/meetings/{meeting_id}', {
       params: { path: { meeting_id: id } },
@@ -53,7 +53,7 @@ export function getMeeting(id: string): Promise<MeetingDetail> {
   )
 }
 
-export function getJob(id: string): Promise<Job> {
+export function getJob(id: Job['id']): Promise<Job> {
   return unwrap(
     client.GET('/jobs/{job_id}', { params: { path: { job_id: id } } }),
   )
