@@ -7,7 +7,10 @@ from fastapi.testclient import TestClient
 
 from app.main import create_app
 from app.schemas.action_item import ActionItemListOut, ActionItemOut
+from app.schemas.auth import LoginResponse, UserMeOut
 from app.schemas.common import ErrorResponse
+from app.schemas.config import ConfigOut
+from app.schemas.edit import EditListOut
 from app.schemas.job import JobOut
 from app.schemas.meeting import (
     MeetingCreateOut,
@@ -501,3 +504,165 @@ def test_delete_action_item() -> None:
             "/api/v1/meetings/meeting-1/action-items/a1f0a2b3-c4d5-4e6f-8a9b-0c1d2e3f4a5b?version=1"
         )
         assert response.status_code == 204
+
+
+def test_config_fixture_validates() -> None:
+    """Kiểm tra fixture config.json hợp lệ theo ConfigOut."""
+    fixture_file = get_contracts_root() / "fixtures" / "api" / "config.json"
+    assert fixture_file.is_file(), f"Không tìm thấy fixture {fixture_file}"
+
+    with open(fixture_file, encoding="utf-8") as f:
+        data = json.load(f)
+
+    result = ConfigOut.model_validate(data)
+    assert result.max_upload_mb == 200
+    assert result.llm_enabled is True
+    assert "txt" in result.export_formats
+
+
+def test_user_me_fixture_validates() -> None:
+    """Kiểm tra fixture user_me.json hợp lệ theo UserMeOut."""
+    fixture_file = get_contracts_root() / "fixtures" / "api" / "user_me.json"
+    assert fixture_file.is_file(), f"Không tìm thấy fixture {fixture_file}"
+
+    with open(fixture_file, encoding="utf-8") as f:
+        data = json.load(f)
+
+    result = UserMeOut.model_validate(data)
+    assert result.user.email == "user@example.com"
+
+
+def test_edits_fixture_validates() -> None:
+    """Kiểm tra fixture edits.json hợp lệ theo EditListOut."""
+    fixture_file = get_contracts_root() / "fixtures" / "api" / "edits.json"
+    assert fixture_file.is_file(), f"Không tìm thấy fixture {fixture_file}"
+
+    with open(fixture_file, encoding="utf-8") as f:
+        data = json.load(f)
+
+    result = EditListOut.model_validate(data)
+    assert result.total == 1
+    assert len(result.items) == 1
+    assert result.items[0].entity_type == "segment"
+
+
+def test_get_config_endpoint() -> None:
+    """Kiểm tra GET /api/v1/config trả về 200."""
+    app = create_app()
+    with TestClient(app) as client:
+        response = client.get("/api/v1/config")
+        assert response.status_code == 200
+        data = response.json()
+        result = ConfigOut.model_validate(data)
+        assert result.max_upload_mb == 200
+
+
+def test_auth_login_success() -> None:
+    """Kiểm tra POST /api/v1/auth/login thành công trả về 200 và set cookie."""
+    app = create_app()
+    with TestClient(app) as client:
+        response = client.post(
+            "/api/v1/auth/login",
+            json={"email": "user@example.com", "password": "valid-password"},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        result = LoginResponse.model_validate(data)
+        assert result.user.email == "user@example.com"
+        assert "session_token" in response.cookies
+
+
+def test_auth_login_invalid() -> None:
+    """Kiểm tra POST /api/v1/auth/login sai thông tin trả về 401."""
+    app = create_app()
+    with TestClient(app) as client:
+        response = client.post(
+            "/api/v1/auth/login",
+            json={"email": "invalid@example.com", "password": "wrong"},
+        )
+        assert response.status_code == 401
+        assert response.json()["error"]["code"] == "INVALID_CREDENTIALS"
+
+
+def test_auth_logout() -> None:
+    """Kiểm tra POST /api/v1/auth/logout trả về 204."""
+    app = create_app()
+    with TestClient(app) as client:
+        response = client.post("/api/v1/auth/logout")
+        assert response.status_code == 204
+
+
+def test_auth_me() -> None:
+    """Kiểm tra GET /api/v1/auth/me trả về thông tin user."""
+    app = create_app()
+    with TestClient(app) as client:
+        response = client.get("/api/v1/auth/me")
+        assert response.status_code == 200
+        data = response.json()
+        result = UserMeOut.model_validate(data)
+        assert result.user.email == "user@example.com"
+
+
+def test_retry_meeting_job_success() -> None:
+    """Kiểm tra POST /api/v1/meetings/{id}/jobs trả về 202."""
+    app = create_app()
+    with TestClient(app) as client:
+        response = client.post(
+            "/api/v1/meetings/meeting-1/jobs",
+            json={"from_stage": "summarize"},
+        )
+        assert response.status_code == 202
+        data = response.json()
+        job = JobOut.model_validate(data)
+        assert job.from_stage == "summarize"
+
+
+def test_retry_meeting_job_already_active() -> None:
+    """Kiểm tra POST /api/v1/meetings/{id}/jobs khi job đang chạy trả về 409."""
+    app = create_app()
+    with TestClient(app) as client:
+        response = client.post(
+            "/api/v1/meetings/active-meeting-1/jobs",
+            json={"from_stage": None},
+        )
+        assert response.status_code == 409
+        assert response.json()["error"]["code"] == "JOB_ALREADY_ACTIVE"
+
+
+def test_list_meeting_edits() -> None:
+    """Kiểm tra GET /api/v1/meetings/{id}/edits trả về lịch sử sửa."""
+    app = create_app()
+    with TestClient(app) as client:
+        response = client.get("/api/v1/meetings/meeting-1/edits")
+        assert response.status_code == 200
+        data = response.json()
+        edits = EditListOut.model_validate(data)
+        assert edits.total == 1
+
+
+def test_export_meeting_success() -> None:
+    """Kiểm tra GET /api/v1/meetings/{id}/export định dạng txt trả về 200."""
+    app = create_app()
+    with TestClient(app) as client:
+        response = client.get("/api/v1/meetings/meeting-1/export?format=txt&variant=current")
+        assert response.status_code == 200
+        assert "attachment;" in response.headers.get("content-disposition", "")
+        assert "Biên bản cuộc họp".encode() in response.content
+
+
+def test_export_meeting_unsupported_format() -> None:
+    """Kiểm tra GET /api/v1/meetings/{id}/export định dạng không hỗ trợ trả về 422."""
+    app = create_app()
+    with TestClient(app) as client:
+        response = client.get("/api/v1/meetings/meeting-1/export?format=pdf")
+        assert response.status_code == 422
+        assert response.json()["error"]["code"] == "FORMAT_NOT_SUPPORTED"
+
+
+def test_export_meeting_not_ready() -> None:
+    """Kiểm tra GET /api/v1/meetings/{id}/export khi chưa ready trả về 409."""
+    app = create_app()
+    with TestClient(app) as client:
+        response = client.get("/api/v1/meetings/not-ready-meeting/export?format=txt")
+        assert response.status_code == 409
+        assert response.json()["error"]["code"] == "TRANSCRIPT_NOT_READY"

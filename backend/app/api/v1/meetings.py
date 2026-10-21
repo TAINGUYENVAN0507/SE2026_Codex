@@ -15,6 +15,8 @@ from app.schemas.action_item import (
     ActionItemPatch,
 )
 from app.schemas.common import ErrorResponse
+from app.schemas.edit import EditListOut
+from app.schemas.job import JobOut, JobRetryCreate
 from app.schemas.meeting import (
     MeetingCreateOut,
     MeetingDetailOut,
@@ -669,3 +671,151 @@ def delete_meeting_action_item(
             },
         )
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+EDITS_FIXTURE_PATH = FIXTURES_DIR / "edits.json"
+JOB_FIXTURE_PATH = FIXTURES_DIR / "job_retry_scheduled.json"
+
+
+def load_edits_fixture() -> dict:
+    """Đọc dữ liệu fixture lịch sử chỉnh sửa."""
+    if EDITS_FIXTURE_PATH.is_file():
+        with open(EDITS_FIXTURE_PATH, encoding="utf-8") as f:
+            return json.load(f)
+    return {"items": [], "total": 0}
+
+
+def load_job_fixture() -> dict:
+    """Đọc dữ liệu fixture job."""
+    if JOB_FIXTURE_PATH.is_file():
+        with open(JOB_FIXTURE_PATH, encoding="utf-8") as f:
+            return json.load(f)
+    return {
+        "id": "c1d2e3f4-a5b6-4c7d-8e9f-0a1b2c3d4e5f",
+        "meeting_id": "8f6c2a1e-b2c3-4d4e-8f9a-0b1c2d3e4f5a",
+        "status": "queued",
+        "stage": "preprocess",
+        "from_stage": None,
+        "progress": 0.0,
+        "stages": {},
+        "attempt": 1,
+        "max_attempts": 3,
+        "next_run_at": None,
+        "error": None,
+        "created_at": "2026-10-15T08:30:01Z",
+        "started_at": None,
+        "finished_at": None,
+    }
+
+
+@router.post(
+    "/{meeting_id}/jobs",
+    response_model=JobOut,
+    status_code=status.HTTP_202_ACCEPTED,
+    responses={
+        404: {"model": ErrorResponse, "description": "Không tìm thấy cuộc họp"},
+        409: {
+            "model": ErrorResponse,
+            "description": "Job đang chạy hoặc đã thành công hoặc có chỉnh sửa người dùng",
+        },
+    },
+    summary="Chạy lại tiến trình xử lý cho cuộc họp",
+)
+def retry_meeting_job(
+    meeting_id: str = FastApiPath(..., description="UUID của cuộc họp"),
+    payload: JobRetryCreate = ...,
+    idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
+) -> JobOut:
+    """Chạy lại tiến trình xử lý từ một stage nhất định (hoặc chạy lại toàn bộ)."""
+    if "active" in meeting_id.lower():
+        active_job = load_job_fixture()
+        active_job["status"] = "running"
+        raise APIError(
+            code="JOB_ALREADY_ACTIVE",
+            message="Cuộc họp hiện đang có một job đang được xử lý.",
+            status_code=status.HTTP_409_CONFLICT,
+            details={"job": active_job},
+        )
+
+    data = load_job_fixture()
+    data["meeting_id"] = meeting_id
+    data["status"] = "queued"
+    data["from_stage"] = payload.from_stage
+    return JobOut.model_validate(data)
+
+
+@router.get(
+    "/{meeting_id}/edits",
+    response_model=EditListOut,
+    status_code=status.HTTP_200_OK,
+    responses={
+        404: {"model": ErrorResponse, "description": "Không tìm thấy cuộc họp"},
+    },
+    summary="Lấy lịch sử chỉnh sửa audit của cuộc họp",
+)
+def list_meeting_edits(
+    meeting_id: str = FastApiPath(..., description="UUID của cuộc họp"),
+    entity_type: Annotated[str | None, Query(description="Lọc theo loại entity")] = None,
+    entity_id: Annotated[str | None, Query(description="Lọc theo ID entity")] = None,
+    field: Annotated[str | None, Query(description="Lọc theo trường sửa")] = None,
+    page: Annotated[int, Query(ge=1, description="Số trang")] = 1,
+    page_size: Annotated[int, Query(ge=1, le=100, description="Kích thước trang")] = 10,
+) -> EditListOut:
+    """Lấy danh sách các sự kiện chỉnh sửa audit của cuộc họp."""
+    data = load_edits_fixture()
+    return EditListOut.model_validate(data)
+
+
+@router.get(
+    "/{meeting_id}/export",
+    status_code=status.HTTP_200_OK,
+    responses={
+        404: {"model": ErrorResponse, "description": "Không tìm thấy cuộc họp"},
+        409: {
+            "model": ErrorResponse,
+            "description": "Transcript chưa sẵn sàng để xuất",
+        },
+        422: {
+            "model": ErrorResponse,
+            "description": "Định dạng export không được hỗ trợ",
+        },
+    },
+    summary="Xuất nội dung cuộc họp theo định dạng yêu cầu",
+)
+def export_meeting(
+    meeting_id: str = FastApiPath(..., description="UUID của cuộc họp"),
+    format: Annotated[str, Query(description="Định dạng xuất: txt, json, md, docx")] = "txt",
+    variant: Annotated[
+        str, Query(description="Biến thể nội dung: current hoặc ai_original")
+    ] = "current",
+) -> Response:
+    """Xuất biên bản cuộc họp dưới định dạng mong muốn."""
+    fmt = format.lower()
+    if fmt not in ("txt", "json", "md", "docx"):
+        raise APIError(
+            code="FORMAT_NOT_SUPPORTED",
+            message=f"Định dạng xuất '{format}' không được hỗ trợ.",
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        )
+
+    if "not-ready" in meeting_id.lower():
+        raise APIError(
+            code="TRANSCRIPT_NOT_READY",
+            message="Transcript chưa sẵn sàng để xuất dữ liệu.",
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    media_types = {
+        "txt": "text/plain; charset=utf-8",
+        "md": "text/markdown; charset=utf-8",
+        "json": "application/json; charset=utf-8",
+        "docx": ("application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
+    }
+
+    content = f"# Biên bản cuộc họp {meeting_id}\nBiến thể: {variant}\n"
+    filename = f"meeting_{meeting_id}_{variant}.{fmt}"
+    return Response(
+        content=content.encode("utf-8"),
+        media_type=media_types.get(fmt, "application/octet-stream"),
+        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{filename}"},
+    )

@@ -1,0 +1,20 @@
+{
+  "max_upload_mb": 200,
+  "max_duration_sec": 14400,
+  "allowed_extensions": [
+    ".mp3",
+    ".m4a",
+    ".wav",
+    ".aac",
+    ".ogg",
+    ".webm",
+    ".flac"
+  ],
+  "export_formats": [
+    "txt",
+    "json",
+    "md",
+    "docx"
+  ],
+  "llm_enabled": true
+}

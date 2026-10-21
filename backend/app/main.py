@@ -2,6 +2,8 @@
 
 from fastapi import FastAPI
 
+from app.api.v1.auth import router as auth_router
+from app.api.v1.config import router as config_router
 from app.api.v1.health import router as health_router
 from app.api.v1.jobs import router as jobs_router
 from app.api.v1.meetings import router as meetings_router
@@ -30,6 +32,8 @@ def create_app() -> FastAPI:
 
     # Đăng ký routers dưới prefix /api/v1
     application.include_router(health_router, prefix=settings.API_V1_PREFIX)
+    application.include_router(auth_router, prefix=settings.API_V1_PREFIX)
+    application.include_router(config_router, prefix=settings.API_V1_PREFIX)
     application.include_router(meetings_router, prefix=settings.API_V1_PREFIX)
     application.include_router(jobs_router, prefix=settings.API_V1_PREFIX)
 
