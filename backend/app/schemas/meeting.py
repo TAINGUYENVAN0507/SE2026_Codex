@@ -41,10 +41,17 @@ class SpeakerOut(BaseModel):
     """Thông tin người nói trong cuộc họp."""
 
     id: str = Field(..., description="UUID của speaker")
-    meeting_id: str = Field(..., description="UUID của cuộc họp")
+    meeting_id: str | None = Field(default=None, description="UUID của cuộc họp")
     label: str = Field(..., description="Nhãn thô từ diarization, ví dụ SPEAKER_00")
     default_name: str = Field(..., description="Tên mặc định có thứ tự xuất hiện, ví dụ Speaker 1")
     display_name: str = Field(..., description="Tên hiển thị do người dùng đặt hoặc mặc định")
+    is_edited: bool = Field(
+        default=False,
+        description="Cờ đánh dấu speaker đã được người dùng chỉnh sửa",
+    )
+    color_index: int = Field(default=0, description="Chỉ số màu phục vụ hiển thị UI")
+    segment_count: int = Field(default=0, description="Tổng số đoạn nói")
+    speaking_time_sec: float = Field(default=0.0, description="Tổng thời lượng nói tính bằng giây")
     version: int = Field(default=1, description="Phiên bản phục vụ optimistic locking")
 
     model_config = ConfigDict(extra="forbid")

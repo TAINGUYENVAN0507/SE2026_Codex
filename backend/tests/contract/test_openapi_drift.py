@@ -6,12 +6,18 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 from app.main import create_app
+from app.schemas.common import ErrorResponse
 from app.schemas.job import JobOut
 from app.schemas.meeting import (
     MeetingCreateOut,
     MeetingDetailOut,
     MeetingListOut,
     MeetingOut,
+    SpeakerOut,
+)
+from app.schemas.transcript import (
+    TranscriptOut,
+    TranscriptSegmentOut,
 )
 
 
@@ -182,3 +188,131 @@ def test_create_meeting_success() -> None:
         result = MeetingCreateOut.model_validate(data)
         assert result.meeting.title == "Họp thảo luận sprint mới"
         assert result.job.status == "queued"
+
+
+def test_transcript_ready_fixture_validates() -> None:
+    """Kiểm tra transcript_ready.json hợp lệ: 2 speaker và 1 segment có speaker_id: null."""
+    fixture_file = get_contracts_root() / "fixtures" / "api" / "transcript_ready.json"
+    assert fixture_file.is_file(), f"Không tìm thấy fixture {fixture_file}"
+
+    with open(fixture_file, encoding="utf-8") as f:
+        data = json.load(f)
+
+    result = TranscriptOut.model_validate(data)
+    assert result.status == "ready"
+    assert result.diarization_status == "ok"
+    assert len(result.speakers) == 2
+    # Ít nhất 1 segment có speaker_id là None
+    null_speakers = [s for s in result.segments if s.speaker_id is None]
+    assert len(null_speakers) >= 1
+
+
+def test_transcript_pending_fixture_validates() -> None:
+    """Kiểm tra transcript_pending.json hợp lệ: pending thì segments rỗng."""
+    fixture_file = get_contracts_root() / "fixtures" / "api" / "transcript_pending.json"
+    assert fixture_file.is_file(), f"Không tìm thấy fixture {fixture_file}"
+
+    with open(fixture_file, encoding="utf-8") as f:
+        data = json.load(f)
+
+    result = TranscriptOut.model_validate(data)
+    assert result.status == "pending"
+    assert result.segments == []
+
+
+def test_error_version_conflict_fixture_validates() -> None:
+    """Kiểm tra fixture error_version_conflict.json hợp lệ theo ErrorResponse."""
+    fixture_file = get_contracts_root() / "fixtures" / "api" / "error_version_conflict.json"
+    assert fixture_file.is_file(), f"Không tìm thấy fixture {fixture_file}"
+
+    with open(fixture_file, encoding="utf-8") as f:
+        data = json.load(f)
+
+    err = ErrorResponse.model_validate(data)
+    assert err.error.code == "VERSION_CONFLICT"
+    assert "current" in err.error.details
+
+
+def test_get_transcript_endpoint_ready() -> None:
+    """Kiểm tra GET /api/v1/meetings/{id}/transcript trả về dữ liệu transcript."""
+    app = create_app()
+    with TestClient(app) as client:
+        response = client.get("/api/v1/meetings/test-meeting-1/transcript")
+        assert response.status_code == 200
+
+        data = response.json()
+        result = TranscriptOut.model_validate(data)
+        assert result.status == "ready"
+        assert len(result.segments) > 0
+
+
+def test_get_transcript_endpoint_pending() -> None:
+    """Kiểm tra GET /api/v1/meetings/{id}/transcript khi pending trả về segments rỗng."""
+    app = create_app()
+    with TestClient(app) as client:
+        response = client.get("/api/v1/meetings/meeting-pending-123/transcript")
+        assert response.status_code == 200
+
+        data = response.json()
+        result = TranscriptOut.model_validate(data)
+        assert result.status == "pending"
+        assert result.segments == []
+
+
+def test_patch_segment_version_conflict() -> None:
+    """Kiểm tra PATCH /meetings/{id}/segments/{id} lệch version trả về 409 VERSION_CONFLICT."""
+    app = create_app()
+    with TestClient(app) as client:
+        response = client.patch(
+            "/api/v1/meetings/test-meeting-1/segments/5b1e7c2a-b2c3-4d4e-8f9a-0b1c2d3e4f5a",
+            json={"text": "Văn bản mới", "version": 1},
+        )
+        assert response.status_code == 409
+        data = response.json()
+        assert data["error"]["code"] == "VERSION_CONFLICT"
+        assert data["error"]["details"]["current"]["version"] == 3
+
+
+def test_patch_segment_success() -> None:
+    """Kiểm tra PATCH /meetings/{id}/segments/{id} đúng version trả về 200."""
+    app = create_app()
+    with TestClient(app) as client:
+        response = client.patch(
+            "/api/v1/meetings/test-meeting-1/segments/5b1e7c2a-b2c3-4d4e-8f9a-0b1c2d3e4f5a",
+            json={"text": "Nội dung cập nhật thành công", "version": 2},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        seg = TranscriptSegmentOut.model_validate(data)
+        assert seg.text == "Nội dung cập nhật thành công"
+        assert seg.version == 3
+        assert seg.is_edited is True
+
+
+def test_patch_speaker_version_conflict() -> None:
+    """Kiểm tra PATCH /meetings/{id}/speakers/{id} lệch version trả về 409."""
+    app = create_app()
+    with TestClient(app) as client:
+        response = client.patch(
+            "/api/v1/meetings/test-meeting-1/speakers/speaker-1",
+            json={"display_name": "Tên mới", "version": 99},
+        )
+        assert response.status_code == 409
+        data = response.json()
+        assert data["error"]["code"] == "VERSION_CONFLICT"
+
+
+def test_patch_speaker_success() -> None:
+    """Kiểm tra PATCH /meetings/{id}/speakers/{id} đúng version trả về 200."""
+    app = create_app()
+    with TestClient(app) as client:
+        response = client.patch(
+            "/api/v1/meetings/test-meeting-1/speakers/2c7a9d10-a1b2-4c3d-8e4f-5a6b7c8d9e0f",
+            json={"display_name": "Chị Lan (Lead PM)", "version": 2},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        spk = SpeakerOut.model_validate(data)
+        assert spk.display_name == "Chị Lan (Lead PM)"
+        assert spk.version == 3
+        assert spk.is_edited is True

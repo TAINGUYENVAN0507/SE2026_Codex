@@ -15,6 +15,13 @@ from app.schemas.meeting import (
     MeetingListOut,
     MeetingSource,
     MeetingStatus,
+    SpeakerOut,
+)
+from app.schemas.transcript import (
+    SegmentPatch,
+    SpeakerPatch,
+    TranscriptOut,
+    TranscriptSegmentOut,
 )
 
 router = APIRouter(prefix="/meetings", tags=["Meetings"])
@@ -205,3 +212,177 @@ def get_meeting(
     data["latest_job"] = None
     data["speakers"] = []
     return MeetingDetailOut.model_validate(data)
+
+
+TRANSCRIPT_READY_FIXTURE_PATH = FIXTURES_DIR / "transcript_ready.json"
+TRANSCRIPT_PENDING_FIXTURE_PATH = FIXTURES_DIR / "transcript_pending.json"
+
+
+def load_transcript_ready_fixture() -> dict:
+    """Đọc dữ liệu fixture transcript ở trạng thái sẵn sàng."""
+    if TRANSCRIPT_READY_FIXTURE_PATH.is_file():
+        with open(TRANSCRIPT_READY_FIXTURE_PATH, encoding="utf-8") as f:
+            return json.load(f)
+    return {
+        "status": "ready",
+        "diarization_status": "ok",
+        "speakers": [],
+        "segments": [],
+    }
+
+
+def load_transcript_pending_fixture() -> dict:
+    """Đọc dữ liệu fixture transcript ở trạng thái đang xử lý."""
+    if TRANSCRIPT_PENDING_FIXTURE_PATH.is_file():
+        with open(TRANSCRIPT_PENDING_FIXTURE_PATH, encoding="utf-8") as f:
+            return json.load(f)
+    return {
+        "status": "pending",
+        "diarization_status": "pending",
+        "speakers": [],
+        "segments": [],
+    }
+
+
+@router.get(
+    "/{meeting_id}/transcript",
+    response_model=TranscriptOut,
+    status_code=status.HTTP_200_OK,
+    responses={
+        404: {"model": ErrorResponse, "description": "Không tìm thấy cuộc họp"},
+    },
+    summary="Lấy transcript của cuộc họp",
+)
+def get_meeting_transcript(
+    meeting_id: str = FastApiPath(..., description="UUID của cuộc họp"),
+) -> TranscriptOut:
+    """Trả về dữ liệu transcript của cuộc họp (trạng thái pending trả về segments rỗng)."""
+    if "pending" in meeting_id.lower():
+        data = load_transcript_pending_fixture()
+    else:
+        data = load_transcript_ready_fixture()
+    return TranscriptOut.model_validate(data)
+
+
+@router.patch(
+    "/{meeting_id}/segments/{segment_id}",
+    response_model=TranscriptSegmentOut,
+    status_code=status.HTTP_200_OK,
+    responses={
+        404: {"model": ErrorResponse, "description": "Không tìm thấy đoạn thoại"},
+        409: {
+            "model": ErrorResponse,
+            "description": "Xung đột phiên bản version do đã có chỉnh sửa khác",
+        },
+    },
+    summary="Chỉnh sửa nội dung hoặc gán người nói cho đoạn transcript",
+)
+def patch_meeting_segment(
+    meeting_id: str = FastApiPath(..., description="UUID của cuộc họp"),
+    segment_id: str = FastApiPath(..., description="UUID của đoạn thoại cần sửa"),
+    payload: SegmentPatch = ...,
+) -> TranscriptSegmentOut:
+    """Chỉnh sửa đoạn transcript với optimistic locking qua trường version."""
+    # Kiểm tra version conflict: version kỳ vọng của fixture mẫu là 2
+    if payload.version != 2:
+        raise APIError(
+            code="VERSION_CONFLICT",
+            message="Đoạn transcript đã được cập nhật ở nơi khác. Vui lòng tải lại.",
+            status_code=status.HTTP_409_CONFLICT,
+            details={
+                "entity": "segment",
+                "current": {"id": segment_id, "version": 3},
+            },
+        )
+
+    # Đọc fixture mẫu để tạo kết quả
+    data = load_transcript_ready_fixture()
+    matched = None
+    for seg in data.get("segments", []):
+        if seg.get("id") == segment_id:
+            matched = seg
+            break
+
+    if not matched:
+        matched = {
+            "id": segment_id,
+            "index": 0,
+            "start_sec": 0.84,
+            "end_sec": 6.2,
+            "speaker_id": payload.speaker_id,
+            "ai_speaker_id": "2c7a9d10-a1b2-4c3d-8e4f-5a6b7c8d9e0f",
+            "text": payload.text or "Nội dung mặc định",
+            "ai_text": "Nội dung gốc do AI",
+            "is_edited": True,
+            "confidence": 0.81,
+            "flags": [],
+            "version": payload.version + 1,
+            "updated_at": "2026-10-15T09:15:00Z",
+        }
+    else:
+        if payload.text is not None:
+            matched["text"] = payload.text
+        if payload.speaker_id is not None:
+            matched["speaker_id"] = payload.speaker_id
+        matched["is_edited"] = True
+        matched["version"] = payload.version + 1
+
+    return TranscriptSegmentOut.model_validate(matched)
+
+
+@router.patch(
+    "/{meeting_id}/speakers/{speaker_id}",
+    response_model=SpeakerOut,
+    status_code=status.HTTP_200_OK,
+    responses={
+        404: {"model": ErrorResponse, "description": "Không tìm thấy người nói"},
+        409: {
+            "model": ErrorResponse,
+            "description": "Xung đột phiên bản version của người nói",
+        },
+    },
+    summary="Đổi tên hiển thị của người nói",
+)
+def patch_meeting_speaker(
+    meeting_id: str = FastApiPath(..., description="UUID của cuộc họp"),
+    speaker_id: str = FastApiPath(..., description="UUID của người nói cần sửa"),
+    payload: SpeakerPatch = ...,
+) -> SpeakerOut:
+    """Cập nhật tên hiển thị người nói với kiểm tra optimistic concurrency control."""
+    if payload.version not in (1, 2):
+        raise APIError(
+            code="VERSION_CONFLICT",
+            message="Người nói đã được cập nhật ở nơi khác. Vui lòng tải lại.",
+            status_code=status.HTTP_409_CONFLICT,
+            details={
+                "entity": "speaker",
+                "current": {"id": speaker_id, "version": 2},
+            },
+        )
+
+    data = load_transcript_ready_fixture()
+    matched = None
+    for spk in data.get("speakers", []):
+        if spk.get("id") == speaker_id:
+            matched = spk
+            break
+
+    if not matched:
+        matched = {
+            "id": speaker_id,
+            "meeting_id": meeting_id,
+            "label": "SPEAKER_00",
+            "default_name": "Speaker 1",
+            "display_name": payload.display_name,
+            "is_edited": True,
+            "color_index": 0,
+            "segment_count": 1,
+            "speaking_time_sec": 6.42,
+            "version": payload.version + 1,
+        }
+    else:
+        matched["display_name"] = payload.display_name
+        matched["is_edited"] = True
+        matched["version"] = payload.version + 1
+
+    return SpeakerOut.model_validate(matched)

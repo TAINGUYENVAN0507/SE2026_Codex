@@ -284,6 +284,233 @@
         }
       }
     },
+    "/api/v1/meetings/{meeting_id}/transcript": {
+      "get": {
+        "tags": [
+          "Meetings"
+        ],
+        "summary": "Lấy transcript của cuộc họp",
+        "description": "Trả về dữ liệu transcript của cuộc họp (trạng thái pending trả về segments rỗng).",
+        "operationId": "get_meeting_transcript_api_v1_meetings__meeting_id__transcript_get",
+        "parameters": [
+          {
+            "name": "meeting_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "UUID của cuộc họp",
+              "title": "Meeting Id"
+            },
+            "description": "UUID của cuộc họp"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TranscriptOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Không tìm thấy cuộc họp",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/meetings/{meeting_id}/segments/{segment_id}": {
+      "patch": {
+        "tags": [
+          "Meetings"
+        ],
+        "summary": "Chỉnh sửa nội dung hoặc gán người nói cho đoạn transcript",
+        "description": "Chỉnh sửa đoạn transcript với optimistic locking qua trường version.",
+        "operationId": "patch_meeting_segment_api_v1_meetings__meeting_id__segments__segment_id__patch",
+        "parameters": [
+          {
+            "name": "meeting_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "UUID của cuộc họp",
+              "title": "Meeting Id"
+            },
+            "description": "UUID của cuộc họp"
+          },
+          {
+            "name": "segment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "UUID của đoạn thoại cần sửa",
+              "title": "Segment Id"
+            },
+            "description": "UUID của đoạn thoại cần sửa"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SegmentPatch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TranscriptSegmentOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Không tìm thấy đoạn thoại",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Xung đột phiên bản version do đã có chỉnh sửa khác",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/meetings/{meeting_id}/speakers/{speaker_id}": {
+      "patch": {
+        "tags": [
+          "Meetings"
+        ],
+        "summary": "Đổi tên hiển thị của người nói",
+        "description": "Cập nhật tên hiển thị người nói với kiểm tra optimistic concurrency control.",
+        "operationId": "patch_meeting_speaker_api_v1_meetings__meeting_id__speakers__speaker_id__patch",
+        "parameters": [
+          {
+            "name": "meeting_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "UUID của cuộc họp",
+              "title": "Meeting Id"
+            },
+            "description": "UUID của cuộc họp"
+          },
+          {
+            "name": "speaker_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "UUID của người nói cần sửa",
+              "title": "Speaker Id"
+            },
+            "description": "UUID của người nói cần sửa"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SpeakerPatch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpeakerOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Không tìm thấy người nói",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Xung đột phiên bản version của người nói",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/jobs/{job_id}": {
       "get": {
         "tags": [
@@ -1208,6 +1435,49 @@
         "title": "MeetingOut",
         "description": "Schema thông tin Cuộc họp theo hợp đồng REST API."
       },
+      "SegmentPatch": {
+        "properties": {
+          "text": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 5000,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text",
+            "description": "Nội dung đoạn thoại mới sửa (1-5000 ký tự)"
+          },
+          "speaker_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Speaker Id",
+            "description": "UUID của người nói mới được gán"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Version",
+            "description": "Phiên bản hiện tại của segment ở client"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "version"
+        ],
+        "title": "SegmentPatch",
+        "description": "Schema cập nhật nội dung hoặc người nói của đoạn transcript."
+      },
       "SpeakerOut": {
         "properties": {
           "id": {
@@ -1216,7 +1486,14 @@
             "description": "UUID của speaker"
           },
           "meeting_id": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Meeting Id",
             "description": "UUID của cuộc họp"
           },
@@ -1235,6 +1512,30 @@
             "title": "Display Name",
             "description": "Tên hiển thị do người dùng đặt hoặc mặc định"
           },
+          "is_edited": {
+            "type": "boolean",
+            "title": "Is Edited",
+            "description": "Cờ đánh dấu speaker đã được người dùng chỉnh sửa",
+            "default": false
+          },
+          "color_index": {
+            "type": "integer",
+            "title": "Color Index",
+            "description": "Chỉ số màu phục vụ hiển thị UI",
+            "default": 0
+          },
+          "segment_count": {
+            "type": "integer",
+            "title": "Segment Count",
+            "description": "Tổng số đoạn nói",
+            "default": 0
+          },
+          "speaking_time_sec": {
+            "type": "number",
+            "title": "Speaking Time Sec",
+            "description": "Tổng thời lượng nói tính bằng giây",
+            "default": 0.0
+          },
           "version": {
             "type": "integer",
             "title": "Version",
@@ -1246,13 +1547,191 @@
         "type": "object",
         "required": [
           "id",
-          "meeting_id",
           "label",
           "default_name",
           "display_name"
         ],
         "title": "SpeakerOut",
         "description": "Thông tin người nói trong cuộc họp."
+      },
+      "SpeakerPatch": {
+        "properties": {
+          "display_name": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 1,
+            "title": "Display Name",
+            "description": "Tên hiển thị mới của người nói (1-50 ký tự)"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Version",
+            "description": "Phiên bản hiện tại của speaker ở client"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "display_name",
+          "version"
+        ],
+        "title": "SpeakerPatch",
+        "description": "Schema cập nhật tên hiển thị của người nói."
+      },
+      "TranscriptOut": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Trạng thái transcript (pending/ready/failed)"
+          },
+          "diarization_status": {
+            "type": "string",
+            "title": "Diarization Status",
+            "description": "Trạng thái phân tách người nói (ok/fallback/pending)"
+          },
+          "speakers": {
+            "items": {
+              "$ref": "#/components/schemas/SpeakerOut"
+            },
+            "type": "array",
+            "title": "Speakers",
+            "description": "Danh sách người nói trong cuộc họp"
+          },
+          "segments": {
+            "items": {
+              "$ref": "#/components/schemas/TranscriptSegmentOut"
+            },
+            "type": "array",
+            "title": "Segments",
+            "description": "Danh sách các đoạn thoại"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status",
+          "diarization_status"
+        ],
+        "title": "TranscriptOut",
+        "description": "Hợp đồng dữ liệu transcript của cuộc họp."
+      },
+      "TranscriptSegmentOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "UUID của segment"
+          },
+          "index": {
+            "type": "integer",
+            "title": "Index",
+            "description": "Số thứ tự của segment trong transcript (0-indexed)"
+          },
+          "start_sec": {
+            "type": "number",
+            "title": "Start Sec",
+            "description": "Thời điểm bắt đầu tính bằng giây"
+          },
+          "end_sec": {
+            "type": "number",
+            "title": "End Sec",
+            "description": "Thời điểm kết thúc tính bằng giây"
+          },
+          "speaker_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Speaker Id",
+            "description": "UUID của speaker tương ứng, null nếu chưa xác định"
+          },
+          "ai_speaker_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ai Speaker Id",
+            "description": "UUID của speaker do AI gán gốc (bất biến)"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text",
+            "description": "Nội dung lời thoại hiện tại"
+          },
+          "ai_text": {
+            "type": "string",
+            "title": "Ai Text",
+            "description": "Nội dung lời thoại gốc do AI nhận dạng"
+          },
+          "is_edited": {
+            "type": "boolean",
+            "title": "Is Edited",
+            "description": "Cờ đánh dấu đoạn thoại đã được người dùng sửa",
+            "default": false
+          },
+          "confidence": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence",
+            "description": "Độ tin cậy của mô hình nhận dạng từ 0.0 đến 1.0"
+          },
+          "flags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Flags",
+            "description": "Danh sách cờ cảnh báo (overlap, low_confidence)"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version",
+            "description": "Phiên bản phục vụ optimistic locking",
+            "default": 1
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Updated At",
+            "description": "Thời điểm cập nhật gần nhất ISO 8601 UTC"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "index",
+          "start_sec",
+          "end_sec",
+          "text",
+          "ai_text",
+          "updated_at"
+        ],
+        "title": "TranscriptSegmentOut",
+        "description": "Thông tin đoạn thoại trong transcript."
       },
       "ValidationError": {
         "properties": {
