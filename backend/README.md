@@ -32,8 +32,32 @@ Hoặc chạy kết hợp trong một dòng:
 uv run ruff check . && uv run ruff format --check . && uv run pytest
 ```
 
-## 4. Chạy ứng dụng nội bộ (development)
+## 4. Cơ sở dữ liệu PostgreSQL 16 (Development & CI)
+
+Dự án sử dụng PostgreSQL 16. Để khởi chạy cơ sở dữ liệu cho môi trường phát triển:
+
+1. Sao chép cấu hình mẫu từ `.env.example`:
+   ```bash
+   cp ../.env.example ../.env
+   ```
+2. Khởi chạy container PostgreSQL qua Docker Compose ở thư mục gốc:
+   ```bash
+   docker compose up -d db
+   ```
+3. Kiểm tra trạng thái healthcheck của container:
+   ```bash
+   docker compose ps
+   ```
+4. Dừng cơ sở dữ liệu khi không sử dụng:
+   ```bash
+   docker compose down
+   ```
+
+Trên CI GitHub Actions (`.github/workflows/backend.yml`), PostgreSQL 16 được tích hợp tự động dưới dạng container service.
+
+## 5. Chạy ứng dụng nội bộ (development)
 
 ```bash
 uv run uvicorn app.main:app --reload --port 8000
 ```
+
