@@ -45,6 +45,7 @@ from meeting_pipeline.schemas import (
     Word,
 )
 from meeting_pipeline.stages.base import StageContext
+from meeting_pipeline.timing import span_within
 
 MAX_TEXT_CHARS = 5000  # giới hạn `text` của TranscriptSegment
 TEXT_TRUNCATED = "SEGMENT_TEXT_TRUNCATED"
@@ -213,18 +214,6 @@ class _Piece:
         return round(sum(c * weight for c, weight in self.scores) / total, 3)
 
 
-def _span(start: float, end: float, duration: float) -> tuple[float, float]:
-    """Clamp vào `[0, duration]`, làm tròn ms và bảo đảm `start < end`."""
-    start = round(min(max(start, 0.0), duration), 3)
-    end = round(min(max(end, start), duration), 3)
-    if end <= start:
-        if round(start + 0.001, 3) <= duration:
-            end = round(start + 0.001, 3)
-        else:
-            start, end = round(duration - 0.001, 3), duration
-    return start, end
-
-
 def _clean_words(words: Sequence[Word], duration: float) -> list[Word]:
     cleaned = []
     for w in words:
@@ -262,7 +251,7 @@ def _pieces(seg: AsrSegment, index: TurnIndex, one_speaker: bool, duration: floa
     """Tách một segment ASR thành các đoạn, mỗi đoạn một speaker."""
 
     def piece(start: float, end: float, label: str | None, text: str, words: list[Word]):
-        start, end = _span(start, end, duration)
+        start, end = span_within(start, end, duration)
         conf = _confidence(words, seg)
         scores = [] if conf is None else [(conf, max(end - start, 0.001))]
         return _Piece(start, end, label, text, words, scores)
@@ -272,7 +261,7 @@ def _pieces(seg: AsrSegment, index: TurnIndex, one_speaker: bool, duration: floa
     if not words:
         if not text:
             return []
-        start, end = _span(seg.start_sec, seg.end_sec, duration)
+        start, end = span_within(seg.start_sec, seg.end_sec, duration)
         label = _ONE_SPEAKER if one_speaker else index.speaker_for(start, end)
         return [piece(start, end, label, text, [])]
 
