@@ -7,6 +7,9 @@ import { DownloadSimpleIcon } from '@phosphor-icons/react/dist/csr/DownloadSimpl
 import { PencilSimpleIcon } from '@phosphor-icons/react/dist/csr/PencilSimple'
 import { UsersIcon } from '@phosphor-icons/react/dist/csr/Users'
 import { Link, useParams } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
+import { ApiError } from '../api/errors'
+import { getMeeting } from '../api/client'
 import { AudioPlayer, type PlayerHandle } from '../features/audio/AudioPlayer'
 import { validateAudio } from '../features/audio/validation'
 import { useMeetings } from '../features/meetings/DemoStore'
@@ -18,9 +21,81 @@ import {
 import { Transcript } from '../features/meetings/Transcript'
 import { NotesPanel } from '../features/meetings/NotesPanel'
 import { useActiveSegment } from '../features/meetings/useActiveSegment'
+import { useTranscriptQuery } from '../features/meetings/useTranscriptQuery'
+import { apiMeetingToView } from '../features/meetings/apiModel'
+import { DEMO_ID } from '../features/meetings/model'
 
 export function MeetingDetailPage() {
   const { meetingId } = useParams()
+  if (
+    meetingId !== DEMO_ID &&
+    !/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(meetingId || '')
+  )
+    return (
+      <main className="missing-meeting">
+        <h1>Không tìm thấy cuộc họp</h1>
+        <p>Mã cuộc họp không hợp lệ.</p>
+        <Link to="/meetings">Về danh sách cuộc họp</Link>
+      </main>
+    )
+  if (meetingId && meetingId !== DEMO_ID)
+    return <RemoteMeetingDetail meetingId={meetingId} />
+  return <DemoMeetingDetail meetingId={meetingId} />
+}
+
+function RemoteMeetingDetail({ meetingId }: { meetingId: string }) {
+  const meetingQuery = useQuery({
+    queryKey: ['meeting', meetingId],
+    queryFn: () => getMeeting(meetingId),
+  })
+  const transcriptQuery = useTranscriptQuery(meetingId)
+  if (meetingQuery.isPending || transcriptQuery.isPending)
+    return (
+      <main className="missing-meeting" role="status">
+        Đang tải cuộc họp và transcript…
+      </main>
+    )
+  if (meetingQuery.isError || transcriptQuery.isError) {
+    const error = meetingQuery.error || transcriptQuery.error
+    return (
+      <main className="missing-meeting" role="alert">
+        <h1>Không tải được cuộc họp</h1>
+        <p>
+          {error instanceof ApiError ? error.message : 'Hãy thử tải lại trang.'}
+        </p>
+        <Link to="/meetings">Về danh sách cuộc họp</Link>
+      </main>
+    )
+  }
+  return (
+    <RemoteMeetingContent
+      key={`${meetingId}-${transcriptQuery.data.status}`}
+      meeting={apiMeetingToView(meetingQuery.data, transcriptQuery.data)}
+      pending={transcriptQuery.data.status === 'pending'}
+    />
+  )
+}
+
+function RemoteMeetingContent({
+  meeting: initial,
+  pending,
+}: {
+  meeting: Meeting
+  pending: boolean
+}) {
+  const [meeting, setMeeting] = useState(initial)
+  const { files } = useMeetings()
+  return (
+    <Detail
+      meeting={meeting}
+      file={files[meeting.id]}
+      pending={pending}
+      onUpdate={(transform) => setMeeting((current) => transform(current))}
+    />
+  )
+}
+
+function DemoMeetingDetail({ meetingId }: { meetingId?: string }) {
   const { meetings, files, update } = useMeetings()
   const meeting = meetings.find((m) => m.id === meetingId)
   if (!meeting)
@@ -47,10 +122,12 @@ function Detail({
   meeting,
   file,
   onUpdate,
+  pending = false,
 }: {
   meeting: Meeting
   file?: File
   onUpdate: (f: (m: Meeting) => Meeting) => void
+  pending?: boolean
 }) {
   const [localFile, setLocalFile] = useState<File | undefined>(file)
   const [position, setPosition] = useState(file ? 0 : 255)
@@ -93,13 +170,6 @@ function Detail({
   const seek = (seconds: number) => {
     player.current?.seek(seconds)
     setMobile('transcript')
-    const seg = meeting.segments.find((s) => s.start === seconds)
-    if (seg)
-      requestAnimationFrame(() =>
-        document
-          .getElementById(`segment-${seg.id}`)
-          ?.scrollIntoView({ block: 'center', behavior: 'smooth' }),
-      )
   }
   function download(format: 'txt' | 'md' | 'json') {
     const url = URL.createObjectURL(
@@ -297,6 +367,7 @@ function Detail({
       <div className="meeting-workspace" data-mobile={mobile}>
         <Transcript
           meeting={meeting}
+          pending={pending}
           position={position}
           onSeek={seek}
           onUpdate={onUpdate}
