@@ -47,6 +47,110 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/v1/auth/login': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Đăng nhập người dùng
+     * @description Đăng nhập tài khoản cục bộ và trả về session cookie.
+     */
+    post: operations['login_api_v1_auth_login_post']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/auth/logout': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Đăng xuất người dùng
+     * @description Đăng xuất tài khoản và xóa session cookie.
+     */
+    post: operations['logout_api_v1_auth_logout_post']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/auth/me': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Lấy thông tin người dùng hiện tại
+     * @description Trả về thông tin người dùng hiện tại từ session.
+     */
+    get: operations['get_me_api_v1_auth_me_get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/config': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Lấy cấu hình hệ thống
+     * @description Trả về cấu hình hệ thống cho frontend (giới hạn upload, thời lượng, formats).
+     */
+    get: operations['get_config_api_v1_config_get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/meetings': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Lấy danh sách cuộc họp có phân trang và lọc
+     * @description Lấy danh sách cuộc họp có phân trang và lọc theo trạng thái.
+     */
+    get: operations['list_meetings_api_v1_meetings_get']
+    put?: never
+    /**
+     * Tải lên tệp âm thanh và tạo cuộc họp mới
+     * @description Tải lên file âm thanh và khởi tạo cuộc họp kèm job xử lý.
+     */
+    post: operations['create_meeting_api_v1_meetings_post']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/v1/meetings/{meeting_id}': {
     parameters: {
       query?: never
@@ -59,6 +163,198 @@ export interface paths {
      * @description Trả về chi tiết cuộc họp (stub contract v0 phục vụ phát triển frontend).
      */
     get: operations['get_meeting_api_v1_meetings__meeting_id__get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/meetings/{meeting_id}/transcript': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Lấy transcript của cuộc họp
+     * @description Trả về dữ liệu transcript của cuộc họp (trạng thái pending trả về segments rỗng).
+     */
+    get: operations['get_meeting_transcript_api_v1_meetings__meeting_id__transcript_get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/meetings/{meeting_id}/segments/{segment_id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    /**
+     * Chỉnh sửa nội dung hoặc gán người nói cho đoạn transcript
+     * @description Chỉnh sửa đoạn transcript với optimistic locking qua trường version.
+     */
+    patch: operations['patch_meeting_segment_api_v1_meetings__meeting_id__segments__segment_id__patch']
+    trace?: never
+  }
+  '/api/v1/meetings/{meeting_id}/speakers/{speaker_id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    /**
+     * Đổi tên hiển thị của người nói
+     * @description Cập nhật tên hiển thị người nói với kiểm tra optimistic concurrency control.
+     */
+    patch: operations['patch_meeting_speaker_api_v1_meetings__meeting_id__speakers__speaker_id__patch']
+    trace?: never
+  }
+  '/api/v1/meetings/{meeting_id}/summary': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Lấy tóm tắt cuộc họp
+     * @description Lấy thông tin tóm tắt cuộc họp (stub contract v0).
+     */
+    get: operations['get_meeting_summary_api_v1_meetings__meeting_id__summary_get']
+    /**
+     * Chỉnh sửa nội dung tóm tắt cuộc họp
+     * @description Cập nhật tóm tắt cuộc họp với optimistic locking.
+     */
+    put: operations['update_meeting_summary_api_v1_meetings__meeting_id__summary_put']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/meetings/{meeting_id}/action-items': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Lấy danh sách các action items của cuộc họp
+     * @description Lấy danh sách các action item (công việc cần làm) của cuộc họp.
+     */
+    get: operations['list_meeting_action_items_api_v1_meetings__meeting_id__action_items_get']
+    put?: never
+    /**
+     * Tạo action item mới do người dùng thêm thủ công
+     * @description Tạo mới một action item với nguồn gốc source='user'.
+     */
+    post: operations['create_meeting_action_item_api_v1_meetings__meeting_id__action_items_post']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/meetings/{meeting_id}/action-items/{item_id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /**
+     * Xóa action item (xóa mềm có audit)
+     * @description Xóa action item (xóa mềm) có kiểm tra version nếu được cung cấp.
+     */
+    delete: operations['delete_meeting_action_item_api_v1_meetings__meeting_id__action_items__item_id__delete']
+    options?: never
+    head?: never
+    /**
+     * Chỉnh sửa action item
+     * @description Chỉnh sửa thông tin action item có kiểm tra optimistic locking.
+     */
+    patch: operations['patch_meeting_action_item_api_v1_meetings__meeting_id__action_items__item_id__patch']
+    trace?: never
+  }
+  '/api/v1/meetings/{meeting_id}/jobs': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Chạy lại tiến trình xử lý cho cuộc họp
+     * @description Chạy lại tiến trình xử lý từ một stage nhất định (hoặc chạy lại toàn bộ).
+     */
+    post: operations['retry_meeting_job_api_v1_meetings__meeting_id__jobs_post']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/meetings/{meeting_id}/edits': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Lấy lịch sử chỉnh sửa audit của cuộc họp
+     * @description Lấy danh sách các sự kiện chỉnh sửa audit của cuộc họp.
+     */
+    get: operations['list_meeting_edits_api_v1_meetings__meeting_id__edits_get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/meetings/{meeting_id}/export': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Xuất nội dung cuộc họp theo định dạng yêu cầu
+     * @description Xuất biên bản cuộc họp dưới định dạng mong muốn.
+     */
+    get: operations['export_meeting_api_v1_meetings__meeting_id__export_get']
     put?: never
     post?: never
     delete?: never
@@ -134,6 +430,362 @@ export interface paths {
 export type webhooks = Record<string, never>
 export interface components {
   schemas: {
+    /**
+     * ActionItemAiOriginal
+     * @description Thông tin trích xuất gốc do AI sinh (bất biến).
+     */
+    ActionItemAiOriginal: {
+      /**
+       * Description
+       * @description Mô tả công việc gốc
+       */
+      description: string
+      /**
+       * Assignee Name
+       * @description Tên người nhận việc gốc
+       */
+      assignee_name?: string | null
+      /**
+       * Due Date
+       * @description Hạn chót YYYY-MM-DD gốc
+       */
+      due_date?: string | null
+      /**
+       * Due Date Text
+       * @description Cụm từ hạn chót gốc
+       */
+      due_date_text?: string | null
+    }
+    /**
+     * ActionItemCreate
+     * @description Schema tạo mới Action Item từ người dùng.
+     */
+    ActionItemCreate: {
+      /**
+       * Description
+       * @description Mô tả công việc cần làm (1-1000 ký tự)
+       */
+      description: string
+      /**
+       * Assignee Name
+       * @description Tên người được giao việc
+       */
+      assignee_name?: string | null
+      /**
+       * Assignee Speaker Id
+       * @description UUID speaker tương ứng
+       */
+      assignee_speaker_id?: string | null
+      /**
+       * Due Date
+       * @description Hạn hoàn thành định dạng YYYY-MM-DD
+       */
+      due_date?: string | null
+      /**
+       * Status
+       * @description Trạng thái khởi tạo (mặc định 'open')
+       * @default open
+       */
+      status: string
+    }
+    /**
+     * ActionItemListOut
+     * @description Danh sách các Action Items của cuộc họp.
+     */
+    ActionItemListOut: {
+      /**
+       * Items
+       * @description Danh sách các công việc cần làm
+       */
+      items?: components['schemas']['ActionItemOut'][]
+    }
+    /**
+     * ActionItemOut
+     * @description Hợp đồng dữ liệu của một Action Item.
+     */
+    ActionItemOut: {
+      /**
+       * Id
+       * @description UUID của action item
+       */
+      id: string
+      /**
+       * Meeting Id
+       * @description UUID của cuộc họp tương ứng
+       */
+      meeting_id: string
+      /**
+       * Description
+       * @description Mô tả công việc cần làm
+       */
+      description: string
+      /**
+       * Assignee Name
+       * @description Tên người được giao việc
+       */
+      assignee_name?: string | null
+      /**
+       * Assignee Speaker Id
+       * @description UUID người nói tương ứng với người nhận việc
+       */
+      assignee_speaker_id?: string | null
+      /**
+       * Due Date
+       * @description Hạn chót hoàn thành định dạng YYYY-MM-DD
+       */
+      due_date?: string | null
+      /**
+       * Due Date Text
+       * @description Cụm từ chỉ thời hạn trong hội thoại
+       */
+      due_date_text?: string | null
+      /**
+       * Status
+       * @description Trạng thái công việc (open/done/cancelled)
+       * @default open
+       */
+      status: string
+      /**
+       * Source
+       * @description Nguồn gốc action item (ai hoặc user)
+       * @default ai
+       * @enum {string}
+       */
+      source: 'ai' | 'user'
+      /**
+       * Is Edited
+       * @description Cờ đánh dấu công việc đã được người dùng sửa
+       * @default false
+       */
+      is_edited: boolean
+      /**
+       * Needs Review
+       * @description Cờ đánh dấu cần người dùng rà soát lại
+       * @default false
+       */
+      needs_review: boolean
+      /**
+       * Evidence Segment Ids
+       * @description Danh sách UUID các segment làm căn cứ trích xuất
+       */
+      evidence_segment_ids?: string[]
+      /** @description Bản dữ liệu trích xuất ban đầu của AI */
+      ai_original?: components['schemas']['ActionItemAiOriginal'] | null
+      /**
+       * Version
+       * @description Phiên bản phục vụ optimistic locking
+       * @default 1
+       */
+      version: number
+      /**
+       * Created At
+       * @description Thời điểm tạo action item ISO 8601 UTC
+       */
+      created_at: string
+      /**
+       * Updated At
+       * @description Thời điểm cập nhật gần nhất ISO 8601 UTC
+       */
+      updated_at: string
+    }
+    /**
+     * ActionItemPatch
+     * @description Schema cập nhật thông tin Action Item.
+     */
+    ActionItemPatch: {
+      /**
+       * Description
+       * @description Mô tả công việc cần làm
+       */
+      description?: string | null
+      /**
+       * Assignee Name
+       * @description Tên người được giao việc
+       */
+      assignee_name?: string | null
+      /**
+       * Assignee Speaker Id
+       * @description UUID speaker tương ứng
+       */
+      assignee_speaker_id?: string | null
+      /**
+       * Due Date
+       * @description Hạn hoàn thành định dạng YYYY-MM-DD
+       */
+      due_date?: string | null
+      /**
+       * Status
+       * @description Trạng thái công việc mới
+       */
+      status?: string | null
+      /**
+       * Version
+       * @description Phiên bản hiện tại của item ở client
+       */
+      version: number
+    }
+    /** Body_create_meeting_api_v1_meetings_post */
+    Body_create_meeting_api_v1_meetings_post: {
+      /**
+       * File
+       * @description Tệp âm thanh cuộc họp
+       */
+      file: string
+      /**
+       * Title
+       * @description Tiêu đề cuộc họp tùy chọn
+       */
+      title?: string | null
+      /**
+       * Source
+       * @description Nguồn âm thanh: upload hoặc recording
+       * @default upload
+       * @enum {string}
+       */
+      source: 'upload' | 'recording'
+      /**
+       * Num Speakers
+       * @description Gợi ý số lượng người nói (1-10)
+       */
+      num_speakers?: number | null
+      /**
+       * Meeting Date
+       * @description Ngày diễn ra cuộc họp YYYY-MM-DD
+       */
+      meeting_date?: string | null
+      /**
+       * Consent Confirmed
+       * @description Xác nhận người tham gia đã đồng ý ghi âm
+       * @default false
+       */
+      consent_confirmed: boolean
+    }
+    /**
+     * ConfigOut
+     * @description Hợp đồng cấu hình hệ thống trả về cho frontend.
+     */
+    ConfigOut: {
+      /**
+       * Max Upload Mb
+       * @description Dung lượng upload tối đa tính bằng MB
+       */
+      max_upload_mb: number
+      /**
+       * Max Duration Sec
+       * @description Thời lượng audio tối đa tính bằng giây
+       */
+      max_duration_sec: number
+      /**
+       * Allowed Extensions
+       * @description Danh sách đuôi file được hỗ trợ
+       */
+      allowed_extensions: string[]
+      /**
+       * Export Formats
+       * @description Danh sách các định dạng export hỗ trợ
+       */
+      export_formats: string[]
+      /**
+       * Llm Enabled
+       * @description Cờ xác định tính năng LLM (tóm tắt) có bật không
+       */
+      llm_enabled: boolean
+    }
+    /**
+     * EditActorOut
+     * @description Người thực hiện hành động chỉnh sửa.
+     */
+    EditActorOut: {
+      /**
+       * Id
+       * @description UUID của actor
+       */
+      id: string
+      /**
+       * Display Name
+       * @description Tên hiển thị của actor
+       */
+      display_name: string
+    }
+    /**
+     * EditEventOut
+     * @description Thông tin một sự kiện chỉnh sửa audit event.
+     */
+    EditEventOut: {
+      /**
+       * Id
+       * @description UUID của audit event
+       */
+      id: string
+      /**
+       * Meeting Id
+       * @description UUID của cuộc họp
+       */
+      meeting_id: string
+      /**
+       * Entity Type
+       * @description Loại entity được sửa (segment/speaker/summary/action_item)
+       */
+      entity_type: string
+      /**
+       * Entity Id
+       * @description UUID của entity được sửa
+       */
+      entity_id: string
+      /**
+       * Action
+       * @description Hành động (update/create/delete)
+       */
+      action: string
+      /**
+       * Field
+       * @description Tên trường dữ liệu bị thay đổi
+       */
+      field?: string | null
+      /**
+       * Before
+       * @description Giá trị trước khi sửa
+       */
+      before?: unknown
+      /**
+       * After
+       * @description Giá trị sau khi sửa
+       */
+      after?: unknown
+      /** @description Người thực hiện chỉnh sửa */
+      actor: components['schemas']['EditActorOut']
+      /**
+       * Entity Version After
+       * @description Phiên bản entity sau khi sửa
+       */
+      entity_version_after: number
+      /**
+       * Request Id
+       * @description Mã định danh request
+       */
+      request_id?: string | null
+      /**
+       * Created At
+       * @description Thời điểm ghi nhận sự kiện ISO 8601 UTC
+       */
+      created_at: string
+    }
+    /**
+     * EditListOut
+     * @description Danh sách các sự kiện chỉnh sửa.
+     */
+    EditListOut: {
+      /**
+       * Items
+       * @description Danh sách lịch sử chỉnh sửa
+       */
+      items?: components['schemas']['EditEventOut'][]
+      /**
+       * Total
+       * @description Tổng số sự kiện
+       */
+      total: number
+    }
     /**
      * ErrorDetail
      * @description Thông tin chi tiết của lỗi trong error envelope.
@@ -286,6 +938,43 @@ export interface components {
       finished_at?: string | null
     }
     /**
+     * JobRetryCreate
+     * @description Yêu cầu chạy lại tiến trình xử lý cuộc họp từ một stage.
+     */
+    JobRetryCreate: {
+      /**
+       * From Stage
+       * @description Stage bắt đầu chạy lại (asr, diarize, summarize) hoặc null
+       */
+      from_stage?:
+        | ('preprocess' | 'vad' | 'asr' | 'diarize' | 'merge' | 'summarize')
+        | null
+    }
+    /**
+     * LoginRequest
+     * @description Thông tin đăng nhập.
+     */
+    LoginRequest: {
+      /**
+       * Email
+       * @description Email đăng nhập
+       */
+      email: string
+      /**
+       * Password
+       * @description Mật khẩu
+       */
+      password: string
+    }
+    /**
+     * LoginResponse
+     * @description Kết quả đăng nhập thành công.
+     */
+    LoginResponse: {
+      /** @description Thông tin người dùng đã đăng nhập */
+      user: components['schemas']['UserOut']
+    }
+    /**
      * MeetingArtifactsOut
      * @description Trạng thái các artifact AI của cuộc họp.
      */
@@ -331,6 +1020,16 @@ export interface components {
        * @description Thời điểm hết hạn lưu trữ audio theo retention policy
        */
       retention_until?: string | null
+    }
+    /**
+     * MeetingCreateOut
+     * @description Kết quả tạo mới cuộc họp và job xử lý đi kèm.
+     */
+    MeetingCreateOut: {
+      /** @description Thông tin cuộc họp vừa tạo */
+      meeting: components['schemas']['MeetingOut']
+      /** @description Thông tin job xử lý được tạo đồng thời */
+      job: components['schemas']['JobOut']
     }
     /**
      * MeetingDetailOut
@@ -419,6 +1118,132 @@ export interface components {
       speakers?: components['schemas']['SpeakerOut'][]
     }
     /**
+     * MeetingListOut
+     * @description Danh sách cuộc họp có phân trang.
+     */
+    MeetingListOut: {
+      /**
+       * Items
+       * @description Danh sách các cuộc họp
+       */
+      items: components['schemas']['MeetingOut'][]
+      /**
+       * Page
+       * @description Số thứ tự trang hiện tại (bắt đầu từ 1)
+       */
+      page: number
+      /**
+       * Page Size
+       * @description Số lượng mục trên mỗi trang
+       */
+      page_size: number
+      /**
+       * Total
+       * @description Tổng số cuộc họp thỏa mãn điều kiện lọc
+       */
+      total: number
+    }
+    /**
+     * MeetingOut
+     * @description Schema thông tin Cuộc họp theo hợp đồng REST API.
+     */
+    MeetingOut: {
+      /**
+       * Id
+       * @description UUID của cuộc họp
+       */
+      id: string
+      /**
+       * Title
+       * @description Tiêu đề cuộc họp
+       */
+      title: string
+      /**
+       * Source
+       * @description Nguồn audio (upload hoặc recording)
+       * @enum {string}
+       */
+      source: 'upload' | 'recording'
+      /**
+       * Status
+       * @description Trạng thái xử lý tổng thể của cuộc họp
+       * @enum {string}
+       */
+      status: 'queued' | 'processing' | 'ready' | 'partial' | 'failed'
+      /**
+       * Language
+       * @description Ngôn ngữ chính (mặc định 'vi')
+       * @default vi
+       */
+      language: string
+      /**
+       * Meeting Date
+       * @description Ngày diễn ra cuộc họp định dạng YYYY-MM-DD
+       */
+      meeting_date?: string | null
+      /**
+       * Duration Sec
+       * @description Thời lượng audio tính bằng giây
+       */
+      duration_sec?: number | null
+      /**
+       * Num Speakers Hint
+       * @description Số lượng người nói gợi ý từ người dùng
+       */
+      num_speakers_hint?: number | null
+      /** @description Thông tin tệp âm thanh */
+      audio: components['schemas']['MeetingAudioOut']
+      /** @description Trạng thái các artifacts được sinh ra */
+      artifacts: components['schemas']['MeetingArtifactsOut']
+      /**
+       * Warnings
+       * @description Danh sách các cảnh báo xử lý
+       */
+      warnings?: string[]
+      /**
+       * Latest Job Id
+       * @description UUID của job xử lý gần nhất
+       */
+      latest_job_id?: string | null
+      /**
+       * Created At
+       * @description Thời điểm tạo cuộc họp ISO 8601 UTC
+       */
+      created_at: string
+      /**
+       * Updated At
+       * @description Thời điểm cập nhật gần nhất ISO 8601 UTC
+       */
+      updated_at: string
+      /**
+       * Version
+       * @description Phiên bản phục vụ optimistic locking
+       * @default 1
+       */
+      version: number
+    }
+    /**
+     * SegmentPatch
+     * @description Schema cập nhật nội dung hoặc người nói của đoạn transcript.
+     */
+    SegmentPatch: {
+      /**
+       * Text
+       * @description Nội dung đoạn thoại mới sửa (1-5000 ký tự)
+       */
+      text?: string | null
+      /**
+       * Speaker Id
+       * @description UUID của người nói mới được gán
+       */
+      speaker_id?: string | null
+      /**
+       * Version
+       * @description Phiên bản hiện tại của segment ở client
+       */
+      version: number
+    }
+    /**
      * SpeakerOut
      * @description Thông tin người nói trong cuộc họp.
      */
@@ -432,7 +1257,7 @@ export interface components {
        * Meeting Id
        * @description UUID của cuộc họp
        */
-      meeting_id: string
+      meeting_id?: string | null
       /**
        * Label
        * @description Nhãn thô từ diarization, ví dụ SPEAKER_00
@@ -449,11 +1274,276 @@ export interface components {
        */
       display_name: string
       /**
+       * Is Edited
+       * @description Cờ đánh dấu speaker đã được người dùng chỉnh sửa
+       * @default false
+       */
+      is_edited: boolean
+      /**
+       * Color Index
+       * @description Chỉ số màu phục vụ hiển thị UI
+       * @default 0
+       */
+      color_index: number
+      /**
+       * Segment Count
+       * @description Tổng số đoạn nói
+       * @default 0
+       */
+      segment_count: number
+      /**
+       * Speaking Time Sec
+       * @description Tổng thời lượng nói tính bằng giây
+       * @default 0
+       */
+      speaking_time_sec: number
+      /**
        * Version
        * @description Phiên bản phục vụ optimistic locking
        * @default 1
        */
       version: number
+    }
+    /**
+     * SpeakerPatch
+     * @description Schema cập nhật tên hiển thị của người nói.
+     */
+    SpeakerPatch: {
+      /**
+       * Display Name
+       * @description Tên hiển thị mới của người nói (1-50 ký tự)
+       */
+      display_name: string
+      /**
+       * Version
+       * @description Phiên bản hiện tại của speaker ở client
+       */
+      version: number
+    }
+    /**
+     * SummaryContentOut
+     * @description Nội dung chi tiết tóm tắt cuộc họp.
+     */
+    SummaryContentOut: {
+      /**
+       * Overview
+       * @description Tổng quan cuộc họp (tối đa 5000 ký tự)
+       */
+      overview: string
+      /**
+       * Key Points
+       * @description Danh sách điểm chính trao đổi
+       */
+      key_points?: components['schemas']['SummaryPointOut'][]
+      /**
+       * Decisions
+       * @description Danh sách các quyết định đã chốt
+       */
+      decisions?: components['schemas']['SummaryPointOut'][]
+    }
+    /**
+     * SummaryOut
+     * @description Hợp đồng dữ liệu tóm tắt cuộc họp.
+     */
+    SummaryOut: {
+      /**
+       * Meeting Id
+       * @description UUID của cuộc họp
+       */
+      meeting_id: string
+      /**
+       * Status
+       * @description Trạng thái tóm tắt (pending/ready/failed/insufficient_content/disabled)
+       */
+      status: string
+      /** @description Nội dung tóm tắt hiện tại */
+      content?: components['schemas']['SummaryContentOut'] | null
+      /** @description Nội dung tóm tắt gốc do AI tạo ra (bất biến) */
+      ai_content?: components['schemas']['SummaryContentOut'] | null
+      /**
+       * Is Edited
+       * @description Cờ đánh dấu tóm tắt đã được người dùng chỉnh sửa
+       * @default false
+       */
+      is_edited: boolean
+      /**
+       * Model
+       * @description Tên model AI sinh tóm tắt
+       */
+      model?: string | null
+      /**
+       * Prompt Version
+       * @description Phiên bản prompt được dùng
+       */
+      prompt_version?: string | null
+      /**
+       * Generated At
+       * @description Thời điểm sinh tóm tắt ISO 8601 UTC
+       */
+      generated_at?: string | null
+      /**
+       * Version
+       * @description Phiên bản phục vụ optimistic locking
+       * @default 1
+       */
+      version: number
+    }
+    /**
+     * SummaryPointOut
+     * @description Điểm chính hoặc quyết định trong tóm tắt cuộc họp kèm ID các đoạn bằng chứng.
+     */
+    SummaryPointOut: {
+      /**
+       * Text
+       * @description Nội dung điểm chính hoặc quyết định
+       */
+      text: string
+      /**
+       * Evidence Segment Ids
+       * @description Danh sách UUID các segment làm bằng chứng trích xuất
+       */
+      evidence_segment_ids?: string[]
+    }
+    /**
+     * SummaryUpdate
+     * @description Schema cập nhật nội dung tóm tắt cuộc họp.
+     */
+    SummaryUpdate: {
+      /** @description Nội dung tóm tắt mới */
+      content: components['schemas']['SummaryContentOut']
+      /**
+       * Version
+       * @description Phiên bản hiện tại của summary ở client
+       */
+      version: number
+    }
+    /**
+     * TranscriptOut
+     * @description Hợp đồng dữ liệu transcript của cuộc họp.
+     */
+    TranscriptOut: {
+      /**
+       * Status
+       * @description Trạng thái transcript (pending/ready/failed)
+       */
+      status: string
+      /**
+       * Diarization Status
+       * @description Trạng thái phân tách người nói (ok/fallback/pending)
+       */
+      diarization_status: string
+      /**
+       * Speakers
+       * @description Danh sách người nói trong cuộc họp
+       */
+      speakers?: components['schemas']['SpeakerOut'][]
+      /**
+       * Segments
+       * @description Danh sách các đoạn thoại
+       */
+      segments?: components['schemas']['TranscriptSegmentOut'][]
+    }
+    /**
+     * TranscriptSegmentOut
+     * @description Thông tin đoạn thoại trong transcript.
+     */
+    TranscriptSegmentOut: {
+      /**
+       * Id
+       * @description UUID của segment
+       */
+      id: string
+      /**
+       * Index
+       * @description Số thứ tự của segment trong transcript (0-indexed)
+       */
+      index: number
+      /**
+       * Start Sec
+       * @description Thời điểm bắt đầu tính bằng giây
+       */
+      start_sec: number
+      /**
+       * End Sec
+       * @description Thời điểm kết thúc tính bằng giây
+       */
+      end_sec: number
+      /**
+       * Speaker Id
+       * @description UUID của speaker tương ứng, null nếu chưa xác định
+       */
+      speaker_id?: string | null
+      /**
+       * Ai Speaker Id
+       * @description UUID của speaker do AI gán gốc (bất biến)
+       */
+      ai_speaker_id?: string | null
+      /**
+       * Text
+       * @description Nội dung lời thoại hiện tại
+       */
+      text: string
+      /**
+       * Ai Text
+       * @description Nội dung lời thoại gốc do AI nhận dạng
+       */
+      ai_text: string
+      /**
+       * Is Edited
+       * @description Cờ đánh dấu đoạn thoại đã được người dùng sửa
+       * @default false
+       */
+      is_edited: boolean
+      /**
+       * Confidence
+       * @description Độ tin cậy của mô hình nhận dạng từ 0.0 đến 1.0
+       */
+      confidence?: number | null
+      /**
+       * Flags
+       * @description Danh sách cờ cảnh báo (overlap, low_confidence)
+       */
+      flags?: string[]
+      /**
+       * Version
+       * @description Phiên bản phục vụ optimistic locking
+       * @default 1
+       */
+      version: number
+      /**
+       * Updated At
+       * @description Thời điểm cập nhật gần nhất ISO 8601 UTC
+       */
+      updated_at: string
+    }
+    /**
+     * UserMeOut
+     * @description Hợp đồng thông tin người dùng hiện tại (GET /auth/me).
+     */
+    UserMeOut: {
+      /** @description Thông tin người dùng */
+      user: components['schemas']['UserOut']
+    }
+    /**
+     * UserOut
+     * @description Thông tin người dùng cơ bản.
+     */
+    UserOut: {
+      /**
+       * Id
+       * @description UUID của người dùng
+       */
+      id: string
+      /**
+       * Email
+       * @description Email người dùng
+       */
+      email: string
+      /**
+       * Display Name
+       * @description Tên hiển thị của người dùng
+       */
+      display_name: string
     }
     /** ValidationError */
     ValidationError: {
@@ -521,6 +1611,198 @@ export interface operations {
       }
     }
   }
+  login_api_v1_auth_login_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['LoginRequest']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['LoginResponse']
+        }
+      }
+      /** @description Email hoặc mật khẩu không chính xác */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  logout_api_v1_auth_logout_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  get_me_api_v1_auth_me_get: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['UserMeOut']
+        }
+      }
+      /** @description Chưa đăng nhập hoặc session đã hết hạn */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+    }
+  }
+  get_config_api_v1_config_get: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ConfigOut']
+        }
+      }
+    }
+  }
+  list_meetings_api_v1_meetings_get: {
+    parameters: {
+      query?: {
+        /** @description Số thứ tự trang (bắt đầu từ 1) */
+        page?: number
+        /** @description Số lượng mục trên mỗi trang */
+        page_size?: number
+        /** @description Lọc theo trạng thái */
+        status?:
+          ('queued' | 'processing' | 'ready' | 'partial' | 'failed') | null
+        /** @description Tìm kiếm theo tiêu đề cuộc họp */
+        q?: string | null
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['MeetingListOut']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  create_meeting_api_v1_meetings_post: {
+    parameters: {
+      query?: never
+      header?: {
+        'Idempotency-Key'?: string | null
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'multipart/form-data': components['schemas']['Body_create_meeting_api_v1_meetings_post']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['MeetingCreateOut']
+        }
+      }
+      /** @description Thiếu header Idempotency-Key */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description Chưa xác nhận consent hoặc dữ liệu không hợp lệ */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+    }
+  }
   get_meeting_api_v1_meetings__meeting_id__get: {
     parameters: {
       query?: never
@@ -558,6 +1840,612 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  get_meeting_transcript_api_v1_meetings__meeting_id__transcript_get: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description UUID của cuộc họp */
+        meeting_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['TranscriptOut']
+        }
+      }
+      /** @description Không tìm thấy cuộc họp */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  patch_meeting_segment_api_v1_meetings__meeting_id__segments__segment_id__patch: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description UUID của cuộc họp */
+        meeting_id: string
+        /** @description UUID của đoạn thoại cần sửa */
+        segment_id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SegmentPatch']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['TranscriptSegmentOut']
+        }
+      }
+      /** @description Không tìm thấy đoạn thoại */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description Xung đột phiên bản version do đã có chỉnh sửa khác */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  patch_meeting_speaker_api_v1_meetings__meeting_id__speakers__speaker_id__patch: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description UUID của cuộc họp */
+        meeting_id: string
+        /** @description UUID của người nói cần sửa */
+        speaker_id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SpeakerPatch']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SpeakerOut']
+        }
+      }
+      /** @description Không tìm thấy người nói */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description Xung đột phiên bản version của người nói */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  get_meeting_summary_api_v1_meetings__meeting_id__summary_get: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description UUID của cuộc họp */
+        meeting_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SummaryOut']
+        }
+      }
+      /** @description Không tìm thấy tóm tắt cuộc họp */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  update_meeting_summary_api_v1_meetings__meeting_id__summary_put: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description UUID của cuộc họp */
+        meeting_id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SummaryUpdate']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SummaryOut']
+        }
+      }
+      /** @description Không tìm thấy tóm tắt cuộc họp */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description Xung đột phiên bản version của tóm tắt */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  list_meeting_action_items_api_v1_meetings__meeting_id__action_items_get: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description UUID của cuộc họp */
+        meeting_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ActionItemListOut']
+        }
+      }
+      /** @description Không tìm thấy cuộc họp */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  create_meeting_action_item_api_v1_meetings__meeting_id__action_items_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description UUID của cuộc họp */
+        meeting_id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ActionItemCreate']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ActionItemOut']
+        }
+      }
+      /** @description Không tìm thấy cuộc họp */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description Dữ liệu không hợp lệ */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+    }
+  }
+  delete_meeting_action_item_api_v1_meetings__meeting_id__action_items__item_id__delete: {
+    parameters: {
+      query?: {
+        /** @description Phiên bản của action item */
+        version?: number | null
+      }
+      header?: never
+      path: {
+        /** @description UUID của cuộc họp */
+        meeting_id: string
+        /** @description UUID của action item */
+        item_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Không tìm thấy action item */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description Xung đột phiên bản version khi xóa */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  patch_meeting_action_item_api_v1_meetings__meeting_id__action_items__item_id__patch: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description UUID của cuộc họp */
+        meeting_id: string
+        /** @description UUID của action item */
+        item_id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ActionItemPatch']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ActionItemOut']
+        }
+      }
+      /** @description Không tìm thấy action item */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description Xung đột phiên bản version của action item */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  retry_meeting_job_api_v1_meetings__meeting_id__jobs_post: {
+    parameters: {
+      query?: never
+      header?: {
+        'Idempotency-Key'?: string | null
+      }
+      path: {
+        /** @description UUID của cuộc họp */
+        meeting_id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['JobRetryCreate']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      202: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['JobOut']
+        }
+      }
+      /** @description Không tìm thấy cuộc họp */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description Job đang chạy hoặc đã thành công hoặc có chỉnh sửa người dùng */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  list_meeting_edits_api_v1_meetings__meeting_id__edits_get: {
+    parameters: {
+      query?: {
+        /** @description Lọc theo loại entity */
+        entity_type?: string | null
+        /** @description Lọc theo ID entity */
+        entity_id?: string | null
+        /** @description Lọc theo trường sửa */
+        field?: string | null
+        /** @description Số trang */
+        page?: number
+        /** @description Kích thước trang */
+        page_size?: number
+      }
+      header?: never
+      path: {
+        /** @description UUID của cuộc họp */
+        meeting_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['EditListOut']
+        }
+      }
+      /** @description Không tìm thấy cuộc họp */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  export_meeting_api_v1_meetings__meeting_id__export_get: {
+    parameters: {
+      query?: {
+        /** @description Định dạng xuất: txt, json, md, docx */
+        format?: string
+        /** @description Biến thể nội dung: current hoặc ai_original */
+        variant?: string
+      }
+      header?: never
+      path: {
+        /** @description UUID của cuộc họp */
+        meeting_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+      /** @description Không tìm thấy cuộc họp */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description Transcript chưa sẵn sàng để xuất */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description Định dạng export không được hỗ trợ */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
         }
       }
     }
