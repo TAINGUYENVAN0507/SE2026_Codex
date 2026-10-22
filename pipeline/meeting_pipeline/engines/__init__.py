@@ -1,6 +1,12 @@
 """Adapter cho model AI. Stage gọi `asr_engine()`, `vad_engine()`; test thay hai hàm này."""
 
-from meeting_pipeline.engines.base import AsrEngine, VadEngine, WavAudio, read_wav
+from meeting_pipeline.engines.base import (
+    AsrEngine,
+    DiarizeEngine,
+    VadEngine,
+    WavAudio,
+    read_wav,
+)
 
 
 def asr_engine() -> AsrEngine:
@@ -15,4 +21,19 @@ def vad_engine() -> VadEngine:
     return SileroVad()
 
 
-__all__ = ["AsrEngine", "VadEngine", "WavAudio", "asr_engine", "read_wav", "vad_engine"]
+def diarize_engine() -> DiarizeEngine:
+    from meeting_pipeline.engines.pyannote import PyannoteConfig, PyannoteDiarizer
+
+    return PyannoteDiarizer(PyannoteConfig.from_env())
+
+
+__all__ = [
+    "AsrEngine",
+    "DiarizeEngine",
+    "VadEngine",
+    "WavAudio",
+    "asr_engine",
+    "diarize_engine",
+    "read_wav",
+    "vad_engine",
+]

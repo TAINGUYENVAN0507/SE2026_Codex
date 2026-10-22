@@ -23,6 +23,22 @@ class FakeAsr:
 
 
 @dataclass
+class FakeDiarizer:
+    turn_list: list[tuple[float, float, str]] = field(default_factory=list)
+    error: Exception | None = None
+    name: str = "fake-diarizer"
+    calls: list[int | None] = field(default_factory=list)
+
+    def turns(
+        self, audio: WavAudio, num_speakers: int | None = None
+    ) -> list[tuple[float, float, str]]:
+        self.calls.append(num_speakers)
+        if self.error is not None:
+            raise self.error
+        return list(self.turn_list)
+
+
+@dataclass
 class FakeVad:
     regions: list[tuple[float, float]] = field(default_factory=list)
     error: Exception | None = None

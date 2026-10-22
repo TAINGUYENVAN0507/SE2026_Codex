@@ -34,6 +34,14 @@ uv run python wer/run_wer.py --hyp hyp.jsonl --tag whisper-small-int8 --asr-meta
 
 `hyp.jsonl` có mỗi dòng `{"id": "<id trong manifest>", "text": "..."}`. Kết quả (`per_sample.csv`, `summary.json`, `env.json`, `report.md`) nằm ở `wer/results/<ngày>_<tag>/`. Định nghĩa metric và quy tắc báo cáo ở `wer/README.md`.
 
+## Chấm DER cho diarization
+
+```bash
+uv run python diarization/run_der.py --hyp-dir <thư mục chứa <id>.rttm> --tag pyannote-community-1
+```
+
+Reference là các dòng manifest có purpose `der` và `rttm_path` (dữ liệu họp nội bộ nằm trong `datasets/private/`, không commit). Kết quả ở `diarization/results/<ngày>_<tag>/`, cùng quy tắc với WER: tách theo `kind`, thiếu hypothesis là lỗi, không chứa text.
+
 ## Cấu trúc
 
 | Thư mục | Nội dung | Task |
@@ -43,6 +51,7 @@ uv run python wer/run_wer.py --hyp hyp.jsonl --tag whisper-small-int8 --asr-meta
 | `wer/` | Chấm WER, CER, WER không dấu cho một lần chạy ASR, sinh report | AI-11 |
 | `spikes/asr/` | Spike chọn cấu hình ASR: chạy faster-whisper trên manifest, đo RTF và VRAM | AI-01 |
 | `spikes/diarization/` | Spike diarization (chưa có) | AI-02 |
-| `noisy_audio/`, `diarization/`, `performance/`, `summary_rubric/` | Các bộ đánh giá còn lại | AI-12 đến AI-14 |
+| `diarization/` | Chấm DER (pyannote.metrics, collar 0.25 s, có và không tính nói chồng) so với RTTM tham chiếu: `run_der.py` | AI-13 |
+| `noisy_audio/`, `performance/`, `summary_rubric/` | Các bộ đánh giá còn lại | AI-12 đến AI-14 |
 
 Thư mục nào chưa có nghĩa là task đó chưa bắt đầu.

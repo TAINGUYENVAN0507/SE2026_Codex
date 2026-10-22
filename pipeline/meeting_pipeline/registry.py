@@ -35,12 +35,13 @@ def _not_implemented(ctx: StageContext):
 
 def _real_stages() -> dict[Stage, StageFn]:
     # Import trong hàm để các stage nặng (model) chỉ được nạp khi thật sự dùng.
-    from meeting_pipeline.stages import asr, merge, preprocess, vad
+    from meeting_pipeline.stages import asr, diarize, merge, preprocess, vad
 
     return {
         Stage.PREPROCESS: preprocess.run,
         Stage.VAD: vad.run,
         Stage.ASR: asr.run,
+        Stage.DIARIZE: diarize.run,
         Stage.MERGE: merge.run,
     }
 
