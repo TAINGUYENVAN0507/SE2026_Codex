@@ -105,3 +105,34 @@ class Meeting(Base):
         back_populates="meeting",
         cascade="all, delete-orphan",
     )
+    speakers: Mapped[list["Speaker"]] = relationship(  # noqa: F821
+        "Speaker",
+        back_populates="meeting",
+        cascade="all, delete-orphan",
+    )
+    segments: Mapped[list["Segment"]] = relationship(  # noqa: F821
+        "Segment",
+        back_populates="meeting",
+        cascade="all, delete-orphan",
+    )
+    ai_outputs: Mapped[list["AIOutput"]] = relationship(  # noqa: F821
+        "AIOutput",
+        back_populates="meeting",
+        cascade="all, delete-orphan",
+    )
+    summary: Mapped["Summary | None"] = relationship(  # noqa: F821
+        "Summary",
+        back_populates="meeting",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+    action_items: Mapped[list["ActionItem"]] = relationship(  # noqa: F821
+        "ActionItem",
+        back_populates="meeting",
+        cascade="all, delete-orphan",
+    )
+    edit_events: Mapped[list["EditEvent"]] = relationship(  # noqa: F821
+        "EditEvent",
+        back_populates="meeting",
+        cascade="all, delete-orphan",
+    )

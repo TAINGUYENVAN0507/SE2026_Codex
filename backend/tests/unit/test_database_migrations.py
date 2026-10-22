@@ -55,18 +55,38 @@ def test_alembic_upgrade_and_downgrade() -> None:
         engine = create_engine(db_url)
         inspector = inspect(engine)
         tables = inspector.get_table_names()
-        assert "users" in tables
-        assert "meetings" in tables
-        assert "jobs" in tables
+        for t in [
+            "users",
+            "meetings",
+            "jobs",
+            "speakers",
+            "segments",
+            "ai_outputs",
+            "summaries",
+            "action_items",
+            "edit_events",
+            "idempotency_keys",
+        ]:
+            assert t in tables
 
         # Downgrade về base
         command.downgrade(cfg, "base")
 
         inspector = inspect(engine)
         tables_after = inspector.get_table_names()
-        assert "users" not in tables_after
-        assert "meetings" not in tables_after
-        assert "jobs" not in tables_after
+        for t in [
+            "users",
+            "meetings",
+            "jobs",
+            "speakers",
+            "segments",
+            "ai_outputs",
+            "summaries",
+            "action_items",
+            "edit_events",
+            "idempotency_keys",
+        ]:
+            assert t not in tables_after
     finally:
         with contextlib.suppress(Exception):
             engine.dispose()
