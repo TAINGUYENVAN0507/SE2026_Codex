@@ -43,6 +43,7 @@ Các giá trị trạng thái:
 ## Quy tắc thay đổi contract
 
 1. **Không sửa tay file được sinh ra** (`contracts/pipeline/*`, `contracts/openapi.json`). Sửa nguồn (Pydantic, FastAPI), sinh lại rồi commit cả hai.
+   PR đổi `contracts/openapi.json` phải sinh lại luôn type của frontend (`cd frontend && npm ci && npm run gen:api`) và commit `frontend/src/api/schema.d.ts` cùng PR. Nếu không, bước kiểm drift của `frontend.yml` trên `main` sẽ đỏ.
 2. **Additive** (thêm field nullable hoặc có default, thêm endpoint): tăng minor, ví dụ `1.0` → `1.1`. Consumer cũ vẫn chạy.
 3. **Breaking** (đổi tên, xóa field, đổi kiểu, đổi nghĩa, thêm giá trị vào enum): tăng major. Consumer phải đồng ý trước. Producer cập nhật fixture, và phần code của consumer cũng được cập nhật trong cùng PR hoặc trong PR của consumer được merge cùng lúc.
 4. **PR chạm `contracts/`:** tick ô "Đổi contract" trong PR template, tag consumer vào PR. Consumer xác nhận bằng comment trong PR, sau đó nhóm trưởng mới merge.
