@@ -14,12 +14,16 @@ export type ApiErrorCode =
 export type ApiErrorDetails = Record<string, unknown> | null
 
 const messages: Record<string, string> = {
+  BAD_REQUEST: 'Yêu cầu không hợp lệ. Hãy kiểm tra thông tin rồi thử lại.',
+  IDEMPOTENCY_KEY_REQUIRED: 'Thiếu khóa chống gửi trùng. Hãy thử lại.',
+  CONFLICT: 'Yêu cầu xung đột với dữ liệu hiện tại. Hãy thử lại.',
   FILE_TOO_LARGE: 'File audio vượt quá dung lượng cho phép.',
   UNSUPPORTED_MEDIA_TYPE: 'Định dạng file audio chưa được hỗ trợ.',
   AUDIO_INVALID: 'File audio không hợp lệ hoặc không thể đọc.',
   AUDIO_TOO_SHORT: 'File audio quá ngắn để xử lý.',
   AUDIO_TOO_LONG: 'File audio vượt quá thời lượng cho phép.',
   CONSENT_REQUIRED: 'Cần xác nhận sự đồng ý trước khi tiếp tục.',
+  SPEAKER_NAME_DUPLICATE: 'Tên người nói đã được sử dụng. Hãy chọn tên khác.',
   VERSION_CONFLICT:
     'Dữ liệu đã được thay đổi ở nơi khác. Hãy tải lại rồi thử lại.',
   UNAUTHENTICATED: 'Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại.',
