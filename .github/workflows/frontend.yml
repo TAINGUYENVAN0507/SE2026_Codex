@@ -5,11 +5,13 @@ on:
   pull_request:
     paths:
       - "frontend/**"
+      - "contracts/openapi.json"
       - ".github/workflows/frontend.yml"
   push:
     branches: [main, vantuong]
     paths:
       - "frontend/**"
+      - "contracts/openapi.json"
       - ".github/workflows/frontend.yml"
 
 permissions:
@@ -35,6 +37,8 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - name: Install dependencies
         run: npm ci
+      - name: Check generated API types
+        run: npm run gen:api && git diff --exit-code -- src/api/schema.d.ts
       - name: Lint and format
         run: npm run lint && npm run format:check
       - name: Typecheck

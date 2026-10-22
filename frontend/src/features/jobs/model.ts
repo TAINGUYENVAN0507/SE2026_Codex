@@ -1,4 +1,4 @@
-import type { ApiError } from '../../api/errors'
+import type { Job } from '../../api/client'
 
 export const PIPELINE_STAGES = [
   'preprocess',
@@ -10,19 +10,4 @@ export const PIPELINE_STAGES = [
 ] as const
 
 export type PipelineStage = (typeof PIPELINE_STAGES)[number]
-export type JobStatus =
-  | 'queued'
-  | 'running'
-  | 'retry_scheduled'
-  | 'succeeded'
-  | 'failed'
-  | 'cancelled'
-
-export interface JobStatusData {
-  status: JobStatus
-  current_stage: PipelineStage | null
-  completed_stages: PipelineStage[]
-  attempt: number
-  max_attempts: number
-  error: ApiError | null
-}
+export type JobStatus = Job['status']

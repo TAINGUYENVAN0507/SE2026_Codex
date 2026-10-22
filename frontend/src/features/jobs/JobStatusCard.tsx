@@ -1,9 +1,7 @@
-import {
-  PIPELINE_STAGES,
-  type JobStatus,
-  type JobStatusData,
-  type PipelineStage,
-} from './model'
+import { ApiError } from '../../api/errors'
+import type { Job } from '../../api/client'
+import { PIPELINE_STAGES, type JobStatus, type PipelineStage } from './model'
+import { useJobQuery } from './useJobQuery'
 
 const stageLabels: Record<PipelineStage, string> = {
   preprocess: 'Chuẩn bị audio',
@@ -23,10 +21,10 @@ const statusLabels: Record<JobStatus, string> = {
   cancelled: 'Đã hủy xử lý',
 }
 
-function stageState(stage: PipelineStage, job: JobStatusData) {
-  if (job.status === 'succeeded' || job.completed_stages.includes(stage))
+function stageState(stage: PipelineStage, job: Job) {
+  if (job.status === 'succeeded' || job.stages?.[stage] === 'succeeded')
     return 'completed'
-  if (stage === job.current_stage) {
+  if (stage === job.stage) {
     if (job.status === 'failed') return 'failed'
     if (job.status === 'retry_scheduled') return 'retry'
     if (job.status === 'cancelled') return 'cancelled'
@@ -36,7 +34,27 @@ function stageState(stage: PipelineStage, job: JobStatusData) {
   return 'pending'
 }
 
-export function JobStatusCard({ job }: { job: JobStatusData }) {
+export function JobStatusCard({ jobId }: { jobId: string }) {
+  const { data: job, error, isPending } = useJobQuery(jobId)
+
+  if (isPending)
+    return (
+      <section className="job-status-card" aria-label="Tiến độ xử lý cuộc họp">
+        <p role="status">Đang tải tiến độ xử lý…</p>
+      </section>
+    )
+
+  if (error || !job)
+    return (
+      <section className="job-status-card" aria-label="Tiến độ xử lý cuộc họp">
+        <p className="job-error" role="alert">
+          {error instanceof ApiError
+            ? error.message
+            : 'Không tải được tiến độ xử lý. Hãy thử lại sau.'}
+        </p>
+      </section>
+    )
+
   return (
     <section className="job-status-card" aria-label="Tiến độ xử lý cuộc họp">
       <header className="job-status-header">

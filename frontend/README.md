@@ -12,7 +12,7 @@ Giao diện graphite/cam được triển khai từ bộ ảnh đã duyệt, g�
 - `/meetings/sprint-42`: cuộc họp mẫu đầy đủ để thử player và chỉnh sửa.
 - `/meetings/:meetingId`: chi tiết các cuộc họp khác trong phiên.
 
-Giao diện đang chạy bằng dữ liệu demo trong React Context, không gọi API và không
+Các trang demo vẫn chạy bằng dữ liệu trong React Context và chưa gọi API, không
 giả lập việc xử lý AI thành công. Dữ liệu sửa và file audio chỉ giữ trong phiên;
 refresh trang sẽ làm mới. Tài khoản/mật khẩu không được gửi hoặc lưu.
 
@@ -22,10 +22,12 @@ export bản hiện tại ra TXT/MD/JSON, upload preview và recorder có consen
 Waveform hiện là minh họa, không phân tích từ audio. Transcript mẫu không tự khớp
 với file người dùng chọn. Export JSON có schema `preview-1`, chưa là API contract.
 
-API client cùng MSW fixtures sẽ được thêm khi backend công bố
-`contracts/openapi.json` và `contracts/fixtures/api/`. TanStack Query đã được chuẩn bị
-cho bước tích hợp này. Giới hạn 200 MB trong demo phải được thay bằng `GET /config`
-khi nối backend. Tùy chọn số người nói đang disable vì chưa được xử lý.
+API client có type sinh từ `contracts/openapi.json`; MSW đọc fixture chung trong
+`contracts/fixtures/api/`. `useJobQuery` và `JobStatusCard` đã poll endpoint job,
+nhưng chưa gắn vào trang demo do chưa có job ID thật. Đặt `VITE_API_MOCK=1` khi
+chạy dev để thử API mock; mặc định không bật. Giới hạn 200 MB trong demo phải
+được thay bằng `GET /config` khi nối backend. Tùy chọn số người nói đang disable
+vì chưa được xử lý.
 
 ## Thử giao diện
 
