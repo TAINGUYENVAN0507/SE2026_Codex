@@ -4,33 +4,37 @@ import { MagnifyingGlassIcon } from '@phosphor-icons/react/dist/csr/MagnifyingGl
 import { PlusIcon } from '@phosphor-icons/react/dist/csr/Plus'
 import { SpinnerGapIcon } from '@phosphor-icons/react/dist/csr/SpinnerGap'
 import { WarningCircleIcon } from '@phosphor-icons/react/dist/csr/WarningCircle'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Topbar } from '../components/Topbar'
-import { useMeetings } from '../features/meetings/DemoStore'
-import { formatDate, type MeetingStatus } from '../features/meetings/model'
+import { ApiError } from '../api/errors'
+import type { MeetingDetail } from '../api/client'
+import { useMeetingsQuery } from '../features/meetings/useMeetingsQuery'
+import { formatDate } from '../features/meetings/model'
 
-const filters: { id: MeetingStatus | 'all'; label: string }[] = [
+type Status = MeetingDetail['status']
+const filters: { id: Status | 'all'; label: string }[] = [
   { id: 'all', label: 'Tất cả' },
   { id: 'ready', label: 'Hoàn thành' },
   { id: 'processing', label: 'Đang xử lý' },
+  { id: 'queued', label: 'Chờ xử lý' },
+  { id: 'partial', label: 'Một phần' },
   { id: 'failed', label: 'Có lỗi' },
 ]
 
 export function MeetingListPage() {
-  const { meetings } = useMeetings()
-  const [filter, setFilter] = useState<MeetingStatus | 'all'>('all')
+  const [filter, setFilter] = useState<Status | 'all'>('all')
+  const [page, setPage] = useState(1)
   const [query, setQuery] = useState('')
-  const filtered = useMemo(
-    () =>
-      meetings.filter(
-        (m) =>
-          (filter === 'all' || m.status === filter) &&
-          m.title
-            .toLocaleLowerCase('vi')
-            .includes(query.trim().toLocaleLowerCase('vi')),
-      ),
-    [meetings, filter, query],
+  const meetingsQuery = useMeetingsQuery({
+    page,
+    status: filter === 'all' ? undefined : filter,
+  })
+  const meetings = meetingsQuery.data?.items ?? []
+  const filtered = meetings.filter((m) =>
+    m.title
+      .toLocaleLowerCase('vi')
+      .includes(query.trim().toLocaleLowerCase('vi')),
   )
   return (
     <>
@@ -39,7 +43,9 @@ export function MeetingListPage() {
         <div className="page-heading">
           <div className="title-line">
             <h1>Cuộc họp</h1>
-            <span className="total-count">{meetings.length} cuộc họp</span>
+            <span className="total-count">
+              {meetingsQuery.data?.total ?? 0} cuộc họp
+            </span>
           </div>
           <Link className="button primary" to="/meetings/new">
             <PlusIcon />
@@ -53,13 +59,14 @@ export function MeetingListPage() {
                 key={f.id}
                 className={filter === f.id ? 'selected' : ''}
                 aria-pressed={filter === f.id}
-                onClick={() => setFilter(f.id)}
+                onClick={() => {
+                  setFilter(f.id)
+                  setPage(1)
+                }}
               >
                 {f.label}
                 <span>
-                  {f.id === 'all'
-                    ? meetings.length
-                    : meetings.filter((m) => m.status === f.id).length}
+                  {f.id === filter ? (meetingsQuery.data?.total ?? 0) : ''}
                 </span>
               </button>
             ))}
@@ -83,6 +90,27 @@ export function MeetingListPage() {
             <span>TRẠNG THÁI</span>
             <span />
           </div>
+          {meetingsQuery.isPending && (
+            <div className="empty-state" role="status">
+              Đang tải danh sách cuộc họp…
+            </div>
+          )}
+          {meetingsQuery.isError && (
+            <div className="empty-state" role="alert">
+              <h2>Không tải được cuộc họp</h2>
+              <p>
+                {meetingsQuery.error instanceof ApiError
+                  ? meetingsQuery.error.message
+                  : 'Đã xảy ra lỗi. Hãy thử lại.'}
+              </p>
+              <button
+                className="button secondary"
+                onClick={() => void meetingsQuery.refetch()}
+              >
+                Thử lại
+              </button>
+            </div>
+          )}
           {filtered.map((m) => (
             <Link key={m.id} className="meeting-row" to={`/meetings/${m.id}`}>
               <span className="meeting-name">
@@ -96,26 +124,21 @@ export function MeetingListPage() {
                 <strong>{m.title}</strong>
               </span>
               <span className="meeting-date">
-                {formatDate(m.date)}
-                <small>{m.time}</small>
+                {formatDate(m.meeting_date || m.created_at.slice(0, 10))}
+                <small>
+                  {new Date(m.created_at).toLocaleTimeString('vi-VN', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </small>
               </span>
               <span className="meeting-duration mono">
-                {Math.floor(m.duration / 60)} phút
+                {m.duration_sec == null
+                  ? '—'
+                  : `${Math.floor(m.duration_sec / 60)} phút`}
               </span>
               <span className="speaker-avatars">
-                {m.speakers.length ? (
-                  m.speakers.slice(0, 3).map((s, i) => (
-                    <span
-                      key={s.id}
-                      className={`avatar ${i === 0 ? 'dark' : ''}`}
-                      title={s.name}
-                    >
-                      {s.initials}
-                    </span>
-                  ))
-                ) : (
-                  <span className="muted">—</span>
-                )}
+                {m.num_speakers_hint ?? <span className="muted">—</span>}
               </span>
               <span className={`status-label ${m.status}`}>
                 <i />
@@ -124,23 +147,33 @@ export function MeetingListPage() {
                     ready: 'Đã hoàn thành',
                     processing: 'Đang tạo tóm tắt',
                     failed: 'Lỗi âm thanh',
-                    pending: 'Chờ xử lý',
+                    queued: 'Chờ xử lý',
+                    partial: 'Hoàn thành một phần',
                   }[m.status]
                 }
               </span>
               <ArrowUpRightIcon className="row-arrow" />
             </Link>
           ))}
-          {!filtered.length && (
+          {meetingsQuery.isSuccess && !filtered.length && (
             <div className="empty-state">
               <MagnifyingGlassIcon size={28} />
-              <h2>Không tìm thấy cuộc họp</h2>
-              <p>Thử từ khóa khác hoặc chọn “Tất cả”.</p>
+              <h2>
+                {meetings.length
+                  ? 'Không tìm thấy cuộc họp'
+                  : 'Chưa có cuộc họp'}
+              </h2>
+              <p>
+                {meetings.length
+                  ? 'Thử từ khóa khác hoặc chọn “Tất cả”.'
+                  : 'Tạo cuộc họp mới để bắt đầu.'}
+              </p>
               <button
                 className="button secondary"
                 onClick={() => {
                   setQuery('')
                   setFilter('all')
+                  setPage(1)
                 }}
               >
                 Xóa bộ lọc
@@ -149,8 +182,27 @@ export function MeetingListPage() {
           )}
         </div>
         <p className="list-footer">
-          Hiển thị {filtered.length} trên {meetings.length} cuộc họp
+          Hiển thị {filtered.length} trên {meetingsQuery.data?.total ?? 0} cuộc
+          họp
         </p>
+        {(meetingsQuery.data?.total ?? 0) >
+          (meetingsQuery.data?.page_size ?? 10) && (
+          <nav aria-label="Phân trang cuộc họp">
+            <button disabled={page <= 1} onClick={() => setPage(page - 1)}>
+              Trang trước
+            </button>
+            <span>Trang {page}</span>
+            <button
+              disabled={
+                page * (meetingsQuery.data?.page_size ?? 10) >=
+                (meetingsQuery.data?.total ?? 0)
+              }
+              onClick={() => setPage(page + 1)}
+            >
+              Trang sau
+            </button>
+          </nav>
+        )}
       </main>
     </>
   )

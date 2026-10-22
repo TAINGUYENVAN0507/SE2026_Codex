@@ -6,7 +6,7 @@ import { AppProviders } from './app/AppProviders'
 import './index.css'
 
 async function startApp() {
-  if (import.meta.env.VITE_API_MOCK === '1') {
+  if (import.meta.env.DEV && import.meta.env.VITE_API_MOCK !== '0') {
     const { worker } = await import('./mocks/browser')
     await worker.start({ onUnhandledRequest: 'bypass' })
   }

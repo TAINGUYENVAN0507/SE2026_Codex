@@ -7,7 +7,9 @@ export function AppShell() {
         <span className="demo-indicator" />
         Bản xem thử{' '}
         <span className="demo-description">
-          Dữ liệu mẫu · thay đổi chỉ giữ trong phiên này
+          {import.meta.env.DEV && import.meta.env.VITE_API_MOCK !== '0'
+            ? 'API mô phỏng bằng dữ liệu mẫu · không lưu lên máy chủ'
+            : 'Giao diện thử nghiệm · kiểm tra dữ liệu trước khi sử dụng'}
         </span>
       </div>
       <Outlet />

@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { render, screen } from '@testing-library/react'
 import { useQueryClient } from '@tanstack/react-query'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, useLocation } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from '../App'
@@ -29,11 +30,17 @@ describe('FE-01 route scaffold', () => {
     ['/unknown', 'Không tìm thấy trang'],
   ])('renders %s in StrictMode', (path, heading) => {
     render(
-      <StrictMode>
-        <MemoryRouter initialEntries={[path]}>
-          <App />
-        </MemoryRouter>
-      </StrictMode>,
+      <QueryClientProvider
+        client={
+          new QueryClient({ defaultOptions: { queries: { retry: false } } })
+        }
+      >
+        <StrictMode>
+          <MemoryRouter initialEntries={[path]}>
+            <App />
+          </MemoryRouter>
+        </StrictMode>
+      </QueryClientProvider>,
     )
     expect(screen.getByRole('heading', { name: heading })).toBeInTheDocument()
     expect(screen.getByText('Bản xem thử')).toBeInTheDocument()
@@ -41,10 +48,16 @@ describe('FE-01 route scaffold', () => {
 
   it('redirects the root to the meeting list', () => {
     render(
-      <MemoryRouter initialEntries={['/']}>
-        <App />
-        <LocationProbe />
-      </MemoryRouter>,
+      <QueryClientProvider
+        client={
+          new QueryClient({ defaultOptions: { queries: { retry: false } } })
+        }
+      >
+        <MemoryRouter initialEntries={['/']}>
+          <App />
+          <LocationProbe />
+        </MemoryRouter>
+      </QueryClientProvider>,
     )
     expect(screen.getByLabelText('Đường dẫn hiện tại')).toHaveTextContent(
       '/meetings',
