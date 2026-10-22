@@ -102,7 +102,7 @@ export const AudioPlayer = forwardRef<PlayerHandle, Props>(function AudioPlayer(
             <WaveformIcon size={17} />
             Bản ghi cuộc họp
           </span>
-          <small>{file?.name || 'Sprint_42_Audio.mp3 · mô phỏng'}</small>
+          <small>{file?.name || 'Chưa chọn file audio · mô phỏng'}</small>
           <button
             className="button secondary small"
             aria-label="Chọn audio để nghe thử"
@@ -203,7 +203,7 @@ export const AudioPlayer = forwardRef<PlayerHandle, Props>(function AudioPlayer(
           </div>
           <span className="current-speaker">
             <span className="playing-dot" />
-            <span>{file ? 'Audio trên máy' : speaker || 'Nguyên Tài'}</span>
+            <span>{file ? 'Audio trên máy' : speaker || 'Chưa xác định'}</span>
           </span>
           <div className="playback-options">
             <select
