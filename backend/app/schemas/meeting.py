@@ -41,10 +41,17 @@ class SpeakerOut(BaseModel):
     """Thông tin người nói trong cuộc họp."""
 
     id: str = Field(..., description="UUID của speaker")
-    meeting_id: str = Field(..., description="UUID của cuộc họp")
+    meeting_id: str | None = Field(default=None, description="UUID của cuộc họp")
     label: str = Field(..., description="Nhãn thô từ diarization, ví dụ SPEAKER_00")
     default_name: str = Field(..., description="Tên mặc định có thứ tự xuất hiện, ví dụ Speaker 1")
     display_name: str = Field(..., description="Tên hiển thị do người dùng đặt hoặc mặc định")
+    is_edited: bool = Field(
+        default=False,
+        description="Cờ đánh dấu speaker đã được người dùng chỉnh sửa",
+    )
+    color_index: int = Field(default=0, description="Chỉ số màu phục vụ hiển thị UI")
+    segment_count: int = Field(default=0, description="Tổng số đoạn nói")
+    speaking_time_sec: float = Field(default=0.0, description="Tổng thời lượng nói tính bằng giây")
     version: int = Field(default=1, description="Phiên bản phục vụ optimistic locking")
 
     model_config = ConfigDict(extra="forbid")
@@ -83,5 +90,25 @@ class MeetingDetailOut(MeetingOut):
 
     latest_job: JobOut | None = Field(default=None, description="Chi tiết job xử lý gần nhất")
     speakers: list[SpeakerOut] = Field(default_factory=list, description="Danh sách người nói")
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class MeetingListOut(BaseModel):
+    """Danh sách cuộc họp có phân trang."""
+
+    items: list[MeetingOut] = Field(..., description="Danh sách các cuộc họp")
+    page: int = Field(..., description="Số thứ tự trang hiện tại (bắt đầu từ 1)")
+    page_size: int = Field(..., description="Số lượng mục trên mỗi trang")
+    total: int = Field(..., description="Tổng số cuộc họp thỏa mãn điều kiện lọc")
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class MeetingCreateOut(BaseModel):
+    """Kết quả tạo mới cuộc họp và job xử lý đi kèm."""
+
+    meeting: MeetingOut = Field(..., description="Thông tin cuộc họp vừa tạo")
+    job: JobOut = Field(..., description="Thông tin job xử lý được tạo đồng thời")
 
     model_config = ConfigDict(extra="forbid")

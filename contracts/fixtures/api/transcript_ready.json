@@ -1,0 +1,75 @@
+{
+  "status": "ready",
+  "diarization_status": "ok",
+  "speakers": [
+    {
+      "id": "2c7a9d10-a1b2-4c3d-8e4f-5a6b7c8d9e0f",
+      "label": "SPEAKER_00",
+      "default_name": "Speaker 1",
+      "display_name": "Chị Lan (PM)",
+      "is_edited": true,
+      "color_index": 0,
+      "segment_count": 1,
+      "speaking_time_sec": 6.42,
+      "version": 2
+    },
+    {
+      "id": "4e21a3b4-c5d6-4e7f-8a9b-0c1d2e3f4a5b",
+      "label": "SPEAKER_01",
+      "default_name": "Speaker 2",
+      "display_name": "Anh Minh",
+      "is_edited": false,
+      "color_index": 1,
+      "segment_count": 1,
+      "speaking_time_sec": 5.36,
+      "version": 1
+    }
+  ],
+  "segments": [
+    {
+      "id": "5b1e7c2a-b2c3-4d4e-8f9a-0b1c2d3e4f5a",
+      "index": 0,
+      "start_sec": 0.84,
+      "end_sec": 6.2,
+      "speaker_id": "2c7a9d10-a1b2-4c3d-8e4f-5a6b7c8d9e0f",
+      "ai_speaker_id": "2c7a9d10-a1b2-4c3d-8e4f-5a6b7c8d9e0f",
+      "text": "Anh Minh phụ trách phần API upload, hạn thứ Sáu tuần này nhé.",
+      "ai_text": "Anh Minh phụ trách phần API áp lốt, hạn thứ sáu tuần này nhé.",
+      "is_edited": true,
+      "confidence": 0.81,
+      "flags": [],
+      "version": 2,
+      "updated_at": "2026-10-15T09:12:44Z"
+    },
+    {
+      "id": "77aa1b2c-3d4e-5f6a-7b8c-9d0e1f2a3b4c",
+      "index": 1,
+      "start_sec": 6.2,
+      "end_sec": 8.1,
+      "speaker_id": null,
+      "ai_speaker_id": null,
+      "text": "Ừ, được.",
+      "ai_text": "Ừ, được.",
+      "is_edited": false,
+      "confidence": 0.42,
+      "flags": ["overlap", "low_confidence"],
+      "version": 1,
+      "updated_at": "2026-10-15T08:51:30Z"
+    },
+    {
+      "id": "9a0d33e1-c2d3-4e4f-8a9b-0c1d2e3f4a5b",
+      "index": 2,
+      "start_sec": 8.5,
+      "end_sec": 13.86,
+      "speaker_id": "4e21a3b4-c5d6-4e7f-8a9b-0c1d2e3f4a5b",
+      "ai_speaker_id": "4e21a3b4-c5d6-4e7f-8a9b-0c1d2e3f4a5b",
+      "text": "Tôi sẽ hoàn thiện đúng hạn vào thứ Sáu.",
+      "ai_text": "Tôi sẽ hoàn thiện đúng hạn vào thứ Sáu.",
+      "is_edited": false,
+      "confidence": 0.95,
+      "flags": [],
+      "version": 1,
+      "updated_at": "2026-10-15T08:51:30Z"
+    }
+  ]
+}

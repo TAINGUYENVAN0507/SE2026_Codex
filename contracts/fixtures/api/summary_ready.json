@@ -1,0 +1,47 @@
+{
+  "meeting_id": "8f6c2a1e-b2c3-4d4e-8f9a-0b1c2d3e4f5a",
+  "status": "ready",
+  "content": {
+    "overview": "Nhóm chốt phạm vi sprint 42: hoàn thiện upload audio và màn hình transcript, lùi export DOCX.",
+    "key_points": [
+      {
+        "text": "API upload phải chống tạo meeting trùng khi retry.",
+        "evidence_segment_ids": [
+          "5b1e7c2a-b2c3-4d4e-8f9a-0b1c2d3e4f5a"
+        ]
+      }
+    ],
+    "decisions": [
+      {
+        "text": "Lùi export DOCX sang sau MVP.",
+        "evidence_segment_ids": [
+          "9a0d33e1-c2d3-4e4f-8a9b-0c1d2e3f4a5b"
+        ]
+      }
+    ]
+  },
+  "ai_content": {
+    "overview": "Nhóm thảo luận phạm vi sprint 42, tập trung vào upload audio và màn hình transcript.",
+    "key_points": [
+      {
+        "text": "API upload phải chống tạo meeting trùng khi retry.",
+        "evidence_segment_ids": [
+          "5b1e7c2a-b2c3-4d4e-8f9a-0b1c2d3e4f5a"
+        ]
+      }
+    ],
+    "decisions": [
+      {
+        "text": "Lùi export DOCX sang sau MVP.",
+        "evidence_segment_ids": [
+          "9a0d33e1-c2d3-4e4f-8a9b-0c1d2e3f4a5b"
+        ]
+      }
+    ]
+  },
+  "is_edited": true,
+  "model": "claude-opus-5-5",
+  "prompt_version": "summary-v1",
+  "generated_at": "2026-10-15T08:55:02Z",
+  "version": 2
+}

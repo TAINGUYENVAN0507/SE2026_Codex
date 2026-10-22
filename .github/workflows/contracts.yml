@@ -1,0 +1,30 @@
+name: contracts
+
+on:
+  pull_request:
+    paths:
+      - "contracts/**"
+      - "backend/**"
+      - "frontend/**"
+      - ".github/workflows/contracts.yml"
+  push:
+    branches: [main]
+    paths:
+      - "contracts/**"
+      - "backend/**"
+      - "frontend/**"
+      - ".github/workflows/contracts.yml"
+
+jobs:
+  check-contracts:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: Install dependencies
+        run: uv sync --locked
+      - name: Check OpenAPI drift and validate API fixtures
+        run: uv run pytest tests/contract/

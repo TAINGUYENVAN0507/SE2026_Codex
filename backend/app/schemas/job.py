@@ -75,3 +75,14 @@ class JobOut(BaseModel):
     )
 
     model_config = ConfigDict(extra="forbid")
+
+
+class JobRetryCreate(BaseModel):
+    """Yêu cầu chạy lại tiến trình xử lý cuộc họp từ một stage."""
+
+    from_stage: PipelineStage | None = Field(
+        default=None,
+        description="Stage bắt đầu chạy lại (asr, diarize, summarize) hoặc null",
+    )
+
+    model_config = ConfigDict(extra="forbid")
