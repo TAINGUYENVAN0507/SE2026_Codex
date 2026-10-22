@@ -100,3 +100,8 @@ class Meeting(Base):
     )
 
     owner: Mapped["User"] = relationship("User", back_populates="meetings")  # noqa: F821
+    jobs: Mapped[list["Job"]] = relationship(  # noqa: F821
+        "Job",
+        back_populates="meeting",
+        cascade="all, delete-orphan",
+    )
