@@ -36,7 +36,9 @@ def run_migrations_online() -> None:
 
     if connectable is None:
         configuration = config.get_section(config.config_ini_section, {})
-        url = config.get_main_option("sqlalchemy.url") or get_settings().DATABASE_URL
+        url = config.get_main_option("sqlalchemy.url")
+        if not url or "driver://user:pass" in url:
+            url = get_settings().DATABASE_URL
         configuration["sqlalchemy.url"] = url
         connectable = engine_from_config(
             configuration,
