@@ -2,6 +2,9 @@
 
 from typing import Protocol
 
+from sqlalchemy import text
+from sqlalchemy.engine import Engine
+
 
 class DatabaseHealthChecker(Protocol):
     """Interface định nghĩa phương thức kiểm tra kết nối cơ sở dữ liệu."""
@@ -12,23 +15,32 @@ class DatabaseHealthChecker(Protocol):
 
 
 class DefaultDatabaseHealthChecker:
-    """Triển khai kiểm tra kết nối DB mặc định."""
+    """Triển khai kiểm tra kết nối DB thật qua SQLAlchemy engine."""
 
-    def __init__(self, database_url: str | None = None) -> None:
-        self.database_url = database_url
+    def __init__(self, engine: Engine | None = None) -> None:
+        self.engine = engine
 
     def is_healthy(self) -> bool:
-        """Kiểm tra kết nối đến cơ sở dữ liệu.
+        """Kiểm tra kết nối thật bằng cách thực thi lệnh ping 'SELECT 1'.
 
-        Ở giai đoạn hiện tại (chưa có SQLAlchemy engine / migrations), nếu có DATABASE_URL
-        hợp lệ thì trả về True. Sẽ được tích hợp SQLAlchemy ping khi sang BE-03.
+        Trả về True nếu kết nối thành công, False nếu mất kết nối hoặc DB tắt.
         """
-        return bool(self.database_url)
+        if self.engine is None:
+            return False
+        try:
+            with self.engine.connect() as conn:
+                conn.execute(text("SELECT 1"))
+            return True
+        except Exception:
+            return False
 
 
 def get_db_health_checker() -> DatabaseHealthChecker:
     """Dependency cung cấp instance DatabaseHealthChecker."""
-    from app.core.config import get_settings
+    from app.db.session import get_engine
 
-    settings = get_settings()
-    return DefaultDatabaseHealthChecker(database_url=settings.DATABASE_URL)
+    try:
+        engine = get_engine()
+        return DefaultDatabaseHealthChecker(engine=engine)
+    except Exception:
+        return DefaultDatabaseHealthChecker(engine=None)
