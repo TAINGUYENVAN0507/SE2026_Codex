@@ -75,3 +75,13 @@ class VadEngine(Protocol):
     name: str
 
     def speech_regions(self, audio: WavAudio) -> list[tuple[float, float]]: ...
+
+
+class DiarizeEngine(Protocol):
+    name: str
+
+    def turns(
+        self, audio: WavAudio, num_speakers: int | None = None
+    ) -> list[tuple[float, float, str]]:
+        """Các lượt nói `(start_sec, end_sec, nhãn)`; nhãn do engine tự đặt, tùy ý."""
+        ...
