@@ -15,7 +15,7 @@ interface Store {
 const Context = createContext<Store | null>(null)
 
 export function DemoStore({ children }: PropsWithChildren) {
-  // Session-only data. Audio, transcript and credentials are never persisted or uploaded.
+  // Keeps the demo meeting and selected local audio in memory for preview.
   const [meetings, setMeetings] = useState(seedMeetings)
   const [files, setFiles] = useState<Record<string, File>>({})
   return (
