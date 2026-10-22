@@ -6,6 +6,8 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "jiwer>=4.0,<5",
+    # DER cho diarization (AI-13); kéo theo numpy, pandas, scipy, scikit-learn.
+    "pyannote.metrics>=4,<5",
 ]
 
 [dependency-groups]
@@ -24,8 +26,8 @@ asr-spike = [
 package = false
 
 [tool.pytest.ini_options]
-testpaths = ["datasets/tests", "normalizer", "wer", "spikes"]
-pythonpath = ["datasets", "normalizer", "wer", "spikes/asr"]
+testpaths = ["datasets/tests", "normalizer", "wer", "spikes", "diarization"]
+pythonpath = ["datasets", "normalizer", "wer", "spikes/asr", "diarization"]
 addopts = "-ra --strict-markers --import-mode=importlib --doctest-modules"
 
 [tool.ruff]
