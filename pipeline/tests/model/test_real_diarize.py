@@ -7,8 +7,6 @@ Audio thử ghép từ 2 bản ghi khác người đọc của cùng một câu 
 giọng 2). Chưa tải FLEURS thì test bị skip.
 """
 
-import shutil
-import subprocess
 from pathlib import Path
 
 import pytest
@@ -21,42 +19,9 @@ from meeting_pipeline.schemas import DiarizeOutput, JobSpec, Stage  # noqa: E402
 from meeting_pipeline.stages.base import execute_stage  # noqa: E402
 from meeting_pipeline.workdir import write_job  # noqa: E402
 
-REPO = Path(__file__).resolve().parents[3]
-FLEURS = REPO / "evaluation/datasets/raw/fleurs_vi_test_audio/test"
-# Câu 1921 của FLEURS vi test, hai người đọc khác nhau.
-VOICE_1 = FLEURS / "7702082596424665893.wav"  # 9.42 s
-VOICE_2 = FLEURS / "5471256245985564162.wav"  # 9.30 s
-BOUNDARY_SEC = 9.92  # hết giọng 1 cộng 0.5 s lặng
+# Ranh giới giữa 2 giọng trong fixture two_voices (conftest.py): hết giọng 1 + 0.5 s lặng.
+BOUNDARY_SEC = 9.92
 TOLERANCE_SEC = 0.5
-
-
-@pytest.fixture(scope="module")
-def two_voices(tmp_path_factory) -> Path:
-    if not (VOICE_1.exists() and VOICE_2.exists()):
-        pytest.skip("chưa tải FLEURS: evaluation/datasets/download.py fleurs_vi_test_audio")
-    if shutil.which("ffmpeg") is None:
-        pytest.skip("cần ffmpeg")
-    out = tmp_path_factory.mktemp("audio") / "two_voices.wav"
-    subprocess.run(
-        [
-            "ffmpeg",
-            "-nostdin",
-            "-loglevel",
-            "error",
-            "-i",
-            str(VOICE_1),
-            "-i",
-            str(VOICE_2),
-            "-filter_complex",
-            "[0:a]aresample=16000,apad=pad_dur=0.5[a];[1:a]aresample=16000[b];"
-            "[a][b]concat=n=2:v=0:a=1",
-            "-ac",
-            "1",
-            str(out),
-        ],
-        check=True,
-    )
-    return out
 
 
 def diarize(tmp_path: Path, audio: Path, hint: int | None) -> DiarizeOutput:
