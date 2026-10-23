@@ -114,6 +114,7 @@ dependencies = [
     { name = "alembic" },
     { name = "argon2-cffi" },
     { name = "fastapi" },
+    { name = "meeting-pipeline" },
     { name = "psycopg", extra = ["binary"] },
     { name = "pydantic-settings" },
     { name = "pyjwt" },
@@ -134,6 +135,7 @@ requires-dist = [
     { name = "alembic", specifier = ">=1.13,<2" },
     { name = "argon2-cffi", specifier = ">=23.1.0" },
     { name = "fastapi", specifier = ">=0.115,<1" },
+    { name = "meeting-pipeline", editable = "../pipeline" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.2,<4" },
     { name = "pydantic-settings", specifier = ">=2.5,<3" },
     { name = "pyjwt", specifier = ">=2.8,<3" },
@@ -542,6 +544,36 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/81/99/157e10966b033b363aeda5263e82596ee232a0b1d082fdbf90aa417ff083/markupsafe-3.0.4-cp315-cp315t-win32.whl", hash = "sha256:e49fb0d1ce92cfa0cb198cc5b1b11cdf9d0638658e2a2db2687e39db7c87fc78", size = 14300, upload-time = "2026-10-02T23:06:53.241Z" },
     { url = "https://files.pythonhosted.org/packages/33/05/55884815414c9706a23deca150b72c25a62109e65b0b6ce232077802c719/markupsafe-3.0.4-cp315-cp315t-win_amd64.whl", hash = "sha256:4f6e0852a0283b1b1fd776eeb7b766a5f440b3e2bd31ab51af3b400585f3965c", size = 14522, upload-time = "2026-10-02T23:06:54.729Z" },
     { url = "https://files.pythonhosted.org/packages/92/f9/ecbde7149e95b8a0f18e16d5d747f7dc06049d5da2e4f77f6f5e4a1f46a8/markupsafe-3.0.4-cp315-cp315t-win_arm64.whl", hash = "sha256:39dbacefc411633db5b4378b066a9aca70a3d7e2922c9e578d825f844026eeba", size = 14417, upload-time = "2026-10-02T23:06:56.246Z" },
+]
+
+[[package]]
+name = "meeting-pipeline"
+version = "0.1.0"
+source = { editable = "../pipeline" }
+dependencies = [
+    { name = "pydantic" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "anthropic", marker = "extra == 'llm'", specifier = ">=1,<2" },
+    { name = "faster-whisper", marker = "extra == 'asr'", specifier = ">=1.2,<2" },
+    { name = "nvidia-cublas-cu12", marker = "sys_platform == 'linux' and extra == 'asr'", specifier = ">=12,<13" },
+    { name = "nvidia-cudnn-cu12", marker = "sys_platform == 'linux' and extra == 'asr'", specifier = ">=9,<10" },
+    { name = "pyannote-audio", marker = "extra == 'diarize'", specifier = ">=4.0,<5" },
+    { name = "pydantic", specifier = ">=2.7,<3" },
+    { name = "torch", marker = "extra == 'diarize'", specifier = ">=2.8", index = "https://download.pytorch.org/whl/cpu" },
+    { name = "torchaudio", marker = "extra == 'diarize'", specifier = ">=2.8", index = "https://download.pytorch.org/whl/cpu" },
+]
+provides-extras = ["asr", "diarize", "llm"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "anthropic", specifier = ">=1,<2" },
+    { name = "hypothesis", specifier = ">=6.100" },
+    { name = "jsonschema", specifier = ">=4.23" },
+    { name = "pytest", specifier = ">=8.3" },
+    { name = "ruff", specifier = ">=0.6" },
 ]
 
 [[package]]
