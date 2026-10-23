@@ -3,6 +3,7 @@
 import json
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.main import create_app
@@ -29,6 +30,57 @@ from app.schemas.transcript import (
 def get_contracts_root() -> Path:
     """Trả về thư mục contracts/ ở gốc repository."""
     return Path(__file__).resolve().parents[3] / "contracts"
+
+
+@pytest.fixture(autouse=True)
+def auto_auth_for_contract_tests(monkeypatch: pytest.MonkeyPatch, request: pytest.FixtureRequest):
+    """Tự động mock current_user cho các contract stub tests."""
+    if request.node.name.startswith("test_auth_") or request.node.name == "test_openapi_json_drift":
+        return
+
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+    from sqlalchemy.pool import StaticPool
+
+    from app import main as app_main
+    from app.api.deps import get_current_user
+    from app.db.base import Base
+    from app.db.models.job import Job
+    from app.db.models.meeting import Meeting
+    from app.db.models.user import User
+    from app.db.session import get_db
+
+    engine = create_engine(
+        "sqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    Base.metadata.create_all(bind=engine, tables=[User.__table__, Meeting.__table__, Job.__table__])
+    session_factory = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    session = session_factory()
+
+    fake_user = User(
+        id="u-03a1b2c3-d4e5-4f6a-8b9c-0d1e2f3a4b5c",
+        email="user@example.com",
+        display_name="Nguyễn Văn A",
+        password_hash="mock",
+    )
+    session.add(fake_user)
+    session.commit()
+
+    orig_create_app = app_main.create_app
+
+    def patched_create_app():
+        application = orig_create_app()
+        application.dependency_overrides[get_current_user] = lambda: fake_user
+
+        def _get_db():
+            yield session
+
+        application.dependency_overrides[get_db] = _get_db
+        return application
+
+    monkeypatch.setattr("tests.contract.test_openapi_drift.create_app", patched_create_app)
 
 
 def test_openapi_json_drift() -> None:

@@ -1,12 +1,13 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Request, Response, status
+from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.api.deps import CurrentUser
 from app.core.config import get_settings
 from app.core.errors import APIError
-from app.core.security import create_access_token, decode_access_token, verify_password
+from app.core.security import create_access_token, verify_password
 from app.db.models.user import User
 from app.db.session import get_db
 from app.schemas.auth import LoginRequest, LoginResponse, UserMeOut, UserOut
@@ -89,39 +90,12 @@ def logout() -> Response:
     },
     summary="Lấy thông tin người dùng hiện tại",
 )
-def get_me(
-    request: Request,
-    db: Annotated[Session, Depends(get_db)],
-) -> UserMeOut:
+def get_me(current_user: CurrentUser) -> UserMeOut:
     """Trả về thông tin người dùng hiện tại từ session."""
-    token = request.cookies.get("session_token")
-    if not token:
-        raise APIError(
-            code="UNAUTHENTICATED",
-            message="Chưa đăng nhập hoặc phiên làm việc đã hết hạn.",
-            status_code=status.HTTP_401_UNAUTHORIZED,
-        )
-
-    user_id = decode_access_token(token)
-    if not user_id:
-        raise APIError(
-            code="UNAUTHENTICATED",
-            message="Chưa đăng nhập hoặc phiên làm việc đã hết hạn.",
-            status_code=status.HTTP_401_UNAUTHORIZED,
-        )
-
-    user = db.execute(select(User).where(User.id == user_id)).scalar_one_or_none()
-    if not user:
-        raise APIError(
-            code="UNAUTHENTICATED",
-            message="Chưa đăng nhập hoặc phiên làm việc đã hết hạn.",
-            status_code=status.HTTP_401_UNAUTHORIZED,
-        )
-
     return UserMeOut(
         user=UserOut(
-            id=user.id,
-            email=user.email,
-            display_name=user.display_name,
+            id=current_user.id,
+            email=current_user.email,
+            display_name=current_user.display_name,
         )
     )

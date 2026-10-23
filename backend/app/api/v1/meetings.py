@@ -4,10 +4,15 @@ import json
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import APIRouter, File, Form, Header, Query, Response, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, Header, Query, Response, UploadFile, status
 from fastapi import Path as FastApiPath
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
+from app.api.deps import CurrentUser, get_current_user
 from app.core.errors import APIError
+from app.db.models.meeting import Meeting
+from app.db.session import get_db
 from app.schemas.action_item import (
     ActionItemCreate,
     ActionItemListOut,
@@ -33,7 +38,11 @@ from app.schemas.transcript import (
     TranscriptSegmentOut,
 )
 
-router = APIRouter(prefix="/meetings", tags=["Meetings"])
+router = APIRouter(
+    prefix="/meetings",
+    tags=["Meetings"],
+    dependencies=[Depends(get_current_user)],
+)
 
 FIXTURES_DIR = Path(__file__).resolve().parents[4] / "contracts" / "fixtures" / "api"
 MEETING_FIXTURE_PATH = FIXTURES_DIR / "meeting_processing.json"
@@ -213,10 +222,28 @@ def create_meeting(
 )
 def get_meeting(
     meeting_id: str = FastApiPath(..., description="UUID của cuộc họp cần lấy thông tin"),
+    current_user: CurrentUser = None,  # type: ignore[assignment]
+    db: Annotated[Session, Depends(get_db)] = None,  # type: ignore[assignment]
 ) -> MeetingDetailOut:
     """Trả về chi tiết cuộc họp (stub contract v0 phục vụ phát triển frontend)."""
+    if db is not None and current_user is not None:
+        meeting = db.execute(select(Meeting).where(Meeting.id == meeting_id)).scalar_one_or_none()
+        if meeting:
+            if meeting.owner_id != current_user.id:
+                raise APIError(
+                    code="MEETING_NOT_FOUND",
+                    message="Không tìm thấy cuộc họp được yêu cầu.",
+                    status_code=status.HTTP_404_NOT_FOUND,
+                )
+            data = load_meeting_fixture()
+            data["id"] = meeting.id
+            data["title"] = meeting.title
+            data["status"] = meeting.status
+            data["latest_job"] = None
+            data["speakers"] = []
+            return MeetingDetailOut.model_validate(data)
+
     data = load_meeting_fixture()
-    # Nếu client truyền ID cụ thể thì gán id tương ứng
     data["id"] = meeting_id
     data["latest_job"] = None
     data["speakers"] = []
