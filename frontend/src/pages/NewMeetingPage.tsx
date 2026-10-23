@@ -7,8 +7,12 @@ import { MicrophoneIcon } from '@phosphor-icons/react/dist/csr/Microphone'
 import { StopIcon } from '@phosphor-icons/react/dist/csr/Stop'
 import { UploadSimpleIcon } from '@phosphor-icons/react/dist/csr/UploadSimple'
 import { Link, useNavigate } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import { Topbar } from '../components/Topbar'
 import { useObjectUrl } from '../features/audio/useObjectUrl'
+import { useIdempotencyKey } from '../features/audio/useIdempotencyKey'
+import { uploadMeeting } from '../features/audio/uploadMeeting'
+import { ApiError } from '../api/errors'
 import {
   DEFAULT_UPLOAD_CONFIG,
   validateAudio,
@@ -19,6 +23,7 @@ import { formatTime } from '../features/meetings/model'
 export function NewMeetingPage() {
   const { add } = useMeetings()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const [mode, setMode] = useState<'upload' | 'record'>('upload')
   const [file, setFile] = useState<File>()
   const [duration, setDuration] = useState(0)
@@ -30,6 +35,9 @@ export function NewMeetingPage() {
   const [requesting, setRequesting] = useState(false)
   const [recording, setRecording] = useState(false)
   const [elapsed, setElapsed] = useState(0)
+  const [uploading, setUploading] = useState(false)
+  const [progress, setProgress] = useState(0)
+  const activeUpload = useRef<ReturnType<typeof uploadMeeting> | null>(null)
   const picker = useRef<HTMLInputElement>(null)
   const recorder = useRef<MediaRecorder | null>(null)
   const stream = useRef<MediaStream | null>(null)
@@ -37,6 +45,7 @@ export function NewMeetingPage() {
   const alive = useRef(true)
   const recordStarted = useRef(0)
   const url = useObjectUrl(file)
+  const idempotencyKey = useIdempotencyKey(file ?? null)
 
   useEffect(() => {
     alive.current = true
@@ -48,6 +57,7 @@ export function NewMeetingPage() {
       }
       stream.current?.getTracks().forEach((t) => t.stop())
       clearInterval(timer.current)
+      activeUpload.current?.abort()
     }
   }, [])
   useEffect(() => {
@@ -58,6 +68,7 @@ export function NewMeetingPage() {
   }, [recording])
 
   function choose(selected: File) {
+    if (uploading) return
     const invalid = validateAudio(selected)
     if (invalid) {
       setError(invalid)
@@ -68,6 +79,70 @@ export function NewMeetingPage() {
     setError('')
     if (!title.trim())
       setTitle(selected.name.replace(/\.[^.]+$/, '').replace(/[_-]/g, ' '))
+  }
+  async function submit() {
+    if (
+      !file ||
+      !consent ||
+      !idempotencyKey ||
+      recording ||
+      requesting ||
+      uploading
+    )
+      return
+    const invalid = validateAudio(file)
+    if (invalid) {
+      setError(invalid)
+      return
+    }
+    setError('')
+    setProgress(0)
+    setUploading(true)
+    const upload = uploadMeeting(
+      file,
+      {
+        title: title.trim(),
+        meetingDate: date,
+        source: mode === 'record' ? 'recording' : 'upload',
+      },
+      idempotencyKey,
+      setProgress,
+    )
+    activeUpload.current = upload
+    try {
+      const result = await upload.promise
+      add(
+        {
+          id: result.meeting.id,
+          title: result.meeting.title,
+          date: result.meeting.meeting_date || date,
+          time: new Date().toLocaleTimeString('vi-VN', {
+            hour: '2-digit',
+            minute: '2-digit',
+          }),
+          duration: result.meeting.duration_sec || duration,
+          status: 'pending',
+          speakers: [],
+          segments: [],
+          overview: '',
+          points: [],
+          decisions: [],
+          tasks: [],
+          fileName: file.name,
+        },
+        file,
+      )
+      void queryClient.invalidateQueries({ queryKey: ['meetings'] })
+      navigate(`/meetings/${result.meeting.id}`)
+    } catch (cause) {
+      if (cause instanceof ApiError && cause.code !== 'UPLOAD_CANCELLED')
+        setError(cause.message)
+      else if (!(cause instanceof ApiError))
+        setError('Không thể tải file lên. Hãy thử lại.')
+    } finally {
+      activeUpload.current = null
+      if (alive.current) setUploading(false)
+    }
   }
   function stop() {
     if (recorder.current?.state === 'recording') recorder.current.stop()
@@ -177,35 +252,7 @@ export function NewMeetingPage() {
           className="create-card"
           onSubmit={(e) => {
             e.preventDefault()
-            if (!file || !consent || recording || requesting) return
-            const invalid = validateAudio(file)
-            if (invalid) {
-              setError(invalid)
-              return
-            }
-            const id = crypto.randomUUID()
-            add(
-              {
-                id,
-                title: title.trim(),
-                date,
-                time: new Date().toLocaleTimeString('vi-VN', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                }),
-                duration,
-                status: 'pending',
-                speakers: [],
-                segments: [],
-                overview: '',
-                points: [],
-                decisions: [],
-                tasks: [],
-                fileName: file.name,
-              },
-              file,
-            )
-            navigate(`/meetings/${id}`)
+            void submit()
           }}
         >
           <div className="create-source">
@@ -235,6 +282,7 @@ export function NewMeetingPage() {
               type="file"
               hidden
               ref={picker}
+              disabled={uploading}
               accept={DEFAULT_UPLOAD_CONFIG.allowed_extensions
                 .map((extension) => `.${extension.replace(/^\./, '')}`)
                 .join(',')}
@@ -302,7 +350,7 @@ export function NewMeetingPage() {
                     className="button secondary small"
                     type="button"
                     onClick={() => picker.current?.click()}
-                    disabled={requesting}
+                    disabled={requesting || uploading}
                   >
                     Đổi file
                   </button>
@@ -411,14 +459,18 @@ export function NewMeetingPage() {
               </span>
             </label>
             <p className="privacy-description">
-              Trong ứng dụng chính thức, transcript có thể được gửi tới dịch vụ
-              AI để tạo tóm tắt. Bản xem thử hiện chỉ giữ file trong phiên trình
-              duyệt.
+              Khi tạo cuộc họp, file audio sẽ được gửi tới API để xử lý. Trong
+              chế độ API mô phỏng, dữ liệu không được lưu lên máy chủ.
             </p>
             {error && (
               <p className="form-error" role="alert">
                 {error}
               </p>
+            )}
+            {uploading && (
+              <div role="status" aria-label="Tiến độ tải lên">
+                Đang tải lên: {progress}%
+              </div>
             )}
           </div>
           <footer className="create-footer">
@@ -429,12 +481,26 @@ export function NewMeetingPage() {
               className="button primary"
               type="submit"
               disabled={
-                !file || !consent || !title.trim() || recording || requesting
+                !file ||
+                !consent ||
+                !title.trim() ||
+                recording ||
+                requesting ||
+                uploading
               }
             >
               Tạo biên bản
               <ArrowRightIcon />
             </button>
+            {uploading && (
+              <button
+                className="button secondary"
+                type="button"
+                onClick={() => activeUpload.current?.abort()}
+              >
+                Hủy tải lên
+              </button>
+            )}
           </footer>
         </form>
       </main>

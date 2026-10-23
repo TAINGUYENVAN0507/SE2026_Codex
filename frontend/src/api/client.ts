@@ -13,6 +13,9 @@ type ApiV1Paths = {
 
 export type MeetingDetail = components['schemas']['MeetingDetailOut']
 export type Job = components['schemas']['JobOut']
+export type MeetingList = components['schemas']['MeetingListOut']
+export type TranscriptData = components['schemas']['TranscriptOut']
+export type SpeakerData = components['schemas']['SpeakerOut']
 
 const client = createClient<ApiV1Paths>({
   baseUrl: new URL('/api/v1', window.location.origin).href,
@@ -56,5 +59,36 @@ export function getMeeting(id: MeetingDetail['id']): Promise<MeetingDetail> {
 export function getJob(id: Job['id']): Promise<Job> {
   return unwrap(
     client.GET('/jobs/{job_id}', { params: { path: { job_id: id } } }),
+  )
+}
+
+export function listMeetings(
+  page: number,
+  status?: MeetingDetail['status'],
+): Promise<MeetingList> {
+  return unwrap(
+    client.GET('/meetings', { params: { query: { page, status } } }),
+  )
+}
+
+export function getTranscript(meetingId: string): Promise<TranscriptData> {
+  return unwrap(
+    client.GET('/meetings/{meeting_id}/transcript', {
+      params: { path: { meeting_id: meetingId } },
+    }),
+  )
+}
+
+export function patchSpeaker(
+  meetingId: string,
+  speakerId: string,
+  displayName: string,
+  version: number,
+): Promise<SpeakerData> {
+  return unwrap(
+    client.PATCH('/meetings/{meeting_id}/speakers/{speaker_id}', {
+      params: { path: { meeting_id: meetingId, speaker_id: speakerId } },
+      body: { display_name: displayName, version },
+    }),
   )
 }

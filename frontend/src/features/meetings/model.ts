@@ -4,6 +4,8 @@ export interface Speaker {
   id: string
   name: string
   initials: string
+  version?: number
+  colorIndex?: number
 }
 export interface Segment {
   id: string
@@ -13,6 +15,7 @@ export interface Segment {
   text: string
   originalText: string
   edited: boolean
+  flags?: string[]
 }
 export interface Task {
   id: string
