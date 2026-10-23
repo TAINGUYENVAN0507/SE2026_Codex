@@ -69,8 +69,19 @@ def db_session():
                 test_db_path.unlink()
 
 
-def test_seed_is_idempotent(db_session: Session) -> None:
+def test_seed_missing_env_raises_error(
+    db_session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Kiểm tra nếu thiếu biến môi trường SEED_DEMO_PASSWORD thì seed báo lỗi rõ ràng."""
+    monkeypatch.delenv("SEED_DEMO_PASSWORD", raising=False)
+    expected_err = "Thiếu biến môi trường SEED_DEMO_PASSWORD bắt buộc để seed tài khoản demo."
+    with pytest.raises(ValueError, match=expected_err):
+        run_seed(db_session)
+
+
+def test_seed_is_idempotent(db_session: Session, monkeypatch: pytest.MonkeyPatch) -> None:
     """Kiểm tra chạy seed 2 lần: lần 1 tạo dữ liệu, lần 2 số row không đổi."""
+    monkeypatch.setenv("SEED_DEMO_PASSWORD", "demo_secret_2026")
     # Lần 1: Chạy seed
     stats_first = run_seed(db_session)
     assert stats_first["users_created"] == 1
