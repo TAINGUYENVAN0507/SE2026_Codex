@@ -50,6 +50,7 @@ def auto_auth_for_contract_tests(monkeypatch: pytest.MonkeyPatch, request: pytes
     from app.db.models.idempotency import IdempotencyKey
     from app.db.models.job import Job
     from app.db.models.meeting import Meeting
+    from app.db.models.transcript import Speaker
     from app.db.models.user import User
     from app.db.session import get_db
     from app.services.audio_validator import AudioProbeResult
@@ -71,7 +72,13 @@ def auto_auth_for_contract_tests(monkeypatch: pytest.MonkeyPatch, request: pytes
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
-    tables = [User.__table__, Meeting.__table__, Job.__table__, IdempotencyKey.__table__]
+    tables = [
+        User.__table__,
+        Meeting.__table__,
+        Job.__table__,
+        IdempotencyKey.__table__,
+        Speaker.__table__,
+    ]
     Base.metadata.create_all(bind=engine, tables=tables)
     session_factory = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     session = session_factory()
@@ -83,6 +90,22 @@ def auto_auth_for_contract_tests(monkeypatch: pytest.MonkeyPatch, request: pytes
         password_hash="mock",
     )
     session.add(fake_user)
+    session.flush()
+
+    fake_meeting = Meeting(
+        id="test-meeting-uuid-12345",
+        owner_id=fake_user.id,
+        title="Họp sprint planning tuần 42",
+        source="recording",
+        status="processing",
+        meeting_date="2026-10-15",
+        duration_sec=1834.52,
+        num_speakers_hint=3,
+        audio_path="audio/test-meeting-uuid-12345/original.webm",
+        audio_sha256="mock_sha256",
+        version=1,
+    )
+    session.add(fake_meeting)
     session.commit()
 
     orig_create_app = app_main.create_app

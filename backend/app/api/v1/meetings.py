@@ -6,13 +6,14 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, Form, Header, Query, Response, UploadFile, status
 from fastapi import Path as FastApiPath
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.api.deps import CurrentUser, get_current_user
 from app.core.errors import APIError
 from app.db.models.job import Job
 from app.db.models.meeting import Meeting
+from app.db.models.transcript import Speaker
 from app.db.session import get_db
 from app.schemas.action_item import (
     ActionItemCreate,
@@ -22,11 +23,12 @@ from app.schemas.action_item import (
 )
 from app.schemas.common import ErrorResponse
 from app.schemas.edit import EditListOut
-from app.schemas.job import JobOut, JobRetryCreate
+from app.schemas.job import JobErrorOut, JobOut, JobRetryCreate
 from app.schemas.meeting import (
     MeetingCreateOut,
     MeetingDetailOut,
     MeetingListOut,
+    MeetingOut,
     MeetingSource,
     MeetingStatus,
     SpeakerOut,
@@ -130,6 +132,61 @@ def load_meeting_created_fixture() -> dict:
     }
 
 
+def serialize_meeting_summary(meeting: Meeting, db: Session) -> MeetingOut:
+    """Chuyển đổi một thực thể Meeting trong DB sang schema MeetingOut."""
+    latest_job = (
+        db.execute(select(Job).where(Job.meeting_id == meeting.id).order_by(Job.created_at.desc()))
+        .scalars()
+        .first()
+    )
+
+    clean_ext = (
+        meeting.audio_path.rsplit(".", 1)[-1].lower()
+        if meeting.audio_path and "." in meeting.audio_path
+        else "wav"
+    )
+    mime_type = "audio/mpeg" if clean_ext == "mp3" else f"audio/{clean_ext}"
+
+    transcript_status = "pending"
+    diarization_status = "pending"
+    summary_status = "pending"
+    if meeting.status in ("ready", "partial"):
+        transcript_status = "ready"
+        diarization_status = "ok"
+        summary_status = "ready"
+    elif meeting.status == "failed":
+        transcript_status = "failed"
+        diarization_status = "failed"
+        summary_status = "failed"
+
+    return MeetingOut(
+        id=meeting.id,
+        title=meeting.title,
+        source=meeting.source,  # type: ignore[arg-type]
+        status=meeting.status,  # type: ignore[arg-type]
+        language="vi",
+        meeting_date=meeting.meeting_date,
+        duration_sec=meeting.duration_sec,
+        num_speakers_hint=meeting.num_speakers_hint,
+        audio={
+            "available": meeting.audio_path is not None,
+            "mime_type": mime_type,
+            "size_bytes": 0,
+            "retention_until": meeting.retention_until,
+        },
+        artifacts={
+            "transcript": transcript_status,
+            "diarization": diarization_status,
+            "summary": summary_status,
+        },
+        warnings=[],
+        latest_job_id=latest_job.id if latest_job else None,
+        created_at=meeting.created_at,
+        updated_at=meeting.updated_at,
+        version=meeting.version,
+    )
+
+
 @router.get(
     "",
     response_model=MeetingListOut,
@@ -137,6 +194,8 @@ def load_meeting_created_fixture() -> dict:
     summary="Lấy danh sách cuộc họp có phân trang và lọc",
 )
 def list_meetings(
+    current_user: CurrentUser,
+    db: Annotated[Session, Depends(get_db)],
     page: Annotated[int, Query(ge=1, description="Số thứ tự trang (bắt đầu từ 1)")] = 1,
     page_size: Annotated[int, Query(ge=1, le=100, description="Số lượng mục trên mỗi trang")] = 10,
     status_filter: Annotated[
@@ -145,15 +204,26 @@ def list_meetings(
     q: Annotated[str | None, Query(description="Tìm kiếm theo tiêu đề cuộc họp")] = None,
 ) -> MeetingListOut:
     """Lấy danh sách cuộc họp có phân trang và lọc theo trạng thái."""
-    data = load_meeting_list_fixture()
-    items = data.get("items", [])
+    base_query = select(Meeting).where(Meeting.owner_id == current_user.id)
     if status_filter is not None:
-        items = [item for item in items if item.get("status") == status_filter]
+        base_query = base_query.where(Meeting.status == status_filter)
+    if q and q.strip():
+        base_query = base_query.where(Meeting.title.ilike(f"%{q.strip()}%"))
+
+    total = db.scalar(select(func.count()).select_from(base_query.subquery())) or 0
+    offset = (page - 1) * page_size
+    meetings = (
+        db.execute(base_query.order_by(Meeting.created_at.desc()).offset(offset).limit(page_size))
+        .scalars()
+        .all()
+    )
+
+    items = [serialize_meeting_summary(m, db) for m in meetings]
     return MeetingListOut(
         items=items,
         page=page,
         page_size=page_size,
-        total=len(items) if status_filter is not None else data.get("total", len(items)),
+        total=total,
     )
 
 
@@ -397,20 +467,82 @@ def get_meeting(
     """Trả về chi tiết cuộc họp (stub contract v0 phục vụ phát triển frontend)."""
     if db is not None and current_user is not None:
         meeting = db.execute(select(Meeting).where(Meeting.id == meeting_id)).scalar_one_or_none()
-        if meeting:
-            if meeting.owner_id != current_user.id:
-                raise APIError(
-                    code="MEETING_NOT_FOUND",
-                    message="Không tìm thấy cuộc họp được yêu cầu.",
-                    status_code=status.HTTP_404_NOT_FOUND,
+        if not meeting or meeting.owner_id != current_user.id:
+            raise APIError(
+                code="MEETING_NOT_FOUND",
+                message="Không tìm thấy cuộc họp được yêu cầu.",
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+
+        latest_job = (
+            db.execute(
+                select(Job).where(Job.meeting_id == meeting.id).order_by(Job.created_at.desc())
+            )
+            .scalars()
+            .first()
+        )
+
+        speakers = (
+            db.execute(
+                select(Speaker)
+                .where(Speaker.meeting_id == meeting.id)
+                .order_by(Speaker.created_at.asc())
+            )
+            .scalars()
+            .all()
+        )
+
+        speakers_out = [
+            SpeakerOut(
+                id=spk.id,
+                meeting_id=spk.meeting_id,
+                label=spk.label,
+                default_name=spk.default_name,
+                display_name=spk.display_name,
+                is_edited=spk.display_name != spk.default_name,
+                color_index=idx % 10,
+                segment_count=0,
+                speaking_time_sec=0.0,
+                version=spk.version,
+            )
+            for idx, spk in enumerate(speakers)
+        ]
+
+        job_out = None
+        if latest_job:
+            job_error = (
+                JobErrorOut(
+                    code=latest_job.error_code,
+                    message=latest_job.error_message or "",
+                    retryable=latest_job.attempt < latest_job.max_attempts,
+                    stage=latest_job.stage,
                 )
-            data = load_meeting_fixture()
-            data["id"] = meeting.id
-            data["title"] = meeting.title
-            data["status"] = meeting.status
-            data["latest_job"] = None
-            data["speakers"] = []
-            return MeetingDetailOut.model_validate(data)
+                if latest_job.error_code
+                else None
+            )
+            job_out = JobOut(
+                id=latest_job.id,
+                meeting_id=latest_job.meeting_id,
+                status=latest_job.status,  # type: ignore[arg-type]
+                stage=latest_job.stage,  # type: ignore[arg-type]
+                from_stage=latest_job.from_stage,  # type: ignore[arg-type]
+                progress=latest_job.progress,
+                stages=latest_job.stage_status or {},
+                attempt=latest_job.attempt,
+                max_attempts=latest_job.max_attempts,
+                next_run_at=latest_job.next_run_at,
+                error=job_error,
+                created_at=latest_job.created_at,
+                started_at=None,
+                finished_at=None,
+            )
+
+        meeting_summary = serialize_meeting_summary(meeting, db)
+        return MeetingDetailOut(
+            **meeting_summary.model_dump(),
+            latest_job=job_out,
+            speakers=speakers_out,
+        )
 
     data = load_meeting_fixture()
     data["id"] = meeting_id
