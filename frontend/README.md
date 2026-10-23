@@ -40,6 +40,9 @@ chọn audio trên máy để nghe file thật. Tạo cuộc họp mới gửi f
 Recorder chỉ xin quyền micro khi bấm bắt đầu sau consent; dừng track khi dừng ghi
 hoặc rời trang. Cần localhost/HTTPS và trình duyệt hỗ trợ MediaRecorder. File WebM
 thiếu duration sử dụng thời gian đo trong phiên ghi âm làm fallback.
+Logic ghi âm nằm trong `src/features/audio/useRecorder.ts`, có test giả lập quyền
+micro, hủy và cleanup. Các cuộc họp API dùng endpoint cho chỉnh sửa segment,
+tóm tắt và công việc; cuộc họp `sprint-42` vẫn là bản demo cục bộ.
 
 ## Chạy local
 
