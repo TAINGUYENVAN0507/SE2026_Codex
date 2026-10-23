@@ -8,6 +8,7 @@ from typing import Any
 
 from fastapi import status
 from sqlalchemy import delete, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.errors import APIError
@@ -96,8 +97,31 @@ class IdempotencyService:
             status="processing",
             created_at=now,
         )
-        session.add(new_record)
-        session.flush()
+        try:
+            session.add(new_record)
+            session.flush()
+        except IntegrityError as exc:
+            session.rollback()
+            # Race condition: một luồng song song khác vừa ghi bản ghi cùng key
+            existing = session.execute(
+                select(IdempotencyKey).where(
+                    IdempotencyKey.user_id == user_id,
+                    IdempotencyKey.key == key,
+                    IdempotencyKey.endpoint == endpoint,
+                )
+            ).scalar_one_or_none()
+            if existing and existing.status == "completed":
+                return IdempotencyCheckResult(
+                    is_replayed=True,
+                    response_code=existing.response_code or 200,
+                    response_body=existing.response_body or {},
+                    record_id=existing.id,
+                )
+            raise APIError(
+                code="REQUEST_IN_PROGRESS",
+                message="Yêu cầu đang được xử lý, vui lòng chờ trong giây lát.",
+                status_code=status.HTTP_409_CONFLICT,
+            ) from exc
 
         return IdempotencyCheckResult(
             is_replayed=False,
