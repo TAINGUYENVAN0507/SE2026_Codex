@@ -20,6 +20,7 @@ from meeting_pipeline.llm.base import (
     LLMProvider,
     SummaryDraft,
     SummaryRequest,
+    SummaryResult,
 )
 
 PROVIDERS = ("disabled", "fake", "anthropic")
@@ -51,5 +52,6 @@ __all__ = [
     "LLMProvider",
     "SummaryDraft",
     "SummaryRequest",
+    "SummaryResult",
     "provider",
 ]

@@ -45,10 +45,17 @@ class SummaryRequest:
     prompt_version: str
 
 
+@dataclass(frozen=True)
+class SummaryResult:
+    draft: SummaryDraft
+    #: model thật sự đã trả lời; có thể khác model yêu cầu khi server-side fallback chạy
+    model: str
+
+
 class LLMProvider(Protocol):
     #: tên model ghi vào `summary.json`; None với provider không gọi model
     model: str | None
     #: False: stage ghi `status=disabled`, không có request nào ra ngoài
     enabled: bool
 
-    def summarize(self, request: SummaryRequest) -> SummaryDraft: ...
+    def summarize(self, request: SummaryRequest) -> SummaryResult: ...

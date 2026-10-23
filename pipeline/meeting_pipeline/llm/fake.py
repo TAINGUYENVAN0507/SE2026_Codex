@@ -4,7 +4,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from meeting_pipeline.llm.base import DraftActionItem, DraftItem, SummaryDraft, SummaryRequest
+from meeting_pipeline.llm.base import (
+    DraftActionItem,
+    DraftItem,
+    SummaryDraft,
+    SummaryRequest,
+    SummaryResult,
+)
 
 FAKE_MODEL = "fake-llm"
 
@@ -34,11 +40,11 @@ class FakeProvider:
     enabled: bool = True
     requests: list[SummaryRequest] = field(default_factory=list)
 
-    def summarize(self, request: SummaryRequest) -> SummaryDraft:
+    def summarize(self, request: SummaryRequest) -> SummaryResult:
         self.requests.append(request)
         if self.error is not None:
             raise self.error
-        return self.draft
+        return SummaryResult(draft=self.draft, model=FAKE_MODEL)
 
 
 @dataclass
@@ -48,5 +54,5 @@ class DisabledProvider:
     model: str | None = None
     enabled: bool = False
 
-    def summarize(self, request: SummaryRequest) -> SummaryDraft:
+    def summarize(self, request: SummaryRequest) -> SummaryResult:
         raise RuntimeError("DisabledProvider không bao giờ được gọi summarize()")

@@ -24,8 +24,9 @@ def test_fake_provider_from_env(monkeypatch):
     p = llm.provider()
     assert isinstance(p, FakeProvider) and p.enabled
     request = SummaryRequest(system="s", user="u", prompt_version="v")
-    draft = p.summarize(request)
-    assert draft.overview and p.requests == [request]
+    result = p.summarize(request)
+    assert result.draft.overview and result.model == "fake-llm"
+    assert p.requests == [request]
 
 
 def test_unknown_provider_is_rejected(monkeypatch):
