@@ -5,17 +5,31 @@ import meetingList from '../../../contracts/fixtures/api/meeting_list.json'
 import transcriptReady from '../../../contracts/fixtures/api/transcript_ready.json'
 import transcriptPending from '../../../contracts/fixtures/api/transcript_pending.json'
 import meetingCreated from '../../../contracts/fixtures/api/meeting_created.json'
-import type { SegmentData } from '../api/client'
+import summaryReady from '../../../contracts/fixtures/api/summary_ready.json'
+import summaryDisabled from '../../../contracts/fixtures/api/summary_disabled.json'
+import actionItems from '../../../contracts/fixtures/api/action_items.json'
+import type { ActionItemData, SegmentData, SummaryData } from '../api/client'
 
 type CreatedMeeting = Omit<typeof meetingCreated.meeting, 'duration_sec'> & {
   duration_sec: number | null
 }
 const createdMeetings = new Map<string, CreatedMeeting>()
 const editedSegments = new Map<string, SegmentData>()
+let editedSummary: SummaryData | null = null
+const mockActionItems = new Map<string, ActionItemData>()
+
+function resetMockActionItems() {
+  mockActionItems.clear()
+  for (const item of actionItems.items)
+    mockActionItems.set(item.id, item as ActionItemData)
+}
+resetMockActionItems()
 
 export function resetMockMeetings() {
   createdMeetings.clear()
   editedSegments.clear()
+  editedSummary = null
+  resetMockActionItems()
 }
 
 function notFound(message: string) {
@@ -78,6 +92,165 @@ export const handlers = [
             ),
           })
         : notFound('Không tìm thấy cuộc họp.'),
+  ),
+  http.get('*/api/v1/meetings/:meetingId/summary', ({ params }) =>
+    params.meetingId === meetingProcessing.id
+      ? HttpResponse.json(editedSummary ?? summaryReady)
+      : createdMeetings.has(String(params.meetingId))
+        ? HttpResponse.json(summaryDisabled)
+        : notFound('Không tìm thấy tóm tắt.'),
+  ),
+  http.put(
+    '*/api/v1/meetings/:meetingId/summary',
+    async ({ params, request }) => {
+      if (params.meetingId !== meetingProcessing.id)
+        return notFound('Không tìm thấy tóm tắt.')
+      const body = (await request.json()) as {
+        content: typeof summaryReady.content
+        version: number
+      }
+      const current = editedSummary ?? summaryReady
+      if (body.version !== current.version)
+        return HttpResponse.json(
+          {
+            error: {
+              code: 'VERSION_CONFLICT',
+              message: 'Tóm tắt đã được thay đổi.',
+              details: { current },
+              request_id: null,
+            },
+          },
+          { status: 409 },
+        )
+      editedSummary = {
+        ...current,
+        content: body.content,
+        is_edited: true,
+        version: current.version + 1,
+      }
+      return HttpResponse.json(editedSummary)
+    },
+  ),
+  http.post(
+    '*/api/v1/meetings/:meetingId/jobs',
+    async ({ params, request }) => {
+      if (params.meetingId !== meetingProcessing.id)
+        return notFound('Không tìm thấy cuộc họp.')
+      const body = (await request.json()) as { from_stage?: string }
+      if (body.from_stage !== 'summarize')
+        return HttpResponse.json(
+          { error: { code: 'BAD_REQUEST', message: 'Stage không hợp lệ.' } },
+          { status: 400 },
+        )
+      editedSummary = { ...summaryReady, status: 'pending', content: null }
+      return HttpResponse.json(
+        { ...jobRetryScheduled, status: 'queued' },
+        { status: 202 },
+      )
+    },
+  ),
+  http.get('*/api/v1/meetings/:meetingId/action-items', ({ params }) =>
+    params.meetingId === meetingProcessing.id
+      ? HttpResponse.json({ items: [...mockActionItems.values()] })
+      : notFound('Không tìm thấy cuộc họp.'),
+  ),
+  http.post(
+    '*/api/v1/meetings/:meetingId/action-items',
+    async ({ params, request }) => {
+      if (params.meetingId !== meetingProcessing.id)
+        return notFound('Không tìm thấy cuộc họp.')
+      const body = (await request.json()) as {
+        description: string
+        assignee_name?: string | null
+        assignee_speaker_id?: string | null
+        due_date?: string | null
+        status: string
+      }
+      if (!body.description.trim() || body.description.trim().length > 1000)
+        return HttpResponse.json(
+          {
+            error: { code: 'VALIDATION_ERROR', message: 'Mô tả không hợp lệ.' },
+          },
+          { status: 422 },
+        )
+      const now = new Date().toISOString()
+      const item: ActionItemData = {
+        id: crypto.randomUUID(),
+        meeting_id: meetingProcessing.id,
+        description: body.description.trim(),
+        assignee_name: body.assignee_name ?? null,
+        assignee_speaker_id: body.assignee_speaker_id ?? null,
+        due_date: body.due_date ?? null,
+        due_date_text: null,
+        status: body.status,
+        source: 'user',
+        is_edited: false,
+        needs_review: false,
+        evidence_segment_ids: [],
+        ai_original: null,
+        version: 1,
+        created_at: now,
+        updated_at: now,
+      }
+      mockActionItems.set(item.id, item)
+      return HttpResponse.json(item, { status: 201 })
+    },
+  ),
+  http.patch(
+    '*/api/v1/meetings/:meetingId/action-items/:itemId',
+    async ({ params, request }) => {
+      const current = mockActionItems.get(String(params.itemId))
+      if (!current || params.meetingId !== meetingProcessing.id)
+        return notFound('Không tìm thấy công việc.')
+      const body = (await request.json()) as {
+        description?: string
+        assignee_name?: string | null
+        assignee_speaker_id?: string | null
+        due_date?: string | null
+        status?: string
+        version: number
+      }
+      if (body.version !== current.version)
+        return HttpResponse.json(
+          { error: { code: 'VERSION_CONFLICT', message: 'Công việc đã đổi.' } },
+          { status: 409 },
+        )
+      const saved: ActionItemData = {
+        ...current,
+        description: body.description ?? current.description,
+        assignee_name:
+          body.assignee_name === undefined
+            ? current.assignee_name
+            : body.assignee_name,
+        assignee_speaker_id:
+          body.assignee_speaker_id === undefined
+            ? current.assignee_speaker_id
+            : body.assignee_speaker_id,
+        due_date:
+          body.due_date === undefined ? current.due_date : body.due_date,
+        status: body.status ?? current.status,
+        is_edited: true,
+        version: current.version + 1,
+      }
+      mockActionItems.set(saved.id, saved)
+      return HttpResponse.json(saved)
+    },
+  ),
+  http.delete(
+    '*/api/v1/meetings/:meetingId/action-items/:itemId',
+    ({ params, request }) => {
+      const current = mockActionItems.get(String(params.itemId))
+      if (!current || params.meetingId !== meetingProcessing.id)
+        return notFound('Không tìm thấy công việc.')
+      const version = Number(new URL(request.url).searchParams.get('version'))
+      if (version !== current.version)
+        return HttpResponse.json(
+          { error: { code: 'VERSION_CONFLICT', message: 'Công việc đã đổi.' } },
+          { status: 409 },
+        )
+      mockActionItems.delete(current.id)
+      return new HttpResponse(null, { status: 204 })
+    },
   ),
   http.patch(
     '*/api/v1/meetings/:meetingId/segments/:segmentId',

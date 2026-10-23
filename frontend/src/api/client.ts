@@ -17,6 +17,10 @@ export type MeetingList = components['schemas']['MeetingListOut']
 export type TranscriptData = components['schemas']['TranscriptOut']
 export type SpeakerData = components['schemas']['SpeakerOut']
 export type SegmentData = components['schemas']['TranscriptSegmentOut']
+export type SummaryData = components['schemas']['SummaryOut']
+export type ActionItemData = components['schemas']['ActionItemOut']
+export type ActionItemCreate = components['schemas']['ActionItemCreate']
+export type ActionItemPatch = components['schemas']['ActionItemPatch']
 
 const client = createClient<ApiV1Paths>({
   baseUrl: new URL('/api/v1', window.location.origin).href,
@@ -105,4 +109,82 @@ export function patchSegment(
       body: patch,
     }),
   )
+}
+
+export function getSummary(meetingId: string): Promise<SummaryData> {
+  return unwrap(
+    client.GET('/meetings/{meeting_id}/summary', {
+      params: { path: { meeting_id: meetingId } },
+    }),
+  )
+}
+
+export function putSummary(
+  meetingId: string,
+  body: components['schemas']['SummaryUpdate'],
+): Promise<SummaryData> {
+  return unwrap(
+    client.PUT('/meetings/{meeting_id}/summary', {
+      params: { path: { meeting_id: meetingId } },
+      body,
+    }),
+  )
+}
+
+export function retrySummary(meetingId: string): Promise<Job> {
+  return unwrap(
+    client.POST('/meetings/{meeting_id}/jobs', {
+      params: { path: { meeting_id: meetingId } },
+      headers: { 'Idempotency-Key': crypto.randomUUID() },
+      body: { from_stage: 'summarize' },
+    }),
+  )
+}
+
+export function listActionItems(meetingId: string) {
+  return unwrap(
+    client.GET('/meetings/{meeting_id}/action-items', {
+      params: { path: { meeting_id: meetingId } },
+    }),
+  )
+}
+
+export function createActionItem(meetingId: string, body: ActionItemCreate) {
+  return unwrap(
+    client.POST('/meetings/{meeting_id}/action-items', {
+      params: { path: { meeting_id: meetingId } },
+      body,
+    }),
+  )
+}
+
+export function patchActionItem(
+  meetingId: string,
+  itemId: string,
+  body: ActionItemPatch,
+) {
+  return unwrap(
+    client.PATCH('/meetings/{meeting_id}/action-items/{item_id}', {
+      params: { path: { meeting_id: meetingId, item_id: itemId } },
+      body,
+    }),
+  )
+}
+
+export async function deleteActionItem(
+  meetingId: string,
+  itemId: string,
+  version: number,
+): Promise<void> {
+  try {
+    await client.DELETE('/meetings/{meeting_id}/action-items/{item_id}', {
+      params: {
+        path: { meeting_id: meetingId, item_id: itemId },
+        query: { version },
+      },
+    })
+  } catch (error) {
+    if (error instanceof ApiError) throw error
+    throw toNetworkError()
+  }
 }
