@@ -18,6 +18,11 @@ class Settings(BaseSettings):
     MAX_UPLOAD_MB: int = 200
     MAX_DURATION_SEC: int = 7200
 
+    # Cấu hình xác thực JWT
+    JWT_SECRET: str = "dev-insecure-jwt-secret-key-change-in-prod"
+    JWT_ALGORITHM: str = "HS256"
+    JWT_EXPIRE_MINUTES: int = 60 * 24 * 7
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

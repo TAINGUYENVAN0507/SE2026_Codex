@@ -557,9 +557,45 @@ def test_get_config_endpoint() -> None:
         assert result.max_upload_mb == 200
 
 
+def _setup_openapi_auth_app():
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+    from sqlalchemy.pool import StaticPool
+
+    from app.core.security import hash_password
+    from app.db.base import Base
+    from app.db.models.user import User
+    from app.db.session import get_db
+
+    engine = create_engine(
+        "sqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    Base.metadata.create_all(bind=engine, tables=[User.__table__])
+    session_factory = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    session = session_factory()
+    user = User(
+        id="u-03a1b2c3-d4e5-4f6a-8b9c-0d1e2f3a4b5c",
+        email="user@example.com",
+        display_name="Nguyễn Văn A",
+        password_hash=hash_password("valid-password"),
+    )
+    session.add(user)
+    session.commit()
+
+    app = create_app()
+
+    def _override_get_db():
+        yield session
+
+    app.dependency_overrides[get_db] = _override_get_db
+    return app
+
+
 def test_auth_login_success() -> None:
     """Kiểm tra POST /api/v1/auth/login thành công trả về 200 và set cookie."""
-    app = create_app()
+    app = _setup_openapi_auth_app()
     with TestClient(app) as client:
         response = client.post(
             "/api/v1/auth/login",
@@ -574,7 +610,7 @@ def test_auth_login_success() -> None:
 
 def test_auth_login_invalid() -> None:
     """Kiểm tra POST /api/v1/auth/login sai thông tin trả về 401."""
-    app = create_app()
+    app = _setup_openapi_auth_app()
     with TestClient(app) as client:
         response = client.post(
             "/api/v1/auth/login",
@@ -586,16 +622,22 @@ def test_auth_login_invalid() -> None:
 
 def test_auth_logout() -> None:
     """Kiểm tra POST /api/v1/auth/logout trả về 204."""
-    app = create_app()
+    app = _setup_openapi_auth_app()
     with TestClient(app) as client:
         response = client.post("/api/v1/auth/logout")
         assert response.status_code == 204
 
 
 def test_auth_me() -> None:
-    """Kiểm tra GET /api/v1/auth/me trả về thông tin user."""
-    app = create_app()
+    """Kiểm tra GET /api/v1/auth/me trả về thông tin user khi đã đăng nhập."""
+    app = _setup_openapi_auth_app()
     with TestClient(app) as client:
+        # Đăng nhập để nhận cookie
+        login_res = client.post(
+            "/api/v1/auth/login",
+            json={"email": "user@example.com", "password": "valid-password"},
+        )
+        assert login_res.status_code == 200
         response = client.get("/api/v1/auth/me")
         assert response.status_code == 200
         data = response.json()
