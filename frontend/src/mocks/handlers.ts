@@ -5,11 +5,18 @@ import meetingList from '../../../contracts/fixtures/api/meeting_list.json'
 import transcriptReady from '../../../contracts/fixtures/api/transcript_ready.json'
 import transcriptPending from '../../../contracts/fixtures/api/transcript_pending.json'
 import meetingCreated from '../../../contracts/fixtures/api/meeting_created.json'
+import type { SegmentData } from '../api/client'
 
 type CreatedMeeting = Omit<typeof meetingCreated.meeting, 'duration_sec'> & {
   duration_sec: number | null
 }
 const createdMeetings = new Map<string, CreatedMeeting>()
+const editedSegments = new Map<string, SegmentData>()
+
+export function resetMockMeetings() {
+  createdMeetings.clear()
+  editedSegments.clear()
+}
 
 function notFound(message: string) {
   return HttpResponse.json(
@@ -64,8 +71,71 @@ export const handlers = [
     createdMeetings.has(String(params.meetingId))
       ? HttpResponse.json(transcriptPending)
       : params.meetingId === meetingProcessing.id
-        ? HttpResponse.json(transcriptReady)
+        ? HttpResponse.json({
+            ...transcriptReady,
+            segments: transcriptReady.segments.map(
+              (segment) => editedSegments.get(segment.id) ?? segment,
+            ),
+          })
         : notFound('Không tìm thấy cuộc họp.'),
+  ),
+  http.patch(
+    '*/api/v1/meetings/:meetingId/segments/:segmentId',
+    async ({ params, request }) => {
+      if (params.meetingId !== meetingProcessing.id)
+        return notFound('Không tìm thấy cuộc họp.')
+      const original = transcriptReady.segments.find(
+        (item) => item.id === params.segmentId,
+      )
+      if (!original) return notFound('Không tìm thấy đoạn transcript.')
+      const current = editedSegments.get(original.id) ?? original
+      const body = (await request.json()) as {
+        text?: string
+        speaker_id?: string | null
+        version: number
+      }
+      if (body.version !== current.version)
+        return HttpResponse.json(
+          {
+            error: {
+              code: 'VERSION_CONFLICT',
+              message: 'Đoạn transcript đã thay đổi.',
+              details: { current },
+              request_id: null,
+            },
+          },
+          { status: 409 },
+        )
+      if (
+        body.text !== undefined &&
+        (body.text.trim().length < 1 || body.text.trim().length > 5000)
+      )
+        return HttpResponse.json(
+          {
+            error: {
+              code: 'VALIDATION_ERROR',
+              message: 'Nội dung cần có từ 1 đến 5000 ký tự.',
+              details: null,
+              request_id: null,
+            },
+          },
+          { status: 422 },
+        )
+      const saved = {
+        ...current,
+        text: body.text?.trim() ?? current.text,
+        speaker_id:
+          body.speaker_id === undefined ? current.speaker_id : body.speaker_id,
+        is_edited:
+          (body.text?.trim() ?? current.text) !== current.ai_text ||
+          (body.speaker_id === undefined
+            ? current.speaker_id
+            : body.speaker_id) !== current.ai_speaker_id,
+        version: current.version + 1,
+      }
+      editedSegments.set(original.id, saved)
+      return HttpResponse.json(saved)
+    },
   ),
   http.patch(
     '*/api/v1/meetings/:meetingId/speakers/:speakerId',

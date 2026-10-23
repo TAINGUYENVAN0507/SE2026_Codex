@@ -34,6 +34,8 @@ export function apiMeetingToView(
         start: segment.start_sec,
         end: segment.end_sec,
         speakerId: segment.speaker_id ?? null,
+        aiSpeakerId: segment.ai_speaker_id ?? null,
+        version: segment.version,
         text: segment.text,
         originalText: segment.ai_text,
         edited: segment.is_edited || false,

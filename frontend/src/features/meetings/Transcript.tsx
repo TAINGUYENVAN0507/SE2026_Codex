@@ -5,7 +5,7 @@ import { CheckIcon } from '@phosphor-icons/react/dist/csr/Check'
 import { XIcon } from '@phosphor-icons/react/dist/csr/X'
 import { type Meeting } from './model'
 import { useActiveSegment } from './useActiveSegment'
-import { patchSpeaker } from '../../api/client'
+import { patchSegment, patchSpeaker } from '../../api/client'
 import { ApiError } from '../../api/errors'
 import { initials } from './model'
 import {
@@ -56,6 +56,9 @@ export function Transcript({
   const [speakerError, setSpeakerError] = useState('')
   const [versionConflict, setVersionConflict] = useState(false)
   const [savingSpeaker, setSavingSpeaker] = useState(false)
+  const [savingSegment, setSavingSegment] = useState(false)
+  const [segmentConflict, setSegmentConflict] = useState(false)
+  const [aiOriginal, setAiOriginal] = useState(false)
   const visible = meeting.segments.filter(
     (s) =>
       (speaker === 'all' || s.speakerId === speaker) &&
@@ -80,25 +83,115 @@ export function Transcript({
         .getElementById(`segment-${active}`)
         ?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
   }, [active, follow, editing])
-  function save(id: string) {
-    if (!draft.trim()) {
-      setError('Nội dung không được để trống.')
+  async function save(id: string) {
+    const text = draft.trim()
+    if (text.length < 1 || text.length > 5000) {
+      setError(
+        text.length < 1
+          ? 'Nội dung không được để trống.'
+          : 'Nội dung không được quá 5000 ký tự.',
+      )
       return
     }
+    const previous = meeting.segments.find((segment) => segment.id === id)
+    if (!previous || savingSegment) return
+    setError('')
+    setSavingSegment(true)
     onUpdate((m) => ({
       ...m,
       segments: m.segments.map((s) =>
         s.id === id
           ? {
               ...s,
-              text: draft.trim(),
-              edited: draft.trim() !== s.originalText,
+              text,
+              edited: text !== s.originalText,
             }
           : s,
       ),
     }))
-    setEditing(undefined)
+    try {
+      if (previous.version != null) {
+        const saved = await patchSegment(meeting.id, id, {
+          text,
+          version: previous.version,
+        })
+        onUpdate((m) => ({
+          ...m,
+          segments: m.segments.map((s) =>
+            s.id === id
+              ? {
+                  ...s,
+                  text: saved.text,
+                  edited: saved.is_edited,
+                  version: saved.version,
+                }
+              : s,
+          ),
+        }))
+      }
+      setEditing(undefined)
+    } catch (cause) {
+      onUpdate((m) => ({
+        ...m,
+        segments: m.segments.map((s) => (s.id === id ? previous : s)),
+      }))
+      if (cause instanceof ApiError && cause.code === 'VERSION_CONFLICT')
+        setSegmentConflict(true)
+      else
+        setError(
+          cause instanceof ApiError
+            ? cause.message
+            : 'Không thể lưu đoạn transcript. Hãy thử lại.',
+        )
+    } finally {
+      setSavingSegment(false)
+    }
+  }
+  async function changeSpeaker(id: string, speakerId: string | null) {
+    const previous = meeting.segments.find((segment) => segment.id === id)
+    if (!previous || savingSegment) return
+    setSavingSegment(true)
     setError('')
+    onUpdate((m) => ({
+      ...m,
+      segments: m.segments.map((s) => (s.id === id ? { ...s, speakerId } : s)),
+    }))
+    try {
+      if (previous.version != null) {
+        const saved = await patchSegment(meeting.id, id, {
+          speaker_id: speakerId,
+          version: previous.version,
+        })
+        onUpdate((m) => ({
+          ...m,
+          segments: m.segments.map((s) =>
+            s.id === id
+              ? {
+                  ...s,
+                  speakerId: saved.speaker_id ?? null,
+                  edited: saved.is_edited,
+                  version: saved.version,
+                }
+              : s,
+          ),
+        }))
+      }
+    } catch (cause) {
+      onUpdate((m) => ({
+        ...m,
+        segments: m.segments.map((s) => (s.id === id ? previous : s)),
+      }))
+      if (cause instanceof ApiError && cause.code === 'VERSION_CONFLICT')
+        setSegmentConflict(true)
+      else
+        setError(
+          cause instanceof ApiError
+            ? cause.message
+            : 'Không thể đổi người nói. Hãy thử lại.',
+        )
+    } finally {
+      setSavingSegment(false)
+    }
   }
   async function saveSpeaker() {
     const name = speakerDraft.trim()
@@ -167,6 +260,14 @@ export function Transcript({
             onChange={(e) => setFollow(e.target.checked)}
           />
           Theo đoạn đang phát
+        </label>
+        <label className="follow-control">
+          <input
+            type="checkbox"
+            checked={aiOriginal}
+            onChange={(event) => setAiOriginal(event.target.checked)}
+          />
+          Bản AI gốc
         </label>
       </div>
       <div className="transcript-scroll">
@@ -255,6 +356,27 @@ export function Transcript({
             <button onClick={() => setVersionConflict(false)}>Để sau</button>
           </div>
         )}
+        {segmentConflict && (
+          <div
+            role="alertdialog"
+            aria-label="Đoạn transcript đã thay đổi"
+            className="version-conflict"
+          >
+            <p>
+              Đoạn transcript đã thay đổi ở nơi khác. Hãy tải lại trang để cập
+              nhật; chữ đang gõ vẫn được giữ cho đến khi bạn chọn.
+            </p>
+            <button onClick={() => window.location.reload()}>
+              Tải lại trang
+            </button>
+            <button onClick={() => setSegmentConflict(false)}>Để sau</button>
+          </div>
+        )}
+        {error && !editing && (
+          <p className="form-error" role="alert">
+            {error}
+          </p>
+        )}
         {pending && (
           <div className="empty-state" role="status">
             <h2>Đang tạo transcript…</h2>
@@ -264,7 +386,11 @@ export function Transcript({
         )}
         {groups.flatMap((group) =>
           group.map((s, index) => {
-            const p = meeting.speakers.find((item) => item.id === s.speakerId)
+            const p = meeting.speakers.find(
+              (item) =>
+                item.id ===
+                (aiOriginal ? (s.aiSpeakerId ?? s.speakerId) : s.speakerId),
+            )
             return (
               <article
                 className={`segment ${index ? 'continuation' : 'group-start'} speaker-color-${p?.colorIndex ?? 'unknown'} ${active === s.id ? 'active' : ''} ${editing === s.id ? 'editing' : ''}`}
@@ -296,54 +422,54 @@ export function Transcript({
                   {active === s.id && (
                     <span className="playing-label">Đang chọn</span>
                   )}
-                  {s.edited && <span className="edited-label">Đã sửa</span>}
-                  <div className="segment-actions">
-                    <select
-                      aria-label={`Người nói đoạn ${s.id}`}
-                      value={s.speakerId || ''}
-                      onChange={(e) =>
-                        onUpdate((m) => ({
-                          ...m,
-                          segments: m.segments.map((seg) =>
-                            seg.id === s.id
-                              ? { ...seg, speakerId: e.target.value || null }
-                              : seg,
-                          ),
-                        }))
-                      }
-                    >
-                      <option value="">Chưa xác định</option>
-                      {meeting.speakers.map((person) => (
-                        <option key={person.id} value={person.id}>
-                          {person.name}
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      className="icon-button"
-                      onClick={() => {
-                        setEditing(s.id)
-                        setDraft(s.text)
-                        setError('')
-                      }}
-                      aria-label={`Sửa đoạn ${s.id}`}
-                    >
-                      <PencilSimpleIcon />
-                    </button>
-                  </div>
+                  {s.edited && !aiOriginal && (
+                    <span className="edited-label">Đã sửa</span>
+                  )}
+                  {!aiOriginal && !pending && (
+                    <div className="segment-actions">
+                      <select
+                        aria-label={`Người nói đoạn ${s.id}`}
+                        value={s.speakerId || ''}
+                        disabled={savingSegment}
+                        onChange={(e) =>
+                          void changeSpeaker(s.id, e.target.value || null)
+                        }
+                      >
+                        <option value="">Chưa xác định</option>
+                        {meeting.speakers.map((person) => (
+                          <option key={person.id} value={person.id}>
+                            {person.name}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        className="icon-button"
+                        disabled={savingSegment}
+                        onClick={() => {
+                          setEditing(s.id)
+                          setDraft(s.text)
+                          setError('')
+                        }}
+                        aria-label={`Sửa đoạn ${s.id}`}
+                      >
+                        <PencilSimpleIcon />
+                      </button>
+                    </div>
+                  )}
                 </header>
-                {editing === s.id ? (
+                {editing === s.id && !aiOriginal ? (
                   <div className="segment-editor">
                     <textarea
                       autoFocus
                       aria-label="Chỉnh sửa transcript"
                       value={draft}
                       onChange={(e) => setDraft(e.target.value)}
-                      maxLength={5000}
                       onKeyDown={(e) => {
                         if (e.key === 'Escape') setEditing(undefined)
-                        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey))
-                          save(s.id)
+                        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                          e.preventDefault()
+                          void save(s.id)
+                        }
                       }}
                     />
                     {error && (
@@ -363,7 +489,8 @@ export function Transcript({
                         </button>
                         <button
                           className="button primary small"
-                          onClick={() => save(s.id)}
+                          disabled={savingSegment}
+                          onClick={() => void save(s.id)}
                         >
                           <CheckIcon />
                           Lưu thay đổi
@@ -374,9 +501,12 @@ export function Transcript({
                 ) : (
                   <>
                     <p className="segment-text">
-                      <Highlight text={s.text} query={query} />
+                      <Highlight
+                        text={aiOriginal ? s.originalText : s.text}
+                        query={query}
+                      />
                     </p>
-                    {s.edited && (
+                    {s.edited && !aiOriginal && (
                       <button
                         className="original-toggle"
                         onClick={() =>

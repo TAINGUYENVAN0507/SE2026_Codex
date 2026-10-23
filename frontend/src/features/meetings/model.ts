@@ -12,6 +12,8 @@ export interface Segment {
   start: number
   end: number
   speakerId: string | null
+  aiSpeakerId?: string | null
+  version?: number
   text: string
   originalText: string
   edited: boolean
