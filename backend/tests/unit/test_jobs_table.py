@@ -1,70 +1,14 @@
 """Kiểm thử ràng buộc toàn vẹn của bảng jobs."""
 
-import contextlib
 import uuid
-from pathlib import Path
 
 import pytest
-from alembic.config import Config
-from sqlalchemy import create_engine, exc
+from sqlalchemy import exc
 from sqlalchemy.orm import Session
 
-from alembic import command
-from app.core.config import get_settings
 from app.db.models.job import Job
 from app.db.models.meeting import Meeting
 from app.db.models.user import User
-
-
-def get_alembic_config(db_url: str) -> Config:
-    """Tạo cấu hình Alembic cho database kiểm thử."""
-    backend_dir = Path(__file__).resolve().parent.parent.parent
-    ini_path = backend_dir / "alembic.ini"
-    cfg = Config(str(ini_path))
-    cfg.set_main_option("script_location", str(backend_dir / "alembic"))
-    cfg.set_main_option("sqlalchemy.url", db_url)
-    return cfg
-
-
-@pytest.fixture
-def db_session():
-    """Fixture khởi tạo database sạch, áp dụng migration và cung cấp session."""
-    settings = get_settings()
-    postgres_available = False
-
-    if settings.DATABASE_URL.startswith("postgresql"):
-        try:
-            connect_args = {"connect_timeout": 1} if "psycopg" in settings.DATABASE_URL else {}
-            test_engine = create_engine(settings.DATABASE_URL, connect_args=connect_args)
-            with test_engine.connect():
-                pass
-            postgres_available = True
-            db_url = settings.DATABASE_URL
-        except Exception:
-            postgres_available = False
-
-    test_db_path = None
-    if not postgres_available:
-        test_db_path = Path(__file__).resolve().parent.parent.parent / "test_jobs.db"
-        if test_db_path.exists():
-            test_db_path.unlink()
-        db_url = f"sqlite:///{test_db_path.as_posix()}"
-
-    cfg = get_alembic_config(db_url)
-    command.upgrade(cfg, "head")
-
-    engine = create_engine(db_url)
-    session = Session(engine)
-
-    try:
-        yield session
-    finally:
-        session.close()
-        command.downgrade(cfg, "base")
-        engine.dispose()
-        if not postgres_available and test_db_path and test_db_path.exists():
-            with contextlib.suppress(Exception):
-                test_db_path.unlink()
 
 
 def test_one_active_job_per_meeting_constraint(db_session: Session) -> None:
