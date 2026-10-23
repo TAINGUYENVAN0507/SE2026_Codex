@@ -62,13 +62,13 @@ flowchart LR
 | Stage | Input | Output trong workdir | Lỗi chính | Stage thật |
 |---|---|---|---|---|
 | `preprocess` | File gốc | `audio.wav` (16 kHz mono), `preprocess.json` | `AUDIO_INVALID`, `AUDIO_TOO_SHORT`, `AUDIO_TOO_LONG`: permanent | ✓ AI-05 |
-| `vad` | `audio.wav` | `vad.json` | `NO_SPEECH_DETECTED`: permanent | ○ AI-06 |
-| `asr` | `audio.wav` | `asr.json` | Timeout, OOM: transient | ○ AI-06 |
-| `diarize` | `audio.wav` | `diarization.json`, `diarization.rttm` | Lỗi ở lượt cuối: fallback 1 speaker, job không fail | ○ AI-07 |
+| `vad` | `audio.wav` | `vad.json` | `NO_SPEECH_DETECTED`: permanent | ✓ AI-06 |
+| `asr` | `audio.wav` | `asr.json` | Timeout, OOM: transient | ✓ AI-06 |
+| `diarize` | `audio.wav` | `diarization.json`, `diarization.rttm` | Lỗi ở lượt cuối: fallback 1 speaker, job không fail | ✓ AI-07 |
 | `merge` | `preprocess.json`, `asr.json`, `diarization.json` | `transcript.json` | Lỗi ở đây là bug: permanent | ✓ AI-08 |
-| `summarize` | `transcript.json`, hoặc transcript đã sửa qua `transcript_override_path` | `summary.json` | 429/5xx: transient. 400: permanent. Không có key: `status=disabled`. | ○ AI-09 |
+| `summarize` | `transcript.json`, hoặc transcript đã sửa qua `transcript_override_path` | `summary.json` | 429/5xx: transient. 400: permanent. LLM tắt hoặc không có key: `status=disabled`. | ✓ AI-09 |
 
-`PIPELINE_BACKEND=fake` chạy cả 6 stage bằng dữ liệu mẫu. `FAKE_SCENARIO` chọn kịch bản lỗi (`pipeline/README.md`). Stage chưa có bản thật thì báo `STAGE_NOT_IMPLEMENTED`.
+`PIPELINE_BACKEND=fake` chạy cả 6 stage bằng dữ liệu mẫu. `FAKE_SCENARIO` chọn kịch bản lỗi (`pipeline/README.md`). Cả 6 stage đã có bản thật; stage thiếu trong registry thì báo `STAGE_NOT_IMPLEMENTED`.
 
 ## Lỗi, timeout, retry
 

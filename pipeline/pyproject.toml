@@ -22,10 +22,12 @@ diarize = [
     "torch>=2.8",
     "torchaudio>=2.8",
 ]
-llm = ["anthropic>=0.70"]
+llm = ["anthropic>=1,<2"]
 
 [dependency-groups]
 dev = [
+    # Test provider Anthropic bằng HTTP transport giả, không gọi mạng (AI-09).
+    "anthropic>=1,<2",
     "pytest>=8.3",
     "hypothesis>=6.100",
     "ruff>=0.6",

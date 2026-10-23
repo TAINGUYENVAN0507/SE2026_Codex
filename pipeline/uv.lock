@@ -1886,6 +1886,7 @@ llm = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "anthropic" },
     { name = "hypothesis" },
     { name = "jsonschema" },
     { name = "pytest" },
@@ -1894,7 +1895,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "anthropic", marker = "extra == 'llm'", specifier = ">=0.70" },
+    { name = "anthropic", marker = "extra == 'llm'", specifier = ">=1,<2" },
     { name = "faster-whisper", marker = "extra == 'asr'", specifier = ">=1.2,<2" },
     { name = "nvidia-cublas-cu12", marker = "sys_platform == 'linux' and extra == 'asr'", specifier = ">=12,<13" },
     { name = "nvidia-cudnn-cu12", marker = "sys_platform == 'linux' and extra == 'asr'", specifier = ">=9,<10" },
@@ -1907,6 +1908,7 @@ provides-extras = ["asr", "diarize", "llm"]
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "anthropic", specifier = ">=1,<2" },
     { name = "hypothesis", specifier = ">=6.100" },
     { name = "jsonschema", specifier = ">=4.23" },
     { name = "pytest", specifier = ">=8.3" },
