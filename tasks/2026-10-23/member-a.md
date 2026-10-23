@@ -64,4 +64,4 @@ git merge origin/main
 ## Cuối ngày
 
 - [x] Tick các ô ở trên và ghi hash. Cập nhật `docs/frontend/` (FE-06, FE-10, FE-12, FE-13).
-- [ ] Push `vantuong`, mở PR vào `main`. **Không tự merge.**
+- [x] Push `vantuong`, mở PR #19 vào `main`. **Không tự merge.**
