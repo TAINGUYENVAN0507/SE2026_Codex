@@ -38,6 +38,8 @@ def auto_auth_for_contract_tests(monkeypatch: pytest.MonkeyPatch, request: pytes
     if request.node.name.startswith("test_auth_") or request.node.name == "test_openapi_json_drift":
         return
 
+    import shutil
+
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
     from sqlalchemy.pool import StaticPool
@@ -45,17 +47,32 @@ def auto_auth_for_contract_tests(monkeypatch: pytest.MonkeyPatch, request: pytes
     from app import main as app_main
     from app.api.deps import get_current_user
     from app.db.base import Base
+    from app.db.models.idempotency import IdempotencyKey
     from app.db.models.job import Job
     from app.db.models.meeting import Meeting
     from app.db.models.user import User
     from app.db.session import get_db
+    from app.services.audio_validator import AudioProbeResult
+
+    if shutil.which("ffprobe") is None:
+
+        def _mock_probe(file_path, timeout_sec=10.0, ffprobe_bin=None):
+            return AudioProbeResult(
+                duration_sec=120.0,
+                format_name="wav",
+                sample_rate=16000,
+                channels=1,
+            )
+
+        monkeypatch.setattr("app.api.v1.meetings.probe_audio", _mock_probe)
 
     engine = create_engine(
         "sqlite:///:memory:",
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
-    Base.metadata.create_all(bind=engine, tables=[User.__table__, Meeting.__table__, Job.__table__])
+    tables = [User.__table__, Meeting.__table__, Job.__table__, IdempotencyKey.__table__]
+    Base.metadata.create_all(bind=engine, tables=tables)
     session_factory = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     session = session_factory()
 
