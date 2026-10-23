@@ -50,7 +50,7 @@ def auto_auth_for_contract_tests(monkeypatch: pytest.MonkeyPatch, request: pytes
     from app.db.models.idempotency import IdempotencyKey
     from app.db.models.job import Job
     from app.db.models.meeting import Meeting
-    from app.db.models.transcript import Speaker
+    from app.db.models.transcript import Segment, Speaker
     from app.db.models.user import User
     from app.db.session import get_db
     from app.services.audio_validator import AudioProbeResult
@@ -78,6 +78,7 @@ def auto_auth_for_contract_tests(monkeypatch: pytest.MonkeyPatch, request: pytes
         Job.__table__,
         IdempotencyKey.__table__,
         Speaker.__table__,
+        Segment.__table__,
     ]
     Base.metadata.create_all(bind=engine, tables=tables)
     session_factory = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -106,6 +107,58 @@ def auto_auth_for_contract_tests(monkeypatch: pytest.MonkeyPatch, request: pytes
         version=1,
     )
     session.add(fake_meeting)
+
+    fake_job = Job(
+        id="test-job-uuid-67890",
+        meeting_id=fake_meeting.id,
+        status="retry_scheduled",
+        stage="summarize",
+        from_stage=None,
+        progress=0.9,
+        stage_status={
+            "preprocess": "succeeded",
+            "vad": "succeeded",
+            "asr": "succeeded",
+            "diarize": "succeeded",
+            "merge": "succeeded",
+            "summarize": "retry_scheduled",
+        },
+        attempt=2,
+        max_attempts=3,
+        error_code="LLM_UNAVAILABLE",
+        error_message="Dịch vụ tóm tắt tạm thời không phản hồi. Hệ thống sẽ tự thử lại.",
+    )
+    session.add(fake_job)
+
+    meeting_ready = Meeting(
+        id="test-meeting-1",
+        owner_id=fake_user.id,
+        title="Họp thử nghiệm 1",
+        source="upload",
+        status="ready",
+        version=1,
+    )
+    meeting_pending = Meeting(
+        id="meeting-pending-123",
+        owner_id=fake_user.id,
+        title="Họp chờ xử lý",
+        source="upload",
+        status="queued",
+        version=1,
+    )
+    session.add_all([meeting_ready, meeting_pending])
+
+    seg1 = Segment(
+        id="5b1e7c2a-b2c3-4d4e-8f9a-0b1c2d3e4f5a",
+        meeting_id="test-meeting-1",
+        idx=0,
+        start_sec=0.0,
+        end_sec=5.0,
+        text="Xin chào mọi người",
+        ai_text="Xin chào mọi người",
+        version=2,
+    )
+    session.add(seg1)
     session.commit()
 
     orig_create_app = app_main.create_app

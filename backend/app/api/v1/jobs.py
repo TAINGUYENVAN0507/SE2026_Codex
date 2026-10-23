@@ -15,7 +15,7 @@ from app.db.models.job import Job
 from app.db.models.meeting import Meeting
 from app.db.session import get_db
 from app.schemas.common import ErrorResponse
-from app.schemas.job import JobOut
+from app.schemas.job import JobErrorOut, JobOut
 
 router = APIRouter(
     prefix="/jobs",
@@ -85,21 +85,48 @@ def get_job(
     """Trả về trạng thái tiến trình job (stub contract v0)."""
     if db is not None and current_user is not None:
         job = db.execute(select(Job).where(Job.id == job_id)).scalar_one_or_none()
-        if job:
-            meeting = db.execute(
-                select(Meeting).where(Meeting.id == job.meeting_id)
-            ).scalar_one_or_none()
-            if not meeting or meeting.owner_id != current_user.id:
-                raise APIError(
-                    code="NOT_FOUND",
-                    message="Không tìm thấy tiến trình xử lý.",
-                    status_code=status.HTTP_404_NOT_FOUND,
-                )
-            data = load_job_fixture()
-            data["id"] = job.id
-            data["meeting_id"] = job.meeting_id
-            data["status"] = job.status
-            return JobOut.model_validate(data)
+        if not job:
+            raise APIError(
+                code="NOT_FOUND",
+                message="Không tìm thấy tiến trình xử lý.",
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+        meeting = db.execute(
+            select(Meeting).where(Meeting.id == job.meeting_id)
+        ).scalar_one_or_none()
+        if not meeting or meeting.owner_id != current_user.id:
+            raise APIError(
+                code="NOT_FOUND",
+                message="Không tìm thấy tiến trình xử lý.",
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+
+        job_error = (
+            JobErrorOut(
+                code=job.error_code,
+                message=job.error_message or "",
+                retryable=job.attempt < job.max_attempts,
+                stage=job.stage,
+            )
+            if job.error_code
+            else None
+        )
+        return JobOut(
+            id=job.id,
+            meeting_id=job.meeting_id,
+            status=job.status,  # type: ignore[arg-type]
+            stage=job.stage,  # type: ignore[arg-type]
+            from_stage=job.from_stage,  # type: ignore[arg-type]
+            progress=job.progress,
+            stages=job.stage_status or {},
+            attempt=job.attempt,
+            max_attempts=job.max_attempts,
+            next_run_at=job.next_run_at,
+            error=job_error,
+            created_at=job.created_at,
+            started_at=None,
+            finished_at=None,
+        )
 
     data = load_job_fixture()
     data["id"] = job_id
