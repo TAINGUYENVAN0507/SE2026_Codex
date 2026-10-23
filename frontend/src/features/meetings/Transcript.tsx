@@ -3,7 +3,7 @@ import { MagnifyingGlassIcon } from '@phosphor-icons/react/dist/csr/MagnifyingGl
 import { PencilSimpleIcon } from '@phosphor-icons/react/dist/csr/PencilSimple'
 import { CheckIcon } from '@phosphor-icons/react/dist/csr/Check'
 import { XIcon } from '@phosphor-icons/react/dist/csr/X'
-import { type Meeting } from './model'
+import { type Meeting, type Segment } from './model'
 import { useActiveSegment } from './useActiveSegment'
 import { patchSegment, patchSpeaker } from '../../api/client'
 import { ApiError } from '../../api/errors'
@@ -59,14 +59,18 @@ export function Transcript({
   const [savingSegment, setSavingSegment] = useState(false)
   const [segmentConflict, setSegmentConflict] = useState(false)
   const [aiOriginal, setAiOriginal] = useState(false)
+  const shownSpeakerId = (s: Segment) =>
+    aiOriginal && s.aiSpeakerId !== undefined ? s.aiSpeakerId : s.speakerId
   const visible = meeting.segments.filter(
     (s) =>
-      (speaker === 'all' || s.speakerId === speaker) &&
-      s.text
+      (speaker === 'all' || shownSpeakerId(s) === speaker) &&
+      (aiOriginal ? s.originalText : s.text)
         .toLocaleLowerCase('vi')
         .includes(query.trim().toLocaleLowerCase('vi')),
   )
-  const groups = groupConsecutiveSegments(visible)
+  const groups = groupConsecutiveSegments(
+    visible.map((s) => ({ ...s, speakerId: shownSpeakerId(s) })),
+  )
   const timedSegments = useMemo(
     () =>
       meeting.segments.map((segment) => ({
@@ -386,11 +390,7 @@ export function Transcript({
         )}
         {groups.flatMap((group) =>
           group.map((s, index) => {
-            const p = meeting.speakers.find(
-              (item) =>
-                item.id ===
-                (aiOriginal ? (s.aiSpeakerId ?? s.speakerId) : s.speakerId),
-            )
+            const p = meeting.speakers.find((item) => item.id === s.speakerId)
             return (
               <article
                 className={`segment ${index ? 'continuation' : 'group-start'} speaker-color-${p?.colorIndex ?? 'unknown'} ${active === s.id ? 'active' : ''} ${editing === s.id ? 'editing' : ''}`}

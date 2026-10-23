@@ -147,7 +147,20 @@ describe('FE-10 segment editing', () => {
         }),
       ]),
     })
-    await user.selectOptions(selector, '')
+    await user.click(screen.getByRole('checkbox', { name: 'Bản AI gốc' }))
+    expect(
+      within(document.getElementById(`segment-${unknown.id}`)!).getByText(
+        'Chưa xác định',
+      ),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole('combobox', { name: `Người nói đoạn ${unknown.id}` }),
+    ).not.toBeInTheDocument()
+    await user.click(screen.getByRole('checkbox', { name: 'Bản AI gốc' }))
+    await user.selectOptions(
+      screen.getByRole('combobox', { name: `Người nói đoạn ${unknown.id}` }),
+      '',
+    )
     const reloaded = await getTranscript(meetingFixture.id)
     expect(
       reloaded.segments?.find((segment) => segment.id === unknown.id)
@@ -162,5 +175,24 @@ describe('FE-10 segment editing', () => {
     expect(
       screen.getByRole('button', { name: `Sửa đoạn ${first.id}` }),
     ).toBeInTheDocument()
+  })
+
+  it('rolls back a speaker change on 409', async () => {
+    server.use(
+      http.patch('*/api/v1/meetings/:meetingId/segments/:segmentId', () =>
+        HttpResponse.json(
+          { error: { code: 'VERSION_CONFLICT', message: 'Conflict' } },
+          { status: 409 },
+        ),
+      ),
+    )
+    const user = userEvent.setup()
+    render(<Harness />)
+    const selector = screen.getByRole('combobox', {
+      name: `Người nói đoạn ${unknown.id}`,
+    })
+    await user.selectOptions(selector, transcriptFixture.speakers[0].id)
+    expect(await screen.findByRole('alertdialog')).toHaveTextContent('tải lại')
+    expect(selector).toHaveValue('')
   })
 })
