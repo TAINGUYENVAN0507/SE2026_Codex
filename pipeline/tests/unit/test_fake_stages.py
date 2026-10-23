@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pytest
 
+from meeting_pipeline import registry
 from meeting_pipeline.errors import (
     ErrorCode,
     PermanentPipelineError,
@@ -191,7 +192,12 @@ def test_wrong_output_type_is_rejected(workdir):
     assert exc.value.code is ErrorCode.PIPELINE_OUTPUT_INVALID
 
 
-def test_real_backend_reports_not_implemented(workdir):
+def test_real_backend_has_every_stage():
+    assert all(get_stage(stage, "real") is not registry._not_implemented for stage in STAGES)
+
+
+def test_real_backend_reports_missing_stage(workdir, monkeypatch):
+    monkeypatch.setattr(registry, "_real_stages", dict)
     with pytest.raises(PermanentPipelineError) as exc:
         execute_stage(Stage.SUMMARIZE, workdir, get_stage(Stage.SUMMARIZE, "real"))
     assert exc.value.code is ErrorCode.STAGE_NOT_IMPLEMENTED

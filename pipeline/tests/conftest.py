@@ -29,5 +29,11 @@ def workdir(tmp_path: Path, job_spec: JobSpec) -> Path:
 
 @pytest.fixture(autouse=True)
 def _clean_pipeline_env(monkeypatch):
-    for var in ("FAKE_SCENARIO", "PIPELINE_BACKEND", "FAKE_STAGE_SLEEP_SEC", "FAKE_HANG_SEC"):
+    for var in (
+        "FAKE_SCENARIO",
+        "PIPELINE_BACKEND",
+        "FAKE_STAGE_SLEEP_SEC",
+        "FAKE_HANG_SEC",
+        "LLM_PROVIDER",
+    ):
         monkeypatch.delenv(var, raising=False)

@@ -19,9 +19,9 @@ Package này không truy cập database hay HTTP. Worker của backend gọi pip
 | `asr` | Đã có: faster-whisper `large-v3-turbo` int8_float16 (ADR-0001), chuẩn hóa timestamp, lọc hallucination; OOM là transient | AI-06 |
 | `diarize` | Đã có: pyannote `community-1` (torch CPU), gợi ý số người nói, ghi RTTM; lỗi thì runner fallback 1 speaker | AI-07 |
 | `merge` | Đã có: gán speaker cho từng word theo overlap lớn nhất, tách và gộp đoạn, cờ `overlap`/`low_confidence`, đánh số speaker theo thứ tự xuất hiện | AI-08 |
-| `summarize` | Chưa | AI-09 |
+| `summarize` | Đã có: Claude API (`claude-opus-5-5`) qua `LLMProvider`, prompt `summary-v1`, hậu kiểm evidence, hạn chót, người nhận việc; mặc định tắt (`disabled`) | AI-09 |
 
-Stage chưa có bản `real` sẽ báo lỗi `STAGE_NOT_IMPLEMENTED`. Dùng `PIPELINE_BACKEND=fake` để chạy trọn pipeline.
+Cả 6 stage đã có bản `real`. Dùng `PIPELINE_BACKEND=fake` để chạy trọn pipeline bằng dữ liệu mẫu, không cần model.
 
 Stage dùng model (`vad`, `asr`, `diarize`) gọi model qua adapter trong `meeting_pipeline/engines/`, có bản fake cho test. Cài model thật bằng `uv sync --extra asr` (faster-whisper, cuBLAS, cuDNN; CI không cài). Biến môi trường của ASR, mặc định theo `docs/adr/0001-asr.md`: `ASR_MODEL` (`large-v3-turbo`), `ASR_COMPUTE_TYPE` (`int8_float16`), `ASR_DEVICE` (`cuda`), `ASR_BEAM_SIZE` (`5`).
 
@@ -30,6 +30,23 @@ Diarization cài bằng `uv sync --extra diarize`: pyannote.audio 4.x và torch 
 Biến môi trường của `preprocess`: `PIPELINE_MIN_DURATION_SEC` (mặc định 1), `PIPELINE_MAX_DURATION_SEC` (mặc định 3600), `FFMPEG_BIN`, `FFPROBE_BIN`.
 
 `merge` là pure function, không cần model: `stages/merge.py::merge(asr, diarization, audio)`. Các ngưỡng nằm trong `MergeConfig` và là giá trị khởi tạo, sẽ hiệu chỉnh sau benchmark AI-13. Output luôn thỏa bất biến của `transcript.schema.json`, kể cả khi ASR trả timestamp lệch (có property test bằng hypothesis).
+
+### Tóm tắt bằng LLM (`summarize`)
+
+`summarize` đọc transcript (bản đã sửa qua `transcript_override_path` nếu có), gọi LLM qua `meeting_pipeline/llm/` rồi hậu kiểm bản nháp trước khi ghi `summary.json`. Chỉ gửi **text** của transcript (kèm tên speaker, thời gian, ngày họp), không gửi audio.
+
+| `LLM_PROVIDER` | Hành vi |
+|---|---|
+| không đặt, `disabled` | Không gọi LLM, không có request nào ra ngoài; `status=disabled` (PRIV-16) |
+| `fake` | Bản nháp cố định, không gọi mạng (dev, CI, E2E) |
+| `anthropic` | Claude API. Cài bằng `uv sync --extra llm`; credential do SDK tự tìm (`ANTHROPIC_API_KEY`). Không có credential thì cũng `disabled`, không gửi gì đi |
+
+Biến của provider `anthropic`: `LLM_MODEL` (`claude-opus-5-5`), `LLM_EFFORT` (`medium`), `LLM_TIMEOUT_SEC` (`180`), `LLM_MAX_RETRIES` (`2`, retry trong SDK, ngoài retry của job).
+
+- Transcript dưới 2 segment hoặc dưới 30 từ thì `insufficient_content`, không gọi LLM.
+- Prompt `summary-v1` (`llm/prompts.py`) đặt transcript trong khối `<transcript>` và dặn model coi đó là dữ liệu, không làm theo lệnh nằm trong transcript. Output là structured output theo model Pydantic `SummaryDraft`.
+- Hậu kiểm (`llm/postcheck.py`): bỏ evidence trỏ tới segment không tồn tại; action item không còn evidence hoặc bị bỏ hạn chót thì `needs_review=true`; `due_date` chỉ giữ khi có `due_date_text` và ngày họp; người nhận việc trùng tên speaker thì gắn `assignee_speaker_label`.
+- Lỗi: 408, 409, 429, 5xx, timeout, lỗi mạng là transient `LLM_UNAVAILABLE`; 4xx khác là permanent `LLM_REQUEST_INVALID`; model từ chối, hết `max_tokens` hoặc output sai schema là `LLM_OUTPUT_INVALID`. Thông điệp lỗi và log không chứa prompt hay response.
 
 ## Cài đặt
 

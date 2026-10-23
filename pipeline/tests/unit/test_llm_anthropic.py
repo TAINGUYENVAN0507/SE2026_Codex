@@ -165,3 +165,45 @@ def test_config_from_env(monkeypatch):
     monkeypatch.setenv("LLM_TIMEOUT_SEC", "60")
     config = AnthropicConfig.from_env()
     assert (config.model, config.effort, config.timeout_sec) == ("claude-opus-5-5", "high", 60.0)
+
+
+CREDENTIAL_ENV = (
+    "ANTHROPIC_API_KEY",
+    "ANTHROPIC_AUTH_TOKEN",
+    "ANTHROPIC_PROFILE",
+    "ANTHROPIC_CONFIG_DIR",
+    "ANTHROPIC_IDENTITY_TOKEN",
+    "ANTHROPIC_IDENTITY_TOKEN_FILE",
+    "ANTHROPIC_FEDERATION_RULE_ID",
+    "ANTHROPIC_ORGANIZATION_ID",
+)
+
+
+@pytest.fixture
+def no_credentials(monkeypatch, tmp_path):
+    for var in CREDENTIAL_ENV:
+        monkeypatch.delenv(var, raising=False)
+    # HOME rỗng: SDK không tìm thấy profile của `ant auth login` trong ~/.config/anthropic.
+    monkeypatch.setenv("HOME", str(tmp_path))
+
+
+def test_enabled_with_api_key():
+    assert provider().enabled
+
+
+def test_priv16_disabled_without_credentials(no_credentials):
+    assert AnthropicProvider.from_env().enabled is False
+
+
+def test_enabled_with_api_key_from_env(no_credentials, monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
+    assert AnthropicProvider.from_env().enabled
+
+
+def test_broken_credential_config_is_permanent(no_credentials, monkeypatch, tmp_path):
+    # Đặt thư mục cấu hình tường minh mà không có profile: SDK báo CredentialsError.
+    monkeypatch.setenv("ANTHROPIC_CONFIG_DIR", str(tmp_path / "missing"))
+    with pytest.raises(PermanentPipelineError) as exc:
+        AnthropicProvider.from_env().enabled  # noqa: B018
+    assert exc.value.code is ErrorCode.LLM_REQUEST_INVALID
+    assert str(tmp_path) not in str(exc.value)

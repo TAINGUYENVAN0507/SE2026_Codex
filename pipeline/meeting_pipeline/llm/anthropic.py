@@ -1,7 +1,8 @@
 """Provider Claude API cho stage summarize (AI-09).
 
 Cài bằng `uv sync --extra llm`. Credential do SDK tự tìm: `ANTHROPIC_API_KEY`, hoặc profile
-của `ant auth login`. Chỉ gửi transcript dạng text, không gửi audio.
+của `ant auth login`. Không tìm thấy credential thì `enabled=False` và stage ghi summary
+`disabled` (PRIV-16). Chỉ gửi transcript dạng text, không gửi audio.
 
 | Biến | Mặc định |
 |---|---|
@@ -22,6 +23,7 @@ của `ant auth login`. Chỉ gửi transcript dạng text, không gửi audio.
 
 from __future__ import annotations
 
+import logging
 import os
 from dataclasses import dataclass
 from typing import Any
@@ -37,6 +39,8 @@ from meeting_pipeline.llm.base import SummaryDraft, SummaryRequest, SummaryResul
 from meeting_pipeline.schemas import Stage
 
 FALLBACK_BETA = "server-side-fallback-2026-07-01"
+
+log = logging.getLogger("meeting_pipeline.llm")
 
 
 @dataclass(frozen=True)
@@ -67,8 +71,6 @@ def _permanent(code: ErrorCode, message: str) -> PermanentPipelineError:
 
 
 class AnthropicProvider:
-    enabled = True
-
     def __init__(self, config: AnthropicConfig, client: Any = None) -> None:
         self.config = config
         self.model: str | None = config.model
@@ -78,13 +80,31 @@ class AnthropicProvider:
     def from_env(cls) -> AnthropicProvider:
         return cls(AnthropicConfig.from_env())
 
+    @property
+    def enabled(self) -> bool:
+        # SDK dò credential (biến môi trường, profile) ngay khi tạo client, không gọi mạng.
+        client = self._get_client()
+        found = any(
+            getattr(client, name, None) is not None
+            for name in ("api_key", "auth_token", "credentials")
+        )
+        if not found:
+            log.warning("LLM_PROVIDER=anthropic nhưng không có credential: summary disabled")
+        return found
+
     def _get_client(self) -> Any:
         if self._client is None:
             import anthropic
 
-            self._client = anthropic.Anthropic(
-                timeout=self.config.timeout_sec, max_retries=self.config.max_retries
-            )
+            try:
+                self._client = anthropic.Anthropic(
+                    timeout=self.config.timeout_sec, max_retries=self.config.max_retries
+                )
+            except anthropic.CredentialsError:
+                # Có cấu hình credential (profile, federation) nhưng hỏng: lỗi cấu hình như 401.
+                raise _permanent(
+                    ErrorCode.LLM_REQUEST_INVALID, "cấu hình credential của LLM không hợp lệ"
+                ) from None
         return self._client
 
     def summarize(self, request: SummaryRequest) -> SummaryResult:

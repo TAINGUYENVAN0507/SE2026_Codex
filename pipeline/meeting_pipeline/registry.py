@@ -1,8 +1,8 @@
 """Chọn implementation của từng stage theo backend.
 
 `PIPELINE_BACKEND=fake` dùng fake stages (CI, dev backend/frontend).
-`PIPELINE_BACKEND=real` (mặc định) dùng stage thật; stage nào chưa làm thì báo
-`STAGE_NOT_IMPLEMENTED` thay vì âm thầm trả dữ liệu giả.
+`PIPELINE_BACKEND=real` (mặc định) dùng stage thật. Cả 6 stage đã có bản thật; stage nào
+thiếu trong `_real_stages()` thì báo `STAGE_NOT_IMPLEMENTED` thay vì âm thầm trả dữ liệu giả.
 """
 
 from __future__ import annotations
@@ -35,7 +35,7 @@ def _not_implemented(ctx: StageContext):
 
 def _real_stages() -> dict[Stage, StageFn]:
     # Import trong hàm để các stage nặng (model) chỉ được nạp khi thật sự dùng.
-    from meeting_pipeline.stages import asr, diarize, merge, preprocess, vad
+    from meeting_pipeline.stages import asr, diarize, merge, preprocess, summarize, vad
 
     return {
         Stage.PREPROCESS: preprocess.run,
@@ -43,6 +43,7 @@ def _real_stages() -> dict[Stage, StageFn]:
         Stage.ASR: asr.run,
         Stage.DIARIZE: diarize.run,
         Stage.MERGE: merge.run,
+        Stage.SUMMARIZE: summarize.run,
     }
 
 
