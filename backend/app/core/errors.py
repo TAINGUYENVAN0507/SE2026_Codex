@@ -18,12 +18,14 @@ class APIError(Exception):
         message: str,
         status_code: int = status.HTTP_400_BAD_REQUEST,
         details: Any = None,
+        headers: dict[str, str] | None = None,
     ) -> None:
         super().__init__(message)
         self.code = code
         self.message = message
         self.status_code = status_code
         self.details = details
+        self.headers = headers
 
 
 def build_error_envelope(
@@ -62,7 +64,7 @@ async def api_error_handler(request: Request, exc: APIError) -> JSONResponse:
         details=exc.details,
         request_id=request_id,
     )
-    return JSONResponse(status_code=exc.status_code, content=body)
+    return JSONResponse(status_code=exc.status_code, content=body, headers=exc.headers)
 
 
 async def http_exception_handler(request: Request, exc: StarletteHTTPException) -> JSONResponse:
