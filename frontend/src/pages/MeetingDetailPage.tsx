@@ -19,7 +19,7 @@ import {
   type Meeting,
 } from '../features/meetings/model'
 import { Transcript } from '../features/meetings/Transcript'
-import { NotesPanel } from '../features/meetings/NotesPanel'
+import { NotesPanel, type NotesTab } from '../features/meetings/NotesPanel'
 import { useActiveSegment } from '../features/meetings/useActiveSegment'
 import { useTranscriptQuery } from '../features/meetings/useTranscriptQuery'
 import { apiMeetingToView } from '../features/meetings/apiModel'
@@ -134,10 +134,8 @@ function Detail({
 }) {
   const [localFile, setLocalFile] = useState<File | undefined>(file)
   const [position, setPosition] = useState(file ? 0 : 255)
-  const [side, setSide] = useState<'summary' | 'tasks'>('summary')
-  const [mobile, setMobile] = useState<'transcript' | 'summary' | 'tasks'>(
-    'transcript',
-  )
+  const [side, setSide] = useState<NotesTab>('summary')
+  const [mobile, setMobile] = useState<'transcript' | NotesTab>('transcript')
   const [exportOpen, setExportOpen] = useState(false)
   const [message, setMessage] = useState('')
   const [rename, setRename] = useState(false)
@@ -347,7 +345,7 @@ function Detail({
         </div>
       )}
       <nav className="mobile-detail-tabs" aria-label="Nội dung cuộc họp">
-        {(['transcript', 'summary', 'tasks'] as const).map((t) => (
+        {(['transcript', 'summary', 'tasks', 'history'] as const).map((t) => (
           <button
             key={t}
             className={mobile === t ? 'selected' : ''}
@@ -362,6 +360,7 @@ function Detail({
                 transcript: 'Transcript',
                 summary: 'Tóm tắt',
                 tasks: 'Công việc',
+                history: 'Lịch sử',
               }[t]
             }
           </button>

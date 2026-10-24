@@ -76,6 +76,17 @@ export function getMe(): Promise<UserSession> {
   return unwrap(client.GET('/auth/me'))
 }
 
+export function listEdits(meetingId: string, page = 1, entityType?: string) {
+  return unwrap(
+    client.GET('/meetings/{meeting_id}/edits', {
+      params: {
+        path: { meeting_id: meetingId },
+        query: { page, page_size: 10, entity_type: entityType || undefined },
+      },
+    }),
+  )
+}
+
 export async function logout(): Promise<void> {
   try {
     await client.POST('/auth/logout')
