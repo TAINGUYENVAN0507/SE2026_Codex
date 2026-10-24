@@ -57,7 +57,29 @@ Trên CI GitHub Actions (`.github/workflows/backend.yml`), PostgreSQL 16 đượ
 
 ## 5. Chạy ứng dụng nội bộ (development)
 
+### 5.1. Chạy API Server
+
+Khởi chạy máy chủ FastAPI qua Uvicorn:
+
 ```bash
 uv run uvicorn app.main:app --reload --port 8000
 ```
+
+Tài liệu API tương tác tự động có thể truy cập tại:
+- Swagger UI: `http://localhost:8000/docs`
+- ReDoc: `http://localhost:8000/redoc`
+
+### 5.2. Chạy Background Worker
+
+Worker chịu trách nhiệm claim các job ở trạng thái `queued` và thực thi pipeline xử lý âm thanh:
+
+- Chạy worker với pipeline giả lập (fake backend, không cần model AI hay GPU):
+  ```bash
+  PIPELINE_BACKEND=fake uv run python -m app.worker.runner
+  ```
+
+- Chạy worker với pipeline thực (yêu cầu cài đặt thêm các extra model tương ứng trong pipeline):
+  ```bash
+  PIPELINE_BACKEND=real uv run python -m app.worker.runner
+  ```
 

@@ -5,7 +5,6 @@ phân đoạn transcript, bản tóm tắt summary và 2 action items.
 Script đảm bảo tính idempotent: chạy lại nhiều lần không sinh bản ghi trùng.
 """
 
-import hashlib
 import json
 import os
 from pathlib import Path
@@ -14,6 +13,7 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.security import hash_password
 from app.db.models.action_item import ActionItem
 from app.db.models.meeting import Meeting
 from app.db.models.summary import Summary
@@ -25,11 +25,6 @@ DEMO_USER_ID = "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d"
 DEMO_USER_EMAIL = "demo@meeting.local"
 DEMO_USER_NAME = "Demo User"
 DEMO_MEETING_ID = "8f6c2a1e-b2c3-4d4e-8f9a-0b1c2d3e4f5a"
-
-
-def _hash_password(raw_password: str) -> str:
-    """Tạo chuỗi hash cho mật khẩu người dùng."""
-    return f"pbkdf2_sha256${hashlib.sha256(raw_password.encode('utf-8')).hexdigest()}"
 
 
 def _load_json_fixture(fixture_name: str) -> dict[str, Any]:
@@ -60,12 +55,16 @@ def run_seed(session: Session) -> dict[str, int]:
     # 1. Tạo User demo nếu chưa tồn tại
     user = session.execute(select(User).where(User.email == DEMO_USER_EMAIL)).scalar_one_or_none()
     if not user:
-        raw_password = os.environ.get("SEED_DEMO_PASSWORD", "demo_password_2026")
+        raw_password = os.environ.get("SEED_DEMO_PASSWORD")
+        if not raw_password:
+            raise ValueError(
+                "Thiếu biến môi trường SEED_DEMO_PASSWORD bắt buộc để seed tài khoản demo."
+            )
         user = User(
             id=DEMO_USER_ID,
             email=DEMO_USER_EMAIL,
             display_name=DEMO_USER_NAME,
-            password_hash=_hash_password(raw_password),
+            password_hash=hash_password(raw_password),
         )
         session.add(user)
         session.flush()

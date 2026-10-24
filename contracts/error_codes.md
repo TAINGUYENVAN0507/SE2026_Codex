@@ -31,6 +31,7 @@ Mọi mã lỗi tuân thủ quy ước:
 | `AUDIO_EXPIRED` | 410 | Tệp âm thanh đã bị xóa theo chính sách lưu trữ (retention policy) | Tệp âm thanh đã hết hạn lưu trữ và đã được dọn dẹp. |
 | `FILE_TOO_LARGE` | 413 | Dung lượng tệp tải lên vượt quá giới hạn tối đa cho phép | Dung lượng tệp âm thanh vượt quá giới hạn cho phép. |
 | `UNSUPPORTED_MEDIA_TYPE` | 415 | Định dạng Content-Type hoặc MIME type không được hỗ trợ | Định dạng tệp không được hỗ trợ. |
+| `RANGE_NOT_SATISFIABLE` | 416 | Khoảng byte yêu cầu trong header Range không hợp lệ hoặc vượt quá kích thước tệp | Khoảng dữ liệu yêu cầu không hợp lệ. |
 | `UNPROCESSABLE_ENTITY` | 422 | Dữ liệu yêu cầu hợp lệ về cú pháp nhưng không thể xử lý | Dữ liệu yêu cầu không thể xử lý. |
 | `VALIDATION_ERROR` | 422 | Dữ liệu đầu vào không vượt qua kiểm tra ràng buộc schema | Dữ liệu nhập vào không hợp lệ. |
 | `CONSENT_REQUIRED` | 422 | Chưa xác nhận sự đồng ý ghi âm/xử lý âm thanh của người tham gia | Cần xác nhận đồng ý xử lý dữ liệu trước khi tải lên. |
@@ -42,6 +43,7 @@ Mọi mã lỗi tuân thủ quy ước:
 | `INTERNAL_SERVER_ERROR` | 500 | Lỗi nội bộ không lường trước phía server | Đã xảy ra lỗi nội bộ hệ thống. Vui lòng thử lại sau. |
 | `HTTP_ERROR` | 500 | Lỗi HTTP không xác định | Đã xảy ra lỗi khi xử lý yêu cầu. |
 | `SERVICE_UNAVAILABLE` | 503 | Dịch vụ backend hoặc cơ sở dữ liệu tạm thời không sẵn sàng | Hệ thống tạm thời không sẵn sàng. Vui lòng thử lại sau. |
+| `LEASE_TIMEOUT` | 504 | Job xử lý vượt quá thời hạn giữ khóa lease và đã đạt số lần thử tối đa | Tiến trình xử lý job bị quá hạn thời gian giữ khóa lease. |
 
 ---
 

@@ -405,6 +405,88 @@
         }
       }
     },
+    "/api/v1/meetings/{meeting_id}/audio": {
+      "get": {
+        "tags": [
+          "Meetings"
+        ],
+        "summary": "Phát luồng dữ liệu âm thanh cuộc họp hỗ trợ HTTP Range",
+        "description": "Stream tệp âm thanh của cuộc họp hỗ trợ HTTP Range (RFC 7233).",
+        "operationId": "get_meeting_audio_api_v1_meetings__meeting_id__audio_get",
+        "parameters": [
+          {
+            "name": "meeting_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "UUID của cuộc họp",
+              "title": "Meeting Id"
+            },
+            "description": "UUID của cuộc họp"
+          },
+          {
+            "name": "Range",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Range"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Toàn bộ luồng tệp âm thanh",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "206": {
+            "description": "Một phần tệp âm thanh theo HTTP Range"
+          },
+          "404": {
+            "description": "Không tìm thấy cuộc họp hoặc tệp âm thanh",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "416": {
+            "description": "Khoảng dữ liệu Range không hợp lệ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/meetings/{meeting_id}/transcript": {
       "get": {
         "tags": [

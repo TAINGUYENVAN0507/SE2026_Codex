@@ -3,6 +3,7 @@
 import json
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.main import create_app
@@ -29,6 +30,150 @@ from app.schemas.transcript import (
 def get_contracts_root() -> Path:
     """Trả về thư mục contracts/ ở gốc repository."""
     return Path(__file__).resolve().parents[3] / "contracts"
+
+
+@pytest.fixture(autouse=True)
+def auto_auth_for_contract_tests(monkeypatch: pytest.MonkeyPatch, request: pytest.FixtureRequest):
+    """Tự động mock current_user cho các contract stub tests."""
+    if request.node.name.startswith("test_auth_") or request.node.name == "test_openapi_json_drift":
+        return
+
+    import shutil
+
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+    from sqlalchemy.pool import StaticPool
+
+    from app import main as app_main
+    from app.api.deps import get_current_user
+    from app.db.base import Base
+    from app.db.models.idempotency import IdempotencyKey
+    from app.db.models.job import Job
+    from app.db.models.meeting import Meeting
+    from app.db.models.transcript import Segment, Speaker
+    from app.db.models.user import User
+    from app.db.session import get_db
+    from app.services.audio_validator import AudioProbeResult
+
+    if shutil.which("ffprobe") is None:
+
+        def _mock_probe(file_path, timeout_sec=10.0, ffprobe_bin=None):
+            return AudioProbeResult(
+                duration_sec=120.0,
+                format_name="wav",
+                sample_rate=16000,
+                channels=1,
+            )
+
+        monkeypatch.setattr("app.api.v1.meetings.probe_audio", _mock_probe)
+
+    engine = create_engine(
+        "sqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    tables = [
+        User.__table__,
+        Meeting.__table__,
+        Job.__table__,
+        IdempotencyKey.__table__,
+        Speaker.__table__,
+        Segment.__table__,
+    ]
+    Base.metadata.create_all(bind=engine, tables=tables)
+    session_factory = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    session = session_factory()
+
+    fake_user = User(
+        id="u-03a1b2c3-d4e5-4f6a-8b9c-0d1e2f3a4b5c",
+        email="user@example.com",
+        display_name="Nguyễn Văn A",
+        password_hash="mock",
+    )
+    session.add(fake_user)
+    session.flush()
+
+    fake_meeting = Meeting(
+        id="test-meeting-uuid-12345",
+        owner_id=fake_user.id,
+        title="Họp sprint planning tuần 42",
+        source="recording",
+        status="processing",
+        meeting_date="2026-10-15",
+        duration_sec=1834.52,
+        num_speakers_hint=3,
+        audio_path="audio/test-meeting-uuid-12345/original.webm",
+        audio_sha256="mock_sha256",
+        version=1,
+    )
+    session.add(fake_meeting)
+
+    fake_job = Job(
+        id="test-job-uuid-67890",
+        meeting_id=fake_meeting.id,
+        status="retry_scheduled",
+        stage="summarize",
+        from_stage=None,
+        progress=0.9,
+        stage_status={
+            "preprocess": "succeeded",
+            "vad": "succeeded",
+            "asr": "succeeded",
+            "diarize": "succeeded",
+            "merge": "succeeded",
+            "summarize": "retry_scheduled",
+        },
+        attempt=2,
+        max_attempts=3,
+        error_code="LLM_UNAVAILABLE",
+        error_message="Dịch vụ tóm tắt tạm thời không phản hồi. Hệ thống sẽ tự thử lại.",
+    )
+    session.add(fake_job)
+
+    meeting_ready = Meeting(
+        id="test-meeting-1",
+        owner_id=fake_user.id,
+        title="Họp thử nghiệm 1",
+        source="upload",
+        status="ready",
+        version=1,
+    )
+    meeting_pending = Meeting(
+        id="meeting-pending-123",
+        owner_id=fake_user.id,
+        title="Họp chờ xử lý",
+        source="upload",
+        status="queued",
+        version=1,
+    )
+    session.add_all([meeting_ready, meeting_pending])
+
+    seg1 = Segment(
+        id="5b1e7c2a-b2c3-4d4e-8f9a-0b1c2d3e4f5a",
+        meeting_id="test-meeting-1",
+        idx=0,
+        start_sec=0.0,
+        end_sec=5.0,
+        text="Xin chào mọi người",
+        ai_text="Xin chào mọi người",
+        version=2,
+    )
+    session.add(seg1)
+    session.commit()
+
+    orig_create_app = app_main.create_app
+
+    def patched_create_app():
+        application = orig_create_app()
+        application.dependency_overrides[get_current_user] = lambda: fake_user
+
+        def _get_db():
+            yield session
+
+        application.dependency_overrides[get_db] = _get_db
+        return application
+
+    monkeypatch.setattr("tests.contract.test_openapi_drift.create_app", patched_create_app)
 
 
 def test_openapi_json_drift() -> None:
@@ -557,9 +702,45 @@ def test_get_config_endpoint() -> None:
         assert result.max_upload_mb == 200
 
 
+def _setup_openapi_auth_app():
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+    from sqlalchemy.pool import StaticPool
+
+    from app.core.security import hash_password
+    from app.db.base import Base
+    from app.db.models.user import User
+    from app.db.session import get_db
+
+    engine = create_engine(
+        "sqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    Base.metadata.create_all(bind=engine, tables=[User.__table__])
+    session_factory = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    session = session_factory()
+    user = User(
+        id="u-03a1b2c3-d4e5-4f6a-8b9c-0d1e2f3a4b5c",
+        email="user@example.com",
+        display_name="Nguyễn Văn A",
+        password_hash=hash_password("valid-password"),
+    )
+    session.add(user)
+    session.commit()
+
+    app = create_app()
+
+    def _override_get_db():
+        yield session
+
+    app.dependency_overrides[get_db] = _override_get_db
+    return app
+
+
 def test_auth_login_success() -> None:
     """Kiểm tra POST /api/v1/auth/login thành công trả về 200 và set cookie."""
-    app = create_app()
+    app = _setup_openapi_auth_app()
     with TestClient(app) as client:
         response = client.post(
             "/api/v1/auth/login",
@@ -574,7 +755,7 @@ def test_auth_login_success() -> None:
 
 def test_auth_login_invalid() -> None:
     """Kiểm tra POST /api/v1/auth/login sai thông tin trả về 401."""
-    app = create_app()
+    app = _setup_openapi_auth_app()
     with TestClient(app) as client:
         response = client.post(
             "/api/v1/auth/login",
@@ -586,16 +767,22 @@ def test_auth_login_invalid() -> None:
 
 def test_auth_logout() -> None:
     """Kiểm tra POST /api/v1/auth/logout trả về 204."""
-    app = create_app()
+    app = _setup_openapi_auth_app()
     with TestClient(app) as client:
         response = client.post("/api/v1/auth/logout")
         assert response.status_code == 204
 
 
 def test_auth_me() -> None:
-    """Kiểm tra GET /api/v1/auth/me trả về thông tin user."""
-    app = create_app()
+    """Kiểm tra GET /api/v1/auth/me trả về thông tin user khi đã đăng nhập."""
+    app = _setup_openapi_auth_app()
     with TestClient(app) as client:
+        # Đăng nhập để nhận cookie
+        login_res = client.post(
+            "/api/v1/auth/login",
+            json={"email": "user@example.com", "password": "valid-password"},
+        )
+        assert login_res.status_code == 200
         response = client.get("/api/v1/auth/me")
         assert response.status_code == 200
         data = response.json()

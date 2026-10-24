@@ -1,33 +1,19 @@
-"""Router cho xác thực người dùng (Auth)."""
+from typing import Annotated
 
-import json
-from pathlib import Path
+from fastapi import APIRouter, Depends, Response, status
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
-from fastapi import APIRouter, Response, status
-
+from app.api.deps import CurrentUser
+from app.core.config import get_settings
 from app.core.errors import APIError
-from app.schemas.auth import LoginRequest, LoginResponse, UserMeOut
+from app.core.security import create_access_token, verify_password
+from app.db.models.user import User
+from app.db.session import get_db
+from app.schemas.auth import LoginRequest, LoginResponse, UserMeOut, UserOut
 from app.schemas.common import ErrorResponse
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
-
-FIXTURE_PATH = (
-    Path(__file__).resolve().parents[4] / "contracts" / "fixtures" / "api" / "user_me.json"
-)
-
-
-def load_user_me_fixture() -> dict:
-    """Đọc dữ liệu fixture thông tin người dùng hiện tại."""
-    if FIXTURE_PATH.is_file():
-        with open(FIXTURE_PATH, encoding="utf-8") as f:
-            return json.load(f)
-    return {
-        "user": {
-            "id": "u-03a1b2c3-d4e5-4f6a-8b9c-0d1e2f3a4b5c",
-            "email": "user@example.com",
-            "display_name": "Nguyễn Văn A",
-        }
-    }
 
 
 @router.post(
@@ -42,23 +28,36 @@ def load_user_me_fixture() -> dict:
     },
     summary="Đăng nhập người dùng",
 )
-def login(payload: LoginRequest, response: Response) -> LoginResponse:
+def login(
+    payload: LoginRequest,
+    response: Response,
+    db: Annotated[Session, Depends(get_db)],
+) -> LoginResponse:
     """Đăng nhập tài khoản cục bộ và trả về session cookie."""
-    if payload.email == "invalid@example.com" or payload.password == "wrong-password":
+    user = db.execute(select(User).where(User.email == payload.email)).scalar_one_or_none()
+    if not user or not verify_password(payload.password, user.password_hash):
         raise APIError(
             code="INVALID_CREDENTIALS",
             message="Email hoặc mật khẩu không chính xác.",
             status_code=status.HTTP_401_UNAUTHORIZED,
         )
 
-    data = load_user_me_fixture()
+    settings = get_settings()
+    token = create_access_token(user.id)
     response.set_cookie(
         key="session_token",
-        value="mock-session-token-v0",
+        value=token,
         httponly=True,
         samesite="lax",
+        secure=(settings.ENVIRONMENT == "production"),
     )
-    return LoginResponse(user=data["user"])
+    return LoginResponse(
+        user=UserOut(
+            id=user.id,
+            email=user.email,
+            display_name=user.display_name,
+        )
+    )
 
 
 @router.post(
@@ -66,10 +65,17 @@ def login(payload: LoginRequest, response: Response) -> LoginResponse:
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Đăng xuất người dùng",
 )
-def logout(response: Response) -> Response:
+def logout() -> Response:
     """Đăng xuất tài khoản và xóa session cookie."""
-    response.delete_cookie(key="session_token")
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+    settings = get_settings()
+    res = Response(status_code=status.HTTP_204_NO_CONTENT)
+    res.delete_cookie(
+        key="session_token",
+        httponly=True,
+        samesite="lax",
+        secure=(settings.ENVIRONMENT == "production"),
+    )
+    return res
 
 
 @router.get(
@@ -84,7 +90,12 @@ def logout(response: Response) -> Response:
     },
     summary="Lấy thông tin người dùng hiện tại",
 )
-def get_me() -> UserMeOut:
+def get_me(current_user: CurrentUser) -> UserMeOut:
     """Trả về thông tin người dùng hiện tại từ session."""
-    data = load_user_me_fixture()
-    return UserMeOut.model_validate(data)
+    return UserMeOut(
+        user=UserOut(
+            id=current_user.id,
+            email=current_user.email,
+            display_name=current_user.display_name,
+        )
+    )
