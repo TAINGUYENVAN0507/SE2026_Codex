@@ -1,6 +1,7 @@
 import createClient from 'openapi-fetch'
 import { ApiError, parseApiError, toNetworkError } from './errors'
 import type { components, paths } from './schema'
+import { notifySessionExpired } from './sessionEvents'
 
 // Path trong contract đã có /api/v1 nên bỏ tiền tố đó trước khi ghép base URL.
 type ApiV1Paths = {
@@ -30,7 +31,12 @@ const client = createClient<ApiV1Paths>({
 })
 
 client.use({
-  async onResponse({ response }) {
+  async onResponse({ request, response }) {
+    if (
+      response.status === 401 &&
+      !new URL(request.url).pathname.endsWith('/auth/login')
+    )
+      notifySessionExpired()
     if (!response.ok) throw await parseApiError(response.clone())
   },
 })

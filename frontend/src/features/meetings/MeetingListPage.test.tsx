@@ -15,6 +15,8 @@ import {
 } from 'vitest'
 import fixture from '../../../../contracts/fixtures/api/meeting_list.json'
 import { MeetingListPage } from '../../pages/MeetingListPage'
+import { DemoStore } from './DemoStore'
+import userMe from '../../../../contracts/fixtures/api/user_me.json'
 
 const server = setupServer()
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
@@ -28,10 +30,13 @@ function renderPage() {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   })
+  client.setQueryData(['me'], userMe)
   return render(
     <QueryClientProvider client={client}>
       <MemoryRouter>
-        <MeetingListPage />
+        <DemoStore>
+          <MeetingListPage />
+        </DemoStore>
       </MemoryRouter>
     </QueryClientProvider>,
   )

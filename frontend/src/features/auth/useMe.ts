@@ -11,7 +11,10 @@ export function useMe() {
       try {
         return await getMe()
       } catch (error) {
-        if (error instanceof ApiError && error.code === 'UNAUTHENTICATED')
+        if (
+          error instanceof ApiError &&
+          (error.status === 401 || error.code === 'UNAUTHENTICATED')
+        )
           return null
         throw error
       }

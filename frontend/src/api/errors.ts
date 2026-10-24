@@ -27,6 +27,7 @@ const messages: Record<string, string> = {
   VERSION_CONFLICT:
     'Dữ liệu đã được thay đổi ở nơi khác. Hãy tải lại rồi thử lại.',
   UNAUTHENTICATED: 'Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại.',
+  INVALID_CREDENTIALS: 'Email hoặc mật khẩu không chính xác.',
   NETWORK_ERROR: 'Không thể kết nối máy chủ. Hãy kiểm tra mạng rồi thử lại.',
   UNKNOWN_ERROR: 'Đã xảy ra lỗi không xác định. Hãy thử lại sau.',
 }
@@ -35,18 +36,21 @@ export class ApiError extends Error {
   readonly code: ApiErrorCode
   readonly details: ApiErrorDetails
   readonly request_id: string | null
+  readonly status: number
 
   constructor(
     code: ApiErrorCode,
     message: string,
     details: ApiErrorDetails = null,
     requestId: string | null = null,
+    status = 0,
   ) {
     super(message)
     this.name = 'ApiError'
     this.code = code
     this.details = details
     this.request_id = requestId
+    this.status = status
   }
 }
 
@@ -58,20 +62,39 @@ export async function parseApiError(response: Response): Promise<ApiError> {
   try {
     const body: unknown = await response.json()
     if (!isRecord(body) || !isRecord(body.error))
-      return new ApiError('UNKNOWN_ERROR', messages.UNKNOWN_ERROR)
+      return new ApiError(
+        'UNKNOWN_ERROR',
+        messages.UNKNOWN_ERROR,
+        null,
+        null,
+        response.status,
+      )
 
     const { code, message, details, request_id: requestId } = body.error
     if (typeof code !== 'string' || typeof message !== 'string')
-      return new ApiError('UNKNOWN_ERROR', messages.UNKNOWN_ERROR)
+      return new ApiError(
+        'UNKNOWN_ERROR',
+        messages.UNKNOWN_ERROR,
+        null,
+        null,
+        response.status,
+      )
 
     return new ApiError(
       code,
       messages[code] ?? message,
       isRecord(details) ? details : null,
       typeof requestId === 'string' ? requestId : null,
+      response.status,
     )
   } catch {
-    return new ApiError('UNKNOWN_ERROR', messages.UNKNOWN_ERROR)
+    return new ApiError(
+      'UNKNOWN_ERROR',
+      messages.UNKNOWN_ERROR,
+      null,
+      null,
+      response.status,
+    )
   }
 }
 

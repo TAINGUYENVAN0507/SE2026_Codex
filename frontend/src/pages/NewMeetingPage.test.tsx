@@ -5,6 +5,7 @@ import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { DemoStore } from '../features/meetings/DemoStore'
 import { NewMeetingPage } from './NewMeetingPage'
+import userMe from '../../../contracts/fixtures/api/user_me.json'
 
 class FakeXHR {
   static instances: FakeXHR[] = []
@@ -53,6 +54,7 @@ function renderPage() {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   })
+  client.setQueryData(['me'], userMe)
   return render(
     <QueryClientProvider client={client}>
       <DemoStore>
