@@ -15,8 +15,8 @@ Giao diện graphite/cam được triển khai từ bộ ảnh đã duyệt, g�
 `/meetings/sprint-42` vẫn là trang mẫu trong React Context. Danh sách,
 upload và transcript của các cuộc họp khác dùng API. Khi chạy dev, MSW bật
 mặc định và trả fixture từ `contracts/fixtures/api/`; đặt `VITE_API_MOCK=0`
-để gọi backend thật. Bản mock không lưu file audio lên server. Tài khoản/mật
-khẩu demo vẫn không được gửi hoặc lưu.
+để gọi backend thật. Bản mock không lưu file audio lên server. Đăng nhập gọi
+API auth; cookie phiên do backend đặt, không lưu token/mật khẩu vào Web Storage.
 
 Đã có tìm kiếm/lọc meeting và transcript, player mô phỏng hoặc nghe audio trên máy,
 sửa transcript và speaker của segment, xem bản gốc, sửa tổng quan, quản lý công việc,

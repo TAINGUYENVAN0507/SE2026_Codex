@@ -17,6 +17,7 @@ export type MeetingList = components['schemas']['MeetingListOut']
 export type TranscriptData = components['schemas']['TranscriptOut']
 export type SpeakerData = components['schemas']['SpeakerOut']
 export type SegmentData = components['schemas']['TranscriptSegmentOut']
+export type UserSession = components['schemas']['UserMeOut']
 export type SummaryData = components['schemas']['SummaryOut']
 export type ActionItemData = components['schemas']['ActionItemOut']
 export type ActionItemCreate = components['schemas']['ActionItemCreate']
@@ -59,6 +60,23 @@ export function getMeeting(id: MeetingDetail['id']): Promise<MeetingDetail> {
       params: { path: { meeting_id: id } },
     }),
   )
+}
+
+export function login(email: string, password: string): Promise<UserSession> {
+  return unwrap(client.POST('/auth/login', { body: { email, password } }))
+}
+
+export function getMe(): Promise<UserSession> {
+  return unwrap(client.GET('/auth/me'))
+}
+
+export async function logout(): Promise<void> {
+  try {
+    await client.POST('/auth/logout')
+  } catch (error) {
+    if (error instanceof ApiError) throw error
+    throw toNetworkError()
+  }
 }
 
 export function getJob(id: Job['id']): Promise<Job> {

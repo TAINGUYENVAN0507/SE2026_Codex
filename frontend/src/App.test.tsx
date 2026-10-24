@@ -2,14 +2,35 @@ import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { DEMO_AUTH_KEY } from './app/RequireAuth'
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest'
+import { setupServer } from 'msw/node'
+import { handlers } from './mocks/handlers'
+import { resetMockAuth } from './mocks/auth'
+import userMe from '../../contracts/fixtures/api/user_me.json'
 import App from './App'
 
-function renderAt(path: string) {
+const server = setupServer(...handlers)
+beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
+afterEach(() => {
+  server.resetHandlers()
+  resetMockAuth()
+})
+afterAll(() => server.close())
+
+function renderAt(path: string, authenticated = true) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   })
+  if (authenticated) client.setQueryData(['me'], userMe)
   return render(
     <QueryClientProvider client={client}>
       <MemoryRouter initialEntries={[path]}>
@@ -21,7 +42,6 @@ function renderAt(path: string) {
 
 beforeEach(() => {
   vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(() => {})
-  sessionStorage.setItem(DEMO_AUTH_KEY, 'true')
 })
 
 describe('meeting workspace', () => {
@@ -123,13 +143,13 @@ describe('meeting workspace', () => {
     expect(screen.getByRole('button', { name: 'Tạo biên bản' })).toBeDisabled()
   })
 
-  it('does not submit credentials to a backend that is not connected', async () => {
+  it('logs in through the auth API', async () => {
     const user = userEvent.setup()
     const fetchSpy = vi.spyOn(globalThis, 'fetch')
     renderAt('/login')
     await user.type(
       screen.getByRole('textbox', { name: 'Email' }),
-      'demo@example.com',
+      'user@example.com',
     )
     await user.type(
       screen.getByLabelText('Mật khẩu', { selector: 'input' }),
@@ -138,24 +158,25 @@ describe('meeting workspace', () => {
     await user.click(screen.getByRole('button', { name: 'Đăng nhập' }))
     expect(
       fetchSpy.mock.calls.some(([request]) =>
-        String(request).includes('/auth/login'),
+        (request instanceof Request ? request.url : String(request)).includes(
+          '/auth/login',
+        ),
       ),
-    ).toBe(false)
+    ).toBe(true)
     fetchSpy.mockRestore()
   })
 
-  it('redirects a protected route to login and returns after demo sign-in', async () => {
-    sessionStorage.removeItem(DEMO_AUTH_KEY)
+  it('redirects a protected route to login and returns after API sign-in', async () => {
     const user = userEvent.setup()
-    renderAt('/meetings/new?source=shortcut')
+    renderAt('/meetings/new?source=shortcut', false)
 
     expect(
-      screen.getByRole('heading', { name: 'Chào mừng trở lại' }),
+      await screen.findByRole('heading', { name: 'Chào mừng trở lại' }),
     ).toBeInTheDocument()
 
     await user.type(
       screen.getByRole('textbox', { name: 'Email' }),
-      'demo@example.com',
+      'user@example.com',
     )
     await user.type(
       screen.getByLabelText('Mật khẩu', { selector: 'input' }),
@@ -164,7 +185,7 @@ describe('meeting workspace', () => {
     await user.click(screen.getByRole('button', { name: 'Đăng nhập' }))
 
     expect(
-      screen.getByRole('heading', { name: 'Tạo cuộc họp mới' }),
+      await screen.findByRole('heading', { name: 'Tạo cuộc họp mới' }),
     ).toBeInTheDocument()
   })
 

@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, useLocation } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from '../App'
-import { DEMO_AUTH_KEY } from './RequireAuth'
+import userMe from '../../../contracts/fixtures/api/user_me.json'
 import { AppProviders } from './AppProviders'
 
 function LocationProbe() {
@@ -17,8 +17,15 @@ function LocationProbe() {
 beforeEach(() => {
   // jsdom does not implement media playback; route unmount still calls cleanup.
   vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(() => {})
-  sessionStorage.setItem(DEMO_AUTH_KEY, 'true')
 })
+
+function authenticatedClient() {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  })
+  client.setQueryData(['me'], userMe)
+  return client
+}
 
 describe('FE-01 route scaffold', () => {
   it.each([
@@ -30,11 +37,7 @@ describe('FE-01 route scaffold', () => {
     ['/unknown', 'Không tìm thấy trang'],
   ])('renders %s in StrictMode', (path, heading) => {
     render(
-      <QueryClientProvider
-        client={
-          new QueryClient({ defaultOptions: { queries: { retry: false } } })
-        }
-      >
+      <QueryClientProvider client={authenticatedClient()}>
         <StrictMode>
           <MemoryRouter initialEntries={[path]}>
             <App />
@@ -48,11 +51,7 @@ describe('FE-01 route scaffold', () => {
 
   it('redirects the root to the meeting list', () => {
     render(
-      <QueryClientProvider
-        client={
-          new QueryClient({ defaultOptions: { queries: { retry: false } } })
-        }
-      >
+      <QueryClientProvider client={authenticatedClient()}>
         <MemoryRouter initialEntries={['/']}>
           <App />
           <LocationProbe />
