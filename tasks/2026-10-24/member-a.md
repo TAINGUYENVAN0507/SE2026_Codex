@@ -92,10 +92,11 @@ PR #19 đã được merge (`2ab123b`).
 ## Cuối ngày
 
 - [x] Tick các ô ở trên và ghi hash. Cập nhật `docs/frontend/` (FE-03, FE-14, FE-16).
-- [ ] Push `vantuong`, mở PR vào `main`. **Không tự merge.**
+- [x] Push `vantuong`, mở [PR #24](https://github.com/TAINGUYENVAN0507/SE2026_Codex/pull/24) vào `main`. **Không tự merge.**
 
 Kiểm tra local: lint, format, TypeScript, 136 test và build đạt. Browser QA tự
 động với MSW tắt, FastAPI thật và PostgreSQL 16 riêng đạt 11 kiểm tra; đã thấy
 một cuộc họp seed trong `/meetings`, cookie HttpOnly, reload và logout. Ảnh và
 kết quả ở `.preview-stitch/qa-2026-10-24/` (không commit). Lịch sử backend vẫn
-trả fixture; lọc/phân trang được kiểm tra qua MSW. Chưa push/PR trong lượt này.
+trả fixture; lọc/phân trang được kiểm tra qua MSW. Đã dừng Vite/API và container
+DB QA sau khi kiểm tra. PR #24 đang chờ review, chưa merge.
