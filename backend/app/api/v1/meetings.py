@@ -26,6 +26,7 @@ from app.core.errors import APIError
 from app.db.models.edit_event import EditEvent
 from app.db.models.job import Job
 from app.db.models.meeting import Meeting
+from app.db.models.summary import Summary
 from app.db.models.transcript import Segment, Speaker
 from app.db.session import get_db
 from app.schemas.action_item import (
@@ -1038,6 +1039,50 @@ def patch_meeting_segment(
     )
 
 
+def serialize_speaker(spk: Speaker, db: Session, meeting_id: str) -> SpeakerOut:
+    """Chuyển đổi Speaker model sang SpeakerOut schema đầy đủ thông tin hiển thị."""
+    all_speakers = (
+        db.execute(
+            select(Speaker)
+            .where(Speaker.meeting_id == meeting_id)
+            .order_by(Speaker.created_at.asc(), Speaker.id.asc())
+        )
+        .scalars()
+        .all()
+    )
+    color_index = 0
+    for idx, s in enumerate(all_speakers):
+        if s.id == spk.id:
+            color_index = idx % 10
+            break
+
+    segments = (
+        db.execute(
+            select(Segment).where(Segment.meeting_id == meeting_id, Segment.speaker_id == spk.id)
+        )
+        .scalars()
+        .all()
+    )
+    segment_count = len(segments)
+    speaking_time_sec = round(
+        sum(max(0.0, (seg.end_sec or 0.0) - (seg.start_sec or 0.0)) for seg in segments), 2
+    )
+    is_edited = spk.display_name != spk.default_name
+
+    return SpeakerOut(
+        id=spk.id,
+        meeting_id=spk.meeting_id,
+        label=spk.label,
+        default_name=spk.default_name,
+        display_name=spk.display_name,
+        is_edited=is_edited,
+        color_index=color_index,
+        segment_count=segment_count,
+        speaking_time_sec=speaking_time_sec,
+        version=spk.version,
+    )
+
+
 @router.patch(
     "/{meeting_id}/speakers/{speaker_id}",
     response_model=SpeakerOut,
@@ -1052,48 +1097,100 @@ def patch_meeting_segment(
     summary="Đổi tên hiển thị của người nói",
 )
 def patch_meeting_speaker(
-    meeting_id: str = FastApiPath(..., description="UUID của cuộc họp"),
-    speaker_id: str = FastApiPath(..., description="UUID của người nói cần sửa"),
-    payload: SpeakerPatch = ...,
+    meeting_id: Annotated[str, FastApiPath(description="UUID của cuộc họp")],
+    speaker_id: Annotated[str, FastApiPath(description="UUID của người nói cần sửa")],
+    payload: SpeakerPatch,
+    current_user: CurrentUser,
+    db: Annotated[Session, Depends(get_db)],
+    request: Request,
 ) -> SpeakerOut:
     """Cập nhật tên hiển thị người nói với kiểm tra optimistic concurrency control."""
-    if payload.version not in (1, 2):
+    meeting = db.execute(
+        select(Meeting).where(Meeting.id == meeting_id, Meeting.owner_id == current_user.id)
+    ).scalar_one_or_none()
+    if meeting is None:
+        raise APIError(
+            code="NOT_FOUND",
+            message="Không tìm thấy cuộc họp được yêu cầu.",
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    speaker = db.execute(
+        select(Speaker).where(Speaker.id == speaker_id, Speaker.meeting_id == meeting.id)
+    ).scalar_one_or_none()
+    if speaker is None:
+        raise APIError(
+            code="NOT_FOUND",
+            message="Không tìm thấy người nói được yêu cầu.",
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    if payload.version != speaker.version:
         raise APIError(
             code="VERSION_CONFLICT",
             message="Người nói đã được cập nhật ở nơi khác. Vui lòng tải lại.",
             status_code=status.HTTP_409_CONFLICT,
             details={
                 "entity": "speaker",
-                "current": {"id": speaker_id, "version": 2},
+                "current": {"id": speaker.id, "version": speaker.version},
             },
         )
 
-    data = load_transcript_ready_fixture()
-    matched = None
-    for spk in data.get("speakers", []):
-        if spk.get("id") == speaker_id:
-            matched = spk
-            break
+    cleaned_name = payload.display_name.strip()
+    if not cleaned_name:
+        raise APIError(
+            code="VALIDATION_ERROR",
+            message="Tên người nói không được để trống.",
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        )
 
-    if not matched:
-        matched = {
-            "id": speaker_id,
-            "meeting_id": meeting_id,
-            "label": "SPEAKER_00",
-            "default_name": "Speaker 1",
-            "display_name": payload.display_name,
-            "is_edited": True,
-            "color_index": 0,
-            "segment_count": 1,
-            "speaking_time_sec": 6.42,
-            "version": payload.version + 1,
-        }
-    else:
-        matched["display_name"] = payload.display_name
-        matched["is_edited"] = True
-        matched["version"] = payload.version + 1
+    # Nếu cùng tên hiển thị -> No-op update: không tăng version, không ghi edit_events
+    if cleaned_name == speaker.display_name:
+        return serialize_speaker(speaker, db, meeting.id)
 
-    return SpeakerOut.model_validate(matched)
+    # Kiểm tra trùng tên trong cùng meeting (so sánh case-insensitive, trừ chính speaker này)
+    other_speakers = (
+        db.execute(
+            select(Speaker).where(Speaker.meeting_id == meeting.id, Speaker.id != speaker.id)
+        )
+        .scalars()
+        .all()
+    )
+    for other in other_speakers:
+        if other.display_name.strip().lower() == cleaned_name.lower():
+            raise APIError(
+                code="SPEAKER_NAME_DUPLICATE",
+                message="Tên người nói bị trùng với người nói khác trong cuộc họp.",
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            )
+
+    before_state = {"display_name": speaker.display_name}
+    after_state = {"display_name": cleaned_name}
+
+    now = datetime.now(UTC)
+    speaker.display_name = cleaned_name
+    speaker.version += 1
+    speaker.updated_at = now
+
+    edit_event = EditEvent(
+        id=str(uuid.uuid4()),
+        meeting_id=meeting.id,
+        actor_id=current_user.id,
+        entity_type="speaker",
+        entity_id=speaker.id,
+        action="update",
+        field="display_name",
+        before=before_state,
+        after=after_state,
+        entity_version_after=speaker.version,
+        request_id=getattr(getattr(request, "state", None), "request_id", None),
+        created_at=now,
+    )
+    db.add(edit_event)
+    db.commit()
+    db.refresh(speaker)
+
+    return serialize_speaker(speaker, db, meeting.id)
 
 
 SUMMARY_READY_FIXTURE_PATH = FIXTURES_DIR / "summary_ready.json"
@@ -1186,27 +1283,98 @@ def get_meeting_summary(
     summary="Chỉnh sửa nội dung tóm tắt cuộc họp",
 )
 def update_meeting_summary(
-    meeting_id: str = FastApiPath(..., description="UUID của cuộc họp"),
-    payload: SummaryUpdate = ...,
+    meeting_id: Annotated[str, FastApiPath(description="UUID của cuộc họp")],
+    payload: SummaryUpdate,
+    current_user: CurrentUser,
+    db: Annotated[Session, Depends(get_db)],
+    request: Request,
 ) -> SummaryOut:
     """Cập nhật tóm tắt cuộc họp với optimistic locking."""
-    if payload.version != 2:
+    meeting = db.execute(
+        select(Meeting).where(Meeting.id == meeting_id, Meeting.owner_id == current_user.id)
+    ).scalar_one_or_none()
+    if meeting is None:
+        raise APIError(
+            code="NOT_FOUND",
+            message="Không tìm thấy cuộc họp được yêu cầu.",
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    summary = db.execute(
+        select(Summary).where(Summary.meeting_id == meeting.id)
+    ).scalar_one_or_none()
+    if summary is None:
+        raise APIError(
+            code="NOT_FOUND",
+            message="Không tìm thấy tóm tắt cuộc họp.",
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    if payload.version != summary.version:
         raise APIError(
             code="VERSION_CONFLICT",
             message="Tóm tắt cuộc họp đã được cập nhật ở nơi khác. Vui lòng tải lại.",
             status_code=status.HTTP_409_CONFLICT,
             details={
                 "entity": "summary",
-                "current": {"meeting_id": meeting_id, "version": 2},
+                "current": {"meeting_id": meeting.id, "version": summary.version},
             },
         )
 
-    data = load_summary_ready_fixture()
-    data["meeting_id"] = meeting_id
-    data["content"] = payload.content.model_dump()
-    data["is_edited"] = True
-    data["version"] = payload.version + 1
-    return SummaryOut.model_validate(data)
+    new_content = payload.content.model_dump()
+    is_edited_now = summary.ai_content is not None and new_content != summary.ai_content
+
+    # No-op check: nếu nội dung gửi lên giống hệt hiện tại
+    if new_content == summary.content:
+        return SummaryOut(
+            meeting_id=summary.meeting_id,
+            status=summary.status,
+            content=summary.content,
+            ai_content=summary.ai_content,
+            is_edited=is_edited_now,
+            model=summary.model,
+            prompt_version=summary.prompt_version,
+            generated_at=summary.created_at,
+            version=summary.version,
+        )
+
+    before_state = {"content": summary.content}
+    after_state = {"content": new_content}
+
+    now = datetime.now(UTC)
+    summary.content = new_content
+    summary.version += 1
+    summary.updated_at = now
+
+    edit_event = EditEvent(
+        id=str(uuid.uuid4()),
+        meeting_id=meeting.id,
+        actor_id=current_user.id,
+        entity_type="summary",
+        entity_id=summary.id,
+        action="update",
+        field=None,
+        before=before_state,
+        after=after_state,
+        entity_version_after=summary.version,
+        request_id=getattr(getattr(request, "state", None), "request_id", None),
+        created_at=now,
+    )
+    db.add(edit_event)
+    db.commit()
+    db.refresh(summary)
+
+    return SummaryOut(
+        meeting_id=summary.meeting_id,
+        status=summary.status,
+        content=summary.content,
+        ai_content=summary.ai_content,
+        is_edited=is_edited_now,
+        model=summary.model,
+        prompt_version=summary.prompt_version,
+        generated_at=summary.created_at,
+        version=summary.version,
+    )
 
 
 @router.get(

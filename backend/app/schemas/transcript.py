@@ -91,3 +91,10 @@ class SpeakerPatch(BaseModel):
     version: int = Field(..., ge=1, description="Phiên bản hiện tại của speaker ở client")
 
     model_config = ConfigDict(extra="forbid")
+
+    @field_validator("display_name", mode="before")
+    @classmethod
+    def strip_display_name(cls, v: str) -> str:
+        if isinstance(v, str):
+            return v.strip()
+        return v
