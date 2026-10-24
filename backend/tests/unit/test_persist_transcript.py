@@ -306,3 +306,98 @@ def test_persist_transcript_invalid_schema_content(
         )
 
     assert exc_info.value.code == ErrorCode.PIPELINE_OUTPUT_INVALID
+
+
+def test_persist_transcript_errors_never_echo_canary_content(
+    test_db: Session,
+    sample_meeting_and_job: tuple[Meeting, Job],
+    tmp_path: Path,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Kiểm tra lỗi persist không lộ chuỗi canary vào job.error_message, response API hay log."""
+    import logging
+    from unittest.mock import patch
+
+    from fastapi.testclient import TestClient
+    from meeting_pipeline.runner import Stage
+
+    from app.api.deps import get_current_user
+    from app.db.session import get_db
+    from app.main import create_app
+    from app.services.storage.local import LocalStorage
+    from app.worker.runner import process_job
+
+    meeting, job = sample_meeting_and_job
+    canary = "CANARY_7f3a_secret_meeting_text"
+
+    bad_file = tmp_path / "transcript.json"
+    bad_data = {
+        "schema_version": "1.0",
+        "audio": {"duration_sec": 10.0, "sample_rate": 16000, "channels": 1},
+        "models": {"asr": "whisper", "diarization": "pyannote"},
+        "diarization_status": "ok",
+        "speakers": [{"label": "SPEAKER_00"}],
+        "segments": [
+            {
+                "index": 0,
+                "start_sec": 10.0,
+                "end_sec": 2.0,  # Invalid: start > end
+                "text": f"Nội dung nhạy cảm {canary}",
+                "speaker_label": "SPEAKER_00",
+                "words": [],
+                "flags": [],
+            }
+        ],
+        "warnings": [],
+    }
+    bad_file.write_text(json.dumps(bad_data), encoding="utf-8")
+
+    # 1. Gọi trực tiếp persist_transcript
+    with pytest.raises(PermanentPipelineError) as exc_info:
+        persist_transcript(
+            test_db,
+            meeting_id=meeting.id,
+            job_id=job.id,
+            artifact_path=bad_file,
+        )
+
+    assert canary not in exc_info.value.message
+    assert str(tmp_path) not in exc_info.value.message
+    assert exc_info.value.code == ErrorCode.PIPELINE_OUTPUT_INVALID
+
+    # 2. Chạy qua process_job với caplog
+    caplog.set_level(logging.INFO)
+    storage = LocalStorage(base_dir=tmp_path)
+
+    def mock_run_job(*args, **kwargs):
+        on_done = kwargs.get("on_stage_done")
+        if on_done:
+            on_done(Stage.MERGE, bad_file)
+        raise exc_info.value
+
+    with patch("app.worker.runner.run_job", mock_run_job):
+        process_job(
+            test_db,
+            job,
+            storage=storage,
+            backend="fake",
+        )
+
+    test_db.refresh(job)
+    assert job.status == "failed"
+    assert job.error_message is not None
+    assert canary not in job.error_message
+    assert str(tmp_path) not in job.error_message
+    assert canary not in caplog.text
+
+    # 3. Kiểm tra phản hồi API GET /jobs/{id}
+    app = create_app()
+    owner = test_db.get(User, meeting.owner_id)
+    app.dependency_overrides[get_db] = lambda: test_db
+    app.dependency_overrides[get_current_user] = lambda: owner
+
+    client = TestClient(app)
+    response = client.get(f"/api/v1/jobs/{job.id}")
+    assert response.status_code == 200
+    assert canary not in response.text
+    assert str(tmp_path) not in response.text
