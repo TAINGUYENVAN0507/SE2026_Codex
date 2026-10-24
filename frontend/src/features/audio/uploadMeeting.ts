@@ -1,5 +1,6 @@
 import type { components } from '../../api/schema'
 import { ApiError, parseApiError, toNetworkError } from '../../api/errors'
+import { notifySessionExpired } from '../../api/sessionEvents'
 
 export type UploadForm = {
   title: string
@@ -29,6 +30,7 @@ export function uploadMeeting(
       reject(new ApiError('UPLOAD_CANCELLED', 'Đã hủy tải lên.'))
     xhr.onerror = () => reject(toNetworkError())
     xhr.onload = () => {
+      if (xhr.status === 401) notifySessionExpired()
       if (xhr.status === 201) {
         try {
           const result = JSON.parse(xhr.responseText) as UploadResult

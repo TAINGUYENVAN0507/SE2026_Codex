@@ -11,6 +11,7 @@ interface Store {
   files: Record<string, File>
   update: (id: string, transform: (m: Meeting) => Meeting) => void
   add: (meeting: Meeting, file: File) => void
+  reset: () => void
 }
 const Context = createContext<Store | null>(null)
 
@@ -23,6 +24,10 @@ export function DemoStore({ children }: PropsWithChildren) {
       value={{
         meetings,
         files,
+        reset: () => {
+          setMeetings(seedMeetings())
+          setFiles({})
+        },
         update: (id, transform) =>
           setMeetings((items) =>
             items.map((m) => (m.id === id ? transform(m) : m)),

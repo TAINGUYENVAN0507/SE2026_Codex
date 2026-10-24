@@ -7,10 +7,12 @@ import { MeetingDetailPage } from './pages/MeetingDetailPage'
 import { MeetingListPage } from './pages/MeetingListPage'
 import { NewMeetingPage } from './pages/NewMeetingPage'
 import { NotFoundPage } from './pages/NotFoundPage'
+import { SessionEvents } from './features/auth/SessionEvents'
 
 export default function App() {
   return (
     <DemoStore>
+      <SessionEvents />
       <Routes>
         <Route element={<AppShell />}>
           <Route path="/login" element={<LoginPage />} />

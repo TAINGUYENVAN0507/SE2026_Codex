@@ -35,6 +35,16 @@ afterEach(() => {
 })
 
 describe('FE-08 player and transcript sync', () => {
+  it('keeps the initial playhead within a short API recording (FE-16)', () => {
+    vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(() => {})
+    render(
+      <AudioPlayer duration={13.86} onPosition={() => {}} onFile={() => {}} />,
+    )
+    expect(document.querySelector('.waveform')).toHaveStyle('--progress: 100%')
+    expect(document.querySelector('.play-time strong')).toHaveTextContent(
+      '00:13',
+    )
+  })
   it('seeks on timestamp, tracks timeupdate and respects the follow switch', async () => {
     vi.stubGlobal('URL', {
       ...URL,

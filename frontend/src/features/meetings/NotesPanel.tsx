@@ -7,6 +7,9 @@ import { TrashIcon } from '@phosphor-icons/react/dist/csr/Trash'
 import { formatDate, formatTime, type Meeting } from './model'
 import { RemoteSummary } from './RemoteSummary'
 import { RemoteTasks } from './RemoteTasks'
+import { HistoryPanel } from './HistoryPanel'
+
+export type NotesTab = 'summary' | 'tasks' | 'history'
 
 export function NotesPanel({
   meeting,
@@ -17,8 +20,8 @@ export function NotesPanel({
   remote = false,
 }: {
   meeting: Meeting
-  tab: 'summary' | 'tasks'
-  setTab: (t: 'summary' | 'tasks') => void
+  tab: NotesTab
+  setTab: (t: NotesTab) => void
   onSeek: (s: number) => void
   onUpdate: (f: (m: Meeting) => Meeting) => void
   remote?: boolean
@@ -54,9 +57,24 @@ export function NotesPanel({
           Công việc{' '}
           {!remote && <span className="badge">{meeting.tasks.length}</span>}
         </button>
+        <button
+          className={tab === 'history' ? 'selected' : ''}
+          onClick={() => setTab('history')}
+          aria-pressed={tab === 'history'}
+        >
+          Lịch sử
+        </button>
       </div>
       <div className="notes-scroll">
-        {remote && tab === 'summary' ? (
+        {tab === 'history' ? (
+          remote ? (
+            <HistoryPanel key={meeting.id} meetingId={meeting.id} />
+          ) : (
+            <p className="empty-state compact">
+              Bản xem thử không lưu lịch sử chỉnh sửa.
+            </p>
+          )
+        ) : remote && tab === 'summary' ? (
           <RemoteSummary meeting={meeting} onSeek={onSeek} />
         ) : remote && tab === 'tasks' ? (
           <RemoteTasks meeting={meeting} />

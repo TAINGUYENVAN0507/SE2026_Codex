@@ -29,7 +29,7 @@ PR #19 đã được merge (`2ab123b`).
 
 ## 5 commit
 
-### 1. [ ] Chạy frontend với backend thật qua proxy của Vite (FE-02)
+### 1. [x] Chạy frontend với backend thật qua proxy của Vite (FE-02)
 
 - **Việc:**
   - `vite.config.ts`: proxy `/api` tới `VITE_API_PROXY_TARGET` (mặc định `http://localhost:8000`). Frontend và API dùng chung origin, nên cookie `SameSite=Lax` gửi được.
@@ -38,9 +38,9 @@ PR #19 đã được merge (`2ab123b`).
   - `frontend/README.md`: thêm cách chạy với backend thật.
 - **Xong khi:** test cấu hình proxy; test handler auth của MSW. Chạy thử bằng tay: `VITE_API_MOCK=0 npm run dev` cùng backend (`uv run uvicorn ...`), mở `/meetings` thấy dữ liệu từ DB.
 - **Message:** `feat(frontend): dev proxy to the real API and auth mock handlers (FE-02)`
-- **Hash:**
+- **Hash:** `f10f057`
 
-### 2. [ ] Đăng nhập bằng API thật (FE-03)
+### 2. [x] Đăng nhập bằng API thật (FE-03)
 
 - **Việc:**
   - `LoginPage` gọi `POST /auth/login`. Thành công thì chuyển tới `safeNext(next)`.
@@ -49,9 +49,9 @@ PR #19 đã được merge (`2ab123b`).
   - Không lưu token hay mật khẩu vào `localStorage`/`sessionStorage`: cookie do server đặt và JS không đọc được.
 - **Xong khi:** RTL test: đăng nhập thành công rồi chuyển trang, sai mật khẩu, lỗi mạng, nút submit bị disable khi đang gửi.
 - **Message:** `feat(frontend): log in against the API with an HttpOnly cookie (FE-03)`
-- **Hash:**
+- **Hash:** `a383faf`
 
-### 3. [ ] `useMe`, chặn route và đăng xuất (FE-03)
+### 3. [x] `useMe`, chặn route và đăng xuất (FE-03)
 
 - **Việc:**
   - `useMe()` gọi `GET /auth/me` bằng TanStack Query.
@@ -60,9 +60,9 @@ PR #19 đã được merge (`2ab123b`).
   - Nút đăng xuất gọi `POST /auth/logout` rồi `queryClient.clear()`, để transcript của phiên trước không còn trong cache.
 - **Xong khi:** RTL test: chưa đăng nhập thì redirect kèm `next`; đã đăng nhập thì vào được; logout thì cache rỗng và về `/login`; một API trả 401 giữa chừng thì về login.
 - **Message:** `feat(frontend): session guard with useMe, 401 handling and logout (FE-03)`
-- **Hash:**
+- **Hash:** `ffe337a`
 
-### 4. [ ] Panel lịch sử chỉnh sửa (FE-14)
+### 4. [x] Panel lịch sử chỉnh sửa (FE-14)
 
 - **Việc:**
   - Tab "Lịch sử" trên trang detail gọi `GET /meetings/{id}/edits` (MSW, fixture `edits.json`).
@@ -71,9 +71,9 @@ PR #19 đã được merge (`2ab123b`).
   - Có các trạng thái rỗng, đang tải, lỗi.
 - **Xong khi:** RTL test: hiển thị đúng fixture, lọc theo loại, trạng thái rỗng và lỗi.
 - **Message:** `feat(frontend): edit history panel with type filter (FE-14)`
-- **Hash:**
+- **Hash:** `e187c4c`
 
-### 5. [ ] Error boundary, banner offline, trang 404 (FE-16)
+### 5. [x] Error boundary, banner offline, trang 404 (FE-16)
 
 - **Việc:**
   - Error boundary ở mức route, có nút "Tải lại".
@@ -83,7 +83,7 @@ PR #19 đã được merge (`2ab123b`).
   - Thông điệp lỗi không hiện stack trace hay nội dung transcript.
 - **Xong khi:** RTL test: component ném lỗi thì hiện fallback; banner offline bật và tắt; route lạ hiện 404.
 - **Message:** `feat(frontend): error boundary, offline banner and not-found page (FE-16)`
-- **Hash:**
+- **Hash:** `76c9542`
 
 ## Việc chung (không phải commit)
 
@@ -91,5 +91,12 @@ PR #19 đã được merge (`2ab123b`).
 
 ## Cuối ngày
 
-- [ ] Tick các ô ở trên và ghi hash. Cập nhật `docs/frontend/` (FE-03, FE-14, FE-16).
-- [ ] Push `vantuong`, mở PR vào `main`. **Không tự merge.**
+- [x] Tick các ô ở trên và ghi hash. Cập nhật `docs/frontend/` (FE-03, FE-14, FE-16).
+- [x] Push `vantuong`, mở [PR #24](https://github.com/TAINGUYENVAN0507/SE2026_Codex/pull/24) vào `main`. **Không tự merge.**
+
+Kiểm tra local: lint, format, TypeScript, 136 test và build đạt. Browser QA tự
+động với MSW tắt, FastAPI thật và PostgreSQL 16 riêng đạt 11 kiểm tra; đã thấy
+một cuộc họp seed trong `/meetings`, cookie HttpOnly, reload và logout. Ảnh và
+kết quả ở `.preview-stitch/qa-2026-10-24/` (không commit). Lịch sử backend vẫn
+trả fixture; lọc/phân trang được kiểm tra qua MSW. Đã dừng Vite/API và container
+DB QA sau khi kiểm tra. PR #24 đang chờ review, chưa merge.

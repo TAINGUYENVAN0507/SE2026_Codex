@@ -2,15 +2,47 @@ import { EyeIcon } from '@phosphor-icons/react/dist/csr/Eye'
 import { EyeSlashIcon } from '@phosphor-icons/react/dist/csr/EyeSlash'
 import { ArrowRightIcon } from '@phosphor-icons/react/dist/csr/ArrowRight'
 import { useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import { Brand } from '../components/Brand'
-import { DEMO_AUTH_KEY } from '../app/RequireAuth'
 import { safeNext } from '../app/safeNext'
+import { login } from '../api/client'
+import { ApiError } from '../api/errors'
+import { ME_QUERY_KEY } from '../features/auth/useMe'
 
 export function LoginPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [visible, setVisible] = useState(false)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState('')
+  const queryClient = useQueryClient()
+
+  async function submit() {
+    if (submitting) return
+    setSubmitting(true)
+    setError('')
+    try {
+      const session = await login(email.trim(), password)
+      queryClient.clear()
+      queryClient.setQueryData(ME_QUERY_KEY, session)
+      setPassword('')
+      navigate(safeNext(searchParams.get('next')), { replace: true })
+    } catch (cause) {
+      setPassword('')
+      setError(
+        cause instanceof ApiError && cause.code === 'INVALID_CREDENTIALS'
+          ? 'Email hoặc mật khẩu không chính xác.'
+          : cause instanceof ApiError && cause.code === 'NETWORK_ERROR'
+            ? 'Không thể kết nối máy chủ. Hãy kiểm tra mạng rồi thử lại.'
+            : 'Không thể đăng nhập. Hãy thử lại.',
+      )
+    } finally {
+      setSubmitting(false)
+    }
+  }
   return (
     <main className="login-page">
       <section className="login-story">
@@ -43,9 +75,7 @@ export function LoginPage() {
           className="login-form"
           onSubmit={(e) => {
             e.preventDefault()
-            e.currentTarget.reset()
-            sessionStorage.setItem(DEMO_AUTH_KEY, 'true')
-            navigate(safeNext(searchParams.get('next')), { replace: true })
+            void submit()
           }}
         >
           <h2>Chào mừng trở lại</h2>
@@ -58,6 +88,9 @@ export function LoginPage() {
               placeholder="ban@example.com"
               autoComplete="email"
               required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={submitting}
             />
           </label>
           <label className="field">
@@ -69,6 +102,9 @@ export function LoginPage() {
                 placeholder="Nhập mật khẩu"
                 autoComplete="current-password"
                 required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={submitting}
               />
               <button
                 className="icon-button"
@@ -80,17 +116,19 @@ export function LoginPage() {
               </button>
             </span>
           </label>
-          <button className="button primary login-submit" type="submit">
-            Đăng nhập <ArrowRightIcon />
+          {error && (
+            <p className="form-error" role="alert">
+              {error}
+            </p>
+          )}
+          <button
+            className="button primary login-submit"
+            type="submit"
+            disabled={submitting}
+          >
+            {submitting ? 'Đang đăng nhập…' : 'Đăng nhập'} <ArrowRightIcon />
           </button>
           <p className="login-help">Tài khoản do quản trị viên cung cấp.</p>
-          <Link
-            className="text-link preview-link"
-            to="/meetings"
-            onClick={() => sessionStorage.setItem(DEMO_AUTH_KEY, 'true')}
-          >
-            Xem thử giao diện <ArrowRightIcon />
-          </Link>
         </form>
       </section>
     </main>

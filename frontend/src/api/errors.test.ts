@@ -48,15 +48,19 @@ describe('API errors', () => {
     expect(toNetworkError().code).toBe('NETWORK_ERROR')
   })
 
-  it('uses the server message for an unknown error code', async () => {
+  it('hides unrecognized server messages that might contain private data', async () => {
     const error = await parseApiError(
       response(
         JSON.stringify({
-          error: { code: 'NEW_BACKEND_CODE', message: 'Server message' },
+          error: {
+            code: 'NEW_BACKEND_CODE',
+            message: 'CANARY_TRANSCRIPT_STACK_TRACE',
+          },
         }),
       ),
     )
     expect(error.code).toBe('NEW_BACKEND_CODE')
-    expect(error.message).toBe('Server message')
+    expect(error.message).toBe('Đã xảy ra lỗi không xác định. Hãy thử lại sau.')
+    expect(error.message).not.toContain('CANARY_TRANSCRIPT')
   })
 })

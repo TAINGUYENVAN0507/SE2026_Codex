@@ -15,8 +15,8 @@ Giao diện graphite/cam được triển khai từ bộ ảnh đã duyệt, g�
 `/meetings/sprint-42` vẫn là trang mẫu trong React Context. Danh sách,
 upload và transcript của các cuộc họp khác dùng API. Khi chạy dev, MSW bật
 mặc định và trả fixture từ `contracts/fixtures/api/`; đặt `VITE_API_MOCK=0`
-để gọi backend thật. Bản mock không lưu file audio lên server. Tài khoản/mật
-khẩu demo vẫn không được gửi hoặc lưu.
+để gọi backend thật. Bản mock không lưu file audio lên server. Đăng nhập gọi
+API auth; cookie phiên do backend đặt, không lưu token/mật khẩu vào Web Storage.
 
 Đã có tìm kiếm/lọc meeting và transcript, player mô phỏng hoặc nghe audio trên máy,
 sửa transcript và speaker của segment, xem bản gốc, sửa tổng quan, quản lý công việc,
@@ -54,6 +54,32 @@ npm run dev
 ```
 
 Trên PowerShell chặn script `npm.ps1`, dùng `npm.cmd run dev`.
+Để dùng backend thật, chạy PostgreSQL và API theo `backend/README.md`, rồi chạy:
+
+```powershell
+$env:VITE_API_MOCK = '0'
+npm run dev
+```
+
+Proxy `/api` mặc định trỏ tới `http://localhost:8000`; đổi bằng
+`VITE_API_PROXY_TARGET` nếu API chạy cổng khác. Mở frontend qua `localhost` để
+request API và cookie cùng origin. Không đặt token, mật khẩu hoặc secret vào biến `VITE_*`.
+MSW dùng tài khoản giả `user@example.com` / `demo-password`; phiên mock chỉ tồn tại
+trong bộ nhớ service worker. Backend thật dùng tài khoản do quản trị viên tạo.
+
+Với PostgreSQL từ `docker-compose.yml` hiện tại, môi trường backend cần
+`DATABASE_URL=postgresql+psycopg://postgres:postgrespassword@localhost:5432/meeting_assistant`
+(thông tin dev trong Compose). Chạy `uv run alembic upgrade head` trước lần đầu.
+Tạo tài khoản bằng `uv run python -m app.scripts.create_user --email <email> --name <tên>`;
+CLI hỏi mật khẩu, không đưa mật khẩu vào tham số dòng lệnh.
+Nếu seed dữ liệu mẫu, cung cấp `SEED_DEMO_PASSWORD` trong môi trường backend,
+chạy `uv run python -m app.scripts.seed`, rồi bỏ biến đó. Tài khoản seed là
+`demo@meeting.local`. Nếu máy có biến `DEBUG=release`, đặt `DEBUG=false` trong
+terminal chạy backend vì cấu hình này yêu cầu boolean.
+
+Đăng xuất xóa query cache và dữ liệu xem thử trong bộ nhớ. Tab Lịch sử hỗ trợ
+lọc và phân trang; backend hiện vẫn trả fixture lịch sử, nên audit thật còn cần
+phần backend hoàn thiện. Trang có thông báo mất mạng và lỗi giao diện an toàn.
 Font Inter Variable được self-host tại `public/fonts/InterVariable.woff2`, kèm giấy phép OFL trong `Inter-LICENSE.txt`.
 
 ## Kiểm tra

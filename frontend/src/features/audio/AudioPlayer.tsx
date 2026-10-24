@@ -34,8 +34,11 @@ export const AudioPlayer = forwardRef<PlayerHandle, Props>(function AudioPlayer(
   const url = useObjectUrl(file)
   const audio = useRef<HTMLAudioElement>(null)
   const picker = useRef<HTMLInputElement>(null)
-  const positionRef = useRef(file ? 0 : 255)
-  const [position, setPosition] = useState(file ? 0 : 255)
+  const initialPosition = file
+    ? 0
+    : Math.max(0, Math.min(255, fallbackDuration))
+  const positionRef = useRef(initialPosition)
+  const [position, setPosition] = useState(initialPosition)
   const [duration, setDuration] = useState(file ? 0 : fallbackDuration)
   const [playing, setPlaying] = useState(false)
   const [speed, setSpeed] = useState(1)
@@ -93,7 +96,7 @@ export const AudioPlayer = forwardRef<PlayerHandle, Props>(function AudioPlayer(
     }
     setPlaying(true)
   }
-  const ratio = duration ? position / duration : 0
+  const ratio = duration ? Math.max(0, Math.min(1, position / duration)) : 0
   return (
     <section className="audio-region" aria-label="Player audio cuộc họp">
       <div className="audio-player">
