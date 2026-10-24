@@ -1,8 +1,12 @@
 """Cấu hình ứng dụng backend sử dụng pydantic-settings."""
 
 from functools import lru_cache
+from typing import Self
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+DEFAULT_DEV_JWT_SECRET = "dev-insecure-jwt-secret-key-change-in-prod"
 
 
 class Settings(BaseSettings):
@@ -16,10 +20,10 @@ class Settings(BaseSettings):
 
     # Giới hạn upload theo kế hoạch
     MAX_UPLOAD_MB: int = 200
-    MAX_DURATION_SEC: int = 7200
+    MAX_DURATION_SEC: int = 3600
 
     # Cấu hình xác thực JWT
-    JWT_SECRET: str = "dev-insecure-jwt-secret-key-change-in-prod"
+    JWT_SECRET: str = DEFAULT_DEV_JWT_SECRET
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_MINUTES: int = 60 * 24 * 7
 
@@ -28,6 +32,18 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         extra="ignore",
     )
+
+    @model_validator(mode="after")
+    def validate_production_settings(self) -> Self:
+        """Đảm bảo JWT_SECRET an toàn khi chạy trên môi trường production."""
+        if self.ENVIRONMENT == "production" and (
+            self.JWT_SECRET == DEFAULT_DEV_JWT_SECRET or len(self.JWT_SECRET) < 32
+        ):
+            raise ValueError(
+                "JWT_SECRET không an toàn cho môi trường production: "
+                "không được dùng giá trị mặc định và phải có độ dài tối thiểu 32 ký tự."
+            )
+        return self
 
 
 @lru_cache

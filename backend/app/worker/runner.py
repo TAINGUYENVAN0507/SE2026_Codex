@@ -24,6 +24,7 @@ from meeting_pipeline.runner import Stage, overall_progress, run_job
 from meeting_pipeline.schemas import JobSpec
 from sqlalchemy.orm import Session
 
+from app.core.config import get_settings
 from app.db.models.job import Job
 from app.db.models.meeting import Meeting
 from app.services.storage import Storage
@@ -91,7 +92,7 @@ def process_job(
         )
         return job
 
-    pipeline_backend = backend or os.getenv("PIPELINE_BACKEND", "fake")
+    pipeline_backend = backend if backend is not None else os.getenv("PIPELINE_BACKEND")
 
     # Xác định đường dẫn audio gốc
     clean_ext = (
@@ -128,6 +129,11 @@ def process_job(
         attempt=job.attempt,
         max_attempts=job.max_attempts,
     )
+
+    settings = get_settings()
+    pipeline_env = dict(env or {})
+    if "PIPELINE_MAX_DURATION_SEC" not in pipeline_env:
+        pipeline_env["PIPELINE_MAX_DURATION_SEC"] = str(settings.MAX_DURATION_SEC)
 
     last_db_update = 0.0
 
@@ -179,7 +185,7 @@ def process_job(
             on_heartbeat=handle_heartbeat,
             heartbeat_sec=heartbeat_sec,
             backend=pipeline_backend,
-            env=env,
+            env=pipeline_env,
         )
 
         job.stage_status = {k.value: v for k, v in outcome.stage_status.items()}
@@ -305,11 +311,12 @@ def run_worker_loop(
     w_id = worker_id or f"worker-{os.getpid()}"
     storage = get_storage()
     session_factory = get_session_factory()
+    configured_backend = backend or os.getenv("PIPELINE_BACKEND") or "real"
     logger.info(
         "Khởi động worker loop %s (poll_interval=%ss, backend=%s)",
         w_id,
         poll_interval_sec,
-        backend or os.getenv("PIPELINE_BACKEND", "fake"),
+        configured_backend,
     )
 
     running = True
