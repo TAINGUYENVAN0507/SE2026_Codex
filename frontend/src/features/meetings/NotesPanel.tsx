@@ -5,6 +5,8 @@ import { PencilSimpleIcon } from '@phosphor-icons/react/dist/csr/PencilSimple'
 import { PlusIcon } from '@phosphor-icons/react/dist/csr/Plus'
 import { TrashIcon } from '@phosphor-icons/react/dist/csr/Trash'
 import { formatDate, formatTime, type Meeting } from './model'
+import { RemoteSummary } from './RemoteSummary'
+import { RemoteTasks } from './RemoteTasks'
 
 export function NotesPanel({
   meeting,
@@ -12,12 +14,14 @@ export function NotesPanel({
   setTab,
   onSeek,
   onUpdate,
+  remote = false,
 }: {
   meeting: Meeting
   tab: 'summary' | 'tasks'
   setTab: (t: 'summary' | 'tasks') => void
   onSeek: (s: number) => void
   onUpdate: (f: (m: Meeting) => Meeting) => void
+  remote?: boolean
 }) {
   const [editing, setEditing] = useState(false)
   const [overview, setOverview] = useState(meeting.overview)
@@ -47,11 +51,16 @@ export function NotesPanel({
           onClick={() => setTab('tasks')}
           aria-pressed={tab === 'tasks'}
         >
-          Công việc <span className="badge">{meeting.tasks.length}</span>
+          Công việc{' '}
+          {!remote && <span className="badge">{meeting.tasks.length}</span>}
         </button>
       </div>
       <div className="notes-scroll">
-        {tab === 'summary' ? (
+        {remote && tab === 'summary' ? (
+          <RemoteSummary meeting={meeting} onSeek={onSeek} />
+        ) : remote && tab === 'tasks' ? (
+          <RemoteTasks meeting={meeting} />
+        ) : tab === 'summary' ? (
           <>
             <div className="notes-status">
               <span>

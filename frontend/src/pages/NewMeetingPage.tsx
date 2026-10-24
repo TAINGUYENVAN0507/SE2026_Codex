@@ -11,6 +11,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { Topbar } from '../components/Topbar'
 import { useObjectUrl } from '../features/audio/useObjectUrl'
 import { useIdempotencyKey } from '../features/audio/useIdempotencyKey'
+import { useRecorder } from '../features/audio/useRecorder'
 import { uploadMeeting } from '../features/audio/uploadMeeting'
 import { ApiError } from '../api/errors'
 import {
@@ -32,31 +33,24 @@ export function NewMeetingPage() {
   const [consent, setConsent] = useState(false)
   const [error, setError] = useState('')
   const [dragging, setDragging] = useState(false)
-  const [requesting, setRequesting] = useState(false)
-  const [recording, setRecording] = useState(false)
-  const [elapsed, setElapsed] = useState(0)
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
   const activeUpload = useRef<ReturnType<typeof uploadMeeting> | null>(null)
   const picker = useRef<HTMLInputElement>(null)
-  const recorder = useRef<MediaRecorder | null>(null)
-  const stream = useRef<MediaStream | null>(null)
-  const timer = useRef<ReturnType<typeof setInterval> | undefined>(undefined)
   const alive = useRef(true)
-  const recordStarted = useRef(0)
   const url = useObjectUrl(file)
   const idempotencyKey = useIdempotencyKey(file ?? null)
+  const record = useRecorder((recordedFile, seconds) => {
+    choose(recordedFile)
+    setDuration(seconds)
+  })
+  const recording = record.status === 'recording'
+  const requesting = record.status === 'requesting'
 
   useEffect(() => {
     alive.current = true
     return () => {
       alive.current = false
-      if (recorder.current?.state === 'recording') {
-        recorder.current.onstop = null
-        recorder.current.stop()
-      }
-      stream.current?.getTracks().forEach((t) => t.stop())
-      clearInterval(timer.current)
       activeUpload.current?.abort()
     }
   }, [])
@@ -98,6 +92,7 @@ export function NewMeetingPage() {
     setError('')
     setProgress(0)
     setUploading(true)
+    if (mode === 'record') record.startUpload()
     const upload = uploadMeeting(
       file,
       {
@@ -133,107 +128,17 @@ export function NewMeetingPage() {
         file,
       )
       void queryClient.invalidateQueries({ queryKey: ['meetings'] })
+      if (mode === 'record') record.finishUpload()
       navigate(`/meetings/${result.meeting.id}`)
     } catch (cause) {
       if (cause instanceof ApiError && cause.code !== 'UPLOAD_CANCELLED')
         setError(cause.message)
       else if (!(cause instanceof ApiError))
         setError('Không thể tải file lên. Hãy thử lại.')
+      if (mode === 'record') record.cancelUpload()
     } finally {
       activeUpload.current = null
       if (alive.current) setUploading(false)
-    }
-  }
-  function stop() {
-    if (recorder.current?.state === 'recording') recorder.current.stop()
-    stream.current?.getTracks().forEach((t) => t.stop())
-    clearInterval(timer.current)
-    setRecording(false)
-  }
-  async function start() {
-    if (!consent) {
-      setError('Hãy xác nhận sự đồng ý trước khi bắt đầu ghi âm.')
-      return
-    }
-    if (
-      !navigator.mediaDevices?.getUserMedia ||
-      typeof MediaRecorder === 'undefined'
-    ) {
-      setError(
-        'Trình duyệt chưa hỗ trợ ghi âm tại đây. Hãy dùng Chrome/Edge qua localhost hoặc tải file có sẵn.',
-      )
-      return
-    }
-    setRequesting(true)
-    setError('')
-    try {
-      const source = await navigator.mediaDevices.getUserMedia({ audio: true })
-      if (!alive.current) {
-        source.getTracks().forEach((t) => t.stop())
-        return
-      }
-      stream.current = source
-      const mime = [
-        'audio/webm;codecs=opus',
-        'audio/ogg;codecs=opus',
-        'audio/mp4',
-      ].find((type) => MediaRecorder.isTypeSupported(type))
-      const r = new MediaRecorder(source, mime ? { mimeType: mime } : undefined)
-      recorder.current = r
-      const chunks: Blob[] = []
-      let size = 0
-      r.ondataavailable = (e) => {
-        if (e.data.size) {
-          chunks.push(e.data)
-          size += e.data.size
-          if (
-            size >= DEFAULT_UPLOAD_CONFIG.max_upload_mb * 1024 * 1024 &&
-            r.state === 'recording'
-          )
-            r.stop()
-        }
-      }
-      r.onerror = () => {
-        source.getTracks().forEach((t) => t.stop())
-        clearInterval(timer.current)
-        if (alive.current) {
-          setError('Ghi âm bị gián đoạn. Hãy thử lại.')
-          setRecording(false)
-        }
-      }
-      r.onstop = () => {
-        source.getTracks().forEach((t) => t.stop())
-        clearInterval(timer.current)
-        if (!alive.current) return
-        setRecording(false)
-        const ext = r.mimeType.includes('mp4')
-          ? 'm4a'
-          : r.mimeType.includes('ogg')
-            ? 'ogg'
-            : 'webm'
-        const result = new File(chunks, `Ban_ghi_${Date.now()}.${ext}`, {
-          type: r.mimeType,
-        })
-        choose(result)
-        setDuration(Math.round((Date.now() - recordStarted.current) / 1000))
-      }
-      recordStarted.current = Date.now()
-      setElapsed(0)
-      r.start(1000)
-      setRecording(true)
-      timer.current = setInterval(() => {
-        const seconds = Math.floor((Date.now() - recordStarted.current) / 1000)
-        setElapsed(seconds)
-        if (seconds >= 3600 && r.state === 'recording') r.stop()
-      }, 250)
-    } catch {
-      stream.current?.getTracks().forEach((t) => t.stop())
-      if (alive.current)
-        setError(
-          'Không truy cập được micro. Kiểm tra quyền micro hoặc chọn tải file audio.',
-        )
-    } finally {
-      if (alive.current) setRequesting(false)
     }
   }
   return (
@@ -302,7 +207,7 @@ export function NewMeetingPage() {
                   <MicrophoneIcon size={27} />
                 </span>
                 <p className="recorder-time mono" aria-live="off">
-                  {formatTime(elapsed)}
+                  {formatTime(record.elapsed)}
                 </p>
                 <p className="recorder-status" role="status">
                   {recording
@@ -315,7 +220,7 @@ export function NewMeetingPage() {
                   <button
                     className="button primary"
                     type="button"
-                    onClick={stop}
+                    onClick={record.stop}
                   >
                     <StopIcon weight="fill" />
                     Dừng ghi âm
@@ -324,7 +229,7 @@ export function NewMeetingPage() {
                   <button
                     className="button primary"
                     type="button"
-                    onClick={() => void start()}
+                    onClick={() => void record.start(consent)}
                     disabled={!consent || requesting}
                   >
                     <MicrophoneIcon />
@@ -462,9 +367,9 @@ export function NewMeetingPage() {
               Khi tạo cuộc họp, file audio sẽ được gửi tới API để xử lý. Trong
               chế độ API mô phỏng, dữ liệu không được lưu lên máy chủ.
             </p>
-            {error && (
+            {(error || record.error) && (
               <p className="form-error" role="alert">
-                {error}
+                {error || record.error}
               </p>
             )}
             {uploading && (

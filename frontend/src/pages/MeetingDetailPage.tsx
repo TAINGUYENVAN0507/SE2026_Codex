@@ -91,6 +91,7 @@ function RemoteMeetingContent({
       file={files[meeting.id]}
       pending={pending}
       onUpdate={(transform) => setMeeting((current) => transform(current))}
+      remote
     />
   )
 }
@@ -123,11 +124,13 @@ function Detail({
   file,
   onUpdate,
   pending = false,
+  remote = false,
 }: {
   meeting: Meeting
   file?: File
   onUpdate: (f: (m: Meeting) => Meeting) => void
   pending?: boolean
+  remote?: boolean
 }) {
   const [localFile, setLocalFile] = useState<File | undefined>(file)
   const [position, setPosition] = useState(file ? 0 : 255)
@@ -378,6 +381,7 @@ function Detail({
           setTab={setSide}
           onSeek={seek}
           onUpdate={onUpdate}
+          remote={remote}
         />
       </div>
     </main>
