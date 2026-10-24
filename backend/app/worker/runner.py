@@ -11,7 +11,7 @@ import logging
 import os
 import time
 from collections.abc import Callable
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from meeting_pipeline.errors import (
@@ -33,8 +33,10 @@ from app.worker.queue import (
     claim_job,
     complete_job,
     fail_job,
+    schedule_retry,
     transition_job_status,
 )
+from app.worker.retry import compute_backoff_delay
 
 logger = logging.getLogger("backend.worker")
 
@@ -47,6 +49,7 @@ def process_job(
     storage: Storage,
     backend: str | None = None,
     on_stage_done_callback: Callable[[Stage, Path], None] | None = None,
+    now: datetime | None = None,
 ) -> Job:
     """Thực thi pipeline cho một Job đã được claim."""
     meeting = db.get(Meeting, job.meeting_id)
@@ -152,11 +155,36 @@ def process_job(
         db.commit()
 
     except TransientPipelineError as err:
-        logger.warning("Job %s gặp lỗi tạm thời: %s", job.id, err)
-        fail_job(db, job, error_code=err.code.value, error_message=err.message)
-        meeting.status = "failed"
-        meeting.updated_at = datetime.now(UTC)
-        db.commit()
+        logger.warning(
+            "Job %s gặp lỗi tạm thời: %s (attempt=%d/%d)",
+            job.id,
+            err,
+            job.attempt,
+            job.max_attempts,
+        )
+        current_time = now or datetime.now(UTC)
+        if job.attempt < job.max_attempts:
+            delay_sec = compute_backoff_delay(job.attempt)
+            next_run = current_time + timedelta(seconds=delay_sec)
+            schedule_retry(
+                db,
+                job,
+                next_run_at=next_run,
+                error_code=err.code.value,
+                error_message=err.message,
+                now=current_time,
+            )
+        else:
+            fail_job(
+                db,
+                job,
+                error_code=err.code.value,
+                error_message=err.message,
+                now=current_time,
+            )
+            meeting.status = "failed"
+            meeting.updated_at = current_time
+            db.commit()
 
     except PipelineCancelledError:
         logger.info("Job %s đã bị hủy", job.id)
@@ -179,13 +207,14 @@ def run_worker_once(
     worker_id: str = "worker-default",
     backend: str | None = None,
     on_stage_done_callback: Callable[[Stage, Path], None] | None = None,
+    now: datetime | None = None,
 ) -> bool:
     """Claim một job từ hàng đợi và thực thi tiến trình xử lý.
 
     Returns:
         True nếu đã claim và xử lý 1 job; False nếu hàng đợi rỗng.
     """
-    job = claim_job(db, worker_id=worker_id)
+    job = claim_job(db, worker_id=worker_id, now=now)
     if job is None:
         return False
 
@@ -195,5 +224,6 @@ def run_worker_once(
         storage=storage,
         backend=backend,
         on_stage_done_callback=on_stage_done_callback,
+        now=now,
     )
     return True
