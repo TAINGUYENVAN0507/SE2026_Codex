@@ -26,8 +26,8 @@ asr-spike = [
 package = false
 
 [tool.pytest.ini_options]
-testpaths = ["datasets/tests", "normalizer", "wer", "spikes", "diarization"]
-pythonpath = ["datasets", "normalizer", "wer", "spikes/asr", "diarization"]
+testpaths = ["datasets/tests", "normalizer", "wer", "spikes", "diarization", "performance", "summary_rubric"]
+pythonpath = ["datasets", "normalizer", "wer", "spikes/asr", "diarization", "performance", "summary_rubric"]
 addopts = "-ra --strict-markers --import-mode=importlib --doctest-modules"
 
 [tool.ruff]
