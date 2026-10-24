@@ -1,6 +1,9 @@
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
+import { RouteErrorBoundary } from './RouteErrorBoundary'
+import { ConnectivityNotice } from './ConnectivityNotice'
 
 export function AppShell() {
+  const location = useLocation()
   return (
     <>
       <div className="demo-strip">
@@ -12,7 +15,10 @@ export function AppShell() {
             : 'Giao diện thử nghiệm · kiểm tra dữ liệu trước khi sử dụng'}
         </span>
       </div>
-      <Outlet />
+      <ConnectivityNotice />
+      <RouteErrorBoundary key={location.pathname}>
+        <Outlet />
+      </RouteErrorBoundary>
     </>
   )
 }

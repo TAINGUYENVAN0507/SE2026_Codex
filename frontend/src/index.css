@@ -1201,6 +1201,28 @@ mark {
   gap: 8px;
   font-size: 12px;
 }
+.offline-banner {
+  background: #fff0da;
+  border-bottom: 1px solid #ecd3aa;
+  color: #744b17;
+  padding: 10px 24px;
+  font-size: 14px;
+}
+.network-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  max-width: min(440px, calc(100vw - 32px));
+  padding: 14px 18px;
+  border: 1px solid var(--line);
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 28px #2022261a;
+}
 .badge {
   display: inline-flex;
   background: #e9ecf1;

@@ -1,3 +1,5 @@
+import { notifyNetworkFailure } from './networkEvents'
+
 export type ApiErrorCode =
   | 'FILE_TOO_LARGE'
   | 'UNSUPPORTED_MEDIA_TYPE'
@@ -28,6 +30,9 @@ const messages: Record<string, string> = {
     'Dữ liệu đã được thay đổi ở nơi khác. Hãy tải lại rồi thử lại.',
   UNAUTHENTICATED: 'Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại.',
   INVALID_CREDENTIALS: 'Email hoặc mật khẩu không chính xác.',
+  NOT_FOUND: 'Không tìm thấy dữ liệu yêu cầu.',
+  MEETING_NOT_FOUND: 'Không tìm thấy cuộc họp.',
+  VALIDATION_ERROR: 'Thông tin chưa hợp lệ. Hãy kiểm tra rồi thử lại.',
   NETWORK_ERROR: 'Không thể kết nối máy chủ. Hãy kiểm tra mạng rồi thử lại.',
   UNKNOWN_ERROR: 'Đã xảy ra lỗi không xác định. Hãy thử lại sau.',
 }
@@ -82,7 +87,7 @@ export async function parseApiError(response: Response): Promise<ApiError> {
 
     return new ApiError(
       code,
-      messages[code] ?? message,
+      messages[code] ?? messages.UNKNOWN_ERROR,
       isRecord(details) ? details : null,
       typeof requestId === 'string' ? requestId : null,
       response.status,
@@ -99,5 +104,6 @@ export async function parseApiError(response: Response): Promise<ApiError> {
 }
 
 export function toNetworkError(): ApiError {
+  notifyNetworkFailure()
   return new ApiError('NETWORK_ERROR', messages.NETWORK_ERROR)
 }

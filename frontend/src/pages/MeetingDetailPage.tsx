@@ -24,6 +24,7 @@ import { useActiveSegment } from '../features/meetings/useActiveSegment'
 import { useTranscriptQuery } from '../features/meetings/useTranscriptQuery'
 import { apiMeetingToView } from '../features/meetings/apiModel'
 import { DEMO_ID } from '../features/meetings/model'
+import { NotFoundPage } from './NotFoundPage'
 
 export function MeetingDetailPage() {
   const { meetingId } = useParams()
@@ -31,13 +32,7 @@ export function MeetingDetailPage() {
     meetingId !== DEMO_ID &&
     !/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(meetingId || '')
   )
-    return (
-      <main className="missing-meeting">
-        <h1>Không tìm thấy cuộc họp</h1>
-        <p>Mã cuộc họp không hợp lệ.</p>
-        <Link to="/meetings">Về danh sách cuộc họp</Link>
-      </main>
-    )
+    return <NotFoundPage meeting />
   if (meetingId && meetingId !== DEMO_ID)
     return <RemoteMeetingDetail meetingId={meetingId} />
   return <DemoMeetingDetail meetingId={meetingId} />
@@ -57,6 +52,11 @@ function RemoteMeetingDetail({ meetingId }: { meetingId: string }) {
     )
   if (meetingQuery.isError || transcriptQuery.isError) {
     const error = meetingQuery.error || transcriptQuery.error
+    if (
+      error instanceof ApiError &&
+      (error.status === 404 || error.code === 'MEETING_NOT_FOUND')
+    )
+      return <NotFoundPage meeting />
     return (
       <main className="missing-meeting" role="alert">
         <h1>Không tải được cuộc họp</h1>
@@ -133,7 +133,9 @@ function Detail({
   remote?: boolean
 }) {
   const [localFile, setLocalFile] = useState<File | undefined>(file)
-  const [position, setPosition] = useState(file ? 0 : 255)
+  const [position, setPosition] = useState(
+    file ? 0 : Math.max(0, Math.min(255, meeting.duration)),
+  )
   const [side, setSide] = useState<NotesTab>('summary')
   const [mobile, setMobile] = useState<'transcript' | NotesTab>('transcript')
   const [exportOpen, setExportOpen] = useState(false)
