@@ -18,8 +18,10 @@ from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.db.base import Base
+from app.db.models.ai_output import AIOutput
 from app.db.models.job import Job
 from app.db.models.meeting import Meeting
+from app.db.models.transcript import Segment, Speaker
 from app.db.models.user import User
 from app.services.storage import Storage
 from app.services.storage.local import LocalStorage
@@ -35,7 +37,14 @@ def test_db() -> Generator[Session, None, None]:
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
-    tables = [User.__table__, Meeting.__table__, Job.__table__]
+    tables = [
+        User.__table__,
+        Meeting.__table__,
+        Job.__table__,
+        AIOutput.__table__,
+        Speaker.__table__,
+        Segment.__table__,
+    ]
     Base.metadata.create_all(bind=engine, tables=tables)
     session_factory = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     session = session_factory()

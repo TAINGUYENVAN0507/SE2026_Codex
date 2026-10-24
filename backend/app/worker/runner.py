@@ -27,6 +27,7 @@ from sqlalchemy.orm import Session
 from app.db.models.job import Job
 from app.db.models.meeting import Meeting
 from app.services.storage import Storage
+from app.worker.persister import persist_transcript
 from app.worker.queue import (
     JobStatus,
     claim_job,
@@ -112,6 +113,13 @@ def process_job(
             last_db_update = now
 
     def handle_stage_done(stage: Stage, artifact_file: Path) -> None:
+        if stage == Stage.MERGE:
+            persist_transcript(
+                db,
+                meeting_id=meeting.id,
+                job_id=job.id,
+                artifact_path=artifact_file,
+            )
         if on_stage_done_callback:
             on_stage_done_callback(stage, artifact_file)
 
