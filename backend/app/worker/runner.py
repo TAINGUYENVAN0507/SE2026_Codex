@@ -10,7 +10,7 @@ Tuân thủ nghiêm ngặt ranh giới module:
 import logging
 import os
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
@@ -36,6 +36,13 @@ from app.worker.queue import (
     schedule_retry,
     transition_job_status,
 )
+from app.worker.reaper import (
+    DEFAULT_LEASE_SEC,
+    DEFAULT_REAPER_INTERVAL_SEC,
+    heartbeat_job,
+    reap_expired_jobs,
+    release_job_on_sigterm,
+)
 from app.worker.retry import compute_backoff_delay
 
 logger = logging.getLogger("backend.worker")
@@ -49,12 +56,39 @@ def process_job(
     storage: Storage,
     backend: str | None = None,
     on_stage_done_callback: Callable[[Stage, Path], None] | None = None,
+    is_cancelled: Callable[[], bool] | None = None,
+    sigterm_check: Callable[[], bool] | None = None,
+    heartbeat_sec: float = 15.0,
+    clock: Callable[[], datetime] | None = None,
     now: datetime | None = None,
+    env: Mapping[str, str] | None = None,
 ) -> Job:
     """Thực thi pipeline cho một Job đã được claim."""
+
+    def get_now() -> datetime:
+        if clock is not None:
+            return clock()
+        if now is not None:
+            return now
+        return datetime.now(UTC)
+
+    def check_cancelled() -> bool:
+        if sigterm_check and sigterm_check():
+            return True
+        return bool(is_cancelled and is_cancelled())
+
+    def handle_heartbeat() -> None:
+        heartbeat_job(db, job, lease_duration_sec=DEFAULT_LEASE_SEC, now=get_now())
+
     meeting = db.get(Meeting, job.meeting_id)
     if meeting is None:
-        fail_job(db, job, error_code="MEETING_NOT_FOUND", error_message="Không tìm thấy cuộc họp")
+        fail_job(
+            db,
+            job,
+            error_code="MEETING_NOT_FOUND",
+            error_message="Không tìm thấy cuộc họp",
+            now=get_now(),
+        )
         return job
 
     pipeline_backend = backend or os.getenv("PIPELINE_BACKEND", "fake")
@@ -99,9 +133,9 @@ def process_job(
 
     def handle_progress(stage: Stage, value: float) -> None:
         nonlocal last_db_update
-        now = time.monotonic()
+        now_ts = time.monotonic()
         # Throttling: chỉ ghi DB tối đa 1 lần mỗi giây hoặc khi stage hoàn thành (value=1.0)
-        if (now - last_db_update >= PROGRESS_THROTTLE_SEC) or value >= 1.0:
+        if (now_ts - last_db_update >= PROGRESS_THROTTLE_SEC) or value >= 1.0:
             calc_progress = overall_progress(stage, value)
             job.stage = stage.value
             job.progress = calc_progress
@@ -110,10 +144,12 @@ def process_job(
             stages[stage.value] = "running" if value < 1.0 else "succeeded"
             job.stage_status = stages
 
-            job.heartbeat_at = datetime.now(UTC)
-            job.updated_at = datetime.now(UTC)
+            cur_time = get_now()
+            job.heartbeat_at = cur_time
+            job.locked_until = cur_time + timedelta(seconds=DEFAULT_LEASE_SEC)
+            job.updated_at = cur_time
             db.commit()
-            last_db_update = now
+            last_db_update = now_ts
 
     def handle_stage_done(stage: Stage, artifact_file: Path) -> None:
         if stage == Stage.MERGE:
@@ -139,23 +175,27 @@ def process_job(
             workdir=workdir,
             on_progress=handle_progress,
             on_stage_done=handle_stage_done,
+            is_cancelled=check_cancelled,
+            on_heartbeat=handle_heartbeat,
+            heartbeat_sec=heartbeat_sec,
             backend=pipeline_backend,
+            env=env,
         )
 
         job.stage_status = {k.value: v for k, v in outcome.stage_status.items()}
-        complete_job(db, job)
+        complete_job(db, job, now=get_now())
         meeting.status = "ready"
-        meeting.updated_at = datetime.now(UTC)
+        meeting.updated_at = get_now()
         db.commit()
 
     except PermanentPipelineError as err:
         logger.error("Job %s gặp lỗi vĩnh viễn: %s", job.id, err)
-        fail_job(db, job, error_code=err.code.value, error_message=err.message)
+        fail_job(db, job, error_code=err.code.value, error_message=err.message, now=get_now())
         if err.stage == Stage.SUMMARIZE:
             meeting.status = "partial"
         else:
             meeting.status = "failed"
-        meeting.updated_at = datetime.now(UTC)
+        meeting.updated_at = get_now()
         db.commit()
 
     except TransientPipelineError as err:
@@ -166,7 +206,7 @@ def process_job(
             job.attempt,
             job.max_attempts,
         )
-        current_time = now or datetime.now(UTC)
+        current_time = get_now()
         if job.attempt < job.max_attempts:
             delay_sec = compute_backoff_delay(job.attempt)
             next_run = current_time + timedelta(seconds=delay_sec)
@@ -194,15 +234,19 @@ def process_job(
             db.commit()
 
     except PipelineCancelledError:
-        logger.info("Job %s đã bị hủy", job.id)
-        transition_job_status(job, JobStatus.CANCELLED)
-        db.commit()
+        if sigterm_check and sigterm_check():
+            logger.info("Worker nhận SIGTERM: giải phóng job %s về queued", job.id)
+            release_job_on_sigterm(db, job, now=get_now())
+        else:
+            logger.info("Job %s đã bị hủy", job.id)
+            transition_job_status(job, JobStatus.CANCELLED, now=get_now())
+            db.commit()
 
     except PipelineError as err:
         logger.error("Job %s gặp lỗi pipeline: %s", job.id, err)
-        fail_job(db, job, error_code=err.code.value, error_message=err.message)
+        fail_job(db, job, error_code=err.code.value, error_message=err.message, now=get_now())
         meeting.status = "failed"
-        meeting.updated_at = datetime.now(UTC)
+        meeting.updated_at = get_now()
         db.commit()
 
     return job
@@ -214,14 +258,19 @@ def run_worker_once(
     worker_id: str = "worker-default",
     backend: str | None = None,
     on_stage_done_callback: Callable[[Stage, Path], None] | None = None,
+    is_cancelled: Callable[[], bool] | None = None,
+    sigterm_check: Callable[[], bool] | None = None,
+    heartbeat_sec: float = 15.0,
+    clock: Callable[[], datetime] | None = None,
     now: datetime | None = None,
+    env: Mapping[str, str] | None = None,
 ) -> bool:
     """Claim một job từ hàng đợi và thực thi tiến trình xử lý.
 
     Returns:
         True nếu đã claim và xử lý 1 job; False nếu hàng đợi rỗng.
     """
-    job = claim_job(db, worker_id=worker_id, now=now)
+    job = claim_job(db, worker_id=worker_id, now=now or (clock() if clock else None))
     if job is None:
         return False
 
@@ -231,7 +280,12 @@ def run_worker_once(
         storage=storage,
         backend=backend,
         on_stage_done_callback=on_stage_done_callback,
+        is_cancelled=is_cancelled,
+        sigterm_check=sigterm_check,
+        heartbeat_sec=heartbeat_sec,
+        clock=clock,
         now=now,
+        env=env,
     )
     return True
 
@@ -240,15 +294,17 @@ def run_worker_loop(
     poll_interval_sec: float = 2.0,
     worker_id: str | None = None,
     backend: str | None = None,
+    reaper_interval_sec: float = DEFAULT_REAPER_INTERVAL_SEC,
 ) -> None:
-    """Vòng lặp thực thi của Worker: định kỳ claim job và chạy pipeline."""
+    """Vòng lặp thực thi của Worker: định kỳ claim job, chạy pipeline và quét reaper."""
     import signal
 
-    from app.db.session import SessionLocal
+    from app.db.session import get_session_factory
     from app.services.storage import get_storage
 
     w_id = worker_id or f"worker-{os.getpid()}"
     storage = get_storage()
+    session_factory = get_session_factory()
     logger.info(
         "Khởi động worker loop %s (poll_interval=%ss, backend=%s)",
         w_id,
@@ -257,30 +313,46 @@ def run_worker_loop(
     )
 
     running = True
+    sigterm_received = False
 
     def _handle_signal(sig, frame):
-        nonlocal running
+        nonlocal running, sigterm_received
         logger.info("Worker %s nhận tín hiệu dừng (%s), đang tắt...", w_id, sig)
         running = False
+        sigterm_received = True
 
     signal.signal(signal.SIGINT, _handle_signal)
     if hasattr(signal, "SIGTERM"):
         signal.signal(signal.SIGTERM, _handle_signal)
 
+    last_reaper_run = 0.0
+
     while running:
-        with SessionLocal() as db:
+        with session_factory() as db:
+            now_mono = time.monotonic()
+            if now_mono - last_reaper_run >= reaper_interval_sec:
+                try:
+                    reaped = reap_expired_jobs(db)
+                    if reaped:
+                        logger.info("Reaper đã thu hồi %d job hết hạn", len(reaped))
+                except Exception as e:
+                    logger.error("Lỗi khi chạy reaper trong worker: %s", e)
+                last_reaper_run = now_mono
+
             try:
                 processed = run_worker_once(
                     db,
                     storage=storage,
                     worker_id=w_id,
                     backend=backend,
+                    sigterm_check=lambda: sigterm_received,
                 )
-                if not processed:
+                if not processed and running:
                     time.sleep(poll_interval_sec)
             except Exception as e:
                 logger.error("Lỗi không mong muốn trong worker loop: %s", e)
-                time.sleep(poll_interval_sec)
+                if running:
+                    time.sleep(poll_interval_sec)
 
 
 if __name__ == "__main__":
