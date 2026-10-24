@@ -13,14 +13,16 @@ from collections.abc import Generator
 from pathlib import Path
 
 import pytest
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.db.base import Base
+from app.db.models.action_item import ActionItem
 from app.db.models.ai_output import AIOutput
 from app.db.models.job import Job
 from app.db.models.meeting import Meeting
+from app.db.models.summary import Summary
 from app.db.models.transcript import Segment, Speaker
 from app.db.models.user import User
 from app.services.storage import Storage
@@ -44,6 +46,8 @@ def test_db() -> Generator[Session, None, None]:
         AIOutput.__table__,
         Speaker.__table__,
         Segment.__table__,
+        Summary.__table__,
+        ActionItem.__table__,
     ]
     Base.metadata.create_all(bind=engine, tables=tables)
     session_factory = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -164,6 +168,20 @@ def test_worker_run_queued_job_to_succeeded(
     assert (workdir / "diarization.json").is_file()
     assert (workdir / "transcript.json").is_file()
     assert (workdir / "summary.json").is_file()
+
+    # Kiểm tra summary và action items đã được persist vào cơ sở dữ liệu
+    summary_record = test_db.execute(
+        select(Summary).where(Summary.meeting_id == meeting.id)
+    ).scalar_one_or_none()
+    assert summary_record is not None
+    assert summary_record.status == "ready"
+
+    action_items = (
+        test_db.execute(select(ActionItem).where(ActionItem.meeting_id == meeting.id))
+        .scalars()
+        .all()
+    )
+    assert len(action_items) > 0
 
 
 def test_worker_run_empty_queue(
