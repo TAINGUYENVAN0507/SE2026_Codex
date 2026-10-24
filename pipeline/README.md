@@ -117,6 +117,7 @@ try:
         on_progress=lambda stage, v: save_progress(stage, overall_progress(stage, v)),
         on_stage_done=lambda stage, path: persist(stage, path),  # idempotent theo (job_id, stage)
         is_cancelled=lambda: job_was_cancelled(job_id),
+        on_heartbeat=lambda: extend_lease(job_id),  # ít nhất mỗi heartbeat_sec (15 s)
     )
 except TransientPipelineError:  # gồm StageTimeoutError: lên lịch retry
     ...
@@ -127,6 +128,9 @@ except PipelineCancelledError:
 ```
 
 - Mỗi stage chạy trong subprocess riêng. Quá timeout thì kill cả process group.
+- `on_heartbeat` được gọi ngay khi bắt đầu, sau đó ít nhất mỗi `heartbeat_sec` (mặc định 15 s), kể cả khi một stage chạy nhiều phút không báo progress. Dùng để gia hạn lease (BE-08).
+- `is_cancelled` được kiểm trước mỗi stage và khoảng mỗi giây (`CANCEL_POLL_SEC`) trong lúc stage chạy. Bị hủy thì kill stage trong khoảng 1 s và raise `PipelineCancelledError`, không ghi artifact dở dang, không fallback kể cả ở `diarize`. Chạy lại cùng `workdir` thì tiếp tục từ checkpoint.
+- Callback nào ném lỗi (ví dụ mất kết nối DB) thì stage đang chạy bị kill, rồi lỗi được raise lại cho worker.
 - Retry dùng lại cùng `workdir`: stage đã có artifact hợp lệ được bỏ qua, nhưng `on_stage_done` vẫn được gọi lại.
 - Diarization lỗi ở lượt cuối (hoặc lỗi permanent) thì fallback 1 speaker, có warning `DIARIZATION_FALLBACK`.
 - `from_stage="summarize"` cùng `transcript_override_path` chỉ chạy lại summarize, không chạy lại ASR.
