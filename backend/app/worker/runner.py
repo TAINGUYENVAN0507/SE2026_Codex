@@ -234,3 +234,55 @@ def run_worker_once(
         now=now,
     )
     return True
+
+
+def run_worker_loop(
+    poll_interval_sec: float = 2.0,
+    worker_id: str | None = None,
+    backend: str | None = None,
+) -> None:
+    """Vòng lặp thực thi của Worker: định kỳ claim job và chạy pipeline."""
+    import signal
+
+    from app.db.session import SessionLocal
+    from app.services.storage import get_storage
+
+    w_id = worker_id or f"worker-{os.getpid()}"
+    storage = get_storage()
+    logger.info(
+        "Khởi động worker loop %s (poll_interval=%ss, backend=%s)",
+        w_id,
+        poll_interval_sec,
+        backend or os.getenv("PIPELINE_BACKEND", "fake"),
+    )
+
+    running = True
+
+    def _handle_signal(sig, frame):
+        nonlocal running
+        logger.info("Worker %s nhận tín hiệu dừng (%s), đang tắt...", w_id, sig)
+        running = False
+
+    signal.signal(signal.SIGINT, _handle_signal)
+    if hasattr(signal, "SIGTERM"):
+        signal.signal(signal.SIGTERM, _handle_signal)
+
+    while running:
+        with SessionLocal() as db:
+            try:
+                processed = run_worker_once(
+                    db,
+                    storage=storage,
+                    worker_id=w_id,
+                    backend=backend,
+                )
+                if not processed:
+                    time.sleep(poll_interval_sec)
+            except Exception as e:
+                logger.error("Lỗi không mong muốn trong worker loop: %s", e)
+                time.sleep(poll_interval_sec)
+
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    run_worker_loop()
