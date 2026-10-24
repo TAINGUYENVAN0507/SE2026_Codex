@@ -107,9 +107,26 @@ async def validation_exception_handler(
     request_id = get_request_id(request)
     # Lọc danh sách lỗi để an toàn và nhất quán
     details = exc.errors()
+
+    code = "VALIDATION_ERROR"
+    message = "Dữ liệu yêu cầu không hợp lệ."
+
+    for err in details:
+        loc = err.get("loc", ())
+        err_type = str(err.get("type", ""))
+        if "text" in loc:
+            if "too_short" in err_type or "empty" in err_type or "missing" in err_type:
+                code = "TEXT_EMPTY"
+                message = "Nội dung đoạn thoại không được để trống."
+                break
+            if "too_long" in err_type:
+                code = "TEXT_TOO_LONG"
+                message = "Nội dung vượt quá độ dài tối đa cho phép."
+                break
+
     body = build_error_envelope(
-        code="VALIDATION_ERROR",
-        message="Dữ liệu yêu cầu không hợp lệ.",
+        code=code,
+        message=message,
         details=details,
         request_id=request_id,
     )

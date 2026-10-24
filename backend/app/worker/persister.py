@@ -51,7 +51,7 @@ def persist_transcript(
         raise PermanentPipelineError(
             ErrorCode.PIPELINE_OUTPUT_INVALID,
             Stage.MERGE,
-            f"Không tìm thấy tệp artifact: {artifact_path}",
+            f"Không tìm thấy tệp artifact: {artifact_path.name}",
         )
 
     try:
@@ -61,7 +61,7 @@ def persist_transcript(
         raise PermanentPipelineError(
             ErrorCode.PIPELINE_OUTPUT_INVALID,
             Stage.MERGE,
-            f"Không thể đọc định dạng JSON của transcript: {exc}",
+            f"Không thể đọc định dạng JSON của {artifact_path.name}",
         ) from exc
 
     # Kiểm tra schema_version hỗ trợ (chỉ chấp nhận 1.x)
@@ -77,10 +77,11 @@ def persist_transcript(
     try:
         transcript = Transcript.model_validate(raw_data)
     except (ValidationError, ValueError) as exc:
+        err_count = exc.error_count() if isinstance(exc, ValidationError) else 1
         raise PermanentPipelineError(
             ErrorCode.PIPELINE_OUTPUT_INVALID,
             Stage.MERGE,
-            f"Dữ liệu transcript.json không hợp lệ theo schema: {exc}",
+            f"artifact {artifact_path.name} sai schema ({err_count} lỗi)",
         ) from exc
 
     # Idempotent guard: kiểm tra xem (job_id, "merge") đã được persist chưa
@@ -180,7 +181,7 @@ def persist_summary(
         raise PermanentPipelineError(
             ErrorCode.PIPELINE_OUTPUT_INVALID,
             Stage.SUMMARIZE,
-            f"Không tìm thấy tệp artifact: {artifact_path}",
+            f"Không tìm thấy tệp artifact: {artifact_path.name}",
         )
 
     try:
@@ -190,7 +191,7 @@ def persist_summary(
         raise PermanentPipelineError(
             ErrorCode.PIPELINE_OUTPUT_INVALID,
             Stage.SUMMARIZE,
-            f"Không thể đọc định dạng JSON của summary: {exc}",
+            f"Không thể đọc định dạng JSON của {artifact_path.name}",
         ) from exc
 
     schema_version = raw_data.get("schema_version")
@@ -204,10 +205,11 @@ def persist_summary(
     try:
         summary_output = SummaryOutput.model_validate(raw_data)
     except (ValidationError, ValueError) as exc:
+        err_count = exc.error_count() if isinstance(exc, ValidationError) else 1
         raise PermanentPipelineError(
             ErrorCode.PIPELINE_OUTPUT_INVALID,
             Stage.SUMMARIZE,
-            f"Dữ liệu summary.json không hợp lệ theo schema: {exc}",
+            f"artifact {artifact_path.name} sai schema ({err_count} lỗi)",
         ) from exc
 
     # Idempotent guard

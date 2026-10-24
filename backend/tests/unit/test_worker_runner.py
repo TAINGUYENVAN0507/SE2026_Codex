@@ -10,7 +10,9 @@ Bao gồm:
 import json
 import uuid
 from collections.abc import Generator
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from unittest.mock import MagicMock
 
 import pytest
 from sqlalchemy import create_engine, select
@@ -27,8 +29,9 @@ from app.db.models.transcript import Segment, Speaker
 from app.db.models.user import User
 from app.services.storage import Storage
 from app.services.storage.local import LocalStorage
-from app.worker.queue import enqueue_job
-from app.worker.runner import run_worker_once
+from app.worker.queue import claim_job, enqueue_job
+from app.worker.reaper import reap_expired_jobs
+from app.worker.runner import process_job, run_job, run_worker_loop, run_worker_once
 
 
 @pytest.fixture
@@ -196,3 +199,167 @@ def test_worker_run_empty_queue(
         backend="fake",
     )
     assert ran is False
+
+
+def test_worker_job_extends_lease_with_heartbeat_over_3_minutes(
+    test_db: Session,
+    sample_meeting_with_audio: Meeting,
+    test_storage: Storage,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Job chạy với thời gian mô phỏng 3 phút (vượt quá lease 60s) vẫn giữ lease nhờ heartbeat."""
+    base_time = datetime(2026, 10, 24, 10, 0, 0, tzinfo=UTC)
+    current_fake_time = [base_time]
+
+    def fake_clock() -> datetime:
+        return current_fake_time[0]
+
+    enqueue_job(test_db, meeting_id=sample_meeting_with_audio.id, now=base_time)
+    test_db.commit()
+
+    claimed = claim_job(test_db, worker_id="test-worker", now=base_time)
+    assert claimed is not None
+
+    heartbeat_count = [0]
+
+    def on_stage_done_hook(stage, path):
+        test_db.refresh(claimed)
+        assert claimed.locked_until is not None
+        assert claimed.locked_until.replace(tzinfo=UTC) > current_fake_time[0]
+
+    original_run_job = run_job
+
+    def intercept_run_job(*args, **kwargs):
+        user_heartbeat = kwargs.get("on_heartbeat")
+
+        def wrapped_heartbeat():
+            heartbeat_count[0] += 1
+            current_fake_time[0] += timedelta(seconds=30)
+            if user_heartbeat:
+                user_heartbeat()
+
+        kwargs["on_heartbeat"] = wrapped_heartbeat
+        kwargs["heartbeat_sec"] = 0.01
+        return original_run_job(*args, **kwargs)
+
+    monkeypatch.setattr("app.worker.runner.run_job", intercept_run_job)
+
+    process_job(
+        test_db,
+        claimed,
+        storage=test_storage,
+        backend="fake",
+        on_stage_done_callback=on_stage_done_hook,
+        clock=fake_clock,
+    )
+
+    test_db.refresh(claimed)
+    assert claimed.status == "succeeded"
+    assert heartbeat_count[0] >= 6
+    assert (current_fake_time[0] - base_time).total_seconds() >= 180
+
+
+def test_worker_crashes_and_reaper_requeues(
+    test_db: Session,
+    sample_meeting_with_audio: Meeting,
+) -> None:
+    """Worker chết không gửi heartbeat thì reaper thu hồi job và tăng attempt."""
+    base_time = datetime(2026, 10, 24, 10, 0, 0, tzinfo=UTC)
+    enqueue_job(test_db, meeting_id=sample_meeting_with_audio.id, now=base_time)
+    test_db.commit()
+
+    claimed = claim_job(test_db, worker_id="crashed-worker", now=base_time)
+    assert claimed is not None
+    assert claimed.attempt == 1
+    assert claimed.locked_until.replace(tzinfo=UTC) == base_time + timedelta(seconds=60)
+
+    # Worker chết, không có heartbeat nào. Thời gian trôi qua 65s (hết lease 60s)
+    later = base_time + timedelta(seconds=65)
+    reaped = reap_expired_jobs(test_db, now=later)
+    assert len(reaped) == 1
+    assert reaped[0].id == claimed.id
+
+    test_db.refresh(claimed)
+    assert claimed.status == "queued"
+    assert claimed.attempt == 2
+    assert claimed.locked_by is None
+    assert claimed.locked_until is None
+
+
+def test_worker_sigterm_releases_job_to_queued_without_incrementing_attempt(
+    test_db: Session,
+    sample_meeting_with_audio: Meeting,
+    test_storage: Storage,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """RT-09: Khi worker nhận SIGTERM giữa chừng, stage dừng và job về queued."""
+    base_time = datetime(2026, 10, 24, 10, 0, 0, tzinfo=UTC)
+    enqueue_job(test_db, meeting_id=sample_meeting_with_audio.id, now=base_time)
+    test_db.commit()
+
+    claimed = claim_job(test_db, worker_id="sigterm-worker", now=base_time)
+    assert claimed is not None
+    assert claimed.attempt == 1
+
+    sigterm_triggered = [False]
+
+    def fake_sigterm_check() -> bool:
+        return sigterm_triggered[0]
+
+    def on_stage_done_hook(stage, path):
+        if stage.value == "preprocess":
+            sigterm_triggered[0] = True
+
+    monkeypatch.setenv("FAKE_STAGE_SLEEP_SEC", "1")
+
+    process_job(
+        test_db,
+        claimed,
+        storage=test_storage,
+        backend="fake",
+        on_stage_done_callback=on_stage_done_hook,
+        sigterm_check=fake_sigterm_check,
+        now=base_time,
+    )
+
+    test_db.refresh(claimed)
+    assert claimed.status == "queued"
+    assert claimed.attempt == 1
+    assert claimed.locked_by is None
+    assert claimed.locked_until is None
+
+
+def test_run_worker_loop_calls_reaper(monkeypatch: pytest.MonkeyPatch) -> None:
+    """run_worker_loop định kỳ gọi reap_expired_jobs mỗi 30s."""
+    reap_called = [0]
+
+    def mock_reap(db, now=None):
+        reap_called[0] += 1
+        return []
+
+    monkeypatch.setattr("app.worker.runner.reap_expired_jobs", mock_reap)
+    monkeypatch.setattr("app.worker.runner.run_worker_once", lambda *args, **kwargs: False)
+
+    loop_count = 0
+
+    class FakeSessionLocal:
+        def __enter__(self):
+            return MagicMock()
+
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            pass
+
+    monkeypatch.setattr("app.db.session.get_session_factory", lambda: FakeSessionLocal)
+
+    def mock_sleep(sec):
+        nonlocal loop_count
+        loop_count += 1
+        if loop_count >= 2:
+            raise KeyboardInterrupt()
+
+    monkeypatch.setattr("time.sleep", mock_sleep)
+
+    with pytest.raises(KeyboardInterrupt):
+        run_worker_loop(poll_interval_sec=0.01, reaper_interval_sec=0.0)
+
+    assert reap_called[0] >= 1
