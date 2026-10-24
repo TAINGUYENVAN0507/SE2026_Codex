@@ -43,6 +43,7 @@ Mọi mã lỗi tuân thủ quy ước:
 | `INTERNAL_SERVER_ERROR` | 500 | Lỗi nội bộ không lường trước phía server | Đã xảy ra lỗi nội bộ hệ thống. Vui lòng thử lại sau. |
 | `HTTP_ERROR` | 500 | Lỗi HTTP không xác định | Đã xảy ra lỗi khi xử lý yêu cầu. |
 | `SERVICE_UNAVAILABLE` | 503 | Dịch vụ backend hoặc cơ sở dữ liệu tạm thời không sẵn sàng | Hệ thống tạm thời không sẵn sàng. Vui lòng thử lại sau. |
+| `LEASE_TIMEOUT` | 504 | Job xử lý vượt quá thời hạn giữ khóa lease và đã đạt số lần thử tối đa | Tiến trình xử lý job bị quá hạn thời gian giữ khóa lease. |
 
 ---
 
