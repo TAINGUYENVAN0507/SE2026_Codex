@@ -134,7 +134,7 @@ def process_job(
             on_stage_done_callback(stage, artifact_file)
 
     try:
-        run_job(
+        outcome = run_job(
             spec,
             workdir=workdir,
             on_progress=handle_progress,
@@ -142,6 +142,7 @@ def process_job(
             backend=pipeline_backend,
         )
 
+        job.stage_status = {k.value: v for k, v in outcome.stage_status.items()}
         complete_job(db, job)
         meeting.status = "ready"
         meeting.updated_at = datetime.now(UTC)
@@ -150,7 +151,10 @@ def process_job(
     except PermanentPipelineError as err:
         logger.error("Job %s gặp lỗi vĩnh viễn: %s", job.id, err)
         fail_job(db, job, error_code=err.code.value, error_message=err.message)
-        meeting.status = "failed"
+        if err.stage == Stage.SUMMARIZE:
+            meeting.status = "partial"
+        else:
+            meeting.status = "failed"
         meeting.updated_at = datetime.now(UTC)
         db.commit()
 
@@ -182,7 +186,10 @@ def process_job(
                 error_message=err.message,
                 now=current_time,
             )
-            meeting.status = "failed"
+            if err.stage == Stage.SUMMARIZE:
+                meeting.status = "partial"
+            else:
+                meeting.status = "failed"
             meeting.updated_at = current_time
             db.commit()
 
