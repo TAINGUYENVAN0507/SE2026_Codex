@@ -18,6 +18,7 @@ Mọi callback được gọi trên thread của người gọi `run_job()`.
 from __future__ import annotations
 
 import contextlib
+import functools
 import json
 import logging
 import os
@@ -75,6 +76,9 @@ HeartbeatFn = Callable[[], None]
 TickFn = Callable[[], None]
 
 INVALIDATION_MARKER = ".from_stage_applied"
+# Khoảng thời gian tối thiểu giữa hai lần gọi `is_cancelled` khi stage đang chạy, để
+# worker không phải query DB mỗi 0.1 s.
+CANCEL_POLL_SEC = 1.0
 
 # Tỉ trọng ước lượng của từng stage trong tổng thời gian, dùng cho thanh progress.
 STAGE_WEIGHTS: dict[Stage, float] = {
@@ -147,19 +151,19 @@ def _noop_heartbeat() -> None:
     pass
 
 
-class _Heartbeat:
-    """Gọi `on_heartbeat` ngay lần đầu, sau đó ít nhất mỗi `interval_sec` (đồng hồ monotonic)."""
+class _Every:
+    """`due()` trả True ngay lần đầu, sau đó khi đã qua ít nhất `interval_sec` (monotonic)."""
 
-    def __init__(self, fn: HeartbeatFn, interval_sec: float) -> None:
-        self._fn = fn
+    def __init__(self, interval_sec: float) -> None:
         self._interval = interval_sec
         self._last: float | None = None
 
-    def beat(self) -> None:
+    def due(self) -> bool:
         now = time.monotonic()
         if self._last is None or now - self._last >= self._interval:
             self._last = now
-            self._fn()
+            return True
+        return False
 
 
 def run_job(
@@ -182,21 +186,32 @@ def run_job(
     workdir, nên lần retry sau chạy tiếp từ checkpoint.
 
     `on_heartbeat` được gọi khi bắt đầu và ít nhất mỗi `heartbeat_sec`, kể cả khi một
-    stage chạy lâu mà không báo progress, để worker gia hạn lease. Callback nào ném lỗi
-    thì stage đang chạy bị kill rồi lỗi được raise lại.
+    stage chạy lâu mà không báo progress, để worker gia hạn lease. `is_cancelled` được
+    kiểm trước mỗi stage và khoảng mỗi giây trong lúc stage chạy; bị hủy thì kill stage
+    và raise `PipelineCancelledError`. Callback nào ném lỗi thì stage đang chạy bị kill
+    rồi lỗi được raise lại.
     """
     timeouts = timeouts or TimeoutPolicy()
     workdir.mkdir(parents=True, exist_ok=True)
     write_job(workdir, spec)
-    heartbeat = _Heartbeat(on_heartbeat, heartbeat_sec)
-    heartbeat.beat()
+    beat_due = _Every(heartbeat_sec)
+    cancel_due = _Every(CANCEL_POLL_SEC)
+    if beat_due.due():
+        on_heartbeat()
+
+    def tick(stage: Stage) -> None:
+        if beat_due.due():
+            on_heartbeat()
+        if cancel_due.due() and is_cancelled():
+            raise PipelineCancelledError(stage)
 
     plan = _plan(spec, workdir)
     status: dict[Stage, StageStatus] = {}
     timings: dict[Stage, float] = {}
 
     for stage in plan:
-        heartbeat.beat()
+        if beat_due.due():
+            on_heartbeat()
         if is_cancelled():
             raise PipelineCancelledError(stage)
 
@@ -214,11 +229,14 @@ def run_job(
                 workdir,
                 timeout_sec=timeouts.timeout_for(stage, _duration(workdir)),
                 on_progress=on_progress,
-                on_tick=heartbeat.beat,
+                on_tick=functools.partial(tick, stage),
                 backend=backend,
                 env=env,
             )
             status[stage] = "succeeded"
+        except PipelineCancelledError:
+            # Không fallback khi bị hủy, kể cả ở stage diarize.
+            raise
         except PipelineError as e:
             if stage is not Stage.DIARIZE or (e.retryable and not spec.is_last_attempt):
                 raise

@@ -264,6 +264,55 @@ def test_heartbeat_error_kills_the_running_stage(job_spec, tmp_path):
     assert not artifact_path(wd, Stage.ASR).exists()
 
 
+def test_rt15_cancel_during_a_stage_kills_it_within_a_second(job_spec, tmp_path):
+    wd = tmp_path / "wd"
+    rec = Recorder()
+    cancelled_at: list[float] = []
+
+    def is_cancelled():
+        # ASR treo 3600 s: hủy ngay khi đã vào ASR.
+        if artifact_path(wd, Stage.VAD).exists():
+            cancelled_at.append(time.monotonic())
+            return True
+        return False
+
+    with pytest.raises(PipelineCancelledError) as exc:
+        run(job_spec, wd, "timeout", rec=rec, is_cancelled=is_cancelled)
+
+    assert exc.value.stage is Stage.ASR
+    assert time.monotonic() - cancelled_at[0] < 2
+    assert rec.done == [Stage.PREPROCESS, Stage.VAD]
+    assert not artifact_path(wd, Stage.ASR).exists()
+
+    # Chạy lại cùng workdir: tiếp tục từ checkpoint, ASR chạy lại từ đầu.
+    outcome = run(job_spec, wd)
+    assert outcome.stage_status[Stage.VAD] == "skipped"
+    assert outcome.stage_status[Stage.ASR] == "succeeded"
+
+
+def test_cancel_during_diarize_never_falls_back(job_spec, tmp_path):
+    """Lượt cuối, diarize lỗi thì fallback 1 speaker; nhưng bị hủy thì phải dừng."""
+    wd = tmp_path / "wd"
+    last = job_spec.model_copy(update={"attempt": 3, "max_attempts": 3})
+    rec = Recorder()
+
+    def diarize_running():
+        return any(stage is Stage.DIARIZE and v < 1 for stage, v in rec.progress)
+
+    with pytest.raises(PipelineCancelledError) as exc:
+        run(
+            last,
+            wd,
+            "slow",
+            rec=rec,
+            env={"FAKE_STAGE_SLEEP_SEC": "2"},
+            is_cancelled=diarize_running,
+        )
+    assert exc.value.stage is Stage.DIARIZE
+    assert not artifact_path(wd, Stage.DIARIZE).exists()
+    assert Stage.DIARIZE not in rec.done
+
+
 def test_timeout_scales_with_duration():
     policy = TimeoutPolicy()
     assert policy.timeout_for(Stage.ASR, 600) == 300 + 2.0 * 600

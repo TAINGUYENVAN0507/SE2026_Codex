@@ -142,7 +142,10 @@ class StageTimeoutError(TransientPipelineError):
 
 
 class PipelineCancelledError(PipelineError):
-    """Job bị hủy (ví dụ người dùng xóa meeting). Runner kiểm tra giữa các stage."""
+    """Job bị hủy (ví dụ người dùng xóa meeting).
+
+    Runner kiểm tra trước mỗi stage và khoảng mỗi giây trong lúc stage chạy.
+    """
 
     kind = ErrorKind.CANCELLED
     exit_code = EXIT_PERMANENT
