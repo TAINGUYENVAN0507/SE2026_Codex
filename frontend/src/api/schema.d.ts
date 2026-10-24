@@ -171,6 +171,26 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/v1/meetings/{meeting_id}/audio': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Phát luồng dữ liệu âm thanh cuộc họp hỗ trợ HTTP Range
+     * @description Stream tệp âm thanh của cuộc họp hỗ trợ HTTP Range (RFC 7233).
+     */
+    get: operations['get_meeting_audio_api_v1_meetings__meeting_id__audio_get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/v1/meetings/{meeting_id}/transcript': {
     parameters: {
       query?: never
@@ -1826,6 +1846,65 @@ export interface operations {
       }
       /** @description Không tìm thấy cuộc họp */
       404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  get_meeting_audio_api_v1_meetings__meeting_id__audio_get: {
+    parameters: {
+      query?: never
+      header?: {
+        Range?: string | null
+      }
+      path: {
+        /** @description UUID của cuộc họp */
+        meeting_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Toàn bộ luồng tệp âm thanh */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+      /** @description Một phần tệp âm thanh theo HTTP Range */
+      206: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Không tìm thấy cuộc họp hoặc tệp âm thanh */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description Khoảng dữ liệu Range không hợp lệ */
+      416: {
         headers: {
           [name: string]: unknown
         }
