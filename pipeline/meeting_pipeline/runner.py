@@ -71,6 +71,8 @@ StageStatus = Literal["succeeded", "skipped", "fallback"]
 ProgressFn = Callable[[Stage, float], None]
 StageDoneFn = Callable[[Stage, Path], None]
 CancelledFn = Callable[[], bool]
+HeartbeatFn = Callable[[], None]
+TickFn = Callable[[], None]
 
 INVALIDATION_MARKER = ".from_stage_applied"
 
@@ -141,6 +143,25 @@ def _never_cancelled() -> bool:
     return False
 
 
+def _noop_heartbeat() -> None:
+    pass
+
+
+class _Heartbeat:
+    """Gọi `on_heartbeat` ngay lần đầu, sau đó ít nhất mỗi `interval_sec` (đồng hồ monotonic)."""
+
+    def __init__(self, fn: HeartbeatFn, interval_sec: float) -> None:
+        self._fn = fn
+        self._interval = interval_sec
+        self._last: float | None = None
+
+    def beat(self) -> None:
+        now = time.monotonic()
+        if self._last is None or now - self._last >= self._interval:
+            self._last = now
+            self._fn()
+
+
 def run_job(
     spec: JobSpec,
     *,
@@ -148,6 +169,8 @@ def run_job(
     on_progress: ProgressFn = _noop_progress,
     on_stage_done: StageDoneFn = _noop_done,
     is_cancelled: CancelledFn = _never_cancelled,
+    on_heartbeat: HeartbeatFn = _noop_heartbeat,
+    heartbeat_sec: float = 15.0,
     timeouts: TimeoutPolicy | None = None,
     backend: str | None = None,
     env: Mapping[str, str] | None = None,
@@ -157,16 +180,23 @@ def run_job(
     Raise `PermanentPipelineError`, `TransientPipelineError` (gồm `StageTimeoutError`)
     hoặc `PipelineCancelledError`. Artifact của các stage đã xong vẫn nằm trong
     workdir, nên lần retry sau chạy tiếp từ checkpoint.
+
+    `on_heartbeat` được gọi khi bắt đầu và ít nhất mỗi `heartbeat_sec`, kể cả khi một
+    stage chạy lâu mà không báo progress, để worker gia hạn lease. Callback nào ném lỗi
+    thì stage đang chạy bị kill rồi lỗi được raise lại.
     """
     timeouts = timeouts or TimeoutPolicy()
     workdir.mkdir(parents=True, exist_ok=True)
     write_job(workdir, spec)
+    heartbeat = _Heartbeat(on_heartbeat, heartbeat_sec)
+    heartbeat.beat()
 
     plan = _plan(spec, workdir)
     status: dict[Stage, StageStatus] = {}
     timings: dict[Stage, float] = {}
 
     for stage in plan:
+        heartbeat.beat()
         if is_cancelled():
             raise PipelineCancelledError(stage)
 
@@ -184,6 +214,7 @@ def run_job(
                 workdir,
                 timeout_sec=timeouts.timeout_for(stage, _duration(workdir)),
                 on_progress=on_progress,
+                on_tick=heartbeat.beat,
                 backend=backend,
                 env=env,
             )
@@ -280,6 +311,7 @@ def _run_stage_subprocess(
     *,
     timeout_sec: float,
     on_progress: ProgressFn,
+    on_tick: TickFn,
     backend: str | None,
     env: Mapping[str, str] | None,
 ) -> None:
@@ -288,6 +320,7 @@ def _run_stage_subprocess(
         stage=stage,
         timeout_sec=timeout_sec,
         on_progress=on_progress,
+        on_tick=on_tick,
         env=env,
     )
     if returncode == 0:
@@ -321,11 +354,13 @@ def run_process(
     stage: Stage,
     timeout_sec: float,
     on_progress: ProgressFn = _noop_progress,
+    on_tick: TickFn | None = None,
     env: Mapping[str, str] | None = None,
 ) -> int:
     """Chạy `cmd` trong process group riêng, chuyển sự kiện progress về caller thread.
 
-    Quá `timeout_sec` thì SIGKILL cả group và raise `StageTimeoutError`.
+    `on_tick` được gọi khoảng mỗi 0.1 s trên caller thread trong lúc chờ. Quá
+    `timeout_sec` thì SIGKILL cả group và raise `StageTimeoutError`.
     """
     proc = subprocess.Popen(
         list(cmd),
@@ -363,6 +398,8 @@ def run_process(
         while True:
             with contextlib.suppress(queue.Empty):
                 on_progress(stage, events.get(timeout=0.1))
+            if on_tick is not None:
+                on_tick()
             if proc.poll() is not None:
                 break
             if time.monotonic() > deadline:

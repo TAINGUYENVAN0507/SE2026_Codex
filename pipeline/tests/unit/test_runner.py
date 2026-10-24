@@ -212,6 +212,58 @@ def test_rt15_cancel_between_stages(job_spec, tmp_path):
     assert rec.done == [Stage.PREPROCESS]
 
 
+class Beats:
+    """Ghi lại thời điểm `on_heartbeat` được gọi."""
+
+    def __init__(self, fail_when=None):
+        self.times: list[float] = []
+        self.fail_when = fail_when
+
+    def __call__(self):
+        self.times.append(time.monotonic())
+        if self.fail_when is not None and self.fail_when():
+            raise RuntimeError("DB down")
+
+    def max_gap(self) -> float:
+        return max(b - a for a, b in zip(self.times, self.times[1:], strict=False))
+
+
+def test_heartbeat_keeps_beating_through_a_silent_stage(job_spec, tmp_path):
+    """ASR treo 3 s không báo progress: worker vẫn phải gia hạn được lease."""
+    beats = Beats()
+    run(
+        job_spec,
+        tmp_path / "wd",
+        "timeout",
+        env={"FAKE_HANG_SEC": "3"},
+        on_heartbeat=beats,
+        heartbeat_sec=0.5,
+    )
+    assert len(beats.times) >= 6
+    assert beats.max_gap() < 1.5, beats.max_gap()
+
+
+def test_heartbeat_starts_immediately_and_covers_skipped_stages(job_spec, tmp_path):
+    wd = tmp_path / "wd"
+    run(job_spec, wd)
+    beats = Beats()
+    outcome = run(job_spec, wd, on_heartbeat=beats, heartbeat_sec=0)
+    assert set(outcome.stage_status.values()) == {"skipped"}
+    # Một lần khi bắt đầu, cộng một lần trước mỗi stage.
+    assert len(beats.times) == len(STAGES) + 1
+
+
+def test_heartbeat_error_kills_the_running_stage(job_spec, tmp_path):
+    wd = tmp_path / "wd"
+    in_asr = Beats(fail_when=lambda: artifact_path(wd, Stage.VAD).exists())
+    started = time.monotonic()
+    with pytest.raises(RuntimeError, match="DB down"):
+        run(job_spec, wd, "timeout", on_heartbeat=in_asr, heartbeat_sec=0.2)
+    # ASR treo 3600 s: thoát nhanh nghĩa là stage đã bị kill, không chờ hết.
+    assert time.monotonic() - started < 15
+    assert not artifact_path(wd, Stage.ASR).exists()
+
+
 def test_timeout_scales_with_duration():
     policy = TimeoutPolicy()
     assert policy.timeout_for(Stage.ASR, 600) == 300 + 2.0 * 600
@@ -274,6 +326,23 @@ def test_run_process_kills_child_when_callback_raises(tmp_path):
             timeout_sec=30,
             on_progress=broken_callback,
         )
+    child = int(pid_file.read_text())
+    with pytest.raises(ProcessLookupError):
+        os.kill(child, 0)
+
+
+def test_run_process_kills_child_when_tick_raises(tmp_path):
+    pid_file = tmp_path / "child.pid"
+    script = (
+        f"import os, time\nopen({str(pid_file)!r}, 'w').write(str(os.getpid()))\ntime.sleep(60)\n"
+    )
+
+    def tick():
+        if pid_file.exists() and pid_file.read_text():
+            raise RuntimeError("lease lost")
+
+    with pytest.raises(RuntimeError):
+        run_process([sys.executable, "-c", script], stage=Stage.ASR, timeout_sec=30, on_tick=tick)
     child = int(pid_file.read_text())
     with pytest.raises(ProcessLookupError):
         os.kill(child, 0)
