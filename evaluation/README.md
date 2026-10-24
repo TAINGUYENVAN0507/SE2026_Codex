@@ -42,6 +42,14 @@ uv run python diarization/run_der.py --hyp-dir <thư mục chứa <id>.rttm> --t
 
 Reference là các dòng manifest có purpose `der` và `rttm_path` (dữ liệu họp nội bộ nằm trong `datasets/private/`, không commit). Kết quả ở `diarization/results/<ngày>_<tag>/`, cùng quy tắc với WER: tách theo `kind`, thiếu hypothesis là lỗi, không chứa text.
 
+## Rubric chấm tóm tắt
+
+A và B chấm theo `summary_rubric/rubric.md`, ghi vào `summary_rubric/ratings.csv`. Tính độ đồng thuận:
+
+```bash
+uv run python summary_rubric/agreement.py summary_rubric/ratings.csv --tag summary-v1
+```
+
 ## Cấu trúc
 
 | Thư mục | Nội dung | Task |
@@ -52,6 +60,9 @@ Reference là các dòng manifest có purpose `der` và `rttm_path` (dữ liệu
 | `spikes/asr/` | Spike chọn cấu hình ASR: chạy faster-whisper trên manifest, đo RTF và VRAM | AI-01 |
 | `spikes/diarization/` | Spike diarization (chưa có) | AI-02 |
 | `diarization/` | Chấm DER (pyannote.metrics, collar 0.25 s, có và không tính nói chồng) so với RTTM tham chiếu: `run_der.py` | AI-13 |
-| `noisy_audio/`, `performance/`, `summary_rubric/` | Các bộ đánh giá còn lại | AI-12 đến AI-14 |
+| `wer/edge_wer.py` | WER của các case edge trong `pipeline/tests/edge/` (một clip, nhiều cách làm hỏng audio) | AI-15 |
+| `performance/` | Benchmark pipeline (chưa có) | AI-13 |
+| `summary_rubric/` | Rubric thang 1–5 cho tóm tắt, mẫu `ratings.csv`, độ đồng thuận giữa 2 người chấm: `agreement.py` | AI-14 |
+| `noisy_audio/` | Bộ đánh giá theo điều kiện ồn (chưa có) | AI-12 |
 
 Thư mục nào chưa có nghĩa là task đó chưa bắt đầu.
