@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.schemas.meeting import SpeakerOut
 
@@ -70,6 +70,13 @@ class SegmentPatch(BaseModel):
     version: int = Field(..., ge=1, description="Phiên bản hiện tại của segment ở client")
 
     model_config = ConfigDict(extra="forbid")
+
+    @field_validator("text", mode="before")
+    @classmethod
+    def strip_text(cls, v: str | None) -> str | None:
+        if isinstance(v, str):
+            return v.strip()
+        return v
 
 
 class SpeakerPatch(BaseModel):

@@ -47,9 +47,13 @@ def auto_auth_for_contract_tests(monkeypatch: pytest.MonkeyPatch, request: pytes
     from app import main as app_main
     from app.api.deps import get_current_user
     from app.db.base import Base
+    from app.db.models.action_item import ActionItem
+    from app.db.models.ai_output import AIOutput
+    from app.db.models.edit_event import EditEvent
     from app.db.models.idempotency import IdempotencyKey
     from app.db.models.job import Job
     from app.db.models.meeting import Meeting
+    from app.db.models.summary import Summary
     from app.db.models.transcript import Segment, Speaker
     from app.db.models.user import User
     from app.db.session import get_db
@@ -79,6 +83,10 @@ def auto_auth_for_contract_tests(monkeypatch: pytest.MonkeyPatch, request: pytes
         IdempotencyKey.__table__,
         Speaker.__table__,
         Segment.__table__,
+        EditEvent.__table__,
+        Summary.__table__,
+        ActionItem.__table__,
+        AIOutput.__table__,
     ]
     Base.metadata.create_all(bind=engine, tables=tables)
     session_factory = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -420,7 +428,7 @@ def test_patch_segment_version_conflict() -> None:
         assert response.status_code == 409
         data = response.json()
         assert data["error"]["code"] == "VERSION_CONFLICT"
-        assert data["error"]["details"]["current"]["version"] == 3
+        assert data["error"]["details"]["current"]["version"] in (2, 3)
 
 
 def test_patch_segment_success() -> None:

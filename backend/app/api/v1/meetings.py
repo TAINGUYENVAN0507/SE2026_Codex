@@ -4,7 +4,18 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, Form, Header, Query, Response, UploadFile, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    Form,
+    Header,
+    Query,
+    Request,
+    Response,
+    UploadFile,
+    status,
+)
 from fastapi import Path as FastApiPath
 from fastapi.responses import StreamingResponse
 from sqlalchemy import func, select
@@ -12,6 +23,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import CurrentUser, get_current_user
 from app.core.errors import APIError
+from app.db.models.edit_event import EditEvent
 from app.db.models.job import Job
 from app.db.models.meeting import Meeting
 from app.db.models.transcript import Segment, Speaker
@@ -860,56 +872,170 @@ def get_meeting_transcript(
     summary="Chỉnh sửa nội dung hoặc gán người nói cho đoạn transcript",
 )
 def patch_meeting_segment(
-    meeting_id: str = FastApiPath(..., description="UUID của cuộc họp"),
-    segment_id: str = FastApiPath(..., description="UUID của đoạn thoại cần sửa"),
-    payload: SegmentPatch = ...,
+    meeting_id: Annotated[str, FastApiPath(description="UUID của cuộc họp")],
+    segment_id: Annotated[str, FastApiPath(description="UUID của đoạn thoại cần sửa")],
+    payload: SegmentPatch,
+    current_user: CurrentUser,
+    db: Annotated[Session, Depends(get_db)],
+    request: Request,
 ) -> TranscriptSegmentOut:
     """Chỉnh sửa đoạn transcript với optimistic locking qua trường version."""
-    # Kiểm tra version conflict: version kỳ vọng của fixture mẫu là 2
-    if payload.version != 2:
+    meeting = db.execute(
+        select(Meeting).where(Meeting.id == meeting_id, Meeting.owner_id == current_user.id)
+    ).scalar_one_or_none()
+    if meeting is None:
+        raise APIError(
+            code="NOT_FOUND",
+            message="Không tìm thấy cuộc họp được yêu cầu.",
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    segment = db.execute(
+        select(Segment).where(Segment.id == segment_id, Segment.meeting_id == meeting.id)
+    ).scalar_one_or_none()
+    if segment is None:
+        raise APIError(
+            code="NOT_FOUND",
+            message="Không tìm thấy đoạn thoại được yêu cầu.",
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    if payload.version != segment.version:
         raise APIError(
             code="VERSION_CONFLICT",
             message="Đoạn transcript đã được cập nhật ở nơi khác. Vui lòng tải lại.",
             status_code=status.HTTP_409_CONFLICT,
             details={
                 "entity": "segment",
-                "current": {"id": segment_id, "version": 3},
+                "current": {
+                    "id": segment.id,
+                    "version": segment.version,
+                    "text": segment.text,
+                    "speaker_id": segment.speaker_id,
+                },
             },
         )
 
-    # Đọc fixture mẫu để tạo kết quả
-    data = load_transcript_ready_fixture()
-    matched = None
-    for seg in data.get("segments", []):
-        if seg.get("id") == segment_id:
-            matched = seg
-            break
+    fields_set = payload.model_fields_set
+    new_text = segment.text
+    if "text" in fields_set:
+        if payload.text is None:
+            raise APIError(
+                code="TEXT_EMPTY",
+                message="Nội dung đoạn thoại không được để trống.",
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            )
+        cleaned = payload.text.strip()
+        if not cleaned:
+            raise APIError(
+                code="TEXT_EMPTY",
+                message="Nội dung đoạn thoại không được để trống.",
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            )
+        if len(cleaned) > 5000:
+            raise APIError(
+                code="TEXT_TOO_LONG",
+                message="Nội dung vượt quá độ dài tối đa cho phép.",
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            )
+        new_text = cleaned
 
-    if not matched:
-        matched = {
-            "id": segment_id,
-            "index": 0,
-            "start_sec": 0.84,
-            "end_sec": 6.2,
-            "speaker_id": payload.speaker_id,
-            "ai_speaker_id": "2c7a9d10-a1b2-4c3d-8e4f-5a6b7c8d9e0f",
-            "text": payload.text or "Nội dung mặc định",
-            "ai_text": "Nội dung gốc do AI",
-            "is_edited": True,
-            "confidence": 0.81,
-            "flags": [],
-            "version": payload.version + 1,
-            "updated_at": "2026-10-15T09:15:00Z",
-        }
-    else:
-        if payload.text is not None:
-            matched["text"] = payload.text
+    new_speaker_id = segment.speaker_id
+    if "speaker_id" in fields_set:
         if payload.speaker_id is not None:
-            matched["speaker_id"] = payload.speaker_id
-        matched["is_edited"] = True
-        matched["version"] = payload.version + 1
+            spk = db.execute(
+                select(Speaker).where(
+                    Speaker.id == payload.speaker_id,
+                    Speaker.meeting_id == meeting.id,
+                )
+            ).scalar_one_or_none()
+            if spk is None:
+                raise APIError(
+                    code="SPEAKER_NOT_IN_MEETING",
+                    message="Người nói không thuộc cuộc họp này.",
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                )
+            new_speaker_id = spk.id
+        else:
+            new_speaker_id = None
 
-    return TranscriptSegmentOut.model_validate(matched)
+    is_edited_now = (new_text != segment.ai_text) or (new_speaker_id != segment.ai_speaker_id)
+    flags_list = []
+    if segment.flags and isinstance(segment.flags, dict):
+        flags_list = segment.flags.get("flags", [])
+
+    # Nếu không có thay đổi giá trị -> trả về 200 và không tăng version
+    if new_text == segment.text and new_speaker_id == segment.speaker_id:
+        return TranscriptSegmentOut(
+            id=segment.id,
+            index=segment.idx,
+            start_sec=segment.start_sec,
+            end_sec=segment.end_sec,
+            speaker_id=segment.speaker_id,
+            ai_speaker_id=segment.ai_speaker_id,
+            text=segment.text,
+            ai_text=segment.ai_text,
+            is_edited=is_edited_now,
+            confidence=segment.confidence,
+            flags=flags_list,
+            version=segment.version,
+            updated_at=segment.updated_at,
+        )
+
+    before_state = {
+        "text": segment.text,
+        "speaker_id": segment.speaker_id,
+    }
+    after_state = {
+        "text": new_text,
+        "speaker_id": new_speaker_id,
+    }
+
+    now = datetime.now(UTC)
+    segment.text = new_text
+    segment.speaker_id = new_speaker_id
+    segment.version += 1
+    segment.updated_at = now
+
+    field_name = None
+    if "text" in fields_set and "speaker_id" not in fields_set:
+        field_name = "text"
+    elif "speaker_id" in fields_set and "text" not in fields_set:
+        field_name = "speaker_id"
+
+    edit_event = EditEvent(
+        id=str(uuid.uuid4()),
+        meeting_id=meeting.id,
+        actor_id=current_user.id,
+        entity_type="segment",
+        entity_id=segment.id,
+        action="update",
+        field=field_name,
+        before=before_state,
+        after=after_state,
+        entity_version_after=segment.version,
+        request_id=getattr(getattr(request, "state", None), "request_id", None),
+        created_at=now,
+    )
+    db.add(edit_event)
+    db.commit()
+    db.refresh(segment)
+
+    return TranscriptSegmentOut(
+        id=segment.id,
+        index=segment.idx,
+        start_sec=segment.start_sec,
+        end_sec=segment.end_sec,
+        speaker_id=segment.speaker_id,
+        ai_speaker_id=segment.ai_speaker_id,
+        text=segment.text,
+        ai_text=segment.ai_text,
+        is_edited=is_edited_now,
+        confidence=segment.confidence,
+        flags=flags_list,
+        version=segment.version,
+        updated_at=segment.updated_at,
+    )
 
 
 @router.patch(
