@@ -54,6 +54,18 @@ npm run dev
 ```
 
 Trên PowerShell chặn script `npm.ps1`, dùng `npm.cmd run dev`.
+Để dùng backend thật, chạy PostgreSQL và API theo `backend/README.md`, rồi chạy:
+
+```powershell
+$env:VITE_API_MOCK = '0'
+npm run dev
+```
+
+Proxy `/api` mặc định trỏ tới `http://localhost:8000`; đổi bằng
+`VITE_API_PROXY_TARGET` nếu API chạy cổng khác. Mở frontend qua `localhost` để
+request API và cookie cùng origin. Không đặt token, mật khẩu hoặc secret vào biến `VITE_*`.
+MSW dùng tài khoản giả `user@example.com` / `demo-password`; phiên mock chỉ tồn tại
+trong bộ nhớ service worker. Backend thật dùng tài khoản do quản trị viên tạo.
 Font Inter Variable được self-host tại `public/fonts/InterVariable.woff2`, kèm giấy phép OFL trong `Inter-LICENSE.txt`.
 
 ## Kiểm tra

@@ -9,6 +9,7 @@ import summaryReady from '../../../contracts/fixtures/api/summary_ready.json'
 import summaryDisabled from '../../../contracts/fixtures/api/summary_disabled.json'
 import actionItems from '../../../contracts/fixtures/api/action_items.json'
 import type { ActionItemData, SegmentData, SummaryData } from '../api/client'
+import { authHandlers } from './auth'
 
 type CreatedMeeting = Omit<typeof meetingCreated.meeting, 'duration_sec'> & {
   duration_sec: number | null
@@ -40,6 +41,7 @@ function notFound(message: string) {
 }
 
 export const handlers = [
+  ...authHandlers,
   http.post('*/api/v1/meetings', async ({ request }) => {
     const form = await request.formData()
     const id = crypto.randomUUID()
