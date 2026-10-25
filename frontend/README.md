@@ -20,9 +20,10 @@ API auth; cookie phiên do backend đặt, không lưu token/mật khẩu vào W
 
 Đã có tìm kiếm/lọc meeting và transcript, player mô phỏng hoặc nghe audio trên máy,
 sửa transcript và speaker của segment, xem bản gốc, sửa tổng quan, quản lý công việc,
-export bản hiện tại ra TXT/MD/JSON, upload preview và recorder có consent.
+menu tải TXT/MD/JSON theo bản hiện tại hoặc bản AI gốc, upload preview và recorder có consent.
 Waveform hiện là minh họa, không phân tích từ audio. Transcript mẫu không tự khớp
-với file người dùng chọn. Export JSON có schema `preview-1`, chưa là API contract.
+với file người dùng chọn. Menu export lấy dữ liệu đã lưu qua API; backend có module
+JSON schema 1.0 nhưng router export hiện vẫn là stub cần B tích hợp. MSW trả file mẫu.
 
 API client có type sinh từ `contracts/openapi.json`; MSW đọc fixture chung trong
 `contracts/fixtures/api/`. Danh sách poll mỗi 5 giây khi còn cuộc họp đang chờ

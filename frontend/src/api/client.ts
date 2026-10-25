@@ -23,6 +23,8 @@ export type SummaryData = components['schemas']['SummaryOut']
 export type ActionItemData = components['schemas']['ActionItemOut']
 export type ActionItemCreate = components['schemas']['ActionItemCreate']
 export type ActionItemPatch = components['schemas']['ActionItemPatch']
+export type ExportFormat = 'txt' | 'json' | 'md'
+export type ExportVariant = 'current' | 'ai_original'
 
 const client = createClient<ApiV1Paths>({
   baseUrl: new URL('/api/v1', window.location.origin).href,
@@ -117,6 +119,31 @@ export function getTranscript(meetingId: string): Promise<TranscriptData> {
       params: { path: { meeting_id: meetingId } },
     }),
   )
+}
+
+export async function getMeetingExport(
+  meetingId: string,
+  format: ExportFormat,
+  variant: ExportVariant,
+) {
+  try {
+    const { data, response } = await client.GET(
+      '/meetings/{meeting_id}/export',
+      {
+        params: { path: { meeting_id: meetingId }, query: { format, variant } },
+        parseAs: 'blob',
+      },
+    )
+    if (!(data instanceof Blob))
+      throw new ApiError('UNKNOWN_ERROR', 'Không tải được file xuất.')
+    return {
+      blob: data,
+      disposition: response.headers.get('Content-Disposition'),
+    }
+  } catch (error) {
+    if (error instanceof ApiError) throw error
+    throw toNetworkError()
+  }
 }
 
 export function patchSpeaker(

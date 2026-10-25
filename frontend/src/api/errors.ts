@@ -32,6 +32,7 @@ const messages: Record<string, string> = {
   INVALID_CREDENTIALS: 'Email hoặc mật khẩu không chính xác.',
   NOT_FOUND: 'Không tìm thấy dữ liệu yêu cầu.',
   MEETING_NOT_FOUND: 'Không tìm thấy cuộc họp.',
+  TRANSCRIPT_NOT_READY: 'Transcript chưa sẵn sàng để xuất.',
   VALIDATION_ERROR: 'Thông tin chưa hợp lệ. Hãy kiểm tra rồi thử lại.',
   NETWORK_ERROR: 'Không thể kết nối máy chủ. Hãy kiểm tra mạng rồi thử lại.',
   UNKNOWN_ERROR: 'Đã xảy ra lỗi không xác định. Hãy thử lại sau.',
