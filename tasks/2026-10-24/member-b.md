@@ -28,7 +28,7 @@ git merge origin/main
 
 ## Phần 0: sửa lỗi tìm ra khi review PR #20
 
-### 1. [ ] Heartbeat gia hạn lease, reaper chạy trong worker (BE-08)
+### 1. [x] Heartbeat gia hạn lease, reaper chạy trong worker (BE-08)
 
 - **Lỗi:**
   - `heartbeat_job()`, `reap_expired_jobs()` và `release_job_on_sigterm()` trong `app/worker/reaper.py` mới chỉ có test, worker chưa gọi hàm nào.
@@ -43,9 +43,9 @@ git merge origin/main
   - worker chết (không heartbeat) thì reaper requeue;
   - SIGTERM thì job về `queued` với `attempt` giữ nguyên (RT-09).
 - **Message:** `fix(backend): heartbeat extends the lease and the reaper runs in the worker (BE-08)`
-- **Hash:**
+- **Hash:** 59bedd1
 
-### 2. [ ] Giá trị mặc định an toàn (BE-09, BE-10)
+### 2. [x] Giá trị mặc định an toàn (BE-09, BE-10)
 
 - **Lỗi:**
   - `runner.py:60` và `:256`: không đặt `PIPELINE_BACKEND` thì worker dùng `fake`. Máy chạy thật thiếu biến này sẽ âm thầm ghi transcript giả. Pipeline cố tình mặc định `real` vì lý do này.
@@ -57,9 +57,9 @@ git merge origin/main
   - `ENVIRONMENT=production` mà `JWT_SECRET` là giá trị mặc định hoặc ngắn hơn 32 ký tự thì app không khởi động, báo lỗi rõ ràng.
 - **Xong khi:** test cho cả 3 trường hợp.
 - **Message:** `fix(backend): safe defaults for pipeline backend, duration limit and JWT secret (BE-09, BE-10)`
-- **Hash:**
+- **Hash:** 80821fd
 
-### 3. [ ] Thông điệp lỗi không chứa nội dung artifact (BE-07)
+### 3. [x] Thông điệp lỗi không chứa nội dung artifact (BE-07)
 
 - **Lỗi:**
   - `persister.py:64, 83, 193, 210` đưa `{exc}` vào message. `str(ValidationError)` của pydantic có `input_value`, tức là một phần text của transcript.
@@ -68,13 +68,13 @@ git merge origin/main
 - **Việc:** chỉ ghi số lỗi (`exc.error_count()`) và tên file artifact, không ghi đường dẫn đầy đủ. Xem cách làm trong `pipeline/meeting_pipeline/stages/base.py`.
 - **Xong khi:** test dùng transcript chứa một chuỗi canary (ví dụ `CANARY_7f3a`) và sai schema: chuỗi này không có trong `job.error_message`, response của API và log (`caplog`).
 - **Message:** `fix(backend): pipeline persist errors never echo artifact contents (BE-07)`
-- **Hash:**
+- **Hash:** fea1281
 
 ## Phần 1: Edit APIs (BE-11)
 
 Endpoint nào cũng phải có `CurrentUser` và lọc theo owner (meeting của người khác thì 404), có optimistic locking bằng `version` (lệch thì 409 `VERSION_CONFLICT` kèm bản hiện tại). Cập nhật không đổi giá trị thì trả 200 và không tăng `version`. Hiện các endpoint này vẫn là stub trả fixture và không kiểm tra đăng nhập.
 
-### 4. [ ] `PATCH /meetings/{id}/segments/{segment_id}` thật (BE-11)
+### 4. [x] `PATCH /meetings/{id}/segments/{segment_id}` thật (BE-11)
 
 - **Việc:**
   - Sửa `text` (1–5000 ký tự, bỏ khoảng trắng hai đầu) và/hoặc `speaker_id` (speaker của cùng meeting, hoặc `null` là "Chưa xác định"; speaker của meeting khác thì 422 `SPEAKER_NOT_IN_MEETING`).
@@ -82,9 +82,9 @@ Endpoint nào cũng phải có `CurrentUser` và lọc theo owner (meeting của
   - Ghi `edit_events` trong cùng transaction (before, after, actor, `entity_version_after`).
 - **Xong khi:** API test: happy path, 422 (text rỗng hoặc quá dài, speaker của meeting khác), 409, 404 (của người khác), cập nhật không đổi giá trị.
 - **Message:** `feat(backend): segment edits with optimistic locking and edit events (BE-11)`
-- **Hash:**
+- **Hash:** 14d6222
 
-### 5. [ ] `PATCH /speakers/{id}` và `PUT /summary` thật (BE-11)
+### 5. [x] `PATCH /speakers/{id}` và `PUT /summary` thật (BE-11)
 
 - **Việc:**
   - Đổi `display_name` của speaker: 1–50 ký tự, không trùng trong cùng meeting (so sánh không phân biệt hoa thường; trùng thì 422 `SPEAKER_NAME_DUPLICATE`).
@@ -92,7 +92,7 @@ Endpoint nào cũng phải có `CurrentUser` và lọc theo owner (meeting của
   - Cả hai đều ghi `edit_events`.
 - **Xong khi:** API test cho từng endpoint: happy path, 422, 409, 404.
 - **Message:** `feat(backend): speaker rename and summary update with versions (BE-11)`
-- **Hash:**
+- **Hash:** ad07b24
 
 ## Việc chung (không phải commit)
 
@@ -100,5 +100,5 @@ Endpoint nào cũng phải có `CurrentUser` và lọc theo owner (meeting của
 
 ## Cuối ngày
 
-- [ ] Tick các ô ở trên và ghi hash. Làm không hết thì ghi rõ commit nào chuyển sang ngày sau.
+- [x] Tick các ô ở trên và ghi hash. Làm không hết thì ghi rõ commit nào chuyển sang ngày sau.
 - [ ] Push `haquang`, mở PR vào `main`, tiêu đề theo format commit. **Không tự merge.** Nếu đổi `contracts/openapi.json` thì commit cả `frontend/src/api/schema.d.ts`.

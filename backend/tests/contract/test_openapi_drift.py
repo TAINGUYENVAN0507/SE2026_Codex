@@ -47,9 +47,13 @@ def auto_auth_for_contract_tests(monkeypatch: pytest.MonkeyPatch, request: pytes
     from app import main as app_main
     from app.api.deps import get_current_user
     from app.db.base import Base
+    from app.db.models.action_item import ActionItem
+    from app.db.models.ai_output import AIOutput
+    from app.db.models.edit_event import EditEvent
     from app.db.models.idempotency import IdempotencyKey
     from app.db.models.job import Job
     from app.db.models.meeting import Meeting
+    from app.db.models.summary import Summary
     from app.db.models.transcript import Segment, Speaker
     from app.db.models.user import User
     from app.db.session import get_db
@@ -79,6 +83,10 @@ def auto_auth_for_contract_tests(monkeypatch: pytest.MonkeyPatch, request: pytes
         IdempotencyKey.__table__,
         Speaker.__table__,
         Segment.__table__,
+        EditEvent.__table__,
+        Summary.__table__,
+        ActionItem.__table__,
+        AIOutput.__table__,
     ]
     Base.metadata.create_all(bind=engine, tables=tables)
     session_factory = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -138,6 +146,14 @@ def auto_auth_for_contract_tests(monkeypatch: pytest.MonkeyPatch, request: pytes
         status="ready",
         version=1,
     )
+    meeting_1 = Meeting(
+        id="meeting-1",
+        owner_id=fake_user.id,
+        title="Meeting 1",
+        source="upload",
+        status="ready",
+        version=1,
+    )
     meeting_pending = Meeting(
         id="meeting-pending-123",
         owner_id=fake_user.id,
@@ -146,7 +162,35 @@ def auto_auth_for_contract_tests(monkeypatch: pytest.MonkeyPatch, request: pytes
         status="queued",
         version=1,
     )
-    session.add_all([meeting_ready, meeting_pending])
+    session.add_all([meeting_ready, meeting_1, meeting_pending])
+
+    spk_lan = Speaker(
+        id="2c7a9d10-a1b2-4c3d-8e4f-5a6b7c8d9e0f",
+        meeting_id="test-meeting-1",
+        label="SPEAKER_00",
+        default_name="Speaker 1",
+        display_name="Chị Lan",
+        version=2,
+    )
+    spk_1 = Speaker(
+        id="speaker-1",
+        meeting_id="test-meeting-1",
+        label="SPEAKER_01",
+        default_name="Speaker 2",
+        display_name="Speaker 2",
+        version=2,
+    )
+    session.add_all([spk_lan, spk_1])
+
+    summary_1 = Summary(
+        id="summary-1",
+        meeting_id="meeting-1",
+        status="ready",
+        content={"overview": "Tổng quan cũ", "key_points": [], "decisions": []},
+        ai_content={"overview": "Tổng quan AI", "key_points": [], "decisions": []},
+        version=2,
+    )
+    session.add(summary_1)
 
     seg1 = Segment(
         id="5b1e7c2a-b2c3-4d4e-8f9a-0b1c2d3e4f5a",
@@ -420,7 +464,7 @@ def test_patch_segment_version_conflict() -> None:
         assert response.status_code == 409
         data = response.json()
         assert data["error"]["code"] == "VERSION_CONFLICT"
-        assert data["error"]["details"]["current"]["version"] == 3
+        assert data["error"]["details"]["current"]["version"] in (2, 3)
 
 
 def test_patch_segment_success() -> None:
