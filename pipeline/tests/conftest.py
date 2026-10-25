@@ -35,5 +35,6 @@ def _clean_pipeline_env(monkeypatch):
         "FAKE_STAGE_SLEEP_SEC",
         "FAKE_HANG_SEC",
         "LLM_PROVIDER",
+        "PIPELINE_PYTHON",
     ):
         monkeypatch.delenv(var, raising=False)

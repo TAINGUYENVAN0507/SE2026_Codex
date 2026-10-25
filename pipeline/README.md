@@ -128,6 +128,7 @@ except PipelineCancelledError:
 ```
 
 - Mỗi stage chạy trong subprocess riêng. Quá timeout thì kill cả process group.
+- Subprocess dùng interpreter của người gọi. Đặt `PIPELINE_PYTHON` để chạy stage bằng một venv khác (ví dụ venv của pipeline có extra `asr`, `diarize`, trong khi worker chạy bằng venv của backend). Trỏ tới file không chạy được thì `run_job()` báo lỗi permanent `INTERNAL_ERROR`. Image worker dùng cách này (`infra/docker/README.md`).
 - `on_heartbeat` được gọi ngay khi bắt đầu, sau đó ít nhất mỗi `heartbeat_sec` (mặc định 15 s), kể cả khi một stage chạy nhiều phút không báo progress. Dùng để gia hạn lease (BE-08).
 - `is_cancelled` được kiểm trước mỗi stage và khoảng mỗi giây (`CANCEL_POLL_SEC`) trong lúc stage chạy. Bị hủy thì kill stage trong khoảng 1 s và raise `PipelineCancelledError`, không ghi artifact dở dang, không fallback kể cả ở `diarize`. Chạy lại cùng `workdir` thì tiếp tục từ checkpoint.
 - Callback nào ném lỗi (ví dụ mất kết nối DB) thì stage đang chạy bị kill, rồi lỗi được raise lại cho worker.
