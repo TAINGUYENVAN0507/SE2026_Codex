@@ -42,6 +42,18 @@ Lần chạy dùng code của commit chứa thư mục này (`git.dirty=true` tr
 - Stage ngắn hơn chu kỳ lấy mẫu 0.5 s (preprocess, merge, summarize) có thể không có số RSS, hoặc số thấp hơn thực tế.
 - Lúc chạy máy không bị nghẽn: IO PSI avg60 khoảng 13 % trước lần 1', dưới 6 % ở các lúc đo sau (xem `pressure` trong `env.json`). Trước đó trong ngày, IO PSI từng lên khoảng 75 % (trình duyệt đang swap); `bench.py` ghi PSI để phân biệt được lần đo nào bị ảnh hưởng.
 
+### `2026-10-25_i7-10750h-cpu-only`
+
+Cùng máy, cùng audio 1'. ASR chạy trên CPU: `ASR_DEVICE=cpu`, `ASR_COMPUTE_TYPE=int8`, giống image worker bản CPU (AI-16).
+
+| Audio | preprocess | vad | asr | diarize | merge | summarize | Tổng | RTF tổng | RSS đỉnh |
+|---|---|---|---|---|---|---|---|---|---|
+| 1' | 0.4 s | 0.9 s | 55.6 s | 59.3 s | 0.4 s | 0.3 s | 116.9 s | 1.95 | 2219 MB |
+
+- ASR trên CPU có RTF 0.93, chậm khoảng 5 lần so với GPU (0.18 ở lần đo 1' bên trên). Cả hai số đều gồm thời gian nạp model.
+- Diarize của cùng audio mất 59.3 s ở lần này và 44.7 s ở lần trước. Đây là dao động giữa các lần chạy trên laptop; cần chạy lặp lại để có khoảng tin cậy.
+- IO PSI avg60 là 1 % trước khi chạy và 7.7 % sau khi chạy.
+
 **Chưa đo:**
 - 15', 30', 60' (cần chạy khi có torch GPU, hoặc chấp nhận khoảng 45' cho mỗi lần 60').
 - Audio họp thật (cần SH-01).

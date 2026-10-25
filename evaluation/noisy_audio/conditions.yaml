@@ -1,0 +1,45 @@
+# Điều kiện ồn synthetic cho AI-12. Đọc bằng make_noisy.load_conditions().
+#
+# SNR tính trên chính tín hiệu: 10·log10(công suất lời nói / công suất ồn), công suất là
+# trung bình bình phương trên toàn clip (gồm cả khoảng ngắt nghỉ). Cùng seed thì ra cùng byte.
+#
+# Loại điều kiện:
+#   clean    : giữ nguyên (mốc so sánh)
+#   noise    : ồn màu `color` (white, pink, brown) ở `snr_db`
+#   babble   : trộn `talkers` giọng FLEURS khác ở `snr_db`
+#   reverb   : vọng phòng, impulse response tổng hợp có thời gian vang `rt60_sec` và tỉ lệ
+#              năng lượng trực tiếp / vọng `drr_db`
+#   far_mic  : micro đặt xa: lọc thông thấp `lowpass_hz`, vọng (`rt60_sec`, `drr_db`), nhỏ
+#              tiếng `gain_db`
+#   codec    : nén rồi giải nén bằng ffmpeg, `codec` (opus) ở `bitrate_kbps`
+
+seed: 2026
+
+conditions:
+  - id: clean
+    type: clean
+
+  - {id: pink_snr20, type: noise, color: pink, snr_db: 20}
+  - {id: pink_snr10, type: noise, color: pink, snr_db: 10}
+  - {id: pink_snr5, type: noise, color: pink, snr_db: 5}
+  - {id: pink_snr0, type: noise, color: pink, snr_db: 0}
+
+  - {id: white_snr20, type: noise, color: white, snr_db: 20}
+  - {id: white_snr10, type: noise, color: white, snr_db: 10}
+  - {id: white_snr5, type: noise, color: white, snr_db: 5}
+  - {id: white_snr0, type: noise, color: white, snr_db: 0}
+
+  # Quạt hoặc điều hòa: năng lượng dồn ở tần thấp.
+  - {id: brown_snr10, type: noise, color: brown, snr_db: 10}
+
+  # Nhiều người nói chen phía sau, như quán cà phê.
+  - {id: babble4_snr10, type: babble, talkers: 4, snr_db: 10}
+  - {id: babble4_snr5, type: babble, talkers: 4, snr_db: 5}
+
+  - {id: reverb_rt60_0.4, type: reverb, rt60_sec: 0.4, drr_db: 3}
+  - {id: reverb_rt60_0.8, type: reverb, rt60_sec: 0.8, drr_db: 0}
+
+  # Laptop đặt giữa bàn, người nói cách 2–3 m.
+  - {id: far_mic, type: far_mic, lowpass_hz: 4000, rt60_sec: 0.5, drr_db: -3, gain_db: -15}
+
+  - {id: opus_16kbps, type: codec, codec: opus, bitrate_kbps: 16}

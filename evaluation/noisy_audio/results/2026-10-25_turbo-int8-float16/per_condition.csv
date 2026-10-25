@@ -1,0 +1,17 @@
+source,condition,type,snr_target_db,snr_measured_db,samples,no_speech,wer,cer,wer_nodiac,delta_wer_vs_clean
+synthetic,clean,clean,,,10,0,0.033,0.0177,0.03,0.0
+synthetic,pink_snr20,noise,20,19.99,10,0,0.0541,0.03,0.0511,0.0211
+synthetic,pink_snr10,noise,10,10.0,10,0,0.0781,0.0497,0.0751,0.0451
+synthetic,pink_snr5,noise,5,5.0,10,0,0.1051,0.0593,0.0931,0.0721
+synthetic,pink_snr0,noise,0,-0.03,10,0,0.2222,0.1356,0.2192,0.1892
+synthetic,white_snr20,noise,20,19.99,10,0,0.0631,0.0368,0.0601,0.0301
+synthetic,white_snr10,noise,10,10.0,10,0,0.0901,0.0525,0.0871,0.0571
+synthetic,white_snr5,noise,5,5.0,10,0,0.1411,0.0886,0.1351,0.1081
+synthetic,white_snr0,noise,0,-0.01,10,0,0.3453,0.2718,0.3423,0.3123
+synthetic,brown_snr10,noise,10,10.0,10,0,0.045,0.0238,0.042,0.012
+synthetic,babble4_snr10,babble,10,9.98,10,0,0.0541,0.0293,0.0511,0.0211
+synthetic,babble4_snr5,babble,5,4.97,10,0,0.2042,0.1628,0.1982,0.1712
+synthetic,reverb_rt60_0.4,reverb,,,10,0,0.0541,0.0272,0.048,0.0211
+synthetic,reverb_rt60_0.8,reverb,,,10,0,0.1081,0.0708,0.1021,0.0751
+synthetic,far_mic,far_mic,,,10,0,0.1952,0.1444,0.1802,0.1622
+synthetic,opus_16kbps,codec,,,10,0,0.0571,0.032,0.0511,0.0241

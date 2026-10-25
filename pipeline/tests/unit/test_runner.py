@@ -22,6 +22,7 @@ from meeting_pipeline.runner import (
     overall_progress,
     run_job,
     run_process,
+    stage_command,
 )
 from meeting_pipeline.schemas import STAGES, JobSpec, Stage, Transcript
 from meeting_pipeline.workdir import artifact_path, read_artifact, write_json_atomic
@@ -412,6 +413,21 @@ def test_run_process_forwards_progress_and_ignores_noise():
     )
     assert code == 0
     assert seen == [(Stage.ASR, 0.5)]
+
+
+def test_pipeline_python_selects_the_stage_interpreter(job_spec, tmp_path, monkeypatch):
+    monkeypatch.setenv("PIPELINE_PYTHON", sys.executable)
+    assert stage_command(Stage.ASR, tmp_path)[0] == sys.executable
+    outcome = run(job_spec, tmp_path / "wd")
+    assert set(outcome.stage_status.values()) == {"succeeded"}
+
+
+def test_pipeline_python_must_be_executable(job_spec, tmp_path, monkeypatch):
+    monkeypatch.setenv("PIPELINE_PYTHON", str(tmp_path / "missing" / "python"))
+    with pytest.raises(PermanentPipelineError) as exc:
+        run(job_spec, tmp_path / "wd")
+    assert exc.value.code is ErrorCode.INTERNAL_ERROR
+    assert str(tmp_path) not in exc.value.message
 
 
 def test_unknown_exit_code_is_transient_crash(job_spec, tmp_path, monkeypatch):

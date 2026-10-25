@@ -8,6 +8,9 @@ dependencies = [
     "jiwer>=4.0,<5",
     # DER cho diarization (AI-13); kéo theo numpy, pandas, scipy, scikit-learn.
     "pyannote.metrics>=4,<5",
+    # Bộ ồn (AI-12): trộn tín hiệu và đọc conditions.yaml.
+    "numpy>=2,<3",
+    "pyyaml>=6,<7",
 ]
 
 [dependency-groups]
@@ -26,8 +29,8 @@ asr-spike = [
 package = false
 
 [tool.pytest.ini_options]
-testpaths = ["datasets/tests", "normalizer", "wer", "spikes", "diarization", "performance", "summary_rubric"]
-pythonpath = ["datasets", "normalizer", "wer", "spikes/asr", "diarization", "performance", "summary_rubric"]
+testpaths = ["datasets/tests", "normalizer", "wer", "spikes", "diarization", "performance", "summary_rubric", "noisy_audio"]
+pythonpath = ["datasets", "normalizer", "wer", "spikes/asr", "diarization", "performance", "summary_rubric", "noisy_audio"]
 addopts = "-ra --strict-markers --import-mode=importlib --doctest-modules"
 
 [tool.ruff]

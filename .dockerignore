@@ -1,0 +1,26 @@
+# Build context là gốc repo. Không đưa vào image: secret, dữ liệu họp, audio, venv của máy dev.
+**/.venv
+**/node_modules
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+.git
+.github
+.vscode
+.idea
+.env
+.env.*
+!.env.example
+reports/
+evaluation/
+frontend/
+backend/appdata/
+models/
+artifacts/
+**/*.wav
+**/*.mp3
+**/*.m4a
+**/*.ogg
+**/*.opus
+**/*.webm
+**/*.flac

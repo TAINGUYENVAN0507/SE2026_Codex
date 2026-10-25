@@ -315,8 +315,25 @@ def _collect_warnings(workdir: Path, plan: Sequence[Stage]) -> list[PipelineWarn
 # ------------------------------------------------------------------ subprocess
 
 
+def stage_python() -> str:
+    """Interpreter chạy subprocess của stage.
+
+    Mặc định là interpreter của người gọi. `PIPELINE_PYTHON` cho phép worker chạy bằng venv của
+    backend (không có model) còn stage chạy bằng venv của pipeline có extra `asr`, `diarize`,
+    mỗi venv dựng từ lock riêng (image worker, AI-16).
+    """
+    python = os.environ.get("PIPELINE_PYTHON")
+    if not python:
+        return sys.executable
+    if not (os.path.isfile(python) and os.access(python, os.X_OK)):
+        raise PermanentPipelineError(
+            ErrorCode.INTERNAL_ERROR, None, "PIPELINE_PYTHON không trỏ tới file chạy được"
+        )
+    return python
+
+
 def stage_command(stage: Stage, workdir: Path, backend: str | None = None) -> list[str]:
-    cmd = [sys.executable, "-m", "meeting_pipeline", "run-stage", stage.value]
+    cmd = [stage_python(), "-m", "meeting_pipeline", "run-stage", stage.value]
     cmd += ["--workdir", str(workdir)]
     if backend:
         cmd += ["--backend", backend]
