@@ -20,6 +20,7 @@ import { useTranscriptQuery } from '../features/meetings/useTranscriptQuery'
 import { apiMeetingToView } from '../features/meetings/apiModel'
 import { DEMO_ID } from '../features/meetings/model'
 import { NotFoundPage } from './NotFoundPage'
+import { LoadingSkeleton } from '../components/LoadingSkeleton'
 
 export function MeetingDetailPage() {
   const { meetingId } = useParams()
@@ -41,8 +42,11 @@ function RemoteMeetingDetail({ meetingId }: { meetingId: string }) {
   const transcriptQuery = useTranscriptQuery(meetingId)
   if (meetingQuery.isPending || transcriptQuery.isPending)
     return (
-      <main className="missing-meeting" role="status">
-        Đang tải cuộc họp và transcript…
+      <main className="loading-detail">
+        <LoadingSkeleton
+          kind="transcript"
+          label="Đang tải cuộc họp và transcript…"
+        />
       </main>
     )
   if (meetingQuery.isError || transcriptQuery.isError) {

@@ -584,6 +584,73 @@ input[type='checkbox'] {
   font-size: 9px;
   letter-spacing: 1px;
 }
+.export-menu label {
+  display: grid;
+  gap: 8px;
+  padding: 8px 10px;
+  font-size: 12px;
+}
+.export-menu select {
+  width: 100%;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+.loading-skeleton {
+  padding: 20px;
+  width: 100%;
+  min-width: 0;
+}
+.loading-detail {
+  padding: 24px;
+}
+.skeleton-block {
+  padding: 16px 0 24px;
+}
+.skeleton-bar {
+  display: block;
+  height: 14px;
+  width: 100%;
+  border-radius: 5px;
+  margin: 10px 0;
+  background: #e7eaf0;
+  animation: skeleton-pulse 1.5s ease-in-out infinite alternate;
+}
+.skeleton-bar.short {
+  width: 32%;
+  height: 18px;
+}
+.skeleton-bar.medium {
+  width: 75%;
+}
+.loading-list .skeleton-block {
+  border-bottom: 1px solid var(--line);
+}
+.loading-summary {
+  padding-inline: 0;
+}
+@keyframes skeleton-pulse {
+  to {
+    opacity: 0.4;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-bar {
+    animation: none;
+  }
+}
 .export-menu button {
   width: 100%;
   padding: 11px 10px;
@@ -2247,8 +2314,13 @@ mark {
     padding: 0 20px;
     background: white;
     border-bottom: 1px solid var(--line);
+    overflow-x: auto;
+    min-width: 0;
+    max-width: 100%;
   }
   .mobile-detail-tabs button {
+    flex-shrink: 0;
+    white-space: nowrap;
     padding: 13px 0;
     font-size: 13px;
     border-radius: 0;

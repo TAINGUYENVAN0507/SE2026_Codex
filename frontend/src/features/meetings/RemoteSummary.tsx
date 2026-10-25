@@ -9,6 +9,7 @@ import {
 } from '../../api/client'
 import type { Meeting } from './model'
 import { formatTranscriptTime } from './transcriptUtils'
+import { LoadingSkeleton } from '../../components/LoadingSkeleton'
 
 type Content = NonNullable<SummaryData['content']>
 
@@ -104,7 +105,8 @@ export function RemoteSummary({
     })
   }
 
-  if (query.isPending) return <div role="status">Đang tải tóm tắt…</div>
+  if (query.isPending)
+    return <LoadingSkeleton kind="summary" label="Đang tải tóm tắt…" />
   if (query.isError)
     return (
       <div role="alert">
@@ -114,6 +116,8 @@ export function RemoteSummary({
     )
 
   const summary = query.data
+  if (summary.status === 'pending')
+    return <LoadingSkeleton kind="summary" label="Đang tạo tóm tắt…" />
   if (summary.status !== 'ready' || !summary.content) {
     const descriptions: Record<string, string> = {
       pending: 'Đang tạo tóm tắt…',

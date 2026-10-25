@@ -1,3 +1,4 @@
+import { LoadingSkeleton } from '../../components/LoadingSkeleton'
 import { useEffect, useMemo, useState } from 'react'
 import { MagnifyingGlassIcon } from '@phosphor-icons/react/dist/csr/MagnifyingGlass'
 import { PencilSimpleIcon } from '@phosphor-icons/react/dist/csr/PencilSimple'
@@ -382,11 +383,7 @@ export function Transcript({
           </p>
         )}
         {pending && (
-          <div className="empty-state" role="status">
-            <h2>Đang tạo transcript…</h2>
-            <p>Transcript sẽ xuất hiện khi xử lý xong.</p>
-            <div className="transcript-skeleton" aria-hidden="true" />
-          </div>
+          <LoadingSkeleton kind="transcript" label="Đang tạo transcript…" />
         )}
         {groups.flatMap((group) =>
           group.map((s, index) => {
