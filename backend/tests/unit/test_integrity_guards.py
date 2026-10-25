@@ -69,6 +69,38 @@ def test_aud10_edit_events_update_prevented_by_trigger(db_session: Session) -> N
     db_session.rollback()
 
 
+def test_aud11_edit_events_delete_prevented_by_trigger(db_session: Session) -> None:
+    """AUD-11: Chứng minh bảng edit_events là append-only và mọi DELETE bị từ chối."""
+    user, meeting = _create_sample_meeting(db_session)
+
+    event = EditEvent(
+        id=str(uuid.uuid4()),
+        meeting_id=meeting.id,
+        actor_id=user.id,
+        entity_type="segment",
+        entity_id=str(uuid.uuid4()),
+        action="update",
+        field="text",
+        before={"text": "Chào các bạn"},
+        after={"text": "Chào mọi người"},
+        entity_version_after=2,
+        request_id="req-test-aud11",
+    )
+    db_session.add(event)
+    db_session.commit()
+
+    # Thử DELETE bản ghi edit_event -> Trigger phải chặn và ném exception
+    with pytest.raises(exc.DBAPIError) as exc_info:
+        db_session.execute(
+            text("DELETE FROM edit_events WHERE id = :event_id"),
+            {"event_id": event.id},
+        )
+        db_session.commit()
+
+    assert "append-only" in str(exc_info.value).lower() or "abort" in str(exc_info.value).lower()
+    db_session.rollback()
+
+
 def test_segments_time_range_check_constraint(db_session: Session) -> None:
     """Kiểm tra ràng buộc CHECK 0 <= start_sec < end_sec của bảng segments."""
     _, meeting = _create_sample_meeting(db_session)

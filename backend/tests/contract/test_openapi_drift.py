@@ -245,6 +245,21 @@ def auto_auth_for_contract_tests(monkeypatch: pytest.MonkeyPatch, request: pytes
         version=1,
     )
     session.add_all([ai_item_1, ai_item_2])
+
+    edit_1 = EditEvent(
+        id="e9c4a1b2-c3d4-4e5f-8a9b-0c1d2e3f4a5b",
+        meeting_id="meeting-1",
+        actor_id=fake_user.id,
+        entity_type="segment",
+        entity_id="5b1e7c2a-b2c3-4d4e-8f9a-0b1c2d3e4f5a",
+        action="update",
+        field="text",
+        before="Anh Minh phụ trách phần API áp lốt, hạn thứ sáu tuần này nhé.",
+        after="Anh Minh phụ trách phần API upload, hạn thứ Sáu tuần này nhé.",
+        entity_version_after=2,
+        request_id="req_7Hq2test001",
+    )
+    session.add(edit_1)
     session.commit()
 
     orig_create_app = app_main.create_app

@@ -1395,6 +1395,45 @@
               "title": "Page Size"
             },
             "description": "Kích thước trang"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 100,
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Số bản ghi tối đa",
+              "title": "Limit"
+            },
+            "description": "Số bản ghi tối đa"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Vị trí bắt đầu",
+              "title": "Offset"
+            },
+            "description": "Vị trí bắt đầu"
           }
         ],
         "responses": {

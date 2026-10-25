@@ -2509,6 +2509,10 @@ export interface operations {
         page?: number
         /** @description Kích thước trang */
         page_size?: number
+        /** @description Số bản ghi tối đa */
+        limit?: number | null
+        /** @description Vị trí bắt đầu */
+        offset?: number | null
       }
       header?: never
       path: {
