@@ -31,7 +31,7 @@ PR #24 đã được merge (`fe6e8e0`).
 
 ## 5 commit
 
-### 1. [ ] DTO `MeetingExport` và export JSON (FE-15)
+### 1. [x] DTO `MeetingExport` và export JSON (FE-15)
 
 - **Việc:**
   - `backend/app/services/export/`: dataclass hoặc model Pydantic `MeetingExport`, gồm meeting (title, ngày, thời lượng), speakers, segments (text, speaker, thời gian), summary, action items.
@@ -41,9 +41,9 @@ PR #24 đã được merge (`fe6e8e0`).
   - Module này là pure function: không đọc DB, không đọc file.
 - **Xong khi:** test golden file; export 2 lần cho ra byte giống hệt; output hợp lệ theo `export.schema.json`.
 - **Message:** `feat(backend): MeetingExport DTO and deterministic JSON export (FE-15)`
-- **Hash:**
+- **Hash:** `0caf964`
 
-### 2. [ ] Export TXT và Markdown, tên file không dấu (FE-15)
+### 2. [x] Export TXT và Markdown, tên file không dấu (FE-15)
 
 - **Việc:**
   - `to_txt()`: mỗi segment một dòng `[hh:mm:ss] Tên: text`.
@@ -51,9 +51,9 @@ PR #24 đã được merge (`fe6e8e0`).
   - `filename(meeting, fmt)`: slug không dấu (`đ` thành `d`), chỉ gồm `[a-z0-9-]`, kèm ngày họp.
 - **Xong khi:** golden file cho TXT và MD, gồm các trường hợp: hạn null, speaker chưa xác định, tiêu đề toàn ký tự đặc biệt, variant `ai_original`. Output deterministic.
 - **Message:** `feat(backend): TXT and Markdown export with ASCII slug filenames (FE-15)`
-- **Hash:**
+- **Hash:** `0c2305f`
 
-### 3. [ ] Menu export trên trang detail (FE-15)
+### 3. [x] Menu export trên trang detail (FE-15)
 
 - **Việc:**
   - Menu chọn định dạng (TXT, JSON, Markdown) và biến thể (bản hiện tại, bản AI gốc).
@@ -61,18 +61,18 @@ PR #24 đã được merge (`fe6e8e0`).
   - Disable khi transcript chưa `ready`, có tooltip giải thích. Lỗi thì hiện toast.
 - **Xong khi:** RTL test: menu disable khi chưa ready; chọn định dạng thì gọi đúng URL; lỗi 409 thì hiện thông báo.
 - **Message:** `feat(frontend): export menu with format and variant (FE-15)`
-- **Hash:**
+- **Hash:** `49e37d0`
 
-### 4. [ ] Skeleton và responsive từ 360px (FE-16)
+### 4. [x] Skeleton và responsive từ 360px (FE-16)
 
 - **Việc:**
   - Skeleton cho danh sách meeting, transcript, tóm tắt thay cho chữ "Đang tải".
   - Layout trang detail ở 360px: player vẫn sticky, các tab cuộn ngang, không có thanh cuộn ngang của cả trang.
 - **Xong khi:** RTL test skeleton hiện khi đang tải; kiểm tra bằng tay ở 360, 768, 1280px (ghi vào checklist ở commit 5).
 - **Message:** `feat(frontend): loading skeletons and a 360px responsive layout (FE-16)`
-- **Hash:**
+- **Hash:** `3919b0c`
 
-### 5. [ ] Phím tắt không bắt khi đang gõ, a11y cơ bản, checklist UX (FE-16)
+### 5. [x] Phím tắt không bắt khi đang gõ, a11y cơ bản, checklist UX (FE-16)
 
 - **Việc:**
   - Phím tắt của player (Space, ←, →) bị bỏ qua khi focus đang ở `input`, `textarea` hoặc `contenteditable`.
@@ -80,7 +80,7 @@ PR #24 đã được merge (`fe6e8e0`).
   - Viết `docs/demo/ux-checklist.md`: các mục đã kiểm, kèm screenshot desktop và mobile. Screenshot dùng dữ liệu mẫu của MSW, không dùng dữ liệu họp thật.
 - **Xong khi:** RTL test: gõ Space trong ô sửa segment không làm player dừng; Esc đóng dialog và trả focus.
 - **Message:** `feat(frontend): typing-safe shortcuts, basic a11y and a UX checklist (FE-16)`
-- **Hash:**
+- **Hash:** `40d2dfa`
 
 ## Việc chung (không phải commit)
 
@@ -88,5 +88,14 @@ PR #24 đã được merge (`fe6e8e0`).
 
 ## Cuối ngày
 
-- [ ] Tick các ô ở trên và ghi hash. Cập nhật `docs/frontend/` (FE-15, FE-16).
+- [x] Tick các ô ở trên và ghi hash. Cập nhật `docs/frontend/` (FE-15, FE-16).
 - [ ] Push `vantuong`, mở PR vào `main`. **Không tự merge.**
+
+Kiểm tra local: backend Ruff lint/format, schema drift và 16 test export đạt;
+frontend lint/format/TypeScript, 149 test và build đạt. Browser QA dùng MSW tải
+đủ sáu file, kiểm tra phím tắt/focus và ba layout 360/768/1280px. Hai JSON tải
+xuống hợp lệ theo schema. Checklist kèm ảnh ở `docs/demo/ux-checklist.md`.
+
+Module export chỉ nhận DTO, không query DB hoặc thay router của B. Endpoint
+export hiện vẫn là stub: B cần review và nối dữ liệu DB vào DTO trước khi
+nghiệm thu export end-to-end với dữ liệu thật. Chưa push hoặc mở PR trong lượt này.
