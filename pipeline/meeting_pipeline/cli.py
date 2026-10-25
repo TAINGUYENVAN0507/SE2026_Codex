@@ -83,6 +83,9 @@ def build_parser() -> argparse.ArgumentParser:
     exp = sub.add_parser("export-contracts", help="sinh contracts/pipeline từ Pydantic")
     exp.add_argument("--check", action="store_true")
     exp.add_argument("--root", type=Path, default=contracts_export.REPO_ROOT)
+
+    dl = sub.add_parser("download-models", help="tải trước model ASR và diarization vào cache")
+    dl.add_argument("--check", action="store_true", help="chỉ kiểm cache, không tải")
     return parser
 
 
@@ -93,5 +96,9 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if args.command == "run-stage":
         return run_stage(Stage(args.stage), args.workdir, args.backend)
+    if args.command == "download-models":
+        from meeting_pipeline import models
+
+        return models.main(check_only=args.check)
     extra = ["--check"] if args.check else []
     return contracts_export.main(["--root", str(args.root), *extra])

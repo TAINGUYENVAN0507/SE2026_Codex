@@ -27,6 +27,8 @@ Stage dùng model (`vad`, `asr`, `diarize`) gọi model qua adapter trong `meeti
 
 Diarization cài bằng `uv sync --extra diarize`: pyannote.audio 4.x và torch **bản CPU** (bản torch trên PyPI kèm CUDA 13, xung đột cuDNN với CTranslate2 của extra `asr`). Model `pyannote/speaker-diarization-community-1` là model gated: tài khoản Hugging Face phải chấp nhận điều kiện, token lấy từ `HF_TOKEN` hoặc `hf auth login`. Biến: `DIARIZATION_MODEL`, `DIARIZATION_DEVICE` (`auto`).
 
+Tải trước model vào cache (`HF_HOME`), kiểm token và quyền vào model gated: `uv run python -m meeting_pipeline download-models` (hoặc `../scripts/download_models.py`). Thêm `--check` để chỉ kiểm cache mà không tải. Thiếu token, token sai hoặc chưa đồng ý điều kiện của model thì exit code 2 kèm hướng dẫn; thông điệp không chứa token.
+
 Biến môi trường của `preprocess`: `PIPELINE_MIN_DURATION_SEC` (mặc định 1), `PIPELINE_MAX_DURATION_SEC` (mặc định 3600), `FFMPEG_BIN`, `FFPROBE_BIN`.
 
 `merge` là pure function, không cần model: `stages/merge.py::merge(asr, diarization, audio)`. Các ngưỡng nằm trong `MergeConfig` và là giá trị khởi tạo, sẽ hiệu chỉnh sau benchmark AI-13. Output luôn thỏa bất biến của `transcript.schema.json`, kể cả khi ASR trả timestamp lệch (có property test bằng hypothesis).
