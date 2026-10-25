@@ -8,7 +8,9 @@ import meetingCreated from '../../../contracts/fixtures/api/meeting_created.json
 import summaryReady from '../../../contracts/fixtures/api/summary_ready.json'
 import summaryDisabled from '../../../contracts/fixtures/api/summary_disabled.json'
 import actionItems from '../../../contracts/fixtures/api/action_items.json'
+import edits from '../../../contracts/fixtures/api/edits.json'
 import type { ActionItemData, SegmentData, SummaryData } from '../api/client'
+import { authHandlers } from './auth'
 
 type CreatedMeeting = Omit<typeof meetingCreated.meeting, 'duration_sec'> & {
   duration_sec: number | null
@@ -40,6 +42,28 @@ function notFound(message: string) {
 }
 
 export const handlers = [
+  ...authHandlers,
+  http.get('*/api/v1/meetings/:meetingId/edits', ({ params, request }) => {
+    if (
+      params.meetingId !== meetingProcessing.id &&
+      !createdMeetings.has(String(params.meetingId))
+    )
+      return notFound('Không tìm thấy cuộc họp.')
+    const url = new URL(request.url)
+    const entityType = url.searchParams.get('entity_type')
+    const page = Math.max(1, Number(url.searchParams.get('page') || 1))
+    const pageSize = Math.min(
+      100,
+      Math.max(1, Number(url.searchParams.get('page_size') || 10)),
+    )
+    const items = edits.items.filter(
+      (item) => !entityType || item.entity_type === entityType,
+    )
+    return HttpResponse.json({
+      items: items.slice((page - 1) * pageSize, page * pageSize),
+      total: items.length,
+    })
+  }),
   http.post('*/api/v1/meetings', async ({ request }) => {
     const form = await request.formData()
     const id = crypto.randomUUID()

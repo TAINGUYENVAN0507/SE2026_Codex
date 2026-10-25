@@ -1,6 +1,7 @@
 import createClient from 'openapi-fetch'
 import { ApiError, parseApiError, toNetworkError } from './errors'
 import type { components, paths } from './schema'
+import { notifySessionExpired } from './sessionEvents'
 
 // Path trong contract đã có /api/v1 nên bỏ tiền tố đó trước khi ghép base URL.
 type ApiV1Paths = {
@@ -17,6 +18,7 @@ export type MeetingList = components['schemas']['MeetingListOut']
 export type TranscriptData = components['schemas']['TranscriptOut']
 export type SpeakerData = components['schemas']['SpeakerOut']
 export type SegmentData = components['schemas']['TranscriptSegmentOut']
+export type UserSession = components['schemas']['UserMeOut']
 export type SummaryData = components['schemas']['SummaryOut']
 export type ActionItemData = components['schemas']['ActionItemOut']
 export type ActionItemCreate = components['schemas']['ActionItemCreate']
@@ -29,7 +31,12 @@ const client = createClient<ApiV1Paths>({
 })
 
 client.use({
-  async onResponse({ response }) {
+  async onResponse({ request, response }) {
+    if (
+      response.status === 401 &&
+      !new URL(request.url).pathname.endsWith('/auth/login')
+    )
+      notifySessionExpired()
     if (!response.ok) throw await parseApiError(response.clone())
   },
 })
@@ -59,6 +66,34 @@ export function getMeeting(id: MeetingDetail['id']): Promise<MeetingDetail> {
       params: { path: { meeting_id: id } },
     }),
   )
+}
+
+export function login(email: string, password: string): Promise<UserSession> {
+  return unwrap(client.POST('/auth/login', { body: { email, password } }))
+}
+
+export function getMe(): Promise<UserSession> {
+  return unwrap(client.GET('/auth/me'))
+}
+
+export function listEdits(meetingId: string, page = 1, entityType?: string) {
+  return unwrap(
+    client.GET('/meetings/{meeting_id}/edits', {
+      params: {
+        path: { meeting_id: meetingId },
+        query: { page, page_size: 10, entity_type: entityType || undefined },
+      },
+    }),
+  )
+}
+
+export async function logout(): Promise<void> {
+  try {
+    await client.POST('/auth/logout')
+  } catch (error) {
+    if (error instanceof ApiError) throw error
+    throw toNetworkError()
+  }
 }
 
 export function getJob(id: Job['id']): Promise<Job> {
