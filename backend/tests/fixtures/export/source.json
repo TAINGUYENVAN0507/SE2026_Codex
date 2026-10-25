@@ -1,0 +1,16 @@
+{
+  "meeting": { "id": "demo-meeting", "title": "Đề án — cuộc họp", "meeting_date": "2026-10-25", "duration_sec": 90.0 },
+  "speakers": [{ "id": "s1", "display_name": "Người phụ trách", "default_name": "Speaker 1" }],
+  "segments": [
+    { "id": "seg1", "start_sec": 0.0, "end_sec": 5.0, "text": "Nội dung đã sửa.", "speaker_id": "s1", "ai_text": "Nội dung gốc.", "ai_speaker_id": null },
+    { "id": "seg2", "start_sec": 65.0, "end_sec": 70.0, "text": "Ý kiến thứ hai.", "speaker_id": null, "ai_text": "Ý kiến thứ hai.", "ai_speaker_id": "s1" }
+  ],
+  "summary": {
+    "content": { "overview": "Tổng quan đã sửa.", "key_points": [], "decisions": [{ "text": "Chốt lịch.", "evidence_segment_ids": ["seg2"] }] },
+    "ai_content": { "overview": "Tổng quan AI.", "key_points": [], "decisions": [] }
+  },
+  "action_items": [
+    { "id": "a1", "description": "Công việc đã sửa", "assignee_name": null, "due_date": null, "due_date_text": null, "status": "done", "source": "ai", "ai_original": { "description": "Công việc AI", "assignee_name": null, "due_date": null, "due_date_text": null } },
+    { "id": "a2", "description": "Việc người dùng thêm", "assignee_name": "Người phụ trách", "due_date": "2026-10-30", "due_date_text": "thứ Sáu", "status": "open", "source": "user", "ai_original": null }
+  ]
+}
