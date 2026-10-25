@@ -51,6 +51,15 @@ uv run python ../evaluation/performance/bench.py --minutes 1 5 --tag gtx1650ti
 
 Ghép clip FLEURS cho đủ thời lượng, chạy `run_job(backend="real")`, ghi thời gian từng stage, RTF, RAM và VRAM đỉnh vào `performance/results/<ngày>_<tag>/`. `env.json` ghi cả mức tải của máy (PSI) trước và sau mỗi lần chạy. Chi tiết ở `performance/README.md`.
 
+## Bộ ồn
+
+```bash
+cd pipeline && uv run python ../evaluation/noisy_audio/run_noisy.py transcribe --clips 10 --tag <tag>
+cd ../evaluation && uv run python noisy_audio/run_noisy.py score noisy_audio/runs/<tag>
+```
+
+Sinh audio theo `noisy_audio/conditions.yaml` (ồn màu theo SNR, babble, vọng, micro đặt xa, nén Opus), chạy VAD và ASR như pipeline, ghi WER theo từng điều kiện vào `noisy_audio/results/<ngày>_<tag>/`. Chi tiết và kết quả: `noisy_audio/README.md`.
+
 ## Rubric chấm tóm tắt
 
 A và B chấm theo `summary_rubric/rubric.md`, ghi vào `summary_rubric/ratings.csv`. Tính độ đồng thuận:
@@ -72,6 +81,6 @@ uv run python summary_rubric/agreement.py summary_rubric/ratings.csv --tag summa
 | `wer/edge_wer.py` | WER của các case edge trong `pipeline/tests/edge/` (một clip, nhiều cách làm hỏng audio) | AI-15 |
 | `performance/` | Benchmark pipeline thật: thời gian từng stage, RTF, RAM và VRAM đỉnh: `bench.py` | AI-13 |
 | `summary_rubric/` | Rubric thang 1–5 cho tóm tắt, mẫu `ratings.csv`, độ đồng thuận giữa 2 người chấm: `agreement.py` | AI-14 |
-| `noisy_audio/` | Bộ đánh giá theo điều kiện ồn (chưa có) | AI-12 |
+| `noisy_audio/` | Bộ ồn synthetic có seed (`conditions.yaml`, `make_noisy.py`), chạy VAD và ASR, WER theo điều kiện (`run_noisy.py`). Phần thu thật chờ SH-01 | AI-12 |
 
 Thư mục nào chưa có nghĩa là task đó chưa bắt đầu.

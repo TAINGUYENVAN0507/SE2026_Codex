@@ -1,0 +1,135 @@
+{
+  "created_at": "2026-10-25T04:30:31Z",
+  "tag": "turbo-int8-float16",
+  "seed": 2026,
+  "conditions_sha256": "230ee7e5b2f8ce76f10fa0e9c48851a9a0bd3e116381d9945565a5686b86675e",
+  "conditions": [
+    {
+      "id": "clean",
+      "type": "clean"
+    },
+    {
+      "id": "pink_snr20",
+      "type": "noise",
+      "color": "pink",
+      "snr_db": 20
+    },
+    {
+      "id": "pink_snr10",
+      "type": "noise",
+      "color": "pink",
+      "snr_db": 10
+    },
+    {
+      "id": "pink_snr5",
+      "type": "noise",
+      "color": "pink",
+      "snr_db": 5
+    },
+    {
+      "id": "pink_snr0",
+      "type": "noise",
+      "color": "pink",
+      "snr_db": 0
+    },
+    {
+      "id": "white_snr20",
+      "type": "noise",
+      "color": "white",
+      "snr_db": 20
+    },
+    {
+      "id": "white_snr10",
+      "type": "noise",
+      "color": "white",
+      "snr_db": 10
+    },
+    {
+      "id": "white_snr5",
+      "type": "noise",
+      "color": "white",
+      "snr_db": 5
+    },
+    {
+      "id": "white_snr0",
+      "type": "noise",
+      "color": "white",
+      "snr_db": 0
+    },
+    {
+      "id": "brown_snr10",
+      "type": "noise",
+      "color": "brown",
+      "snr_db": 10
+    },
+    {
+      "id": "babble4_snr10",
+      "type": "babble",
+      "talkers": 4,
+      "snr_db": 10
+    },
+    {
+      "id": "babble4_snr5",
+      "type": "babble",
+      "talkers": 4,
+      "snr_db": 5
+    },
+    {
+      "id": "reverb_rt60_0.4",
+      "type": "reverb",
+      "rt60_sec": 0.4,
+      "drr_db": 3
+    },
+    {
+      "id": "reverb_rt60_0.8",
+      "type": "reverb",
+      "rt60_sec": 0.8,
+      "drr_db": 0
+    },
+    {
+      "id": "far_mic",
+      "type": "far_mic",
+      "lowpass_hz": 4000,
+      "rt60_sec": 0.5,
+      "drr_db": -3,
+      "gain_db": -15
+    },
+    {
+      "id": "opus_16kbps",
+      "type": "codec",
+      "codec": "opus",
+      "bitrate_kbps": 16
+    }
+  ],
+  "clips": [
+    "fleurs-1661-13695736044714235367",
+    "fleurs-1665-13379028942642129694",
+    "fleurs-1700-7883777556680644152",
+    "fleurs-1702-5552194812226333079",
+    "fleurs-1706-431401535124439576",
+    "fleurs-1711-2686283497284494382",
+    "fleurs-1713-4644125398152819931",
+    "fleurs-1717-9576825305599137129",
+    "fleurs-1721-12740622559749389835",
+    "fleurs-1768-11595830277981788585"
+  ],
+  "babble": [
+    "10057024225045006889",
+    "10072308967409148015",
+    "10078277432407694754",
+    "10093159547857080890",
+    "1015279164912843543",
+    "1015563747297542961",
+    "10169179696365895477",
+    "10185666587391780903"
+  ],
+  "gpu": "NVIDIA GeForce GTX 1650 Ti, 4096 MiB, 580.178.04",
+  "proc_sec": 368.77,
+  "asr": "faster-whisper:large-v3-turbo:int8_float16",
+  "device": "cuda",
+  "beam_size": 5,
+  "model_load_sec": 31.565,
+  "min_speech_sec": 0.5,
+  "faster_whisper": "1.2.1",
+  "ctranslate2": "4.8.3"
+}
