@@ -1,5 +1,6 @@
 #!/bin/sh
-# Smoke test cho image worker (AI-16). Chạy trong container, không cần mạng hay model:
+# Smoke test cho image worker (AI-16), bản CPU và CUDA. Chạy trong container, không cần mạng,
+# model hay GPU:
 #
 #   docker run --rm -v "$PWD/infra/docker/smoke_worker.sh:/smoke.sh:ro" meeting-worker:cpu sh /smoke.sh
 set -eu
@@ -13,6 +14,20 @@ import ctranslate2, faster_whisper, pyannote.audio, torch
 assert '+cpu' in torch.__version__, torch.__version__
 print('faster-whisper', faster_whisper.__version__, '| pyannote', pyannote.audio.__version__, '| torch', torch.__version__)
 "
+
+echo "2b. bản ${WORKER_VARIANT}: thư viện CUDA và mặc định của ASR"
+if [ "$WORKER_VARIANT" = cuda ]; then
+    test "$ASR_DEVICE" = cuda
+    "$PIPELINE_PYTHON" -c "import nvidia.cublas.lib, nvidia.cudnn.lib"
+else
+    test "$ASR_DEVICE" = cpu
+    test "$ASR_COMPUTE_TYPE" = int8
+    if "$PIPELINE_PYTHON" -c "import nvidia.cublas.lib" 2>/dev/null; then
+        echo "bản CPU không được có cuBLAS" >&2
+        exit 1
+    fi
+fi
+echo "ASR_DEVICE=$ASR_DEVICE ASR_COMPUTE_TYPE=$ASR_COMPUTE_TYPE"
 
 echo "3. venv backend import được worker, không có runtime của model"
 python -c "

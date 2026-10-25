@@ -1,6 +1,6 @@
 # Cấu trúc repository
 
-> Trạng thái ngày 2026-10-19. ✓ đã có trong `main` · ◐ đang ở nhánh cá nhân, chưa vào `main` · ○ chưa có, sẽ làm theo kế hoạch.
+> Trạng thái ngày 2026-10-25. ✓ đã có trong `main` · ◐ mới có một phần · ○ chưa có, sẽ làm theo kế hoạch.
 
 ## Cây thư mục cấp cao
 
@@ -13,17 +13,17 @@
 ├── tasks/                ✓ phân công theo ngày: tasks/<YYYY-MM-DD>/member-{a,b,c}.md
 ├── docs/                 ✓ tài liệu chung theo khu vực (docs/README.md)
 ├── contracts/            ✓ contract giữa các module (contracts.md)
-├── frontend/             ◐ A, nhánh vantuong
-├── backend/              ○ B
+├── frontend/             ✓ A
+├── backend/              ✓ B (gồm app/scripts/: create_user.py, seed.py)
 ├── pipeline/             ✓ C
 ├── evaluation/           ✓ C
 ├── tests/                ○ B: test liên module (integration, audit, reliability, privacy)
-├── infra/                ○ B: nginx.conf, Dockerfile của api/worker/web
-├── scripts/              ○ B, C: create_user.py, seed.py, download_models.py
-├── docker-compose.yml    ○ B: db, api, worker, web (+ docker-compose.gpu.yml)
+├── infra/                ◐ docker/worker.Dockerfile ✓ (C, AI-16) · nginx.conf, Dockerfile của api/web ○ (B)
+├── scripts/              ✓ download_models.py (C, AI-16)
+├── docker-compose.yml    ◐ B: đã có db · api, worker, web, docker-compose.gpu.yml ○
 ├── Makefile              ○ B: up, down, test, seed, contract-check, eval-*
-├── .env.example          ○ B: chỉ chứa placeholder
-├── .github/              ✓ workflows/pipeline.yml, evaluation.yml · ◐ workflows/frontend.yml
+├── .env.example          ✓ B: chỉ chứa placeholder
+├── .github/              ✓ workflows: pipeline, evaluation, frontend, backend, contracts, worker-image
 └── reports/              ✗ ghi chú cá nhân của nhóm trưởng, nằm trong .gitignore
 ```
 
@@ -146,6 +146,6 @@ evaluation/
 | Audio, video | `*.wav`, `*.mp3`, `*.m4a`, `*.webm`… | Sinh lúc chạy test bằng ffmpeg, hoặc tải bằng script có sha256 |
 | Dữ liệu họp nội bộ | Audio, transcript tham chiếu, RTTM của `meet-*`, `noisy-*` | Để trong `evaluation/datasets/private/`, chia sẻ qua kênh riêng của nhóm |
 | Dữ liệu tải về | `evaluation/datasets/raw/` | `evaluation/datasets/download.py` |
-| Model, artifact của pipeline | `models/`, `artifacts/` | Script tải model (`scripts/download_models.py`, chưa có) |
+| Model, artifact của pipeline | `models/`, `artifacts/` | Script tải model và kiểm token (`scripts/download_models.py`, gọi `python -m meeting_pipeline download-models`) |
 | Môi trường, cache, build | `.venv/`, `node_modules/`, `__pycache__/`, `dist/` | Lockfile: `uv.lock`, `package-lock.json` |
 | Ghi chú cá nhân | `reports/`, `CLAUDE.md` | |
