@@ -22,6 +22,7 @@ from meeting_pipeline.errors import (
 )
 from meeting_pipeline.runner import Stage, overall_progress, run_job
 from meeting_pipeline.schemas import JobSpec
+from sqlalchemy import update
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
@@ -40,6 +41,7 @@ from app.worker.queue import (
 from app.worker.reaper import (
     DEFAULT_LEASE_SEC,
     DEFAULT_REAPER_INTERVAL_SEC,
+    LeaseLostError,
     heartbeat_job,
     reap_expired_jobs,
     release_job_on_sigterm,
@@ -78,8 +80,16 @@ def process_job(
             return True
         return bool(is_cancelled and is_cancelled())
 
+    current_worker_id = job.locked_by
+
     def handle_heartbeat() -> None:
-        heartbeat_job(db, job, lease_duration_sec=DEFAULT_LEASE_SEC, now=get_now())
+        heartbeat_job(
+            db,
+            job,
+            lease_duration_sec=DEFAULT_LEASE_SEC,
+            now=get_now(),
+            worker_id=current_worker_id,
+        )
 
     meeting = db.get(Meeting, job.meeting_id)
     if meeting is None:
@@ -143,18 +153,42 @@ def process_job(
         # Throttling: chỉ ghi DB tối đa 1 lần mỗi giây hoặc khi stage hoàn thành (value=1.0)
         if (now_ts - last_db_update >= PROGRESS_THROTTLE_SEC) or value >= 1.0:
             calc_progress = overall_progress(stage, value)
-            job.stage = stage.value
-            job.progress = calc_progress
-
             stages = dict(job.stage_status or {})
             stages[stage.value] = "running" if value < 1.0 else "succeeded"
-            job.stage_status = stages
 
             cur_time = get_now()
+            res = db.execute(
+                update(Job)
+                .where(
+                    Job.id == job.id,
+                    Job.status == JobStatus.RUNNING.value,
+                    Job.locked_by == current_worker_id,
+                )
+                .values(
+                    stage=stage.value,
+                    progress=calc_progress,
+                    stage_status=stages,
+                    heartbeat_at=cur_time,
+                    locked_until=cur_time + timedelta(seconds=DEFAULT_LEASE_SEC),
+                    updated_at=cur_time,
+                )
+            )
+            if res.rowcount == 0:
+                db.rollback()
+                logger.warning(
+                    "Job %s đã mất lease khi cập nhật tiến độ (worker=%s). Dừng job.",
+                    job.id,
+                    current_worker_id,
+                )
+                raise LeaseLostError(f"Lease for job {job.id} was lost during progress update")
+
+            db.commit()
+            job.stage = stage.value
+            job.progress = calc_progress
+            job.stage_status = stages
             job.heartbeat_at = cur_time
             job.locked_until = cur_time + timedelta(seconds=DEFAULT_LEASE_SEC)
             job.updated_at = cur_time
-            db.commit()
             last_db_update = now_ts
 
     def handle_stage_done(stage: Stage, artifact_file: Path) -> None:
@@ -238,6 +272,16 @@ def process_job(
                 meeting.status = "failed"
             meeting.updated_at = current_time
             db.commit()
+
+    except LeaseLostError as err:
+        logger.warning(
+            "Worker đã mất lease cho job %s (worker=%s): %s. "
+            "Dừng xử lý mà không ghi kết quả hay đổi trạng thái.",
+            job.id,
+            current_worker_id,
+            err,
+        )
+        return job
 
     except PipelineCancelledError:
         if sigterm_check and sigterm_check():

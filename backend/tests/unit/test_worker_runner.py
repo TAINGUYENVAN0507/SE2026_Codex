@@ -8,6 +8,7 @@ Bao gồm:
 """
 
 import json
+import os
 import uuid
 from collections.abc import Generator
 from datetime import UTC, datetime, timedelta
@@ -363,3 +364,50 @@ def test_run_worker_loop_calls_reaper(monkeypatch: pytest.MonkeyPatch) -> None:
         run_worker_loop(poll_interval_sec=0.01, reaper_interval_sec=0.0)
 
     assert reap_called[0] >= 1
+
+
+def test_process_job_stops_when_lease_lost_without_writing_results(
+    test_db: Session,
+    sample_meeting_with_audio: Meeting,
+    test_storage: Storage,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """BE-08: Reaper requeue và worker khác claim giữa chừng:
+    worker cũ dừng trong 1 lần heartbeat và không ghi gì vào DB.
+    """
+    if not hasattr(os, "killpg"):
+        monkeypatch.setattr("meeting_pipeline.runner._kill_group", lambda proc: proc.kill())
+
+    base_time = datetime(2026, 10, 24, 10, 0, 0, tzinfo=UTC)
+    enqueue_job(test_db, meeting_id=sample_meeting_with_audio.id, now=base_time)
+    test_db.commit()
+
+    claimed = claim_job(test_db, worker_id="worker-old", now=base_time)
+    assert claimed is not None
+
+    def on_stage_done_hook(stage, path):
+        if stage.value == "preprocess":
+            # Giả lập lease hết hạn, reaper thu hồi và worker-new claim
+            reaped = reap_expired_jobs(test_db, now=base_time + timedelta(seconds=70))
+            assert len(reaped) == 1
+            claimed_new = claim_job(
+                test_db, worker_id="worker-new", now=base_time + timedelta(seconds=70)
+            )
+            assert claimed_new is not None
+            assert claimed_new.locked_by == "worker-new"
+
+    process_job(
+        test_db,
+        claimed,
+        storage=test_storage,
+        backend="fake",
+        on_stage_done_callback=on_stage_done_hook,
+        now=base_time,
+    )
+
+    # Worker cũ dừng lại và không ghi đè gì vào DB
+    test_db.refresh(claimed)
+    assert claimed.locked_by == "worker-new"
+    # Meeting không chuyển sang ready hay failed bởi worker-old
+    test_db.refresh(sample_meeting_with_audio)
+    assert sample_meeting_with_audio.status != "ready"
