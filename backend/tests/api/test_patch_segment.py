@@ -393,3 +393,43 @@ def test_patch_segment_not_found_404(
 
     assert res.status_code == 404
     assert res.json()["error"]["code"] in ("SEGMENT_NOT_FOUND", "NOT_FOUND")
+
+
+def test_atomic_optimistic_locking_two_requests_same_version(
+    test_db: Session, users: dict[str, User], meeting_data: dict[str, object]
+) -> None:
+    """Hai request đồng thời gửi cùng version=1 (BE-11):
+    - Request đầu tiên thành công 200, version tăng lên 2.
+    - Request thứ hai thất bại 409 VERSION_CONFLICT kèm current version là 2.
+    - Chỉ có duy nhất 1 edit event được ghi vào DB.
+    """
+    owner = users["owner"]
+    meeting = meeting_data["meeting"]
+    segment = meeting_data["segment"]
+    client = make_client_for_user(owner, test_db)
+    url = f"/api/v1/meetings/{meeting.id}/segments/{segment.id}"
+
+    # Request 1 với version=1
+    res1 = client.patch(url, json={"text": "Bản sửa 1", "version": 1})
+    assert res1.status_code == 200
+    assert res1.json()["version"] == 2
+
+    # Request 2 gửi cùng lúc với version=1 (giả lập 2 tab cùng mở bản version 1)
+    res2 = client.patch(url, json={"text": "Bản sửa 2", "version": 1})
+    assert res2.status_code == 409
+    body2 = res2.json()
+    assert body2["error"]["code"] == "VERSION_CONFLICT"
+    assert body2["error"]["details"]["current"]["version"] == 2
+
+    # Kiểm tra chỉ có duy nhất 1 edit event được ghi
+    events = (
+        test_db.execute(
+            select(EditEvent).where(
+                EditEvent.meeting_id == meeting.id, EditEvent.entity_id == segment.id
+            )
+        )
+        .scalars()
+        .all()
+    )
+    assert len(events) == 1
+    assert events[0].entity_version_after == 2

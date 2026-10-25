@@ -4,7 +4,7 @@ import uuid
 from datetime import UTC, datetime
 
 import pytest
-from sqlalchemy import exc, text
+from sqlalchemy import exc, text, update
 from sqlalchemy.orm import Session
 
 from app.db.models.action_item import ActionItem
@@ -177,3 +177,62 @@ def test_action_items_soft_delete(db_session: Session) -> None:
 
     db_session.refresh(item)
     assert item.deleted_at is not None
+
+
+def test_be11_optimistic_locking_conditional_update_postgres(db_session: Session) -> None:
+    """BE-11: Kiểm tra conditional update với optimistic locking trên cơ sở dữ liệu.
+    Hai phiên cùng UPDATE cùng version ban đầu:
+    - Phiên 1 thành công (rowcount == 1, version -> 2)
+    - Phiên 2 chạy sau với version cũ thì rowcount == 0 (bị chặn)
+    """
+    _, meeting = _create_sample_meeting(db_session)
+
+    segment = Segment(
+        id=str(uuid.uuid4()),
+        meeting_id=meeting.id,
+        idx=0,
+        start_sec=0.0,
+        end_sec=5.0,
+        text="Văn bản gốc",
+        ai_text="Văn bản gốc",
+        version=1,
+    )
+    db_session.add(segment)
+    db_session.commit()
+
+    # Phiên 1: UPDATE có điều kiện WHERE version = 1 thành công
+    res1 = db_session.execute(
+        update(Segment)
+        .where(
+            Segment.id == segment.id,
+            Segment.meeting_id == meeting.id,
+            Segment.version == 1,
+        )
+        .values(
+            text="Văn bản cập nhật bởi phiên 1",
+            version=2,
+        )
+    )
+    db_session.commit()
+    assert res1.rowcount == 1
+
+    # Phiên 2: Giả lập phiên khác cũng gửi với version = 1 (chưa đọc bản mới) -> rowcount == 0
+    res2 = db_session.execute(
+        update(Segment)
+        .where(
+            Segment.id == segment.id,
+            Segment.meeting_id == meeting.id,
+            Segment.version == 1,
+        )
+        .values(
+            text="Văn bản cập nhật bởi phiên 2 (ghi đè hụt)",
+            version=2,
+        )
+    )
+    db_session.commit()
+    assert res2.rowcount == 0
+
+    # Kiểm tra DB giữ nguyên bản sửa của phiên 1
+    db_session.refresh(segment)
+    assert segment.version == 2
+    assert segment.text == "Văn bản cập nhật bởi phiên 1"

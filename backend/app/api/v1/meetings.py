@@ -18,7 +18,7 @@ from fastapi import (
 )
 from fastapi import Path as FastApiPath
 from fastapi.responses import StreamingResponse
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
 from app.api.deps import CurrentUser, get_current_user
@@ -993,10 +993,46 @@ def patch_meeting_segment(
     }
 
     now = datetime.now(UTC)
-    segment.text = new_text
-    segment.speaker_id = new_speaker_id
-    segment.version += 1
-    segment.updated_at = now
+    new_version = payload.version + 1
+
+    # Cập nhật nguyên tử có điều kiện theo version (optimistic locking)
+    stmt = (
+        update(Segment)
+        .where(
+            Segment.id == segment.id,
+            Segment.meeting_id == meeting.id,
+            Segment.version == payload.version,
+        )
+        .values(
+            text=new_text,
+            speaker_id=new_speaker_id,
+            version=new_version,
+            updated_at=now,
+        )
+    )
+    res = db.execute(stmt)
+    if res.rowcount == 0:
+        db.rollback()
+        current_segment = db.execute(
+            select(Segment).where(Segment.id == segment.id, Segment.meeting_id == meeting.id)
+        ).scalar_one_or_none()
+        curr_ver = current_segment.version if current_segment else payload.version
+        curr_text = current_segment.text if current_segment else segment.text
+        curr_spk = current_segment.speaker_id if current_segment else segment.speaker_id
+        raise APIError(
+            code="VERSION_CONFLICT",
+            message="Đoạn transcript đã được cập nhật ở nơi khác. Vui lòng tải lại.",
+            status_code=status.HTTP_409_CONFLICT,
+            details={
+                "entity": "segment",
+                "current": {
+                    "id": segment.id,
+                    "version": curr_ver,
+                    "text": curr_text,
+                    "speaker_id": curr_spk,
+                },
+            },
+        )
 
     field_name = None
     if "text" in fields_set and "speaker_id" not in fields_set:
@@ -1014,7 +1050,7 @@ def patch_meeting_segment(
         field=field_name,
         before=before_state,
         after=after_state,
-        entity_version_after=segment.version,
+        entity_version_after=new_version,
         request_id=getattr(getattr(request, "state", None), "request_id", None),
         created_at=now,
     )
@@ -1168,9 +1204,38 @@ def patch_meeting_speaker(
     after_state = {"display_name": cleaned_name}
 
     now = datetime.now(UTC)
-    speaker.display_name = cleaned_name
-    speaker.version += 1
-    speaker.updated_at = now
+    new_version = payload.version + 1
+
+    # Cập nhật nguyên tử có điều kiện theo version (optimistic locking)
+    stmt = (
+        update(Speaker)
+        .where(
+            Speaker.id == speaker.id,
+            Speaker.meeting_id == meeting.id,
+            Speaker.version == payload.version,
+        )
+        .values(
+            display_name=cleaned_name,
+            version=new_version,
+            updated_at=now,
+        )
+    )
+    res = db.execute(stmt)
+    if res.rowcount == 0:
+        db.rollback()
+        current_speaker = db.execute(
+            select(Speaker).where(Speaker.id == speaker.id, Speaker.meeting_id == meeting.id)
+        ).scalar_one_or_none()
+        curr_ver = current_speaker.version if current_speaker else payload.version
+        raise APIError(
+            code="VERSION_CONFLICT",
+            message="Người nói đã được cập nhật ở nơi khác. Vui lòng tải lại.",
+            status_code=status.HTTP_409_CONFLICT,
+            details={
+                "entity": "speaker",
+                "current": {"id": speaker.id, "version": curr_ver},
+            },
+        )
 
     edit_event = EditEvent(
         id=str(uuid.uuid4()),
@@ -1182,7 +1247,7 @@ def patch_meeting_speaker(
         field="display_name",
         before=before_state,
         after=after_state,
-        entity_version_after=speaker.version,
+        entity_version_after=new_version,
         request_id=getattr(getattr(request, "state", None), "request_id", None),
         created_at=now,
     )
@@ -1342,9 +1407,38 @@ def update_meeting_summary(
     after_state = {"content": new_content}
 
     now = datetime.now(UTC)
-    summary.content = new_content
-    summary.version += 1
-    summary.updated_at = now
+    new_version = payload.version + 1
+
+    # Cập nhật nguyên tử có điều kiện theo version (optimistic locking)
+    stmt = (
+        update(Summary)
+        .where(
+            Summary.id == summary.id,
+            Summary.meeting_id == meeting.id,
+            Summary.version == payload.version,
+        )
+        .values(
+            content=new_content,
+            version=new_version,
+            updated_at=now,
+        )
+    )
+    res = db.execute(stmt)
+    if res.rowcount == 0:
+        db.rollback()
+        current_summary = db.execute(
+            select(Summary).where(Summary.meeting_id == meeting.id)
+        ).scalar_one_or_none()
+        curr_ver = current_summary.version if current_summary else payload.version
+        raise APIError(
+            code="VERSION_CONFLICT",
+            message="Tóm tắt cuộc họp đã được cập nhật ở nơi khác. Vui lòng tải lại.",
+            status_code=status.HTTP_409_CONFLICT,
+            details={
+                "entity": "summary",
+                "current": {"meeting_id": meeting.id, "version": curr_ver},
+            },
+        )
 
     edit_event = EditEvent(
         id=str(uuid.uuid4()),
@@ -1356,7 +1450,7 @@ def update_meeting_summary(
         field=None,
         before=before_state,
         after=after_state,
-        entity_version_after=summary.version,
+        entity_version_after=new_version,
         request_id=getattr(getattr(request, "state", None), "request_id", None),
         created_at=now,
     )
