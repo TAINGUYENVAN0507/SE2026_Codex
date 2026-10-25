@@ -96,9 +96,49 @@ export const AudioPlayer = forwardRef<PlayerHandle, Props>(function AudioPlayer(
     }
     setPlaying(true)
   }
+  useEffect(() => {
+    const shortcut = (event: KeyboardEvent) => {
+      if (
+        event.defaultPrevented ||
+        event.repeat ||
+        event.ctrlKey ||
+        event.metaKey ||
+        event.altKey
+      )
+        return
+      const target =
+        event.target instanceof HTMLElement
+          ? event.target
+          : document.activeElement
+      if (
+        target instanceof HTMLElement &&
+        target.closest(
+          'input,textarea,select,button,a,[contenteditable]:not([contenteditable="false"]),[role="dialog"],[role="alertdialog"]',
+        )
+      )
+        return
+      if (!duration) return
+      if (event.key === ' ' || event.code === 'Space') {
+        event.preventDefault()
+        void toggle()
+      } else if (event.key === 'ArrowLeft') {
+        event.preventDefault()
+        seek(positionRef.current - 10)
+      } else if (event.key === 'ArrowRight') {
+        event.preventDefault()
+        seek(positionRef.current + 10)
+      }
+    }
+    window.addEventListener('keydown', shortcut)
+    return () => window.removeEventListener('keydown', shortcut)
+  })
   const ratio = duration ? Math.max(0, Math.min(1, position / duration)) : 0
   return (
-    <section className="audio-region" aria-label="Player audio cuộc họp">
+    <section
+      className="audio-region"
+      aria-label="Player audio cuộc họp"
+      aria-keyshortcuts="Space ArrowLeft ArrowRight"
+    >
       <div className="audio-player">
         <div className="audio-caption">
           <span>

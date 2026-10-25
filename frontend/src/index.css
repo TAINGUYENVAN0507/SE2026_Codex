@@ -641,6 +641,40 @@ input[type='checkbox'] {
 .loading-summary {
   padding-inline: 0;
 }
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  padding: 20px;
+  display: grid;
+  place-items: center;
+  background: #20222670;
+}
+.app-dialog {
+  width: min(100%, 480px);
+  max-height: calc(100dvh - 40px);
+  overflow: auto;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 16px 60px #20222635;
+}
+.app-dialog h2 {
+  margin-top: 0;
+  font-size: 20px;
+}
+.app-dialog p {
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.app-dialog button {
+  margin: 8px 12px 0 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #f7f8fa;
+}
 @keyframes skeleton-pulse {
   to {
     opacity: 0.4;
