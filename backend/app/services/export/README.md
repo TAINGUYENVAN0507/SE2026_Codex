@@ -17,3 +17,9 @@ CLI là nơi duy nhất đọc/ghi schema, không nằm trong serializer.
 Test: `uv run pytest tests/unit/test_export*.py`. `jsonschema` (MIT, dev dependency)
 xác nhận output hợp lệ theo schema; fixture golden chỉ chứa dữ liệu mẫu tự viết.
 Endpoint export hiện là stub của B; module này không tự query DB hoặc thay router.
+
+`to_txt()` xuất mỗi segment một dòng `[hh:mm:ss] Người nói: text`.
+`to_markdown()` thêm tiêu đề, ngày họp, tóm tắt, ý chính, quyết định và bảng công
+việc. Giá trị null dùng “Chưa xác định”, “Chưa giao”, “Chưa có hạn”. Text được
+escape trước khi đưa vào Markdown, xuống dòng trong segment được gộp để không
+phá dòng TXT/bảng. `filename(dto, fmt)` trả slug ASCII + ngày, chỉ hỗ trợ txt/json/md.

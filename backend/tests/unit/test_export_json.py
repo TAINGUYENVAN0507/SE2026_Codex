@@ -24,7 +24,11 @@ def test_export_json_golden_and_deterministic() -> None:
     meeting = source()
     before = meeting.model_dump()
     first = to_json(meeting)
-    assert first == to_json(meeting) == (FIXTURES / "current.json").read_bytes()
+    assert (
+        first
+        == to_json(meeting)
+        == (FIXTURES / "current.json").read_text(encoding="utf-8").encode()
+    )
     assert "Đề án" in first.decode()
     assert meeting.model_dump() == before
 

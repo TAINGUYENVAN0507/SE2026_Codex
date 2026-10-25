@@ -19,7 +19,7 @@ def main() -> None:
     args = parser.parse_args()
     expected = (json.dumps(export_schema(), ensure_ascii=False, indent=2) + "\n").encode()
     if args.check:
-        if not args.output.exists() or args.output.read_bytes() != expected:
+        if not args.output.exists() or args.output.read_text(encoding="utf-8") != expected.decode():
             parser.exit(1, "Contract export chưa đồng bộ. Chạy python -m app.services.export.\n")
     else:
         args.output.write_bytes(expected)

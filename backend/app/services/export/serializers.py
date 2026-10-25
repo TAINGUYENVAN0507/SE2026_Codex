@@ -1,6 +1,9 @@
 """Các phép biến đổi thuần từ MeetingExport sang dữ liệu tải xuống."""
 
+import html
 import json
+import re
+import unicodedata
 
 from .models import (
     ExportAction,
@@ -73,3 +76,89 @@ def export_schema() -> dict:
         "$schema": "https://json-schema.org/draft/2020-12/schema",
         **ExportDocument.model_json_schema(),
     }
+
+
+def timestamp(seconds: float) -> str:
+    """Định dạng mốc audio, không dùng giờ địa phương hoặc ngày hiện tại."""
+    value = int(seconds)
+    return f"{value // 3600:02d}:{value // 60 % 60:02d}:{value % 60:02d}"
+
+
+def _line(value: str) -> str:
+    return " ".join(value.split())
+
+
+def _markdown(value: str) -> str:
+    # Dữ liệu được giữ ở dạng text, không biến thành HTML hoặc link Markdown.
+    return re.sub(r"([\\`*_\[\]#|])", r"\\\1", html.escape(_line(value), quote=False))
+
+
+def to_txt(meeting: MeetingExport, variant: Variant = "current") -> bytes:
+    """Xuất mỗi segment đúng một dòng, kể cả text đầu vào có xuống dòng."""
+    data = document(meeting, variant)
+    names = {speaker.id: speaker.name for speaker in data.speakers}
+    lines = [
+        f"[{timestamp(s.start_sec)}] {_line(names.get(s.speaker_id, 'Chưa xác định'))}: "
+        f"{_line(s.text)}"
+        for s in data.segments
+    ]
+    return ("\n".join(lines) + ("\n" if lines else "")).encode("utf-8")
+
+
+def to_markdown(meeting: MeetingExport, variant: Variant = "current") -> bytes:
+    """Biên bản Markdown gồm tóm tắt, quyết định, công việc và transcript."""
+    data = document(meeting, variant)
+    names = {speaker.id: speaker.name for speaker in data.speakers}
+    lines = [
+        f"# {_markdown(data.meeting.title)}",
+        "",
+        f"Ngày họp: {data.meeting.meeting_date or 'Chưa có ngày'}",
+        "",
+        "## Tóm tắt",
+        "",
+        _markdown(data.summary.overview) if data.summary else "Chưa có tóm tắt.",
+        "",
+        "## Ý chính",
+        "",
+    ]
+    lines += (
+        [f"- {_markdown(p.text)}" for p in data.summary.key_points]
+        if data.summary and data.summary.key_points
+        else ["Chưa có ý chính."]
+    )
+    lines += ["", "## Quyết định", ""]
+    lines += (
+        [f"- {_markdown(p.text)}" for p in data.summary.decisions]
+        if data.summary and data.summary.decisions
+        else ["Chưa có quyết định."]
+    )
+    lines += [
+        "",
+        "## Công việc",
+        "",
+        "| Nội dung | Người nhận | Hạn | Trạng thái |",
+        "| --- | --- | --- | --- |",
+    ]
+    status_names = {"open": "Chưa hoàn thành", "done": "Hoàn thành", "cancelled": "Đã hủy"}
+    for item in data.action_items:
+        lines.append(
+            f"| {_markdown(item.description)} | {_markdown(item.assignee_name or 'Chưa giao')} "
+            f"| {item.due_date or 'Chưa có hạn'} | {status_names[item.status]} |"
+        )
+    lines += ["", "## Transcript", ""]
+    lines += [
+        f"- [{timestamp(s.start_sec)}] {_markdown(names.get(s.speaker_id, 'Chưa xác định'))}: "
+        f"{_markdown(s.text)}"
+        for s in data.segments
+    ]
+    return ("\n".join(lines) + "\n").encode("utf-8")
+
+
+def filename(meeting: MeetingExport, fmt: str) -> str:
+    """Tên tải xuống chỉ dùng slug ASCII và ngày họp, không nhận đường dẫn."""
+    if fmt not in ("txt", "json", "md"):
+        raise ValueError("Định dạng export không hợp lệ")
+    title = unicodedata.normalize("NFKD", meeting.meeting.title.lower().replace("đ", "d"))
+    ascii_title = title.encode("ascii", "ignore").decode()
+    slug = re.sub(r"[^a-z0-9]+", "-", ascii_title).strip("-")[:80].rstrip("-") or "cuoc-hop"
+    return f"{slug}-{meeting.meeting.meeting_date or 'khong-ro-ngay'}.{fmt}"
