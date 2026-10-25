@@ -203,6 +203,48 @@ def auto_auth_for_contract_tests(monkeypatch: pytest.MonkeyPatch, request: pytes
         version=2,
     )
     session.add(seg1)
+
+    ai_item_1 = ActionItem(
+        id="a1f0a2b3-c4d5-4e6f-8a9b-0c1d2e3f4a5b",
+        meeting_id="meeting-1",
+        description="Hoàn thiện API upload audio và viết test idempotency",
+        assignee_name="Anh Minh",
+        assignee_speaker_id=None,
+        due_date="2026-10-16",
+        due_date_text="thứ Sáu tuần này",
+        status="open",
+        source="ai",
+        needs_review=False,
+        evidence_segment_ids=["5b1e7c2a-b2c3-4d4e-8f9a-0b1c2d3e4f5a"],
+        ai_original={
+            "description": "Hoàn thiện API upload audio và viết test idempotency",
+            "assignee_name": "Anh Minh",
+            "due_date": "2026-10-16",
+            "due_date_text": "thứ Sáu tuần này",
+        },
+        version=1,
+    )
+    ai_item_2 = ActionItem(
+        id="b2e1a2b3-c4d5-4e6f-8a9b-0c1d2e3f4a5b",
+        meeting_id="meeting-1",
+        description="Tìm thêm dữ liệu audio có tiếng ồn để đánh giá",
+        assignee_name=None,
+        assignee_speaker_id=None,
+        due_date=None,
+        due_date_text=None,
+        status="open",
+        source="ai",
+        needs_review=True,
+        evidence_segment_ids=[],
+        ai_original={
+            "description": "Tìm thêm dữ liệu audio có tiếng ồn để đánh giá",
+            "assignee_name": None,
+            "due_date": None,
+            "due_date_text": None,
+        },
+        version=1,
+    )
+    session.add_all([ai_item_1, ai_item_2])
     session.commit()
 
     orig_create_app = app_main.create_app
