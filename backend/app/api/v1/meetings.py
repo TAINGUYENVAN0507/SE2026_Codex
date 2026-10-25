@@ -24,7 +24,6 @@ from sqlalchemy.orm import Session
 from app.api.deps import CurrentUser, get_current_user
 from app.core.errors import APIError
 from app.db.models.action_item import ActionItem
-from app.db.models.edit_event import EditEvent
 from app.db.models.job import Job
 from app.db.models.meeting import Meeting
 from app.db.models.summary import Summary
@@ -45,6 +44,7 @@ from app.schemas.meeting import (
     MeetingDetailOut,
     MeetingListOut,
     MeetingOut,
+    MeetingPatch,
     MeetingSource,
     MeetingStatus,
     SpeakerOut,
@@ -57,6 +57,7 @@ from app.schemas.transcript import (
     TranscriptSegmentOut,
 )
 from app.services.audio_validator import probe_audio, validate_extension_and_mime
+from app.services.audit import record_edit
 from app.services.idempotency.service import IdempotencyService
 from app.services.storage import FileTooLargeError, Storage, get_storage
 
@@ -466,6 +467,77 @@ def create_meeting(
     return MeetingCreateOut.model_validate(response_data)
 
 
+def serialize_meeting_detail(meeting: Meeting, db: Session) -> MeetingDetailOut:
+    """Tạo đối tượng MeetingDetailOut từ model Meeting."""
+    latest_job = (
+        db.execute(select(Job).where(Job.meeting_id == meeting.id).order_by(Job.created_at.desc()))
+        .scalars()
+        .first()
+    )
+
+    speakers = (
+        db.execute(
+            select(Speaker)
+            .where(Speaker.meeting_id == meeting.id)
+            .order_by(Speaker.created_at.asc())
+        )
+        .scalars()
+        .all()
+    )
+
+    speakers_out = [
+        SpeakerOut(
+            id=spk.id,
+            meeting_id=spk.meeting_id,
+            label=spk.label,
+            default_name=spk.default_name,
+            display_name=spk.display_name,
+            is_edited=spk.display_name != spk.default_name,
+            color_index=idx % 10,
+            segment_count=0,
+            speaking_time_sec=0.0,
+            version=spk.version,
+        )
+        for idx, spk in enumerate(speakers)
+    ]
+
+    job_out = None
+    if latest_job:
+        job_error = (
+            JobErrorOut(
+                code=latest_job.error_code,
+                message=latest_job.error_message or "",
+                retryable=latest_job.attempt < latest_job.max_attempts,
+                stage=latest_job.stage,
+            )
+            if latest_job.error_code
+            else None
+        )
+        job_out = JobOut(
+            id=latest_job.id,
+            meeting_id=latest_job.meeting_id,
+            status=latest_job.status,  # type: ignore[arg-type]
+            stage=latest_job.stage,  # type: ignore[arg-type]
+            from_stage=latest_job.from_stage,  # type: ignore[arg-type]
+            progress=latest_job.progress,
+            stages=latest_job.stage_status or {},
+            attempt=latest_job.attempt,
+            max_attempts=latest_job.max_attempts,
+            next_run_at=latest_job.next_run_at,
+            error=job_error,
+            created_at=latest_job.created_at,
+            started_at=None,
+            finished_at=None,
+        )
+
+    meeting_summary = serialize_meeting_summary(meeting, db)
+    return MeetingDetailOut(
+        **meeting_summary.model_dump(),
+        latest_job=job_out,
+        speakers=speakers_out,
+    )
+
+
 @router.get(
     "/{meeting_id}",
     response_model=MeetingDetailOut,
@@ -489,82 +561,137 @@ def get_meeting(
                 message="Không tìm thấy cuộc họp được yêu cầu.",
                 status_code=status.HTTP_404_NOT_FOUND,
             )
-
-        latest_job = (
-            db.execute(
-                select(Job).where(Job.meeting_id == meeting.id).order_by(Job.created_at.desc())
-            )
-            .scalars()
-            .first()
-        )
-
-        speakers = (
-            db.execute(
-                select(Speaker)
-                .where(Speaker.meeting_id == meeting.id)
-                .order_by(Speaker.created_at.asc())
-            )
-            .scalars()
-            .all()
-        )
-
-        speakers_out = [
-            SpeakerOut(
-                id=spk.id,
-                meeting_id=spk.meeting_id,
-                label=spk.label,
-                default_name=spk.default_name,
-                display_name=spk.display_name,
-                is_edited=spk.display_name != spk.default_name,
-                color_index=idx % 10,
-                segment_count=0,
-                speaking_time_sec=0.0,
-                version=spk.version,
-            )
-            for idx, spk in enumerate(speakers)
-        ]
-
-        job_out = None
-        if latest_job:
-            job_error = (
-                JobErrorOut(
-                    code=latest_job.error_code,
-                    message=latest_job.error_message or "",
-                    retryable=latest_job.attempt < latest_job.max_attempts,
-                    stage=latest_job.stage,
-                )
-                if latest_job.error_code
-                else None
-            )
-            job_out = JobOut(
-                id=latest_job.id,
-                meeting_id=latest_job.meeting_id,
-                status=latest_job.status,  # type: ignore[arg-type]
-                stage=latest_job.stage,  # type: ignore[arg-type]
-                from_stage=latest_job.from_stage,  # type: ignore[arg-type]
-                progress=latest_job.progress,
-                stages=latest_job.stage_status or {},
-                attempt=latest_job.attempt,
-                max_attempts=latest_job.max_attempts,
-                next_run_at=latest_job.next_run_at,
-                error=job_error,
-                created_at=latest_job.created_at,
-                started_at=None,
-                finished_at=None,
-            )
-
-        meeting_summary = serialize_meeting_summary(meeting, db)
-        return MeetingDetailOut(
-            **meeting_summary.model_dump(),
-            latest_job=job_out,
-            speakers=speakers_out,
-        )
+        return serialize_meeting_detail(meeting, db)
 
     data = load_meeting_fixture()
     data["id"] = meeting_id
     data["latest_job"] = None
     data["speakers"] = []
     return MeetingDetailOut.model_validate(data)
+
+
+@router.patch(
+    "/{meeting_id}",
+    response_model=MeetingDetailOut,
+    status_code=status.HTTP_200_OK,
+    responses={
+        404: {"model": ErrorResponse, "description": "Không tìm thấy cuộc họp"},
+        409: {
+            "model": ErrorResponse,
+            "description": "Xung đột phiên bản version của cuộc họp",
+        },
+        422: {"model": ErrorResponse, "description": "Dữ liệu không hợp lệ"},
+    },
+    summary="Chỉnh sửa thông tin cuộc họp (tiêu đề)",
+)
+def patch_meeting(
+    meeting_id: Annotated[str, FastApiPath(description="UUID của cuộc họp")],
+    payload: MeetingPatch,
+    current_user: CurrentUser,
+    db: Annotated[Session, Depends(get_db)],
+    request: Request,
+) -> MeetingDetailOut:
+    """Chỉnh sửa tiêu đề cuộc họp có kiểm tra optimistic locking nguyên tử."""
+    meeting = db.execute(
+        select(Meeting).where(Meeting.id == meeting_id, Meeting.owner_id == current_user.id)
+    ).scalar_one_or_none()
+    if meeting is None:
+        raise APIError(
+            code="MEETING_NOT_FOUND",
+            message="Không tìm thấy cuộc họp được yêu cầu.",
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    if payload.version != meeting.version:
+        raise APIError(
+            code="VERSION_CONFLICT",
+            message="Cuộc họp đã được cập nhật ở nơi khác. Vui lòng tải lại.",
+            status_code=status.HTTP_409_CONFLICT,
+            details={
+                "entity": "meeting",
+                "current": {"id": meeting.id, "version": meeting.version},
+            },
+        )
+
+    fields_set = payload.model_fields_set
+    new_title = meeting.title
+    if "title" in fields_set:
+        if payload.title is None:
+            raise APIError(
+                code="VALIDATION_ERROR",
+                message="Tiêu đề cuộc họp không được để trống.",
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            )
+        cleaned_title = payload.title.strip()
+        if not cleaned_title:
+            raise APIError(
+                code="VALIDATION_ERROR",
+                message="Tiêu đề cuộc họp không được để trống.",
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            )
+        if len(cleaned_title) > 200:
+            raise APIError(
+                code="VALIDATION_ERROR",
+                message="Tiêu đề cuộc họp không được vượt quá 200 ký tự.",
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            )
+        new_title = cleaned_title
+
+    # Kiểm tra no-op (không đổi giá trị)
+    if new_title == meeting.title:
+        return serialize_meeting_detail(meeting, db)
+
+    old_title = meeting.title
+    now = datetime.now(UTC)
+    new_version = payload.version + 1
+
+    stmt = (
+        update(Meeting)
+        .where(
+            Meeting.id == meeting.id,
+            Meeting.owner_id == current_user.id,
+            Meeting.version == payload.version,
+        )
+        .values(
+            title=new_title,
+            version=new_version,
+            updated_at=now,
+        )
+    )
+    res = db.execute(stmt)
+    if res.rowcount == 0:
+        db.rollback()
+        curr_meeting = db.execute(
+            select(Meeting).where(Meeting.id == meeting.id, Meeting.owner_id == current_user.id)
+        ).scalar_one_or_none()
+        curr_ver = curr_meeting.version if curr_meeting else payload.version
+        raise APIError(
+            code="VERSION_CONFLICT",
+            message="Cuộc họp đã được cập nhật ở nơi khác. Vui lòng tải lại.",
+            status_code=status.HTTP_409_CONFLICT,
+            details={
+                "entity": "meeting",
+                "current": {"id": meeting.id, "version": curr_ver},
+            },
+        )
+
+    record_edit(
+        db,
+        meeting_id=meeting.id,
+        entity_type="meeting",
+        entity_id=meeting.id,
+        action="update",
+        actor_id=current_user.id,
+        field="title",
+        before={"title": old_title},
+        after={"title": new_title},
+        entity_version_after=new_version,
+        request_id=getattr(getattr(request, "state", None), "request_id", None),
+        created_at=now,
+    )
+    db.commit()
+    db.refresh(meeting)
+    return serialize_meeting_detail(meeting, db)
 
 
 AUDIO_MIME_TYPES: dict[str, str] = {
@@ -985,9 +1112,14 @@ def patch_meeting_segment(
             updated_at=segment.updated_at,
         )
 
+    old_text = segment.text
+    old_speaker_id = segment.speaker_id
+    text_changed = new_text != old_text
+    speaker_changed = new_speaker_id != old_speaker_id
+
     before_state = {
-        "text": segment.text,
-        "speaker_id": segment.speaker_id,
+        "text": old_text,
+        "speaker_id": old_speaker_id,
     }
     after_state = {
         "text": new_text,
@@ -1036,27 +1168,40 @@ def patch_meeting_segment(
             },
         )
 
-    field_name = None
-    if "text" in fields_set and "speaker_id" not in fields_set:
-        field_name = "text"
-    elif "speaker_id" in fields_set and "text" not in fields_set:
-        field_name = "speaker_id"
+    req_id = getattr(getattr(request, "state", None), "request_id", None)
 
-    edit_event = EditEvent(
-        id=str(uuid.uuid4()),
-        meeting_id=meeting.id,
-        actor_id=current_user.id,
-        entity_type="segment",
-        entity_id=segment.id,
-        action="update",
-        field=field_name,
-        before=before_state,
-        after=after_state,
-        entity_version_after=new_version,
-        request_id=getattr(getattr(request, "state", None), "request_id", None),
-        created_at=now,
-    )
-    db.add(edit_event)
+    if text_changed:
+        record_edit(
+            db,
+            meeting_id=meeting.id,
+            entity_type="segment",
+            entity_id=segment.id,
+            action="update",
+            actor_id=current_user.id,
+            field="text",
+            before=before_state,
+            after=after_state,
+            entity_version_after=new_version,
+            request_id=req_id,
+            created_at=now,
+        )
+
+    if speaker_changed:
+        record_edit(
+            db,
+            meeting_id=meeting.id,
+            entity_type="segment",
+            entity_id=segment.id,
+            action="update",
+            actor_id=current_user.id,
+            field="speaker_id",
+            before=before_state,
+            after=after_state,
+            entity_version_after=new_version,
+            request_id=req_id,
+            created_at=now,
+        )
+
     db.commit()
     db.refresh(segment)
 
@@ -1239,13 +1384,13 @@ def patch_meeting_speaker(
             },
         )
 
-    edit_event = EditEvent(
-        id=str(uuid.uuid4()),
+    record_edit(
+        db,
         meeting_id=meeting.id,
-        actor_id=current_user.id,
         entity_type="speaker",
         entity_id=speaker.id,
         action="update",
+        actor_id=current_user.id,
         field="display_name",
         before=before_state,
         after=after_state,
@@ -1253,7 +1398,6 @@ def patch_meeting_speaker(
         request_id=getattr(getattr(request, "state", None), "request_id", None),
         created_at=now,
     )
-    db.add(edit_event)
     db.commit()
     db.refresh(speaker)
 
@@ -1442,13 +1586,13 @@ def update_meeting_summary(
             },
         )
 
-    edit_event = EditEvent(
-        id=str(uuid.uuid4()),
+    record_edit(
+        db,
         meeting_id=meeting.id,
-        actor_id=current_user.id,
         entity_type="summary",
         entity_id=summary.id,
         action="update",
+        actor_id=current_user.id,
         field=None,
         before=before_state,
         after=after_state,
@@ -1456,7 +1600,6 @@ def update_meeting_summary(
         request_id=getattr(getattr(request, "state", None), "request_id", None),
         created_at=now,
     )
-    db.add(edit_event)
     db.commit()
     db.refresh(summary)
 
@@ -1634,13 +1777,13 @@ def create_meeting_action_item(
     )
     db.add(new_item)
 
-    edit_event = EditEvent(
-        id=str(uuid.uuid4()),
+    record_edit(
+        db,
         meeting_id=meeting.id,
-        actor_id=current_user.id,
         entity_type="action_item",
         entity_id=new_item.id,
         action="create",
+        actor_id=current_user.id,
         field=None,
         before=None,
         after={
@@ -1654,7 +1797,6 @@ def create_meeting_action_item(
         request_id=getattr(getattr(request, "state", None), "request_id", None),
         created_at=now,
     )
-    db.add(edit_event)
     db.commit()
     db.refresh(new_item)
 
@@ -1836,13 +1978,13 @@ def patch_meeting_action_item(
             },
         )
 
-    edit_event = EditEvent(
-        id=str(uuid.uuid4()),
+    record_edit(
+        db,
         meeting_id=meeting.id,
-        actor_id=current_user.id,
         entity_type="action_item",
         entity_id=item.id,
         action="update",
+        actor_id=current_user.id,
         field=None,
         before={
             "description": item.description,
@@ -1862,7 +2004,6 @@ def patch_meeting_action_item(
         request_id=getattr(getattr(request, "state", None), "request_id", None),
         created_at=now,
     )
-    db.add(edit_event)
     db.commit()
     db.refresh(item)
 
@@ -1966,13 +2107,13 @@ def delete_meeting_action_item(
             },
         )
 
-    edit_event = EditEvent(
-        id=str(uuid.uuid4()),
+    record_edit(
+        db,
         meeting_id=meeting.id,
-        actor_id=current_user.id,
         entity_type="action_item",
         entity_id=item.id,
         action="delete",
+        actor_id=current_user.id,
         field=None,
         before={
             "description": item.description,
@@ -1984,7 +2125,6 @@ def delete_meeting_action_item(
         request_id=getattr(getattr(request, "state", None), "request_id", None),
         created_at=now,
     )
-    db.add(edit_event)
     db.commit()
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)

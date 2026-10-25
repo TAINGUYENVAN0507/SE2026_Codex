@@ -403,6 +403,79 @@
             }
           }
         }
+      },
+      "patch": {
+        "tags": [
+          "Meetings"
+        ],
+        "summary": "Chỉnh sửa thông tin cuộc họp (tiêu đề)",
+        "description": "Chỉnh sửa tiêu đề cuộc họp có kiểm tra optimistic locking nguyên tử.",
+        "operationId": "patch_meeting_api_v1_meetings__meeting_id__patch",
+        "parameters": [
+          {
+            "name": "meeting_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "UUID của cuộc họp",
+              "title": "Meeting Id"
+            },
+            "description": "UUID của cuộc họp"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MeetingPatch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeetingDetailOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Không tìm thấy cuộc họp",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Xung đột phiên bản version của cuộc họp",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dữ liệu không hợp lệ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/meetings/{meeting_id}/audio": {
@@ -2989,6 +3062,37 @@
         ],
         "title": "MeetingOut",
         "description": "Schema thông tin Cuộc họp theo hợp đồng REST API."
+      },
+      "MeetingPatch": {
+        "properties": {
+          "title": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title",
+            "description": "Tiêu đề cuộc họp (1-200 ký tự)"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Version",
+            "description": "Phiên bản hiện tại của cuộc họp ở client"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "version"
+        ],
+        "title": "MeetingPatch",
+        "description": "Schema cập nhật thông tin cuộc họp (tiêu đề)."
       },
       "SegmentPatch": {
         "properties": {

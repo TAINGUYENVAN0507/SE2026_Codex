@@ -240,7 +240,7 @@ def test_patch_segment_speaker_success(
 def test_patch_segment_both_text_and_speaker(
     test_db: Session, users: dict[str, User], meeting_data: dict[str, object]
 ) -> None:
-    """Kiểm tra sửa cả text và speaker_id cùng lúc."""
+    """Kiểm tra sửa cả text và speaker_id cùng lúc tạo 2 EditEvent riêng biệt."""
     owner = users["owner"]
     meeting = meeting_data["meeting"]
     spk2 = meeting_data["spk2"]
@@ -257,6 +257,24 @@ def test_patch_segment_both_text_and_speaker(
     assert data["text"] == "Nội dung mới bởi người khác"
     assert data["speaker_id"] == spk2.id
     assert data["version"] == 2
+
+    events = (
+        test_db.execute(
+            select(EditEvent).where(
+                EditEvent.meeting_id == meeting.id, EditEvent.entity_id == segment.id
+            )
+        )
+        .scalars()
+        .all()
+    )
+    assert len(events) == 2
+    fields = {ev.field for ev in events}
+    assert fields == {"text", "speaker_id"}
+    for ev in events:
+        assert ev.entity_type == "segment"
+        assert ev.action == "update"
+        assert ev.entity_version_after == 2
+        assert ev.actor_id == owner.id
 
 
 def test_patch_segment_no_op_does_not_bump_version(

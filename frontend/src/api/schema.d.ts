@@ -168,7 +168,11 @@ export interface paths {
     delete?: never
     options?: never
     head?: never
-    patch?: never
+    /**
+     * Chỉnh sửa thông tin cuộc họp (tiêu đề)
+     * @description Chỉnh sửa tiêu đề cuộc họp có kiểm tra optimistic locking nguyên tử.
+     */
+    patch: operations['patch_meeting_api_v1_meetings__meeting_id__patch']
     trace?: never
   }
   '/api/v1/meetings/{meeting_id}/audio': {
@@ -1243,6 +1247,22 @@ export interface components {
       version: number
     }
     /**
+     * MeetingPatch
+     * @description Schema cập nhật thông tin cuộc họp (tiêu đề).
+     */
+    MeetingPatch: {
+      /**
+       * Title
+       * @description Tiêu đề cuộc họp (1-200 ký tự)
+       */
+      title?: string | null
+      /**
+       * Version
+       * @description Phiên bản hiện tại của cuộc họp ở client
+       */
+      version: number
+    }
+    /**
      * SegmentPatch
      * @description Schema cập nhật nội dung hoặc người nói của đoạn transcript.
      */
@@ -1860,6 +1880,60 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  patch_meeting_api_v1_meetings__meeting_id__patch: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description UUID của cuộc họp */
+        meeting_id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['MeetingPatch']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['MeetingDetailOut']
+        }
+      }
+      /** @description Không tìm thấy cuộc họp */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description Xung đột phiên bản version của cuộc họp */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description Dữ liệu không hợp lệ */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
         }
       }
     }
