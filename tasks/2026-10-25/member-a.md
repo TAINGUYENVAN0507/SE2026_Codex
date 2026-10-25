@@ -89,7 +89,7 @@ PR #24 đã được merge (`fe6e8e0`).
 ## Cuối ngày
 
 - [x] Tick các ô ở trên và ghi hash. Cập nhật `docs/frontend/` (FE-15, FE-16).
-- [ ] Push `vantuong`, mở PR vào `main`. **Không tự merge.**
+- [x] Push `vantuong`, mở [PR #29](https://github.com/TAINGUYENVAN0507/SE2026_Codex/pull/29) vào `main`. **Không tự merge.**
 
 Kiểm tra local: backend Ruff lint/format, schema drift và 16 test export đạt;
 frontend lint/format/TypeScript, 149 test và build đạt. Browser QA dùng MSW tải
@@ -98,4 +98,5 @@ xuống hợp lệ theo schema. Checklist kèm ảnh ở `docs/demo/ux-checklist
 
 Module export chỉ nhận DTO, không query DB hoặc thay router của B. Endpoint
 export hiện vẫn là stub: B cần review và nối dữ liệu DB vào DTO trước khi
-nghiệm thu export end-to-end với dữ liệu thật. Chưa push hoặc mở PR trong lượt này.
+nghiệm thu export end-to-end với dữ liệu thật. Đã push và mở PR #29, đang chờ
+review; chưa merge. Server QA đã dừng.
