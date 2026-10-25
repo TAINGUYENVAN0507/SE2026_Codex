@@ -27,7 +27,7 @@ Yêu cầu phần cứng và số đo: [`docs/pipeline/AI-16.md`](../../docs/pip
 | `/app/backend/.venv` | backend, `meeting_pipeline` (không có model) | worker loop, `run_job()` |
 | `/app/pipeline/.venv` | pipeline với extra `asr`, `diarize` (faster-whisper, pyannote, torch CPU) | subprocess của từng stage, qua `PIPELINE_PYTHON` |
 
-**Bản `cpu`** bỏ các gói CUDA mà extra `asr` kéo theo trên Linux: cuBLAS, cuDNN, NVRTC (khoảng 1 GB).
+**Bản `cpu`** bỏ các gói CUDA mà extra `asr` kéo theo trên Linux: cuBLAS, cuDNN, NVRTC. Kích thước đo trên CI: bản `cpu` 2.57 GB, bản `cuda` 4.87 GB.
 
 **Volume:**
 - `/models`: cache Hugging Face (`HF_HOME`). Model không nằm trong image.
