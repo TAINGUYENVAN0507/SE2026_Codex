@@ -411,3 +411,159 @@ def test_process_job_stops_when_lease_lost_without_writing_results(
     # Meeting không chuyển sang ready hay failed bởi worker-old
     test_db.refresh(sample_meeting_with_audio)
     assert sample_meeting_with_audio.status != "ready"
+
+
+def test_rt14_regenerate_summary_from_edited_transcript(
+    test_db: Session,
+    sample_meeting_with_audio: Meeting,
+    test_storage: Storage,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """RT-14: Tạo lại tóm tắt từ transcript đã sửa (BE-10).
+
+    1. Chạy với FAKE_SCENARIO=summary_fail -> meeting chuyển partial, transcript đã lưu.
+    2. Người dùng sửa transcript (text, speaker display_name).
+    3. Tạo job retry với from_stage=summarize, chạy FAKE_SCENARIO=ok.
+    4. Meeting chuyển ready, ASR không chạy lại.
+    5. File transcript override chứa text và speaker display_name đã sửa.
+    6. Kiểm tra trường hợp người dùng đã sửa summary: giữ bản của user, cập nhật ai_content.
+    """
+    meeting = sample_meeting_with_audio
+    monkeypatch.setenv("FAKE_SCENARIO", "summary_fail")
+
+    # 1. Chạy lần đầu với lỗi summarize
+    initial_job = enqueue_job(test_db, meeting_id=meeting.id, max_attempts=3)
+    test_db.commit()
+
+    ran_1 = run_worker_once(
+        test_db,
+        storage=test_storage,
+        worker_id="worker-1",
+        backend="fake",
+    )
+    assert ran_1 is True
+
+    test_db.refresh(meeting)
+    assert meeting.status == "partial"
+    test_db.refresh(initial_job)
+    assert initial_job.status == "failed"
+
+    # Transcript đã được persist đầy đủ
+    segments = (
+        test_db.execute(
+            select(Segment).where(Segment.meeting_id == meeting.id).order_by(Segment.idx)
+        )
+        .scalars()
+        .all()
+    )
+    assert len(segments) > 0
+
+    speakers = (
+        test_db.execute(select(Speaker).where(Speaker.meeting_id == meeting.id)).scalars().all()
+    )
+    assert len(speakers) > 0
+
+    # 2. Người dùng chỉnh sửa transcript: sửa text phân đoạn 0 và display_name speaker 0
+    edited_text = "Nội dung phân đoạn đã được người dùng chỉnh sửa cho RT-14."
+    segments[0].text = edited_text
+    edited_speaker_name = "Chị Lan Quản Lý Dự Án"
+    speakers[0].display_name = edited_speaker_name
+    test_db.commit()
+
+    # 3. Retry với from_stage=summarize và kịch bản ok
+    monkeypatch.setenv("FAKE_SCENARIO", "ok")
+    retry_job = enqueue_job(
+        test_db,
+        meeting_id=meeting.id,
+        from_stage="summarize",
+        max_attempts=3,
+    )
+    # Khởi tạo trạng thái các stage trước là succeeded giống như endpoint POST /meetings/{id}/jobs
+    retry_job.stage_status = {
+        "preprocess": "succeeded",
+        "vad": "succeeded",
+        "asr": "succeeded",
+        "diarize": "succeeded",
+        "merge": "succeeded",
+        "summarize": "queued",
+    }
+    test_db.commit()
+
+    ran_2 = run_worker_once(
+        test_db,
+        storage=test_storage,
+        worker_id="worker-2",
+        backend="fake",
+    )
+    assert ran_2 is True
+
+    # 4. Xác minh meeting từ partial -> ready
+    test_db.refresh(meeting)
+    assert meeting.status == "ready"
+    test_db.refresh(retry_job)
+    assert retry_job.status == "succeeded"
+    assert retry_job.stage_status["asr"] == "succeeded"
+    assert retry_job.stage_status["summarize"] == "succeeded"
+
+    # 5. Xác minh file transcript override trên đĩa chứa text và speaker display_name đã sửa
+    override_file = (
+        Path(test_storage.base_dir)
+        / "artifacts"
+        / meeting.id
+        / retry_job.id
+        / "transcript_override.json"
+    )
+    assert override_file.is_file()
+    override_data = json.loads(override_file.read_text(encoding="utf-8"))
+    assert override_data["segments"][0]["text"] == edited_text
+    matched_spk = next(s for s in override_data["speakers"] if s["label"] == speakers[0].label)
+    assert matched_spk["display_name"] == edited_speaker_name
+
+    # Summary đã được lưu trong DB
+    summary = test_db.execute(
+        select(Summary).where(Summary.meeting_id == meeting.id)
+    ).scalar_one_or_none()
+    assert summary is not None
+    assert summary.status == "ready"
+    assert summary.content is not None
+    assert summary.ai_content is not None
+
+    # 6. Kiểm tra trường hợp người dùng đã sửa summary:
+    # Người dùng chỉnh sửa overview của summary
+    user_edited_overview = "Tóm tắt tổng quan đã được biên tập bởi người dùng."
+    summary.content = dict(summary.content)
+    summary.content["overview"] = user_edited_overview
+    test_db.commit()
+
+    # Retry lại summarize lần nữa
+    retry_job_3 = enqueue_job(
+        test_db,
+        meeting_id=meeting.id,
+        from_stage="summarize",
+        max_attempts=3,
+    )
+    retry_job_3.stage_status = {
+        "preprocess": "succeeded",
+        "vad": "succeeded",
+        "asr": "succeeded",
+        "diarize": "succeeded",
+        "merge": "succeeded",
+        "summarize": "queued",
+    }
+    test_db.commit()
+
+    ran_3 = run_worker_once(
+        test_db,
+        storage=test_storage,
+        worker_id="worker-3",
+        backend="fake",
+    )
+    assert ran_3 is True
+
+    test_db.refresh(summary)
+    # Bản của người dùng được bảo toàn
+    assert summary.content["overview"] == user_edited_overview
+    # Bản AI mới được lưu trong ai_content
+    assert summary.ai_content["overview"] != user_edited_overview
+    # Trạng thái thể hiện is_edited = True
+    assert summary.content != summary.ai_content

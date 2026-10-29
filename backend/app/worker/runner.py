@@ -21,13 +21,15 @@ from meeting_pipeline.errors import (
     TransientPipelineError,
 )
 from meeting_pipeline.runner import Stage, overall_progress, run_job
-from meeting_pipeline.schemas import JobSpec
-from sqlalchemy import update
+from meeting_pipeline.schemas import JobSpec, Transcript
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
+from app.db.models.ai_output import AIOutput
 from app.db.models.job import Job
 from app.db.models.meeting import Meeting
+from app.db.models.transcript import Segment, Speaker
 from app.services.storage import Storage
 from app.worker.persister import persist_summary, persist_transcript
 from app.worker.queue import (
@@ -51,6 +53,131 @@ from app.worker.retry import compute_backoff_delay
 logger = logging.getLogger("backend.worker")
 
 PROGRESS_THROTTLE_SEC = 1.0
+
+
+def export_transcript_override(db: Session, meeting: Meeting, workdir: Path) -> Path:
+    """Xuất transcript hiện tại trong DB thành file JSON theo transcript.schema.json.
+
+    Dùng cho stage summarize khi chạy lại từ transcript đã được người dùng chỉnh sửa.
+    """
+    # 1. Lấy thông tin audio, models, diarization_status từ ai_outputs của stage merge
+    ai_output = (
+        db.execute(
+            select(AIOutput)
+            .where(
+                AIOutput.meeting_id == meeting.id,
+                AIOutput.stage == "merge",
+            )
+            .order_by(AIOutput.created_at.desc())
+        )
+        .scalars()
+        .first()
+    )
+
+    merge_payload = ai_output.payload if ai_output and isinstance(ai_output.payload, dict) else {}
+
+    # 2. Lấy danh sách segments và speakers từ DB
+    segments_db = (
+        db.execute(select(Segment).where(Segment.meeting_id == meeting.id).order_by(Segment.idx))
+        .scalars()
+        .all()
+    )
+
+    speakers_db = (
+        db.execute(select(Speaker).where(Speaker.meeting_id == meeting.id)).scalars().all()
+    )
+    speaker_map = {spk.id: spk for spk in speakers_db}
+
+    # Tính duration_sec an toàn
+    max_seg_end = max((seg.end_sec for seg in segments_db), default=0.0)
+    base_duration = float(meeting.duration_sec or 0.0)
+    duration_sec = max(base_duration, max_seg_end + 1.0, 1.0)
+
+    audio_info = merge_payload.get("audio") or {
+        "duration_sec": duration_sec,
+        "sample_rate": 16000,
+        "channels": 1,
+    }
+    if audio_info.get("duration_sec", 0.0) < max_seg_end:
+        audio_info["duration_sec"] = max_seg_end + 1.0
+
+    models_info = merge_payload.get("models") or {
+        "asr": "whisper",
+        "diarization": "pyannote",
+    }
+    diarization_status = merge_payload.get("diarization_status", "ok")
+    warnings_info = merge_payload.get("warnings", [])
+
+    # Tính first_start_sec cho mỗi speaker
+    speaker_first_start: dict[str, float] = {}
+    for seg in segments_db:
+        if seg.speaker_id and seg.speaker_id not in speaker_first_start:
+            speaker_first_start[seg.speaker_id] = seg.start_sec
+
+    # Danh sách speakers kèm display_name
+    speakers_list = []
+    for spk in speakers_db:
+        speakers_list.append(
+            {
+                "label": spk.label,
+                "first_start_sec": speaker_first_start.get(spk.id, 0.0),
+                "display_name": spk.display_name,
+            }
+        )
+
+    # Danh sách segments kèm text và speaker đã sửa
+    segments_list = []
+    for seg in segments_db:
+        spk_obj = speaker_map.get(seg.speaker_id) if seg.speaker_id else None
+        speaker_label = spk_obj.label if spk_obj else None
+
+        flags: list[str] = []
+        if isinstance(seg.flags, dict):
+            flags = list(seg.flags.get("flags", []))
+        elif isinstance(seg.flags, list):
+            flags = list(seg.flags)
+
+        orig_words: list[dict] = []
+        if merge_payload and "segments" in merge_payload:
+            orig_segs = merge_payload["segments"]
+            if 0 <= seg.idx < len(orig_segs) and isinstance(orig_segs[seg.idx], dict):
+                orig_words = orig_segs[seg.idx].get("words", [])
+
+        segments_list.append(
+            {
+                "index": seg.idx,
+                "start_sec": seg.start_sec,
+                "end_sec": seg.end_sec,
+                "speaker_label": speaker_label,
+                "text": seg.text,
+                "confidence": seg.confidence,
+                "flags": flags,
+                "words": orig_words,
+            }
+        )
+
+    # Gắn cờ overlap nếu có đoạn nào chồng lấn để đảm bảo bất biến của schema
+    for prev, cur in zip(segments_list, segments_list[1:], strict=False):
+        if cur["start_sec"] < prev["end_sec"]:
+            if "overlap" not in prev["flags"]:
+                prev["flags"].append("overlap")
+            if "overlap" not in cur["flags"]:
+                cur["flags"].append("overlap")
+
+    transcript_dict = {
+        "schema_version": "1.0",
+        "audio": audio_info,
+        "models": models_info,
+        "diarization_status": diarization_status,
+        "speakers": speakers_list,
+        "segments": segments_list,
+        "warnings": warnings_info,
+    }
+
+    transcript_obj = Transcript.model_validate(transcript_dict)
+    override_path = workdir / "transcript_override.json"
+    override_path.write_text(transcript_obj.model_dump_json(indent=2), encoding="utf-8")
+    return override_path
 
 
 def process_job(
@@ -128,11 +255,17 @@ def process_job(
         except ValueError:
             from_stage_val = None
 
+    transcript_override_path: str | None = None
+    if from_stage_val is Stage.SUMMARIZE:
+        override_file = export_transcript_override(db, meeting, workdir)
+        transcript_override_path = str(override_file.resolve())
+
     spec = JobSpec(
         meeting_id=meeting.id,
         job_id=job.id,
         audio_path=str(audio_file.resolve()),
         from_stage=from_stage_val,
+        transcript_override_path=transcript_override_path,
         num_speakers_hint=meeting.num_speakers_hint,
         meeting_date=meeting.meeting_date,
         language="vi",
@@ -222,7 +355,10 @@ def process_job(
             env=pipeline_env,
         )
 
-        job.stage_status = {k.value: v for k, v in outcome.stage_status.items()}
+        merged_stages = dict(job.stage_status or {})
+        for k, v in outcome.stage_status.items():
+            merged_stages[k.value] = v
+        job.stage_status = merged_stages
         complete_job(db, job, now=get_now())
         meeting.status = "ready"
         meeting.updated_at = get_now()
