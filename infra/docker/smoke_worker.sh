@@ -11,23 +11,35 @@ ffmpeg -hide_banner -version | head -1
 echo "2. venv pipeline có runtime của model"
 "$PIPELINE_PYTHON" -c "
 import ctranslate2, faster_whisper, pyannote.audio, torch
-assert '+cpu' in torch.__version__, torch.__version__
 print('faster-whisper', faster_whisper.__version__, '| pyannote', pyannote.audio.__version__, '| torch', torch.__version__)
 "
 
-echo "2b. bản ${WORKER_VARIANT}: thư viện CUDA và mặc định của ASR"
+echo "2b. bản ${WORKER_VARIANT}: torch, thư viện CUDA và mặc định của ASR"
 if [ "$WORKER_VARIANT" = cuda ]; then
     test "$ASR_DEVICE" = cuda
-    "$PIPELINE_PYTHON" -c "import nvidia.cublas.lib, nvidia.cudnn.lib"
+    "$PIPELINE_PYTHON" -c "
+import importlib.metadata as md
+import torch
+import nvidia.cublas.lib, nvidia.cudnn.lib
+# torch CUDA 12 dùng chung một bản cuDNN 9.x và cuBLAS 12.x với CTranslate2.
+assert torch.version.cuda and torch.version.cuda.startswith('12.'), torch.version.cuda
+assert md.version('nvidia-cudnn-cu12').startswith('9.'), md.version('nvidia-cudnn-cu12')
+assert md.version('nvidia-cublas-cu12').startswith('12.'), md.version('nvidia-cublas-cu12')
+print('torch CUDA', torch.version.cuda, '| cuDNN', md.version('nvidia-cudnn-cu12'), '| cuBLAS', md.version('nvidia-cublas-cu12'))
+"
 else
     test "$ASR_DEVICE" = cpu
     test "$ASR_COMPUTE_TYPE" = int8
+    "$PIPELINE_PYTHON" -c "
+import torch
+assert '+cpu' in torch.__version__, torch.__version__
+"
     if "$PIPELINE_PYTHON" -c "import nvidia.cublas.lib" 2>/dev/null; then
         echo "bản CPU không được có cuBLAS" >&2
         exit 1
     fi
 fi
-echo "ASR_DEVICE=$ASR_DEVICE ASR_COMPUTE_TYPE=$ASR_COMPUTE_TYPE"
+echo "ASR_DEVICE=$ASR_DEVICE ASR_COMPUTE_TYPE=$ASR_COMPUTE_TYPE DIARIZATION_DEVICE=$DIARIZATION_DEVICE"
 
 echo "3. venv backend import được worker, không có runtime của model"
 python -c "

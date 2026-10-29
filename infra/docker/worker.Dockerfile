@@ -7,14 +7,16 @@
 #
 # Hai venv, mỗi venv dựng từ lock của chính nó:
 # - /app/backend/.venv: worker loop (`python -m app.worker.runner`), không có model.
-# - /app/pipeline/.venv: extra `asr` và `diarize` (faster-whisper, pyannote, torch CPU). Worker
-#   chạy subprocess của từng stage bằng interpreter này qua `PIPELINE_PYTHON`.
+# - /app/pipeline/.venv: extra `asr` (faster-whisper) và `diarize` (bản cpu, torch CPU) hoặc
+#   `diarize-gpu` (bản cuda, torch CUDA 12). Worker chạy subprocess của từng stage bằng
+#   interpreter này qua `PIPELINE_PYTHON`.
 #
 # VARIANT=cpu bỏ cuBLAS, cuDNN, NVRTC mà extra `asr` kéo theo trên Linux (image 2.57 GB so với
-# 4.87 GB của bản cuda, đo trên CI ngày 2026-10-25).
+# 8.38 GB của bản cuda có torch CUDA, đo trên CI ngày 2026-10-29).
 # VARIANT=cuda giữ chúng: CTranslate2 nạp thư viện từ wheel `nvidia-*` (`preload_cuda_libs`),
 # nên không cần base image CUDA; host chỉ cần driver NVIDIA và nvidia-container-toolkit
-# (`docker run --gpus all`). Diarization vẫn chạy CPU ở cả hai bản (torch CPU).
+# (`docker run --gpus all`). Bản cuda chạy cả ASR lẫn diarization trên GPU: torch CUDA 12.6 dùng
+# chung cuDNN 9.10 và cuBLAS 12.6 với CTranslate2 (AI-16).
 #
 # Model không nằm trong image: tải vào volume `/models` (HF_HOME) bằng
 # `python -m meeting_pipeline download-models`, hoặc tự tải ở lần chạy đầu.
@@ -40,12 +42,12 @@ COPY --from=ghcr.io/astral-sh/uv:0.11.28 /uv /usr/local/bin/uv
 
 WORKDIR /app
 
-# Gói bỏ qua theo VARIANT, ghi ra file để 2 lần sync bên dưới dùng chung.
+# Đối số của `uv sync` theo VARIANT, ghi ra file để 2 lần sync bên dưới dùng chung.
 RUN case "$VARIANT" in \
-        cpu) printf '%s\n' --no-install-package nvidia-cublas-cu12 \
+        cpu) printf '%s\n' --extra diarize --no-install-package nvidia-cublas-cu12 \
                 --no-install-package nvidia-cudnn-cu12 \
-                --no-install-package nvidia-cuda-nvrtc-cu12 > /app/.uv-skip ;; \
-        cuda) : > /app/.uv-skip ;; \
+                --no-install-package nvidia-cuda-nvrtc-cu12 > /app/.uv-args ;; \
+        cuda) printf '%s\n' --extra diarize-gpu > /app/.uv-args ;; \
         *) echo "VARIANT phải là cpu hoặc cuda, nhận: $VARIANT" >&2; exit 1 ;; \
     esac
 
@@ -53,8 +55,8 @@ RUN case "$VARIANT" in \
 COPY pipeline/pyproject.toml pipeline/uv.lock pipeline/README.md pipeline/
 # hadolint ignore=SC2046
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv --directory pipeline sync --locked --no-dev --extra asr --extra diarize \
-        --no-install-project $(cat /app/.uv-skip)
+    uv --directory pipeline sync --locked --no-dev --extra asr \
+        --no-install-project $(cat /app/.uv-args)
 
 COPY backend/pyproject.toml backend/uv.lock backend/README.md backend/
 RUN --mount=type=cache,target=/root/.cache/uv \
@@ -66,8 +68,8 @@ COPY backend/ backend/
 COPY --chmod=0755 infra/docker/worker-entrypoint.sh /usr/local/bin/worker-entrypoint
 # hadolint ignore=SC2046
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv --directory pipeline sync --locked --no-dev --extra asr --extra diarize \
-        $(cat /app/.uv-skip) \
+    uv --directory pipeline sync --locked --no-dev --extra asr \
+        $(cat /app/.uv-args) \
     && uv --directory backend sync --locked --no-dev
 
 RUN useradd --create-home --uid 10001 app \
@@ -79,7 +81,7 @@ ENV PATH="/app/backend/.venv/bin:${PATH}" \
     WORKER_VARIANT=${VARIANT} \
     PIPELINE_PYTHON=/app/pipeline/.venv/bin/python \
     PIPELINE_BACKEND=real \
-    DIARIZATION_DEVICE=cpu \
+    DIARIZATION_DEVICE=auto \
     HF_HOME=/models/huggingface
 
 USER app

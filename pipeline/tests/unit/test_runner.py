@@ -317,7 +317,7 @@ def test_cancel_during_diarize_never_falls_back(job_spec, tmp_path):
 def test_timeout_scales_with_duration():
     policy = TimeoutPolicy()
     assert policy.timeout_for(Stage.ASR, 600) == 300 + 2.0 * 600
-    assert policy.timeout_for(Stage.PREPROCESS, None) == 120 + 0.2 * 3600
+    assert policy.timeout_for(Stage.PREPROCESS, None) == 120 + 0.05 * 3600
 
 
 def test_overall_progress_weights():
