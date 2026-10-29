@@ -170,7 +170,28 @@ def auto_auth_for_contract_tests(monkeypatch: pytest.MonkeyPatch, request: pytes
         status="ready",
         version=1,
     )
-    session.add_all([meeting_ready, meeting_1, meeting_pending, meeting_disabled])
+    active_meeting = Meeting(
+        id="active-meeting-1",
+        owner_id=fake_user.id,
+        title="Họp active",
+        source="upload",
+        status="processing",
+        version=1,
+    )
+    active_job = Job(
+        id="active-job-1",
+        meeting_id="active-meeting-1",
+        status="running",
+        stage="asr",
+        from_stage=None,
+        progress=0.5,
+        stage_status={"preprocess": "succeeded", "vad": "succeeded", "asr": "running"},
+        attempt=1,
+        max_attempts=3,
+    )
+    session.add_all(
+        [meeting_ready, meeting_1, meeting_pending, meeting_disabled, active_meeting, active_job]
+    )
 
     summary_disabled = Summary(
         id="summary-disabled-1",
