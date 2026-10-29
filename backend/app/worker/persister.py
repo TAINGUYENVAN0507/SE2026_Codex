@@ -290,9 +290,16 @@ def persist_summary(
     ).scalar_one_or_none()
 
     if existing_summary is not None:
+        user_has_edited = False
+        if existing_summary.content is not None and existing_summary.ai_content is not None:
+            user_has_edited = existing_summary.content != existing_summary.ai_content
+        elif existing_summary.content is not None and existing_summary.ai_content is None:
+            user_has_edited = True
+
         existing_summary.status = summary_output.status
-        existing_summary.content = content_dict
         existing_summary.ai_content = content_dict
+        if not user_has_edited:
+            existing_summary.content = content_dict
         existing_summary.model = summary_output.model
         existing_summary.prompt_version = summary_output.prompt_version
         existing_summary.updated_at = now
@@ -310,6 +317,21 @@ def persist_summary(
             updated_at=now,
         )
         db.add(new_summary)
+
+    # Xóa các action item AI cũ chưa bị người dùng chỉnh sửa
+    old_ai_items = (
+        db.execute(
+            select(ActionItem).where(
+                ActionItem.meeting_id == meeting_id,
+                ActionItem.source == "ai",
+                ActionItem.version == 1,
+            )
+        )
+        .scalars()
+        .all()
+    )
+    for old_item in old_ai_items:
+        db.delete(old_item)
 
     # Ghi action items
     for item in summary_output.action_items:

@@ -23,6 +23,7 @@ from app.db.models.user import User
 from app.worker.queue import JobStatus
 from app.worker.reaper import (
     DEFAULT_LEASE_SEC,
+    LeaseLostError,
     heartbeat_job,
     reap_expired_jobs,
     release_job_on_sigterm,
@@ -219,3 +220,82 @@ def test_heartbeat_extends_lease(
     test_db.refresh(job)
     assert job.heartbeat_at.replace(tzinfo=UTC) == hb_time
     assert job.locked_until.replace(tzinfo=UTC) == hb_time + timedelta(seconds=DEFAULT_LEASE_SEC)
+
+
+def test_heartbeat_raises_lease_lost_when_reaped_to_queued(
+    test_db: Session,
+    sample_meeting: Meeting,
+) -> None:
+    """BE-08: Khi reaper đã thu hồi job về queued, heartbeat ném LeaseLostError."""
+    base_time = datetime(2026, 10, 24, 10, 0, 0, tzinfo=UTC)
+
+    job = Job(
+        id=str(uuid.uuid4()),
+        meeting_id=sample_meeting.id,
+        status=JobStatus.RUNNING.value,
+        attempt=1,
+        max_attempts=3,
+        locked_by="worker-1",
+        locked_until=base_time + timedelta(seconds=DEFAULT_LEASE_SEC),
+        heartbeat_at=base_time,
+        created_at=base_time,
+        updated_at=base_time,
+    )
+    test_db.add(job)
+    test_db.commit()
+
+    # Reaper thu hồi job về queued vì hết lease
+    clock_expired = base_time + timedelta(seconds=65)
+    reaped = reap_expired_jobs(test_db, now=clock_expired)
+    assert len(reaped) == 1
+
+    # Worker-1 kết nối lại và cố gửi heartbeat -> ném LeaseLostError
+    with pytest.raises(LeaseLostError, match="lease was lost"):
+        heartbeat_job(test_db, job, now=clock_expired + timedelta(seconds=5), worker_id="worker-1")
+
+    # Đảm bảo DB không bị ghi đè: job vẫn ở trạng thái queued và locked_by=None
+    test_db.refresh(job)
+    assert job.status == JobStatus.QUEUED.value
+    assert job.locked_by is None
+    assert job.locked_until is None
+
+
+def test_heartbeat_raises_lease_lost_when_claimed_by_another_worker(
+    test_db: Session,
+    sample_meeting: Meeting,
+) -> None:
+    """BE-08: Khi worker khác đã claim job, heartbeat của worker cũ ném LeaseLostError."""
+    base_time = datetime(2026, 10, 24, 10, 0, 0, tzinfo=UTC)
+
+    job = Job(
+        id=str(uuid.uuid4()),
+        meeting_id=sample_meeting.id,
+        status=JobStatus.RUNNING.value,
+        attempt=1,
+        max_attempts=3,
+        locked_by="worker-1",
+        locked_until=base_time + timedelta(seconds=DEFAULT_LEASE_SEC),
+        heartbeat_at=base_time,
+        created_at=base_time,
+        updated_at=base_time,
+    )
+    test_db.add(job)
+    test_db.commit()
+
+    # Reaper thu hồi job về queued
+    reap_expired_jobs(test_db, now=base_time + timedelta(seconds=65))
+
+    # Worker-2 claim job này
+    job.status = JobStatus.RUNNING.value
+    job.locked_by = "worker-2"
+    job.locked_until = base_time + timedelta(seconds=125)
+    test_db.commit()
+
+    # Worker-1 gửi heartbeat với danh tính worker-1 -> ném LeaseLostError
+    with pytest.raises(LeaseLostError, match="lease was lost"):
+        heartbeat_job(test_db, job, now=base_time + timedelta(seconds=70), worker_id="worker-1")
+
+    # Đảm bảo khóa của worker-2 không bị worker-1 ghi đè
+    test_db.refresh(job)
+    assert job.locked_by == "worker-2"
+    assert job.locked_until.replace(tzinfo=UTC) == base_time + timedelta(seconds=125)

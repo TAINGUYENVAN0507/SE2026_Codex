@@ -160,15 +160,23 @@ export interface paths {
     }
     /**
      * Lấy chi tiết cuộc họp
-     * @description Trả về chi tiết cuộc họp (stub contract v0 phục vụ phát triển frontend).
+     * @description Trả về chi tiết cuộc họp từ cơ sở dữ liệu.
      */
     get: operations['get_meeting_api_v1_meetings__meeting_id__get']
     put?: never
     post?: never
-    delete?: never
+    /**
+     * Xóa cuộc họp
+     * @description Xóa cuộc họp cùng file audio, artifacts và toàn bộ dữ liệu liên quan.
+     */
+    delete: operations['delete_meeting_api_v1_meetings__meeting_id__delete']
     options?: never
     head?: never
-    patch?: never
+    /**
+     * Chỉnh sửa thông tin cuộc họp (tiêu đề)
+     * @description Chỉnh sửa tiêu đề cuộc họp có kiểm tra optimistic locking nguyên tử.
+     */
+    patch: operations['patch_meeting_api_v1_meetings__meeting_id__patch']
     trace?: never
   }
   '/api/v1/meetings/{meeting_id}/audio': {
@@ -200,7 +208,7 @@ export interface paths {
     }
     /**
      * Lấy transcript của cuộc họp
-     * @description Trả về dữ liệu transcript của cuộc họp (trạng thái pending trả về segments rỗng).
+     * @description Trả về dữ liệu transcript của cuộc họp từ cơ sở dữ liệu.
      */
     get: operations['get_meeting_transcript_api_v1_meetings__meeting_id__transcript_get']
     put?: never
@@ -260,7 +268,7 @@ export interface paths {
     }
     /**
      * Lấy tóm tắt cuộc họp
-     * @description Lấy thông tin tóm tắt cuộc họp (stub contract v0).
+     * @description Lấy thông tin tóm tắt cuộc họp từ cơ sở dữ liệu.
      */
     get: operations['get_meeting_summary_api_v1_meetings__meeting_id__summary_get']
     /**
@@ -392,7 +400,7 @@ export interface paths {
     }
     /**
      * Lấy trạng thái tiến trình xử lý
-     * @description Trả về trạng thái tiến trình job (stub contract v0).
+     * @description Trả về trạng thái tiến trình job từ cơ sở dữ liệu.
      */
     get: operations['get_job_api_v1_jobs__job_id__get']
     put?: never
@@ -1243,6 +1251,22 @@ export interface components {
       version: number
     }
     /**
+     * MeetingPatch
+     * @description Schema cập nhật thông tin cuộc họp (tiêu đề).
+     */
+    MeetingPatch: {
+      /**
+       * Title
+       * @description Tiêu đề cuộc họp (1-200 ký tự)
+       */
+      title?: string | null
+      /**
+       * Version
+       * @description Phiên bản hiện tại của cuộc họp ở client
+       */
+      version: number
+    }
+    /**
      * SegmentPatch
      * @description Schema cập nhật nội dung hoặc người nói của đoạn transcript.
      */
@@ -1864,6 +1888,99 @@ export interface operations {
       }
     }
   }
+  delete_meeting_api_v1_meetings__meeting_id__delete: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description UUID của cuộc họp cần xóa */
+        meeting_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Cuộc họp đã được xóa thành công */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Không tìm thấy cuộc họp */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  patch_meeting_api_v1_meetings__meeting_id__patch: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description UUID của cuộc họp */
+        meeting_id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['MeetingPatch']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['MeetingDetailOut']
+        }
+      }
+      /** @description Không tìm thấy cuộc họp */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description Xung đột phiên bản version của cuộc họp */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description Dữ liệu không hợp lệ */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+    }
+  }
   get_meeting_audio_api_v1_meetings__meeting_id__audio_get: {
     parameters: {
       query?: never
@@ -2435,6 +2552,10 @@ export interface operations {
         page?: number
         /** @description Kích thước trang */
         page_size?: number
+        /** @description Số bản ghi tối đa */
+        limit?: number | null
+        /** @description Vị trí bắt đầu */
+        offset?: number | null
       }
       header?: never
       path: {

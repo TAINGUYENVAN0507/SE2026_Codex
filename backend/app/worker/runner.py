@@ -9,6 +9,7 @@ Tuân thủ nghiêm ngặt ranh giới module:
 
 import logging
 import os
+import shutil
 import time
 from collections.abc import Callable, Mapping
 from datetime import UTC, datetime, timedelta
@@ -21,12 +22,15 @@ from meeting_pipeline.errors import (
     TransientPipelineError,
 )
 from meeting_pipeline.runner import Stage, overall_progress, run_job
-from meeting_pipeline.schemas import JobSpec
+from meeting_pipeline.schemas import JobSpec, Transcript
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
+from app.db.models.ai_output import AIOutput
 from app.db.models.job import Job
 from app.db.models.meeting import Meeting
+from app.db.models.transcript import Segment, Speaker
 from app.services.storage import Storage
 from app.worker.persister import persist_summary, persist_transcript
 from app.worker.queue import (
@@ -40,6 +44,7 @@ from app.worker.queue import (
 from app.worker.reaper import (
     DEFAULT_LEASE_SEC,
     DEFAULT_REAPER_INTERVAL_SEC,
+    LeaseLostError,
     heartbeat_job,
     reap_expired_jobs,
     release_job_on_sigterm,
@@ -49,6 +54,131 @@ from app.worker.retry import compute_backoff_delay
 logger = logging.getLogger("backend.worker")
 
 PROGRESS_THROTTLE_SEC = 1.0
+
+
+def export_transcript_override(db: Session, meeting: Meeting, workdir: Path) -> Path:
+    """Xuất transcript hiện tại trong DB thành file JSON theo transcript.schema.json.
+
+    Dùng cho stage summarize khi chạy lại từ transcript đã được người dùng chỉnh sửa.
+    """
+    # 1. Lấy thông tin audio, models, diarization_status từ ai_outputs của stage merge
+    ai_output = (
+        db.execute(
+            select(AIOutput)
+            .where(
+                AIOutput.meeting_id == meeting.id,
+                AIOutput.stage == "merge",
+            )
+            .order_by(AIOutput.created_at.desc())
+        )
+        .scalars()
+        .first()
+    )
+
+    merge_payload = ai_output.payload if ai_output and isinstance(ai_output.payload, dict) else {}
+
+    # 2. Lấy danh sách segments và speakers từ DB
+    segments_db = (
+        db.execute(select(Segment).where(Segment.meeting_id == meeting.id).order_by(Segment.idx))
+        .scalars()
+        .all()
+    )
+
+    speakers_db = (
+        db.execute(select(Speaker).where(Speaker.meeting_id == meeting.id)).scalars().all()
+    )
+    speaker_map = {spk.id: spk for spk in speakers_db}
+
+    # Tính duration_sec an toàn
+    max_seg_end = max((seg.end_sec for seg in segments_db), default=0.0)
+    base_duration = float(meeting.duration_sec or 0.0)
+    duration_sec = max(base_duration, max_seg_end + 1.0, 1.0)
+
+    audio_info = merge_payload.get("audio") or {
+        "duration_sec": duration_sec,
+        "sample_rate": 16000,
+        "channels": 1,
+    }
+    if audio_info.get("duration_sec", 0.0) < max_seg_end:
+        audio_info["duration_sec"] = max_seg_end + 1.0
+
+    models_info = merge_payload.get("models") or {
+        "asr": "whisper",
+        "diarization": "pyannote",
+    }
+    diarization_status = merge_payload.get("diarization_status", "ok")
+    warnings_info = merge_payload.get("warnings", [])
+
+    # Tính first_start_sec cho mỗi speaker
+    speaker_first_start: dict[str, float] = {}
+    for seg in segments_db:
+        if seg.speaker_id and seg.speaker_id not in speaker_first_start:
+            speaker_first_start[seg.speaker_id] = seg.start_sec
+
+    # Danh sách speakers kèm display_name
+    speakers_list = []
+    for spk in speakers_db:
+        speakers_list.append(
+            {
+                "label": spk.label,
+                "first_start_sec": speaker_first_start.get(spk.id, 0.0),
+                "display_name": spk.display_name,
+            }
+        )
+
+    # Danh sách segments kèm text và speaker đã sửa
+    segments_list = []
+    for seg in segments_db:
+        spk_obj = speaker_map.get(seg.speaker_id) if seg.speaker_id else None
+        speaker_label = spk_obj.label if spk_obj else None
+
+        flags: list[str] = []
+        if isinstance(seg.flags, dict):
+            flags = list(seg.flags.get("flags", []))
+        elif isinstance(seg.flags, list):
+            flags = list(seg.flags)
+
+        orig_words: list[dict] = []
+        if merge_payload and "segments" in merge_payload:
+            orig_segs = merge_payload["segments"]
+            if 0 <= seg.idx < len(orig_segs) and isinstance(orig_segs[seg.idx], dict):
+                orig_words = orig_segs[seg.idx].get("words", [])
+
+        segments_list.append(
+            {
+                "index": seg.idx,
+                "start_sec": seg.start_sec,
+                "end_sec": seg.end_sec,
+                "speaker_label": speaker_label,
+                "text": seg.text,
+                "confidence": seg.confidence,
+                "flags": flags,
+                "words": orig_words,
+            }
+        )
+
+    # Gắn cờ overlap nếu có đoạn nào chồng lấn để đảm bảo bất biến của schema
+    for prev, cur in zip(segments_list, segments_list[1:], strict=False):
+        if cur["start_sec"] < prev["end_sec"]:
+            if "overlap" not in prev["flags"]:
+                prev["flags"].append("overlap")
+            if "overlap" not in cur["flags"]:
+                cur["flags"].append("overlap")
+
+    transcript_dict = {
+        "schema_version": "1.0",
+        "audio": audio_info,
+        "models": models_info,
+        "diarization_status": diarization_status,
+        "speakers": speakers_list,
+        "segments": segments_list,
+        "warnings": warnings_info,
+    }
+
+    transcript_obj = Transcript.model_validate(transcript_dict)
+    override_path = workdir / "transcript_override.json"
+    override_path.write_text(transcript_obj.model_dump_json(indent=2), encoding="utf-8")
+    return override_path
 
 
 def process_job(
@@ -73,13 +203,42 @@ def process_job(
             return now
         return datetime.now(UTC)
 
+    last_cancel_db_check = 0.0
+    cached_db_cancelled = False
+
     def check_cancelled() -> bool:
+        nonlocal last_cancel_db_check, cached_db_cancelled
+        if cached_db_cancelled:
+            return True
         if sigterm_check and sigterm_check():
             return True
-        return bool(is_cancelled and is_cancelled())
+        if is_cancelled and is_cancelled():
+            return True
+
+        now_m = time.monotonic()
+        if now_m - last_cancel_db_check >= 1.0:
+            last_cancel_db_check = now_m
+            try:
+                cur_status = db.execute(
+                    select(Job.status).where(Job.id == job.id)
+                ).scalar_one_or_none()
+                if cur_status is None or cur_status == JobStatus.CANCELLED.value:
+                    cached_db_cancelled = True
+                    return True
+            except Exception:
+                pass
+        return False
+
+    current_worker_id = job.locked_by
 
     def handle_heartbeat() -> None:
-        heartbeat_job(db, job, lease_duration_sec=DEFAULT_LEASE_SEC, now=get_now())
+        heartbeat_job(
+            db,
+            job,
+            lease_duration_sec=DEFAULT_LEASE_SEC,
+            now=get_now(),
+            worker_id=current_worker_id,
+        )
 
     meeting = db.get(Meeting, job.meeting_id)
     if meeting is None:
@@ -118,11 +277,17 @@ def process_job(
         except ValueError:
             from_stage_val = None
 
+    transcript_override_path: str | None = None
+    if from_stage_val is Stage.SUMMARIZE:
+        override_file = export_transcript_override(db, meeting, workdir)
+        transcript_override_path = str(override_file.resolve())
+
     spec = JobSpec(
         meeting_id=meeting.id,
         job_id=job.id,
         audio_path=str(audio_file.resolve()),
         from_stage=from_stage_val,
+        transcript_override_path=transcript_override_path,
         num_speakers_hint=meeting.num_speakers_hint,
         meeting_date=meeting.meeting_date,
         language="vi",
@@ -143,18 +308,42 @@ def process_job(
         # Throttling: chỉ ghi DB tối đa 1 lần mỗi giây hoặc khi stage hoàn thành (value=1.0)
         if (now_ts - last_db_update >= PROGRESS_THROTTLE_SEC) or value >= 1.0:
             calc_progress = overall_progress(stage, value)
-            job.stage = stage.value
-            job.progress = calc_progress
-
             stages = dict(job.stage_status or {})
             stages[stage.value] = "running" if value < 1.0 else "succeeded"
-            job.stage_status = stages
 
             cur_time = get_now()
+            res = db.execute(
+                update(Job)
+                .where(
+                    Job.id == job.id,
+                    Job.status == JobStatus.RUNNING.value,
+                    Job.locked_by == current_worker_id,
+                )
+                .values(
+                    stage=stage.value,
+                    progress=calc_progress,
+                    stage_status=stages,
+                    heartbeat_at=cur_time,
+                    locked_until=cur_time + timedelta(seconds=DEFAULT_LEASE_SEC),
+                    updated_at=cur_time,
+                )
+            )
+            if res.rowcount == 0:
+                db.rollback()
+                logger.warning(
+                    "Job %s đã mất lease khi cập nhật tiến độ (worker=%s). Dừng job.",
+                    job.id,
+                    current_worker_id,
+                )
+                raise LeaseLostError(f"Lease for job {job.id} was lost during progress update")
+
+            db.commit()
+            job.stage = stage.value
+            job.progress = calc_progress
+            job.stage_status = stages
             job.heartbeat_at = cur_time
             job.locked_until = cur_time + timedelta(seconds=DEFAULT_LEASE_SEC)
             job.updated_at = cur_time
-            db.commit()
             last_db_update = now_ts
 
     def handle_stage_done(stage: Stage, artifact_file: Path) -> None:
@@ -188,7 +377,10 @@ def process_job(
             env=pipeline_env,
         )
 
-        job.stage_status = {k.value: v for k, v in outcome.stage_status.items()}
+        merged_stages = dict(job.stage_status or {})
+        for k, v in outcome.stage_status.items():
+            merged_stages[k.value] = v
+        job.stage_status = merged_stages
         complete_job(db, job, now=get_now())
         meeting.status = "ready"
         meeting.updated_at = get_now()
@@ -239,14 +431,29 @@ def process_job(
             meeting.updated_at = current_time
             db.commit()
 
+    except LeaseLostError as err:
+        logger.warning(
+            "Worker đã mất lease cho job %s (worker=%s): %s. "
+            "Dừng xử lý mà không ghi kết quả hay đổi trạng thái.",
+            job.id,
+            current_worker_id,
+            err,
+        )
+        return job
+
     except PipelineCancelledError:
         if sigterm_check and sigterm_check():
             logger.info("Worker nhận SIGTERM: giải phóng job %s về queued", job.id)
             release_job_on_sigterm(db, job, now=get_now())
         else:
             logger.info("Job %s đã bị hủy", job.id)
-            transition_job_status(job, JobStatus.CANCELLED, now=get_now())
-            db.commit()
+            existing_job = db.execute(select(Job).where(Job.id == job.id)).scalar_one_or_none()
+            if existing_job is not None:
+                transition_job_status(existing_job, JobStatus.CANCELLED, now=get_now())
+                db.commit()
+            job.status = JobStatus.CANCELLED.value
+            if workdir.exists():
+                shutil.rmtree(workdir, ignore_errors=True)
 
     except PipelineError as err:
         logger.error("Job %s gặp lỗi pipeline: %s", job.id, err)

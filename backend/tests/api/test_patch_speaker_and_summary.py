@@ -480,3 +480,90 @@ def test_put_summary_not_found_404(
 
     assert res.status_code == 404
     assert res.json()["error"]["code"] in ("MEETING_NOT_FOUND", "NOT_FOUND")
+
+
+def test_atomic_optimistic_locking_speaker_concurrent(
+    test_db: Session, users: dict[str, User], sample_data: dict[str, object]
+) -> None:
+    """Hai request sửa speaker đồng thời với cùng version=1:
+    - 1 request thành công 200, version=2
+    - 1 request thất bại 409, current version=2
+    - Chỉ có 1 edit event được ghi
+    """
+    owner = users["owner"]
+    meeting = sample_data["meeting"]
+    spk1 = sample_data["spk1"]
+    client = make_client_for_user(owner, test_db)
+    url = f"/api/v1/meetings/{meeting.id}/speakers/{spk1.id}"
+
+    res1 = client.patch(url, json={"display_name": "Tên Mới 1", "version": 1})
+    assert res1.status_code == 200
+    assert res1.json()["version"] == 2
+
+    res2 = client.patch(url, json={"display_name": "Tên Mới 2", "version": 1})
+    assert res2.status_code == 409
+    assert res2.json()["error"]["code"] == "VERSION_CONFLICT"
+    assert res2.json()["error"]["details"]["current"]["version"] == 2
+
+    events = (
+        test_db.execute(
+            select(EditEvent).where(
+                EditEvent.meeting_id == meeting.id,
+                EditEvent.entity_type == "speaker",
+                EditEvent.entity_id == spk1.id,
+            )
+        )
+        .scalars()
+        .all()
+    )
+    assert len(events) == 1
+    assert events[0].entity_version_after == 2
+
+
+def test_atomic_optimistic_locking_summary_concurrent(
+    test_db: Session, users: dict[str, User], sample_data: dict[str, object]
+) -> None:
+    """Hai request sửa summary đồng thời với cùng version=1:
+    - 1 request thành công 200, version=2
+    - 1 request thất bại 409, current version=2
+    - Chỉ có 1 edit event được ghi
+    """
+    owner = users["owner"]
+    meeting = sample_data["meeting"]
+    summary = sample_data["summary"]
+    client = make_client_for_user(owner, test_db)
+    url = f"/api/v1/meetings/{meeting.id}/summary"
+
+    c1 = {
+        "overview": "Tóm tắt lần 1",
+        "key_points": [{"text": "Ý 1", "evidence_segment_ids": []}],
+        "decisions": [{"text": "Quyết định 1", "evidence_segment_ids": []}],
+    }
+    c2 = {
+        "overview": "Tóm tắt lần 2",
+        "key_points": [{"text": "Ý 2", "evidence_segment_ids": []}],
+        "decisions": [{"text": "Quyết định 2", "evidence_segment_ids": []}],
+    }
+
+    res1 = client.put(url, json={"content": c1, "version": 1})
+    assert res1.status_code == 200
+    assert res1.json()["version"] == 2
+
+    res2 = client.put(url, json={"content": c2, "version": 1})
+    assert res2.status_code == 409
+    assert res2.json()["error"]["code"] == "VERSION_CONFLICT"
+    assert res2.json()["error"]["details"]["current"]["version"] == 2
+
+    events = (
+        test_db.execute(
+            select(EditEvent).where(
+                EditEvent.meeting_id == meeting.id,
+                EditEvent.entity_type == "summary",
+                EditEvent.entity_id == summary.id,
+            )
+        )
+        .scalars()
+        .all()
+    )
+    assert len(events) == 1
+    assert events[0].entity_version_after == 2

@@ -112,3 +112,17 @@ class MeetingCreateOut(BaseModel):
     job: JobOut = Field(..., description="Thông tin job xử lý được tạo đồng thời")
 
     model_config = ConfigDict(extra="forbid")
+
+
+class MeetingPatch(BaseModel):
+    """Schema cập nhật thông tin cuộc họp (tiêu đề)."""
+
+    title: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=200,
+        description="Tiêu đề cuộc họp (1-200 ký tự)",
+    )
+    version: int = Field(..., ge=1, description="Phiên bản hiện tại của cuộc họp ở client")
+
+    model_config = ConfigDict(extra="forbid")

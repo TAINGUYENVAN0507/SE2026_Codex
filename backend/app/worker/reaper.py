@@ -15,7 +15,7 @@ Quy ước:
 import logging
 from datetime import UTC, datetime, timedelta
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from app.db.models.job import Job
@@ -28,18 +28,58 @@ DEFAULT_HEARTBEAT_SEC = 15
 DEFAULT_REAPER_INTERVAL_SEC = 30
 
 
+class LeaseLostError(RuntimeError):
+    """Ngoại lệ khi worker bị mất lease (reaper thu hồi hoặc worker khác claim)."""
+
+    pass
+
+
 def heartbeat_job(
     db: Session,
     job: Job,
     lease_duration_sec: int = DEFAULT_LEASE_SEC,
     now: datetime | None = None,
+    worker_id: str | None = None,
 ) -> None:
-    """Cập nhật heartbeat cho job đang chạy và gia hạn thời hạn lease."""
+    """Cập nhật heartbeat cho job đang chạy và gia hạn thời hạn lease.
+
+    Chỉ gia hạn nếu job đang 'running' và thuộc về worker này (locked_by).
+    Nếu mất lease (rowcount == 0), ném LeaseLostError để dừng job ngay lập tức.
+    """
     current_time = now or datetime.now(UTC)
-    job.heartbeat_at = current_time
-    job.locked_until = current_time + timedelta(seconds=lease_duration_sec)
-    job.updated_at = current_time
+    worker = worker_id if worker_id is not None else job.locked_by
+
+    new_locked_until = current_time + timedelta(seconds=lease_duration_sec)
+
+    stmt = (
+        update(Job)
+        .where(
+            Job.id == job.id,
+            Job.status == JobStatus.RUNNING.value,
+            Job.locked_by == worker,
+        )
+        .values(
+            heartbeat_at=current_time,
+            locked_until=new_locked_until,
+            updated_at=current_time,
+        )
+    )
+    res = db.execute(stmt)
+    if res.rowcount == 0:
+        db.rollback()
+        logger.warning(
+            "Job %s đã mất lease (locked_by=%s). Ném LeaseLostError để dừng job.",
+            job.id,
+            worker,
+        )
+        raise LeaseLostError(
+            f"Job {job.id} lease was lost: not in running state or locked_by != {worker}"
+        )
+
     db.commit()
+    job.heartbeat_at = current_time
+    job.locked_until = new_locked_until
+    job.updated_at = current_time
 
 
 def reap_expired_jobs(

@@ -135,4 +135,5 @@ class Meeting(Base):
         "EditEvent",
         back_populates="meeting",
         cascade="all, delete-orphan",
+        passive_deletes=True,
     )
