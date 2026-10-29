@@ -162,7 +162,25 @@ def auto_auth_for_contract_tests(monkeypatch: pytest.MonkeyPatch, request: pytes
         status="queued",
         version=1,
     )
-    session.add_all([meeting_ready, meeting_1, meeting_pending])
+    meeting_disabled = Meeting(
+        id="meeting-disabled-1",
+        owner_id=fake_user.id,
+        title="Họp disabled",
+        source="upload",
+        status="ready",
+        version=1,
+    )
+    session.add_all([meeting_ready, meeting_1, meeting_pending, meeting_disabled])
+
+    summary_disabled = Summary(
+        id="summary-disabled-1",
+        meeting_id="meeting-disabled-1",
+        status="disabled",
+        content=None,
+        ai_content=None,
+        version=1,
+    )
+    session.add(summary_disabled)
 
     spk_lan = Speaker(
         id="2c7a9d10-a1b2-4c3d-8e4f-5a6b7c8d9e0f",

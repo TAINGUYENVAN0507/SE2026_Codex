@@ -1,4 +1,3 @@
-import json
 import uuid
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -51,7 +50,7 @@ from app.schemas.meeting import (
     MeetingStatus,
     SpeakerOut,
 )
-from app.schemas.summary import SummaryOut, SummaryUpdate
+from app.schemas.summary import SummaryContentOut, SummaryOut, SummaryUpdate
 from app.schemas.transcript import (
     SegmentPatch,
     SpeakerPatch,
@@ -68,87 +67,6 @@ router = APIRouter(
     tags=["Meetings"],
     dependencies=[Depends(get_current_user)],
 )
-
-FIXTURES_DIR = Path(__file__).resolve().parents[4] / "contracts" / "fixtures" / "api"
-MEETING_FIXTURE_PATH = FIXTURES_DIR / "meeting_processing.json"
-MEETING_LIST_FIXTURE_PATH = FIXTURES_DIR / "meeting_list.json"
-MEETING_CREATED_FIXTURE_PATH = FIXTURES_DIR / "meeting_created.json"
-
-
-def load_meeting_fixture() -> dict:
-    """Đọc dữ liệu fixture meeting mẫu."""
-    if MEETING_FIXTURE_PATH.is_file():
-        with open(MEETING_FIXTURE_PATH, encoding="utf-8") as f:
-            return json.load(f)
-    # Dữ liệu fallback nếu fixture chưa được gắn kết
-    return {
-        "id": "8f6c2a1e-b2c3-4d4e-8f9a-0b1c2d3e4f5a",
-        "title": "Họp sprint planning tuần 42",
-        "source": "recording",
-        "status": "processing",
-        "language": "vi",
-        "meeting_date": "2026-10-15",
-        "duration_sec": 1834.52,
-        "num_speakers_hint": 3,
-        "audio": {
-            "available": True,
-            "mime_type": "audio/webm",
-            "size_bytes": 11834512,
-            "retention_until": "2026-11-14T08:30:00Z",
-        },
-        "artifacts": {"transcript": "ready", "diarization": "ok", "summary": "pending"},
-        "warnings": [],
-        "latest_job_id": "c1d2e3f4-a5b6-4c7d-8e9f-0a1b2c3d4e5f",
-        "created_at": "2026-10-15T08:30:00Z",
-        "updated_at": "2026-10-15T08:52:10Z",
-        "version": 1,
-    }
-
-
-def load_meeting_list_fixture() -> dict:
-    """Đọc dữ liệu fixture danh sách meeting mẫu."""
-    if MEETING_LIST_FIXTURE_PATH.is_file():
-        with open(MEETING_LIST_FIXTURE_PATH, encoding="utf-8") as f:
-            return json.load(f)
-    return {
-        "items": [load_meeting_fixture()],
-        "page": 1,
-        "page_size": 10,
-        "total": 1,
-    }
-
-
-def load_meeting_created_fixture() -> dict:
-    """Đọc dữ liệu fixture kết quả tạo meeting mẫu."""
-    if MEETING_CREATED_FIXTURE_PATH.is_file():
-        with open(MEETING_CREATED_FIXTURE_PATH, encoding="utf-8") as f:
-            return json.load(f)
-    return {
-        "meeting": load_meeting_fixture(),
-        "job": {
-            "id": "c1d2e3f4-a5b6-4c7d-8e9f-0a1b2c3d4e5f",
-            "meeting_id": "8f6c2a1e-b2c3-4d4e-8f9a-0b1c2d3e4f5a",
-            "status": "queued",
-            "stage": "preprocess",
-            "from_stage": None,
-            "progress": 0.0,
-            "stages": {
-                "preprocess": "queued",
-                "vad": "queued",
-                "asr": "queued",
-                "diarize": "queued",
-                "merge": "queued",
-                "summarize": "queued",
-            },
-            "attempt": 1,
-            "max_attempts": 3,
-            "next_run_at": None,
-            "error": None,
-            "created_at": "2026-10-15T08:30:01Z",
-            "started_at": None,
-            "finished_at": None,
-        },
-    }
 
 
 def serialize_meeting_summary(meeting: Meeting, db: Session) -> MeetingOut:
@@ -550,26 +468,19 @@ def serialize_meeting_detail(meeting: Meeting, db: Session) -> MeetingDetailOut:
     summary="Lấy chi tiết cuộc họp",
 )
 def get_meeting(
-    meeting_id: str = FastApiPath(..., description="UUID của cuộc họp cần lấy thông tin"),
-    current_user: CurrentUser = None,  # type: ignore[assignment]
-    db: Annotated[Session, Depends(get_db)] = None,  # type: ignore[assignment]
+    meeting_id: Annotated[str, FastApiPath(description="UUID của cuộc họp cần lấy thông tin")],
+    current_user: CurrentUser,
+    db: Annotated[Session, Depends(get_db)],
 ) -> MeetingDetailOut:
-    """Trả về chi tiết cuộc họp (stub contract v0 phục vụ phát triển frontend)."""
-    if db is not None and current_user is not None:
-        meeting = db.execute(select(Meeting).where(Meeting.id == meeting_id)).scalar_one_or_none()
-        if not meeting or meeting.owner_id != current_user.id:
-            raise APIError(
-                code="MEETING_NOT_FOUND",
-                message="Không tìm thấy cuộc họp được yêu cầu.",
-                status_code=status.HTTP_404_NOT_FOUND,
-            )
-        return serialize_meeting_detail(meeting, db)
-
-    data = load_meeting_fixture()
-    data["id"] = meeting_id
-    data["latest_job"] = None
-    data["speakers"] = []
-    return MeetingDetailOut.model_validate(data)
+    """Trả về chi tiết cuộc họp từ cơ sở dữ liệu."""
+    meeting = db.execute(select(Meeting).where(Meeting.id == meeting_id)).scalar_one_or_none()
+    if not meeting or meeting.owner_id != current_user.id:
+        raise APIError(
+            code="MEETING_NOT_FOUND",
+            message="Không tìm thấy cuộc họp được yêu cầu.",
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+    return serialize_meeting_detail(meeting, db)
 
 
 @router.patch(
@@ -857,36 +768,6 @@ def get_meeting_audio(
     )
 
 
-TRANSCRIPT_READY_FIXTURE_PATH = FIXTURES_DIR / "transcript_ready.json"
-TRANSCRIPT_PENDING_FIXTURE_PATH = FIXTURES_DIR / "transcript_pending.json"
-
-
-def load_transcript_ready_fixture() -> dict:
-    """Đọc dữ liệu fixture transcript ở trạng thái sẵn sàng."""
-    if TRANSCRIPT_READY_FIXTURE_PATH.is_file():
-        with open(TRANSCRIPT_READY_FIXTURE_PATH, encoding="utf-8") as f:
-            return json.load(f)
-    return {
-        "status": "ready",
-        "diarization_status": "ok",
-        "speakers": [],
-        "segments": [],
-    }
-
-
-def load_transcript_pending_fixture() -> dict:
-    """Đọc dữ liệu fixture transcript ở trạng thái đang xử lý."""
-    if TRANSCRIPT_PENDING_FIXTURE_PATH.is_file():
-        with open(TRANSCRIPT_PENDING_FIXTURE_PATH, encoding="utf-8") as f:
-            return json.load(f)
-    return {
-        "status": "pending",
-        "diarization_status": "pending",
-        "speakers": [],
-        "segments": [],
-    }
-
-
 @router.get(
     "/{meeting_id}/transcript",
     response_model=TranscriptOut,
@@ -897,97 +778,88 @@ def load_transcript_pending_fixture() -> dict:
     summary="Lấy transcript của cuộc họp",
 )
 def get_meeting_transcript(
-    meeting_id: str = FastApiPath(..., description="UUID của cuộc họp"),
-    current_user: CurrentUser = None,  # type: ignore[assignment]
-    db: Annotated[Session, Depends(get_db)] = None,  # type: ignore[assignment]
+    meeting_id: Annotated[str, FastApiPath(description="UUID của cuộc họp")],
+    current_user: CurrentUser,
+    db: Annotated[Session, Depends(get_db)],
 ) -> TranscriptOut:
-    """Trả về dữ liệu transcript của cuộc họp (trạng thái pending trả về segments rỗng)."""
-    if db is not None and current_user is not None:
-        meeting = db.execute(select(Meeting).where(Meeting.id == meeting_id)).scalar_one_or_none()
-        if not meeting or meeting.owner_id != current_user.id:
-            raise APIError(
-                code="MEETING_NOT_FOUND",
-                message="Không tìm thấy cuộc họp được yêu cầu.",
-                status_code=status.HTTP_404_NOT_FOUND,
-            )
-
-        if meeting.status in ("ready", "partial"):
-            speakers = (
-                db.execute(
-                    select(Speaker)
-                    .where(Speaker.meeting_id == meeting.id)
-                    .order_by(Speaker.created_at.asc())
-                )
-                .scalars()
-                .all()
-            )
-
-            segments = (
-                db.execute(
-                    select(Segment)
-                    .where(Segment.meeting_id == meeting.id)
-                    .order_by(Segment.idx.asc())
-                )
-                .scalars()
-                .all()
-            )
-
-            if segments:
-                speakers_out = [
-                    SpeakerOut(
-                        id=spk.id,
-                        meeting_id=spk.meeting_id,
-                        label=spk.label,
-                        default_name=spk.default_name,
-                        display_name=spk.display_name,
-                        is_edited=spk.display_name != spk.default_name,
-                        color_index=idx % 10,
-                        segment_count=0,
-                        speaking_time_sec=0.0,
-                        version=spk.version,
-                    )
-                    for idx, spk in enumerate(speakers)
-                ]
-                segments_out = [
-                    TranscriptSegmentOut(
-                        id=seg.id,
-                        index=seg.idx,
-                        start_sec=seg.start_sec,
-                        end_sec=seg.end_sec,
-                        speaker_id=seg.speaker_id,
-                        ai_speaker_id=seg.ai_speaker_id,
-                        text=seg.text,
-                        ai_text=seg.ai_text,
-                        is_edited=seg.text != seg.ai_text or seg.speaker_id != seg.ai_speaker_id,
-                        confidence=seg.confidence,
-                        flags=list(seg.flags.keys())
-                        if isinstance(seg.flags, dict)
-                        else (list(seg.flags) if isinstance(seg.flags, list) else []),
-                        version=seg.version,
-                        updated_at=seg.updated_at,
-                    )
-                    for seg in segments
-                ]
-                return TranscriptOut(
-                    status="ready",
-                    diarization_status="ok",
-                    speakers=speakers_out,
-                    segments=segments_out,
-                )
-
-        status_val = "failed" if meeting.status == "failed" else "pending"
-        return TranscriptOut(
-            status=status_val,
-            diarization_status=status_val,
-            speakers=[],
-            segments=[],
+    """Trả về dữ liệu transcript của cuộc họp từ cơ sở dữ liệu."""
+    meeting = db.execute(select(Meeting).where(Meeting.id == meeting_id)).scalar_one_or_none()
+    if not meeting or meeting.owner_id != current_user.id:
+        raise APIError(
+            code="MEETING_NOT_FOUND",
+            message="Không tìm thấy cuộc họp được yêu cầu.",
+            status_code=status.HTTP_404_NOT_FOUND,
         )
 
-    if "pending" in meeting_id.lower():
-        data = load_transcript_pending_fixture()
-    else:
-        data = load_transcript_ready_fixture()
-    return TranscriptOut.model_validate(data)
+    if meeting.status in ("ready", "partial"):
+        speakers = (
+            db.execute(
+                select(Speaker)
+                .where(Speaker.meeting_id == meeting.id)
+                .order_by(Speaker.created_at.asc())
+            )
+            .scalars()
+            .all()
+        )
+
+        segments = (
+            db.execute(
+                select(Segment).where(Segment.meeting_id == meeting.id).order_by(Segment.idx.asc())
+            )
+            .scalars()
+            .all()
+        )
+
+        if segments:
+            speakers_out = [
+                SpeakerOut(
+                    id=spk.id,
+                    meeting_id=spk.meeting_id,
+                    label=spk.label,
+                    default_name=spk.default_name,
+                    display_name=spk.display_name,
+                    is_edited=spk.display_name != spk.default_name,
+                    color_index=idx % 10,
+                    segment_count=0,
+                    speaking_time_sec=0.0,
+                    version=spk.version,
+                )
+                for idx, spk in enumerate(speakers)
+            ]
+            segments_out = [
+                TranscriptSegmentOut(
+                    id=seg.id,
+                    index=seg.idx,
+                    start_sec=seg.start_sec,
+                    end_sec=seg.end_sec,
+                    speaker_id=seg.speaker_id,
+                    ai_speaker_id=seg.ai_speaker_id,
+                    text=seg.text,
+                    ai_text=seg.ai_text,
+                    is_edited=seg.text != seg.ai_text or seg.speaker_id != seg.ai_speaker_id,
+                    confidence=seg.confidence,
+                    flags=list(seg.flags.keys())
+                    if isinstance(seg.flags, dict)
+                    else (list(seg.flags) if isinstance(seg.flags, list) else []),
+                    version=seg.version,
+                    updated_at=seg.updated_at,
+                )
+                for seg in segments
+            ]
+            return TranscriptOut(
+                status="ready",
+                diarization_status="ok",
+                speakers=speakers_out,
+                segments=segments_out,
+            )
+
+    status_val = "failed" if meeting.status == "failed" else "pending"
+    return TranscriptOut(
+        status=status_val,
+        diarization_status=status_val,
+        speakers=[],
+        segments=[],
+    )
 
 
 @router.patch(
@@ -1406,55 +1278,6 @@ def patch_meeting_speaker(
     return serialize_speaker(speaker, db, meeting.id)
 
 
-SUMMARY_READY_FIXTURE_PATH = FIXTURES_DIR / "summary_ready.json"
-SUMMARY_DISABLED_FIXTURE_PATH = FIXTURES_DIR / "summary_disabled.json"
-ACTION_ITEMS_FIXTURE_PATH = FIXTURES_DIR / "action_items.json"
-
-
-def load_summary_ready_fixture() -> dict:
-    """Đọc dữ liệu fixture summary ở trạng thái sẵn sàng."""
-    if SUMMARY_READY_FIXTURE_PATH.is_file():
-        with open(SUMMARY_READY_FIXTURE_PATH, encoding="utf-8") as f:
-            return json.load(f)
-    return {
-        "meeting_id": "test-id",
-        "status": "ready",
-        "content": None,
-        "ai_content": None,
-        "is_edited": False,
-        "model": None,
-        "prompt_version": None,
-        "generated_at": None,
-        "version": 1,
-    }
-
-
-def load_summary_disabled_fixture() -> dict:
-    """Đọc dữ liệu fixture summary ở trạng thái disabled."""
-    if SUMMARY_DISABLED_FIXTURE_PATH.is_file():
-        with open(SUMMARY_DISABLED_FIXTURE_PATH, encoding="utf-8") as f:
-            return json.load(f)
-    return {
-        "meeting_id": "test-id",
-        "status": "disabled",
-        "content": None,
-        "ai_content": None,
-        "is_edited": False,
-        "model": None,
-        "prompt_version": None,
-        "generated_at": None,
-        "version": 1,
-    }
-
-
-def load_action_items_fixture() -> dict:
-    """Đọc dữ liệu fixture danh sách action items."""
-    if ACTION_ITEMS_FIXTURE_PATH.is_file():
-        with open(ACTION_ITEMS_FIXTURE_PATH, encoding="utf-8") as f:
-            return json.load(f)
-    return {"items": []}
-
-
 @router.get(
     "/{meeting_id}/summary",
     response_model=SummaryOut,
@@ -1468,15 +1291,59 @@ def load_action_items_fixture() -> dict:
     summary="Lấy tóm tắt cuộc họp",
 )
 def get_meeting_summary(
-    meeting_id: str = FastApiPath(..., description="UUID của cuộc họp"),
+    meeting_id: Annotated[str, FastApiPath(description="UUID của cuộc họp")],
+    current_user: CurrentUser,
+    db: Annotated[Session, Depends(get_db)],
 ) -> SummaryOut:
-    """Lấy thông tin tóm tắt cuộc họp (stub contract v0)."""
-    if "disabled" in meeting_id.lower():
-        data = load_summary_disabled_fixture()
-    else:
-        data = load_summary_ready_fixture()
-    data["meeting_id"] = meeting_id
-    return SummaryOut.model_validate(data)
+    """Lấy thông tin tóm tắt cuộc họp từ cơ sở dữ liệu."""
+    meeting = db.execute(select(Meeting).where(Meeting.id == meeting_id)).scalar_one_or_none()
+    if not meeting or meeting.owner_id != current_user.id:
+        raise APIError(
+            code="MEETING_NOT_FOUND",
+            message="Không tìm thấy cuộc họp được yêu cầu.",
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    summary = db.execute(
+        select(Summary).where(Summary.meeting_id == meeting.id)
+    ).scalar_one_or_none()
+
+    if summary is None:
+        status_val = "failed" if meeting.status == "failed" else "pending"
+        return SummaryOut(
+            meeting_id=meeting.id,
+            status=status_val,
+            content=None,
+            ai_content=None,
+            is_edited=False,
+            model=None,
+            prompt_version=None,
+            generated_at=None,
+            version=1,
+        )
+
+    is_edited = (
+        summary.ai_content is not None
+        and summary.content is not None
+        and summary.content != summary.ai_content
+    )
+
+    content_out = SummaryContentOut.model_validate(summary.content) if summary.content else None
+    ai_content_out = (
+        SummaryContentOut.model_validate(summary.ai_content) if summary.ai_content else None
+    )
+
+    return SummaryOut(
+        meeting_id=meeting.id,
+        status=summary.status,
+        content=content_out,
+        ai_content=ai_content_out,
+        is_edited=is_edited,
+        model=summary.model,
+        prompt_version=summary.prompt_version,
+        generated_at=summary.created_at,
+        version=summary.version,
+    )
 
 
 @router.put(
@@ -2132,23 +1999,8 @@ def delete_meeting_action_item(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-EDITS_FIXTURE_PATH = FIXTURES_DIR / "edits.json"
-JOB_FIXTURE_PATH = FIXTURES_DIR / "job_retry_scheduled.json"
-
-
-def load_edits_fixture() -> dict:
-    """Đọc dữ liệu fixture lịch sử chỉnh sửa."""
-    if EDITS_FIXTURE_PATH.is_file():
-        with open(EDITS_FIXTURE_PATH, encoding="utf-8") as f:
-            return json.load(f)
-    return {"items": [], "total": 0}
-
-
 def load_job_fixture() -> dict:
-    """Đọc dữ liệu fixture job."""
-    if JOB_FIXTURE_PATH.is_file():
-        with open(JOB_FIXTURE_PATH, encoding="utf-8") as f:
-            return json.load(f)
+    """Dữ liệu stub fallback cho job."""
     return {
         "id": "c1d2e3f4-a5b6-4c7d-8e9f-0a1b2c3d4e5f",
         "meeting_id": "8f6c2a1e-b2c3-4d4e-8f9a-0b1c2d3e4f5a",

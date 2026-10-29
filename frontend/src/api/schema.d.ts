@@ -160,7 +160,7 @@ export interface paths {
     }
     /**
      * Lấy chi tiết cuộc họp
-     * @description Trả về chi tiết cuộc họp (stub contract v0 phục vụ phát triển frontend).
+     * @description Trả về chi tiết cuộc họp từ cơ sở dữ liệu.
      */
     get: operations['get_meeting_api_v1_meetings__meeting_id__get']
     put?: never
@@ -204,7 +204,7 @@ export interface paths {
     }
     /**
      * Lấy transcript của cuộc họp
-     * @description Trả về dữ liệu transcript của cuộc họp (trạng thái pending trả về segments rỗng).
+     * @description Trả về dữ liệu transcript của cuộc họp từ cơ sở dữ liệu.
      */
     get: operations['get_meeting_transcript_api_v1_meetings__meeting_id__transcript_get']
     put?: never
@@ -264,7 +264,7 @@ export interface paths {
     }
     /**
      * Lấy tóm tắt cuộc họp
-     * @description Lấy thông tin tóm tắt cuộc họp (stub contract v0).
+     * @description Lấy thông tin tóm tắt cuộc họp từ cơ sở dữ liệu.
      */
     get: operations['get_meeting_summary_api_v1_meetings__meeting_id__summary_get']
     /**
@@ -396,7 +396,7 @@ export interface paths {
     }
     /**
      * Lấy trạng thái tiến trình xử lý
-     * @description Trả về trạng thái tiến trình job (stub contract v0).
+     * @description Trả về trạng thái tiến trình job từ cơ sở dữ liệu.
      */
     get: operations['get_job_api_v1_jobs__job_id__get']
     put?: never
