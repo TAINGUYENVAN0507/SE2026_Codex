@@ -11,13 +11,17 @@
 ## Cập nhật local ngày 29/10
 
 - Đã triển khai và kiểm tra local mục **1, 2, 4, 5**; hash ghi dưới từng mục.
-- **152 unit test và 15 E2E đạt**, không skip; lint, format, typecheck và build đạt.
+- **153 unit test và 15 E2E đạt**, không skip; lint, format, typecheck và build đạt.
   Chi tiết: [FE-17](../../docs/frontend/FE-17.md).
 - Các ô nghiệm thu vẫn để `[ ]` vì điều kiện “xanh trên CI” chưa được xác nhận:
   cần theo dõi kết quả trên PR #29; không tự merge.
 - Mục **3** chờ PR #28 của B được merge vào main; kiểm tra lại ngày 29/10,
   PR vẫn `open`, `merged=false`. Chưa viết test giả hoặc bỏ qua bước này để báo đủ 5 commit.
 - SH-01 là việc chung của nhóm, chưa thực hiện trong đợt này.
+- Đã push và cập nhật tiêu đề/mô tả [PR #29](https://github.com/TAINGUYENVAN0507/SE2026_Codex/pull/29).
+  CI head `bc86239`: frontend/backend/contracts đạt; E2E 3/4 scenario đạt,
+  `transient_once` phát hiện countdown dùng thời điểm mở trang khi response chậm.
+  Đã sửa và thêm regression test; theo dõi CI của commit sửa tiếp theo, chưa merge.
 
 ### Phân biệt các phần đang chờ backend
 
@@ -129,4 +133,4 @@ git merge origin/main
 ## Cuối ngày
 
 - [ ] Tick các ô ở trên và ghi hash.
-- [ ] Push `vantuong`, mở PR vào `main` (hoặc push thêm vào #29 nếu chưa merge). **Không tự merge.**
+- [x] Push `vantuong`, cập nhật PR #29 vào `main`. **Không tự merge.**

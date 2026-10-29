@@ -24,7 +24,7 @@ jobs:
           POSTGRES_DB: meeting_e2e
         ports: ['5432:5432']
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U postgres -d meeting_e2e"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 5

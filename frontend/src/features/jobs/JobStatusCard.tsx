@@ -35,18 +35,23 @@ function stageState(stage: PipelineStage, job: Job) {
   return 'pending'
 }
 
-export function JobStatusCard({ jobId }: { jobId: string }) {
-  const { data: job, error, isPending } = useJobQuery(jobId)
+function RetryCountdown({ retryAt }: { retryAt: string }) {
   const [now, setNow] = useState(() => Date.now())
-  const retryAt = job?.status === 'retry_scheduled' ? job.next_run_at : null
   useEffect(() => {
-    if (!retryAt) return
     const timer = window.setInterval(() => setNow(Date.now()), 1_000)
     return () => window.clearInterval(timer)
-  }, [retryAt])
-  const seconds = retryAt
-    ? Math.max(0, Math.ceil((Date.parse(retryAt) - now) / 1_000))
-    : 0
+  }, [])
+  const seconds = Math.max(0, Math.ceil((Date.parse(retryAt) - now) / 1_000))
+  return (
+    <p role="timer" aria-label="Thời gian chờ thử lại">
+      {seconds > 0 ? `Đang thử lại sau ${seconds} giây` : 'Đang thử lại…'}
+    </p>
+  )
+}
+
+export function JobStatusCard({ jobId }: { jobId: string }) {
+  const { data: job, error, isPending } = useJobQuery(jobId)
+  const retryAt = job?.status === 'retry_scheduled' ? job.next_run_at : null
 
   if (isPending)
     return (
@@ -108,11 +113,7 @@ export function JobStatusCard({ jobId }: { jobId: string }) {
           )
         })}
       </ol>
-      {retryAt && (
-        <p role="timer" aria-label="Thời gian chờ thử lại">
-          {seconds > 0 ? `Đang thử lại sau ${seconds} giây` : 'Đang thử lại…'}
-        </p>
-      )}
+      {retryAt && <RetryCountdown key={retryAt} retryAt={retryAt} />}
       {job.status === 'failed' && job.error && (
         <p className="job-error" role="alert">
           {errorMessageForCode(job.error.code)}

@@ -179,6 +179,32 @@ describe('JobStatusCard', () => {
     expect(screen.queryByRole('timer')).not.toBeInTheDocument()
   })
 
+  it('starts the countdown from response time after a delayed job response', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(
+      new Date(Date.parse(jobRetryScheduled.next_run_at) - 10_000),
+    )
+    let release: () => void = () => {}
+    const waiting = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    server.use(
+      http.get('*/api/v1/jobs/:jobId', async () => {
+        await waiting
+        return HttpResponse.json(jobRetryScheduled)
+      }),
+    )
+    renderCard()
+    await act(async () => vi.advanceTimersByTimeAsync(3_000))
+    await act(async () => {
+      release()
+      await vi.advanceTimersByTimeAsync(100)
+    })
+    expect(screen.getByRole('timer')).toHaveTextContent(
+      'Đang thử lại sau 7 giây',
+    )
+  })
+
   it.each([
     ['AUDIO_INVALID', 'File audio không hợp lệ hoặc không thể đọc.'],
     ['UNRECOGNIZED_CODE', 'Đã xảy ra lỗi không xác định. Hãy thử lại sau.'],
