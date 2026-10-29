@@ -14,10 +14,23 @@
 - **152 unit test và 15 E2E đạt**, không skip; lint, format, typecheck và build đạt.
   Chi tiết: [FE-17](../../docs/frontend/FE-17.md).
 - Các ô nghiệm thu vẫn để `[ ]` vì điều kiện “xanh trên CI” chưa được xác nhận:
-  chưa push các commit hôm nay, chưa sửa PR #29 hoặc tự merge.
+  cần theo dõi kết quả trên PR #29; không tự merge.
 - Mục **3** chờ PR #28 của B được merge vào main; kiểm tra lại ngày 29/10,
   PR vẫn `open`, `merged=false`. Chưa viết test giả hoặc bỏ qua bước này để báo đủ 5 commit.
 - SH-01 là việc chung của nhóm, chưa thực hiện trong đợt này.
+
+### Phân biệt các phần đang chờ backend
+
+- **Mục 3 hôm nay:** chờ PR #28 được merge để kiểm thử toàn luồng sửa segment,
+  đổi tên speaker, thêm/sửa/xóa action item, reload và lịch sử trên backend thật.
+- **Phần chờ từ trước:** giao diện và module export FE-15 đã có; B cần nối
+  `GET /summary`, export và tạo lại tóm tắt với DB/worker thật. E2E tóm tắt/export
+  làm tiếp sau khi các API tương ứng sẵn sàng, không làm lại giao diện từ đầu.
+- Hai phụ thuộc này khác nhau. PR #28 được merge chưa đồng nghĩa các API
+  tóm tắt/export/tạo lại tóm tắt đã hoàn tất; kiểm tra từng phần trước khi làm tiếp.
+- **PR:** #29 (`vantuong` → `main`) vẫn mở, chưa merge tại lần kiểm tra ngày 29/10.
+  Người dùng đã cho phép push cập nhật ngày 29/10. Các commit mới trên `vantuong` sẽ tự vào #29; cập nhật mô tả
+  để nêu phần FE-17 và việc còn chờ. Không mở PR trùng cùng nhánh đích/nguồn.
 
 Đọc trước:
 - Mục FE-17 và mục 10.4 (RT-11, PRIV-01…09) của kế hoạch.
