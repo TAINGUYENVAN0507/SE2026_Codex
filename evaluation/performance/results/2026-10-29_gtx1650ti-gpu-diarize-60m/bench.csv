@@ -1,0 +1,8 @@
+target_min,audio_sec,stage,status,seconds,rtf,peak_rss_mb,peak_vram_mb,error_code
+60.0,3600.0,preprocess,succeeded,0.634,0.0002,32,0,
+60.0,3600.0,vad,succeeded,9.15,0.0025,977,0,
+60.0,3600.0,asr,succeeded,356.375,0.099,3920,1254,
+60.0,3600.0,diarize,succeeded,240.939,0.0669,2119,2798,
+60.0,3600.0,merge,succeeded,0.481,0.0001,53,0,
+60.0,3600.0,summarize,succeeded,0.364,0.0001,,,
+60.0,3600.0,total,succeeded,607.943,0.1689,3920,2798,
