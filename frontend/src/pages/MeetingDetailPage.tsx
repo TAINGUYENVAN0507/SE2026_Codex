@@ -21,6 +21,7 @@ import { apiMeetingToView } from '../features/meetings/apiModel'
 import { DEMO_ID } from '../features/meetings/model'
 import { NotFoundPage } from './NotFoundPage'
 import { LoadingSkeleton } from '../components/LoadingSkeleton'
+import { JobStatusCard } from '../features/jobs/JobStatusCard'
 
 export function MeetingDetailPage() {
   const { meetingId } = useParams()
@@ -38,6 +39,11 @@ function RemoteMeetingDetail({ meetingId }: { meetingId: string }) {
   const meetingQuery = useQuery({
     queryKey: ['meeting', meetingId],
     queryFn: () => getMeeting(meetingId),
+    refetchInterval: (query) =>
+      query.state.data &&
+      ['queued', 'processing'].includes(query.state.data.status)
+        ? 2_000
+        : false,
   })
   const transcriptQuery = useTranscriptQuery(meetingId)
   if (meetingQuery.isPending || transcriptQuery.isPending)
@@ -68,10 +74,13 @@ function RemoteMeetingDetail({ meetingId }: { meetingId: string }) {
   }
   return (
     <RemoteMeetingContent
-      key={`${meetingId}-${transcriptQuery.data.status}`}
+      key={`${meetingId}-${transcriptQuery.data.status}-${meetingQuery.data.status}`}
       meeting={apiMeetingToView(meetingQuery.data, transcriptQuery.data)}
       pending={transcriptQuery.data.status === 'pending'}
       ready={transcriptQuery.data.status === 'ready'}
+      jobId={
+        meetingQuery.data.latest_job_id || meetingQuery.data.latest_job?.id
+      }
     />
   )
 }
@@ -80,10 +89,12 @@ function RemoteMeetingContent({
   meeting: initial,
   pending,
   ready,
+  jobId,
 }: {
   meeting: Meeting
   pending: boolean
   ready: boolean
+  jobId?: string
 }) {
   const [meeting, setMeeting] = useState(initial)
   const { files } = useMeetings()
@@ -95,6 +106,7 @@ function RemoteMeetingContent({
       transcriptReady={ready}
       onUpdate={(transform) => setMeeting((current) => transform(current))}
       remote
+      jobId={jobId}
     />
   )
 }
@@ -129,6 +141,7 @@ function Detail({
   pending = false,
   remote = false,
   transcriptReady = meeting.status === 'ready',
+  jobId,
 }: {
   meeting: Meeting
   file?: File
@@ -136,6 +149,7 @@ function Detail({
   pending?: boolean
   remote?: boolean
   transcriptReady?: boolean
+  jobId?: string
 }) {
   const [localFile, setLocalFile] = useState<File | undefined>(file)
   const [position, setPosition] = useState(
@@ -251,6 +265,7 @@ function Detail({
         </div>
         <ExportMenu meetingId={meeting.id} ready={transcriptReady} />
       </header>
+      {jobId && <JobStatusCard jobId={jobId} />}
       <AudioPlayer
         key={`${localFile?.name || 'demo'}-${localFile?.lastModified || 0}`}
         file={localFile}
@@ -275,7 +290,7 @@ function Detail({
           </button>
         </div>
       )}
-      {meeting.status !== 'ready' && (
+      {!remote && meeting.status !== 'ready' && (
         <div className="detail-notice" role="status">
           {
             {
