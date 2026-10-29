@@ -25,7 +25,7 @@ Cả 6 stage đã có bản `real`. Dùng `PIPELINE_BACKEND=fake` để chạy t
 
 Stage dùng model (`vad`, `asr`, `diarize`) gọi model qua adapter trong `meeting_pipeline/engines/`, có bản fake cho test. Cài model thật bằng `uv sync --extra asr` (faster-whisper, cuBLAS, cuDNN; CI không cài). Biến môi trường của ASR, mặc định theo `docs/adr/0001-asr.md`: `ASR_MODEL` (`large-v3-turbo`), `ASR_COMPUTE_TYPE` (`int8_float16`), `ASR_DEVICE` (`cuda`), `ASR_BEAM_SIZE` (`5`).
 
-Diarization cài bằng `uv sync --extra diarize`: pyannote.audio 4.x và torch **bản CPU** (bản torch trên PyPI kèm CUDA 13, xung đột cuDNN với CTranslate2 của extra `asr`). Model `pyannote/speaker-diarization-community-1` là model gated: tài khoản Hugging Face phải chấp nhận điều kiện, token lấy từ `HF_TOKEN` hoặc `hf auth login`. Biến: `DIARIZATION_MODEL`, `DIARIZATION_DEVICE` (`auto`).
+Diarization cài bằng `uv sync --extra diarize` (bản CPU) hoặc `uv sync --extra diarize-gpu` (bản GPU, dùng torch CUDA 12 chung cuDNN với extra `asr`, AI-16). Model `pyannote/speaker-diarization-community-1` là model gated: tài khoản Hugging Face phải chấp nhận điều kiện, token lấy từ `HF_TOKEN` hoặc `hf auth login`. Biến: `DIARIZATION_MODEL`, `DIARIZATION_DEVICE` (`auto`).
 
 Tải trước model vào cache (`HF_HOME`), kiểm token và quyền vào model gated: `uv run python -m meeting_pipeline download-models` (hoặc `../scripts/download_models.py`). Thêm `--check` để chỉ kiểm cache mà không tải. Thiếu token, token sai hoặc chưa đồng ý điều kiện của model thì exit code 2 kèm hướng dẫn; thông điệp không chứa token.
 

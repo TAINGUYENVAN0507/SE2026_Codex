@@ -16,8 +16,15 @@ asr = [
     "nvidia-cudnn-cu12>=9,<10; sys_platform == 'linux'",
 ]
 # torch bản CPU từ index của PyTorch: bản trên PyPI kèm CUDA 13 (vài GB), cuDNN của nó ghi
-# đè cuDNN cho CUDA 12 mà CTranslate2 (extra asr) cần. Bản GPU sẽ cấu hình ở AI-16.
+# đè cuDNN cho CUDA 12 mà CTranslate2 (extra asr) cần.
 diarize = [
+    "pyannote.audio>=4.0,<5",
+    "torch>=2.8",
+    "torchaudio>=2.8",
+]
+# diarize-gpu dùng torch và torchaudio từ index CUDA 12 của PyTorch (AI-16), dùng chung cuDNN 9.x
+# và cuBLAS với CTranslate2 (extra asr). Xung đột với extra diarize (bản CPU).
+diarize-gpu = [
     "pyannote.audio>=4.0,<5",
     "torch>=2.8",
     "torchaudio>=2.8",
@@ -56,11 +63,30 @@ target-version = "py311"
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "SIM"]
 
+[tool.uv]
+conflicts = [
+    [
+        { extra = "diarize" },
+        { extra = "diarize-gpu" },
+    ],
+]
+
 [tool.uv.sources]
-torch = [{ index = "pytorch-cpu" }]
-torchaudio = [{ index = "pytorch-cpu" }]
+torch = [
+    { index = "pytorch-cpu", extra = "diarize" },
+    { index = "pytorch-cu126", extra = "diarize-gpu" },
+]
+torchaudio = [
+    { index = "pytorch-cpu", extra = "diarize" },
+    { index = "pytorch-cu126", extra = "diarize-gpu" },
+]
 
 [[tool.uv.index]]
 name = "pytorch-cpu"
 url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[[tool.uv.index]]
+name = "pytorch-cu126"
+url = "https://download.pytorch.org/whl/cu126"
 explicit = true
