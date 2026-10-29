@@ -1,4 +1,5 @@
-import { ApiError } from '../../api/errors'
+import { useEffect, useState } from 'react'
+import { ApiError, errorMessageForCode } from '../../api/errors'
 import type { Job } from '../../api/client'
 import { PIPELINE_STAGES, type JobStatus, type PipelineStage } from './model'
 import { useJobQuery } from './useJobQuery'
@@ -36,6 +37,16 @@ function stageState(stage: PipelineStage, job: Job) {
 
 export function JobStatusCard({ jobId }: { jobId: string }) {
   const { data: job, error, isPending } = useJobQuery(jobId)
+  const [now, setNow] = useState(() => Date.now())
+  const retryAt = job?.status === 'retry_scheduled' ? job.next_run_at : null
+  useEffect(() => {
+    if (!retryAt) return
+    const timer = window.setInterval(() => setNow(Date.now()), 1_000)
+    return () => window.clearInterval(timer)
+  }, [retryAt])
+  const seconds = retryAt
+    ? Math.max(0, Math.ceil((Date.parse(retryAt) - now) / 1_000))
+    : 0
 
   if (isPending)
     return (
@@ -97,9 +108,14 @@ export function JobStatusCard({ jobId }: { jobId: string }) {
           )
         })}
       </ol>
+      {retryAt && (
+        <p role="timer" aria-label="Thời gian chờ thử lại">
+          {seconds > 0 ? `Đang thử lại sau ${seconds} giây` : 'Đang thử lại…'}
+        </p>
+      )}
       {job.status === 'failed' && job.error && (
         <p className="job-error" role="alert">
-          {job.error.message}
+          {errorMessageForCode(job.error.code)}
         </p>
       )}
     </section>

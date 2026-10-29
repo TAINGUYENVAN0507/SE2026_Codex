@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test'
 import { login } from '../fixtures.js'
+import { expectReady } from '../meeting.js'
 
 declare global {
   interface Window {
@@ -142,6 +143,8 @@ test('PRIV-06: chỉ upload sau click tạo biên bản và đúng một request
   expect((await created).status()).toBe(201)
   await expect(page).toHaveURL(/\/meetings\/[0-9a-f-]+$/)
   expect(requests).toHaveLength(1)
+  // Đợi worker kết thúc để lần chạy kịch bản sau không nhận job dở dang.
+  await expectReady(page)
 })
 
 test('PRIV-07: reload lúc ghi có cảnh báo, không tự ghi lại hay upload', async ({
