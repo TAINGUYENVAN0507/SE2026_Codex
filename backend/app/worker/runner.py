@@ -9,6 +9,7 @@ Tuân thủ nghiêm ngặt ranh giới module:
 
 import logging
 import os
+import shutil
 import time
 from collections.abc import Callable, Mapping
 from datetime import UTC, datetime, timedelta
@@ -202,10 +203,31 @@ def process_job(
             return now
         return datetime.now(UTC)
 
+    last_cancel_db_check = 0.0
+    cached_db_cancelled = False
+
     def check_cancelled() -> bool:
+        nonlocal last_cancel_db_check, cached_db_cancelled
+        if cached_db_cancelled:
+            return True
         if sigterm_check and sigterm_check():
             return True
-        return bool(is_cancelled and is_cancelled())
+        if is_cancelled and is_cancelled():
+            return True
+
+        now_m = time.monotonic()
+        if now_m - last_cancel_db_check >= 1.0:
+            last_cancel_db_check = now_m
+            try:
+                cur_status = db.execute(
+                    select(Job.status).where(Job.id == job.id)
+                ).scalar_one_or_none()
+                if cur_status is None or cur_status == JobStatus.CANCELLED.value:
+                    cached_db_cancelled = True
+                    return True
+            except Exception:
+                pass
+        return False
 
     current_worker_id = job.locked_by
 
@@ -425,8 +447,13 @@ def process_job(
             release_job_on_sigterm(db, job, now=get_now())
         else:
             logger.info("Job %s đã bị hủy", job.id)
-            transition_job_status(job, JobStatus.CANCELLED, now=get_now())
-            db.commit()
+            existing_job = db.execute(select(Job).where(Job.id == job.id)).scalar_one_or_none()
+            if existing_job is not None:
+                transition_job_status(existing_job, JobStatus.CANCELLED, now=get_now())
+                db.commit()
+            job.status = JobStatus.CANCELLED.value
+            if workdir.exists():
+                shutil.rmtree(workdir, ignore_errors=True)
 
     except PipelineError as err:
         logger.error("Job %s gặp lỗi pipeline: %s", job.id, err)

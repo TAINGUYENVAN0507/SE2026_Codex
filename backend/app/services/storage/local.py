@@ -136,7 +136,10 @@ class LocalStorage(Storage):
         )
 
     def delete_meeting_files(self, meeting_id: str) -> None:
-        """Xóa thư mục audio của meeting."""
+        """Xóa thư mục audio và artifacts của meeting."""
         meeting_dir = self.get_audio_dir(meeting_id)
         if meeting_dir.exists():
             shutil.rmtree(meeting_dir, ignore_errors=True)
+        artifacts_dir = Path(self.base_dir) / "artifacts" / meeting_id
+        if artifacts_dir.exists():
+            shutil.rmtree(artifacts_dir, ignore_errors=True)

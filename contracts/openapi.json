@@ -476,6 +476,52 @@
             }
           }
         }
+      },
+      "delete": {
+        "tags": [
+          "Meetings"
+        ],
+        "summary": "Xóa cuộc họp",
+        "description": "Xóa cuộc họp cùng file audio, artifacts và toàn bộ dữ liệu liên quan.",
+        "operationId": "delete_meeting_api_v1_meetings__meeting_id__delete",
+        "parameters": [
+          {
+            "name": "meeting_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "UUID của cuộc họp cần xóa",
+              "title": "Meeting Id"
+            },
+            "description": "UUID của cuộc họp cần xóa"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Cuộc họp đã được xóa thành công"
+          },
+          "404": {
+            "description": "Không tìm thấy cuộc họp",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/meetings/{meeting_id}/audio": {

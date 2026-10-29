@@ -165,7 +165,11 @@ export interface paths {
     get: operations['get_meeting_api_v1_meetings__meeting_id__get']
     put?: never
     post?: never
-    delete?: never
+    /**
+     * Xóa cuộc họp
+     * @description Xóa cuộc họp cùng file audio, artifacts và toàn bộ dữ liệu liên quan.
+     */
+    delete: operations['delete_meeting_api_v1_meetings__meeting_id__delete']
     options?: never
     head?: never
     /**
@@ -1863,6 +1867,45 @@ export interface operations {
         content: {
           'application/json': components['schemas']['MeetingDetailOut']
         }
+      }
+      /** @description Không tìm thấy cuộc họp */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  delete_meeting_api_v1_meetings__meeting_id__delete: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description UUID của cuộc họp cần xóa */
+        meeting_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Cuộc họp đã được xóa thành công */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
       }
       /** @description Không tìm thấy cuộc họp */
       404: {

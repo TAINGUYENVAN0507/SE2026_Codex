@@ -1,3 +1,4 @@
+import logging
 import uuid
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -17,7 +18,7 @@ from fastapi import (
 )
 from fastapi import Path as FastApiPath
 from fastapi.responses import StreamingResponse
-from sqlalchemy import func, select, update
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -68,6 +69,8 @@ router = APIRouter(
     tags=["Meetings"],
     dependencies=[Depends(get_current_user)],
 )
+
+logger = logging.getLogger("backend.api.meetings")
 
 
 def serialize_meeting_summary(meeting: Meeting, db: Session) -> MeetingOut:
@@ -606,6 +609,62 @@ def patch_meeting(
     db.commit()
     db.refresh(meeting)
     return serialize_meeting_detail(meeting, db)
+
+
+@router.delete(
+    "/{meeting_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={
+        204: {"description": "Cuộc họp đã được xóa thành công"},
+        404: {"model": ErrorResponse, "description": "Không tìm thấy cuộc họp"},
+    },
+    summary="Xóa cuộc họp",
+)
+def delete_meeting(
+    meeting_id: Annotated[str, FastApiPath(description="UUID của cuộc họp cần xóa")],
+    current_user: CurrentUser,
+    db: Annotated[Session, Depends(get_db)],
+    storage: Annotated[Storage, Depends(get_storage)],
+) -> Response:
+    """Xóa cuộc họp cùng file audio, artifacts và toàn bộ dữ liệu liên quan."""
+    meeting = db.execute(select(Meeting).where(Meeting.id == meeting_id)).scalar_one_or_none()
+    if not meeting or meeting.owner_id != current_user.id:
+        raise APIError(
+            code="MEETING_NOT_FOUND",
+            message="Không tìm thấy cuộc họp được yêu cầu.",
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    # 1. Chuyển trạng thái các job đang active sang cancelled
+    active_jobs = (
+        db.execute(
+            select(Job).where(
+                Job.meeting_id == meeting.id,
+                Job.status.in_(["queued", "running", "retry_scheduled"]),
+            )
+        )
+        .scalars()
+        .all()
+    )
+    for aj in active_jobs:
+        aj.status = "cancelled"
+        aj.updated_at = datetime.now(UTC)
+    if active_jobs:
+        db.commit()
+
+    # 2. Xóa audio và artifacts trên đĩa
+    storage.delete_meeting_files(meeting_id)
+
+    # 3. Xóa cuộc họp và các bảng liên quan khỏi DB
+    db.delete(meeting)
+    db.flush()
+    db.execute(delete(EditEvent).where(EditEvent.meeting_id == meeting_id))
+    db.commit()
+
+    # 4. Ghi log chỉ với meeting_id (bảo mật PRIV-12, không ghi tiêu đề hay nội dung)
+    logger.info("Đã xóa cuộc họp: meeting_id=%s", meeting_id)
+
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 AUDIO_MIME_TYPES: dict[str, str] = {
