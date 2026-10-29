@@ -8,7 +8,11 @@ export default defineConfig(({ mode }) => ({
   server: {
     proxy: createDevProxy(loadEnv(mode, process.cwd(), 'VITE_')),
   },
+  preview: {
+    proxy: createDevProxy(loadEnv(mode, process.cwd(), 'VITE_')),
+  },
   test: {
+    include: ['src/**/*.test.{ts,tsx}'],
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
     maxWorkers: 4,

@@ -2,6 +2,9 @@
 
 React SPA của Vietnamese Meeting Minutes Assistant. Owner: member A.
 
+Kiểm thử trình duyệt trên stack thật: xem [FE-17](../docs/frontend/FE-17.md).
+Chạy `npm run e2e` sau khi cấu hình database E2E và mật khẩu demo theo tài liệu.
+
 ## Trạng thái
 
 Giao diện graphite/cam được triển khai từ bộ ảnh đã duyệt, gồm:
