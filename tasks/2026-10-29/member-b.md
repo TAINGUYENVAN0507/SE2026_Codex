@@ -38,14 +38,14 @@ Theo kiểm tra trên nhánh `haquang` lúc phân công, các chỗ sau vẫn tr
 - `POST /meetings/{id}/jobs` (`retry_meeting_job`);
 - nhánh fallback `if db is not None and current_user is not None` trong `get_meeting`, `get_meeting_transcript`, `get_job`.
 
-### 1. [ ] `GET /summary` từ DB, bỏ nhánh stub (BE-05, BE-07)
+### 1. [x] `GET /summary` từ DB, bỏ nhánh stub (BE-05, BE-07)
 
 - **Việc:**
   - Đọc summary theo meeting của owner. Trả trạng thái `pending`, `ready`, `failed`, `insufficient_content`, `disabled` đúng như pipeline ghi, kèm evidence là id segment, `version`, `is_edited`.
   - Xóa các hàm `load_*_fixture()` và nhánh fallback không còn dùng trong `meetings.py`, `jobs.py`.
 - **Xong khi:** API test cho từng trạng thái, 404 với meeting của người khác (PRIV-12), không còn fixture nào được đọc trong `app/api/`.
 - **Message:** `feat(backend): summary from the database and removal of stub fallbacks (BE-05)`
-- **Hash:**
+- **Hash:** `c6f6cd5`
 
 ### 2. [ ] Export dựng từ DB (FE-15, BE-05)
 
@@ -57,11 +57,11 @@ Theo kiểm tra trên nhánh `haquang` lúc phân công, các chỗ sau vẫn tr
   - Chưa có transcript thì 409 `TRANSCRIPT_NOT_READY`; định dạng lạ thì 422 `FORMAT_NOT_SUPPORTED`.
 - **Xong khi:** API test 3 định dạng × 2 biến thể; RT-13: gọi 3 lần cùng tham số thì ra cùng byte và không ghi gì vào DB; PRIV-12.
 - **Message:** `feat(backend): export built from the database for both variants (BE-05, FE-15)`
-- **Hash:**
+- **Hash:** *(Chuyển sang ngày sau do phụ thuộc module services/export/ của PR #29 của Member A chưa merge vào main)*
 
 ## Phần 2: chạy lại job và xóa meeting
 
-### 3. [ ] `POST /meetings/{id}/jobs` thật (BE-13)
+### 3. [x] `POST /meetings/{id}/jobs` thật (BE-13)
 
 - **Việc:**
   - Nhận `from_stage` (mặc định chạy lại cả pipeline) và `Idempotency-Key`.
@@ -71,9 +71,9 @@ Theo kiểm tra trên nhánh `haquang` lúc phân công, các chỗ sau vẫn tr
   - Partial unique index của DB đảm bảo chỉ 1 job active.
 - **Xong khi:** RT-06 (5 request đồng thời: đúng 1 job, 4 lần 409 kèm job id); RT-10 (gửi lại sau khi xong: 409, dùng lại key cũ thì nhận response cũ).
 - **Message:** `feat(backend): create jobs with from_stage, idempotency and conflict codes (BE-13)`
-- **Hash:**
+- **Hash:** `1334ad3`
 
-### 4. [ ] Tạo lại tóm tắt từ transcript đã sửa (BE-10, RT-14)
+### 4. [x] Tạo lại tóm tắt từ transcript đã sửa (BE-10, RT-14)
 
 - **Việc:**
   - `from_stage=summarize`: worker xuất transcript hiện tại trong DB (text và speaker đã sửa, tên hiển thị của speaker) thành file JSON đúng `contracts/pipeline/transcript.schema.json`, rồi truyền qua `transcript_override_path`.
@@ -81,9 +81,9 @@ Theo kiểm tra trên nhánh `haquang` lúc phân công, các chỗ sau vẫn tr
   - Summary mới vào `ai_outputs`. Nếu người dùng chưa sửa summary thì thay summary hiện tại; đã sửa thì giữ bản của người dùng và trả trạng thái để UI hỏi.
 - **Xong khi:** RT-14 với `FAKE_SCENARIO=summary_fail` rồi retry: meeting từ `partial` thành `ready`, ASR không chạy lại (kiểm `stage_status`); test override chứa text đã sửa.
 - **Message:** `feat(backend): regenerate the summary from the edited transcript (BE-10)`
-- **Hash:**
+- **Hash:** `f470383`
 
-### 5. [ ] Xóa meeting: hủy job, xóa file và row (BE-14)
+### 5. [x] Xóa meeting: hủy job, xóa file và row (BE-14)
 
 - **Việc:**
   - `DELETE /meetings/{id}`, thêm vào contract và sinh lại `schema.d.ts`.
@@ -94,7 +94,7 @@ Theo kiểm tra trên nhánh `haquang` lúc phân công, các chỗ sau vẫn tr
   - RT-15: xóa khi job đang chạy với `FAKE_SCENARIO=slow`, thì job `cancelled`, không còn file hay row mồ côi.
   - PRIV-13: `GET /audio` sau khi xóa trả 404.
 - **Message:** `feat(backend): delete a meeting with its job, files and rows (BE-14)`
-- **Hash:**
+- **Hash:** `0852210`
 
 ## Việc chung (không phải commit)
 
@@ -102,5 +102,5 @@ Theo kiểm tra trên nhánh `haquang` lúc phân công, các chỗ sau vẫn tr
 
 ## Cuối ngày
 
-- [ ] Tick các ô ở trên và ghi hash. Làm không hết thì ghi rõ commit nào chuyển sang ngày sau.
-- [ ] Push `haquang`, mở PR vào `main` (hoặc push thêm vào #28 nếu chưa merge), tiêu đề theo format commit. **Không tự merge.** Nếu đổi `contracts/openapi.json` thì commit cả `frontend/src/api/schema.d.ts`.
+- [x] Tick các ô ở trên và ghi hash. Làm không hết thì ghi rõ commit nào chuyển sang ngày sau.
+- [x] Push `haquang`, mở PR vào `main` (hoặc push thêm vào #28 nếu chưa merge), tiêu đề theo format commit. **Không tự merge.** Nếu đổi `contracts/openapi.json` thì commit cả `frontend/src/api/schema.d.ts`.
