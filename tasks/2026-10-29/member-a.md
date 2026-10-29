@@ -8,6 +8,17 @@
 
   Phần tóm tắt và export trong E2E làm ở ngày sau, khi B xong `GET /summary` và export thật (hôm nay, phần 1 của B).
 
+## Cập nhật local ngày 29/10
+
+- Đã triển khai và kiểm tra local mục **1, 2, 4, 5**; hash ghi dưới từng mục.
+- **152 unit test và 15 E2E đạt**, không skip; lint, format, typecheck và build đạt.
+  Chi tiết: [FE-17](../../docs/frontend/FE-17.md).
+- Các ô nghiệm thu vẫn để `[ ]` vì điều kiện “xanh trên CI” chưa được xác nhận:
+  chưa push các commit hôm nay, chưa sửa PR #29 hoặc tự merge.
+- Mục **3** chờ PR #28 của B được merge vào main; kiểm tra lại ngày 29/10,
+  PR vẫn `open`, `merged=false`. Chưa viết test giả hoặc bỏ qua bước này để báo đủ 5 commit.
+- SH-01 là việc chung của nhóm, chưa thực hiện trong đợt này.
+
 Đọc trước:
 - Mục FE-17 và mục 10.4 (RT-11, PRIV-01…09) của kế hoạch.
 - `backend/README.md`, mục 5: chạy API và worker.
@@ -48,7 +59,7 @@ git merge origin/main
   - Script `frontend/e2e/start-stack.sh` dùng chung cho máy dev và CI.
 - **Xong khi:** test đăng nhập bằng user demo rồi thấy trang danh sách meeting, chạy xanh trên CI.
 - **Message:** `test(frontend): Playwright on the real stack with an e2e workflow (FE-17)`
-- **Hash:**
+- **Hash:** `fe8f9c6` — login E2E thật đã đạt local; workflow đã viết, chờ CI.
 
 ### 2. [ ] Upload tới `ready` với fake pipeline (FE-17, RT-11)
 
@@ -58,7 +69,7 @@ git merge origin/main
   - RT-11: reload trang khi job đang chạy (worker chạy với `FAKE_SCENARIO=slow`): UI tiếp tục hiện tiến trình lấy từ server, và vẫn chỉ có 1 job.
 - **Xong khi:** 2 test xanh trên CI; không dùng `waitForTimeout` cố định, chỉ chờ theo trạng thái trên UI.
 - **Message:** `test(frontend): upload to ready and reload during processing (FE-17)`
-- **Hash:**
+- **Hash:** `cd979b4` — 2 E2E đạt local; kiểm thêm bằng psql: meeting RT-11 có 1 job.
 
 ### 3. [ ] Sửa segment, đổi tên speaker, action item, lịch sử (FE-17)
 
@@ -70,7 +81,7 @@ git merge origin/main
   - tab Lịch sử có đúng các event vừa tạo.
 - **Xong khi:** test xanh trên CI với backend thật (cần PR #28 của B đã vào `main`).
 - **Message:** `test(frontend): edits persist across reloads and show in history (FE-17)`
-- **Hash:**
+- **Hash:** chưa có — chờ PR #28 theo Bước 0. Không thay thế bằng mock hoặc skip.
 
 ### 4. [ ] Bộ PRIV của recorder trong trình duyệt thật (FE-17, PRIV-01…09)
 
@@ -86,7 +97,7 @@ git merge origin/main
     - PRIV-09: rời trang thì track dừng.
 - **Xong khi:** mỗi PRIV là một test riêng, tên test ghi mã PRIV; xanh trên CI.
 - **Message:** `test(frontend): recorder privacy checks PRIV-01 to PRIV-09 in Chromium (FE-17)`
-- **Hash:**
+- **Hash:** `731b84a` — 9 PRIV đạt trên Chromium thật; bổ sung chờ worker kết thúc upload trong `a0bb599`.
 
 ### 5. [ ] Luồng lỗi và retry (FE-17)
 
@@ -96,7 +107,7 @@ git merge origin/main
   - `summary_fail`: meeting `partial`, transcript vẫn đọc và sửa được.
 - **Xong khi:** 3 test xanh trên CI. Cập nhật `docs/frontend/FE-17.md`: cách chạy E2E ở máy, các test đã có, phần chờ B (tóm tắt, export, "Tạo lại tóm tắt").
 - **Message:** `test(frontend): failure, transient retry and partial result flows (FE-17)`
-- **Hash:**
+- **Hash:** `a0bb599` — 3 E2E lỗi/retry/partial đạt local; đã cập nhật hướng dẫn và giới hạn trong FE-17.md.
 
 ## Việc chung (không phải commit)
 
