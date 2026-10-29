@@ -1,4 +1,4 @@
-import json
+import logging
 import uuid
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -18,36 +18,41 @@ from fastapi import (
 )
 from fastapi import Path as FastApiPath
 from fastapi.responses import StreamingResponse
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.api.deps import CurrentUser, get_current_user
 from app.core.errors import APIError
+from app.db.models.action_item import ActionItem
 from app.db.models.edit_event import EditEvent
 from app.db.models.job import Job
 from app.db.models.meeting import Meeting
 from app.db.models.summary import Summary
 from app.db.models.transcript import Segment, Speaker
+from app.db.models.user import User
 from app.db.session import get_db
 from app.schemas.action_item import (
+    ActionItemAiOriginal,
     ActionItemCreate,
     ActionItemListOut,
     ActionItemOut,
     ActionItemPatch,
 )
 from app.schemas.common import ErrorResponse
-from app.schemas.edit import EditListOut
+from app.schemas.edit import EditActorOut, EditEventOut, EditListOut
 from app.schemas.job import JobErrorOut, JobOut, JobRetryCreate
 from app.schemas.meeting import (
     MeetingCreateOut,
     MeetingDetailOut,
     MeetingListOut,
     MeetingOut,
+    MeetingPatch,
     MeetingSource,
     MeetingStatus,
     SpeakerOut,
 )
-from app.schemas.summary import SummaryOut, SummaryUpdate
+from app.schemas.summary import SummaryContentOut, SummaryOut, SummaryUpdate
 from app.schemas.transcript import (
     SegmentPatch,
     SpeakerPatch,
@@ -55,6 +60,7 @@ from app.schemas.transcript import (
     TranscriptSegmentOut,
 )
 from app.services.audio_validator import probe_audio, validate_extension_and_mime
+from app.services.audit import record_edit
 from app.services.idempotency.service import IdempotencyService
 from app.services.storage import FileTooLargeError, Storage, get_storage
 
@@ -64,86 +70,7 @@ router = APIRouter(
     dependencies=[Depends(get_current_user)],
 )
 
-FIXTURES_DIR = Path(__file__).resolve().parents[4] / "contracts" / "fixtures" / "api"
-MEETING_FIXTURE_PATH = FIXTURES_DIR / "meeting_processing.json"
-MEETING_LIST_FIXTURE_PATH = FIXTURES_DIR / "meeting_list.json"
-MEETING_CREATED_FIXTURE_PATH = FIXTURES_DIR / "meeting_created.json"
-
-
-def load_meeting_fixture() -> dict:
-    """Đọc dữ liệu fixture meeting mẫu."""
-    if MEETING_FIXTURE_PATH.is_file():
-        with open(MEETING_FIXTURE_PATH, encoding="utf-8") as f:
-            return json.load(f)
-    # Dữ liệu fallback nếu fixture chưa được gắn kết
-    return {
-        "id": "8f6c2a1e-b2c3-4d4e-8f9a-0b1c2d3e4f5a",
-        "title": "Họp sprint planning tuần 42",
-        "source": "recording",
-        "status": "processing",
-        "language": "vi",
-        "meeting_date": "2026-10-15",
-        "duration_sec": 1834.52,
-        "num_speakers_hint": 3,
-        "audio": {
-            "available": True,
-            "mime_type": "audio/webm",
-            "size_bytes": 11834512,
-            "retention_until": "2026-11-14T08:30:00Z",
-        },
-        "artifacts": {"transcript": "ready", "diarization": "ok", "summary": "pending"},
-        "warnings": [],
-        "latest_job_id": "c1d2e3f4-a5b6-4c7d-8e9f-0a1b2c3d4e5f",
-        "created_at": "2026-10-15T08:30:00Z",
-        "updated_at": "2026-10-15T08:52:10Z",
-        "version": 1,
-    }
-
-
-def load_meeting_list_fixture() -> dict:
-    """Đọc dữ liệu fixture danh sách meeting mẫu."""
-    if MEETING_LIST_FIXTURE_PATH.is_file():
-        with open(MEETING_LIST_FIXTURE_PATH, encoding="utf-8") as f:
-            return json.load(f)
-    return {
-        "items": [load_meeting_fixture()],
-        "page": 1,
-        "page_size": 10,
-        "total": 1,
-    }
-
-
-def load_meeting_created_fixture() -> dict:
-    """Đọc dữ liệu fixture kết quả tạo meeting mẫu."""
-    if MEETING_CREATED_FIXTURE_PATH.is_file():
-        with open(MEETING_CREATED_FIXTURE_PATH, encoding="utf-8") as f:
-            return json.load(f)
-    return {
-        "meeting": load_meeting_fixture(),
-        "job": {
-            "id": "c1d2e3f4-a5b6-4c7d-8e9f-0a1b2c3d4e5f",
-            "meeting_id": "8f6c2a1e-b2c3-4d4e-8f9a-0b1c2d3e4f5a",
-            "status": "queued",
-            "stage": "preprocess",
-            "from_stage": None,
-            "progress": 0.0,
-            "stages": {
-                "preprocess": "queued",
-                "vad": "queued",
-                "asr": "queued",
-                "diarize": "queued",
-                "merge": "queued",
-                "summarize": "queued",
-            },
-            "attempt": 1,
-            "max_attempts": 3,
-            "next_run_at": None,
-            "error": None,
-            "created_at": "2026-10-15T08:30:01Z",
-            "started_at": None,
-            "finished_at": None,
-        },
-    }
+logger = logging.getLogger("backend.api.meetings")
 
 
 def serialize_meeting_summary(meeting: Meeting, db: Session) -> MeetingOut:
@@ -464,6 +391,77 @@ def create_meeting(
     return MeetingCreateOut.model_validate(response_data)
 
 
+def serialize_meeting_detail(meeting: Meeting, db: Session) -> MeetingDetailOut:
+    """Tạo đối tượng MeetingDetailOut từ model Meeting."""
+    latest_job = (
+        db.execute(select(Job).where(Job.meeting_id == meeting.id).order_by(Job.created_at.desc()))
+        .scalars()
+        .first()
+    )
+
+    speakers = (
+        db.execute(
+            select(Speaker)
+            .where(Speaker.meeting_id == meeting.id)
+            .order_by(Speaker.created_at.asc())
+        )
+        .scalars()
+        .all()
+    )
+
+    speakers_out = [
+        SpeakerOut(
+            id=spk.id,
+            meeting_id=spk.meeting_id,
+            label=spk.label,
+            default_name=spk.default_name,
+            display_name=spk.display_name,
+            is_edited=spk.display_name != spk.default_name,
+            color_index=idx % 10,
+            segment_count=0,
+            speaking_time_sec=0.0,
+            version=spk.version,
+        )
+        for idx, spk in enumerate(speakers)
+    ]
+
+    job_out = None
+    if latest_job:
+        job_error = (
+            JobErrorOut(
+                code=latest_job.error_code,
+                message=latest_job.error_message or "",
+                retryable=latest_job.attempt < latest_job.max_attempts,
+                stage=latest_job.stage,
+            )
+            if latest_job.error_code
+            else None
+        )
+        job_out = JobOut(
+            id=latest_job.id,
+            meeting_id=latest_job.meeting_id,
+            status=latest_job.status,  # type: ignore[arg-type]
+            stage=latest_job.stage,  # type: ignore[arg-type]
+            from_stage=latest_job.from_stage,  # type: ignore[arg-type]
+            progress=latest_job.progress,
+            stages=latest_job.stage_status or {},
+            attempt=latest_job.attempt,
+            max_attempts=latest_job.max_attempts,
+            next_run_at=latest_job.next_run_at,
+            error=job_error,
+            created_at=latest_job.created_at,
+            started_at=None,
+            finished_at=None,
+        )
+
+    meeting_summary = serialize_meeting_summary(meeting, db)
+    return MeetingDetailOut(
+        **meeting_summary.model_dump(),
+        latest_job=job_out,
+        speakers=speakers_out,
+    )
+
+
 @router.get(
     "/{meeting_id}",
     response_model=MeetingDetailOut,
@@ -474,95 +472,199 @@ def create_meeting(
     summary="Lấy chi tiết cuộc họp",
 )
 def get_meeting(
-    meeting_id: str = FastApiPath(..., description="UUID của cuộc họp cần lấy thông tin"),
-    current_user: CurrentUser = None,  # type: ignore[assignment]
-    db: Annotated[Session, Depends(get_db)] = None,  # type: ignore[assignment]
+    meeting_id: Annotated[str, FastApiPath(description="UUID của cuộc họp cần lấy thông tin")],
+    current_user: CurrentUser,
+    db: Annotated[Session, Depends(get_db)],
 ) -> MeetingDetailOut:
-    """Trả về chi tiết cuộc họp (stub contract v0 phục vụ phát triển frontend)."""
-    if db is not None and current_user is not None:
-        meeting = db.execute(select(Meeting).where(Meeting.id == meeting_id)).scalar_one_or_none()
-        if not meeting or meeting.owner_id != current_user.id:
+    """Trả về chi tiết cuộc họp từ cơ sở dữ liệu."""
+    meeting = db.execute(select(Meeting).where(Meeting.id == meeting_id)).scalar_one_or_none()
+    if not meeting or meeting.owner_id != current_user.id:
+        raise APIError(
+            code="MEETING_NOT_FOUND",
+            message="Không tìm thấy cuộc họp được yêu cầu.",
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+    return serialize_meeting_detail(meeting, db)
+
+
+@router.patch(
+    "/{meeting_id}",
+    response_model=MeetingDetailOut,
+    status_code=status.HTTP_200_OK,
+    responses={
+        404: {"model": ErrorResponse, "description": "Không tìm thấy cuộc họp"},
+        409: {
+            "model": ErrorResponse,
+            "description": "Xung đột phiên bản version của cuộc họp",
+        },
+        422: {"model": ErrorResponse, "description": "Dữ liệu không hợp lệ"},
+    },
+    summary="Chỉnh sửa thông tin cuộc họp (tiêu đề)",
+)
+def patch_meeting(
+    meeting_id: Annotated[str, FastApiPath(description="UUID của cuộc họp")],
+    payload: MeetingPatch,
+    current_user: CurrentUser,
+    db: Annotated[Session, Depends(get_db)],
+    request: Request,
+) -> MeetingDetailOut:
+    """Chỉnh sửa tiêu đề cuộc họp có kiểm tra optimistic locking nguyên tử."""
+    meeting = db.execute(
+        select(Meeting).where(Meeting.id == meeting_id, Meeting.owner_id == current_user.id)
+    ).scalar_one_or_none()
+    if meeting is None:
+        raise APIError(
+            code="MEETING_NOT_FOUND",
+            message="Không tìm thấy cuộc họp được yêu cầu.",
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    if payload.version != meeting.version:
+        raise APIError(
+            code="VERSION_CONFLICT",
+            message="Cuộc họp đã được cập nhật ở nơi khác. Vui lòng tải lại.",
+            status_code=status.HTTP_409_CONFLICT,
+            details={
+                "entity": "meeting",
+                "current": {"id": meeting.id, "version": meeting.version},
+            },
+        )
+
+    fields_set = payload.model_fields_set
+    new_title = meeting.title
+    if "title" in fields_set:
+        if payload.title is None:
             raise APIError(
-                code="MEETING_NOT_FOUND",
-                message="Không tìm thấy cuộc họp được yêu cầu.",
-                status_code=status.HTTP_404_NOT_FOUND,
+                code="VALIDATION_ERROR",
+                message="Tiêu đề cuộc họp không được để trống.",
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             )
+        cleaned_title = payload.title.strip()
+        if not cleaned_title:
+            raise APIError(
+                code="VALIDATION_ERROR",
+                message="Tiêu đề cuộc họp không được để trống.",
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            )
+        if len(cleaned_title) > 200:
+            raise APIError(
+                code="VALIDATION_ERROR",
+                message="Tiêu đề cuộc họp không được vượt quá 200 ký tự.",
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            )
+        new_title = cleaned_title
 
-        latest_job = (
-            db.execute(
-                select(Job).where(Job.meeting_id == meeting.id).order_by(Job.created_at.desc())
-            )
-            .scalars()
-            .first()
+    # Kiểm tra no-op (không đổi giá trị)
+    if new_title == meeting.title:
+        return serialize_meeting_detail(meeting, db)
+
+    old_title = meeting.title
+    now = datetime.now(UTC)
+    new_version = payload.version + 1
+
+    stmt = (
+        update(Meeting)
+        .where(
+            Meeting.id == meeting.id,
+            Meeting.owner_id == current_user.id,
+            Meeting.version == payload.version,
+        )
+        .values(
+            title=new_title,
+            version=new_version,
+            updated_at=now,
+        )
+    )
+    res = db.execute(stmt)
+    if res.rowcount == 0:
+        db.rollback()
+        curr_meeting = db.execute(
+            select(Meeting).where(Meeting.id == meeting.id, Meeting.owner_id == current_user.id)
+        ).scalar_one_or_none()
+        curr_ver = curr_meeting.version if curr_meeting else payload.version
+        raise APIError(
+            code="VERSION_CONFLICT",
+            message="Cuộc họp đã được cập nhật ở nơi khác. Vui lòng tải lại.",
+            status_code=status.HTTP_409_CONFLICT,
+            details={
+                "entity": "meeting",
+                "current": {"id": meeting.id, "version": curr_ver},
+            },
         )
 
-        speakers = (
-            db.execute(
-                select(Speaker)
-                .where(Speaker.meeting_id == meeting.id)
-                .order_by(Speaker.created_at.asc())
-            )
-            .scalars()
-            .all()
+    record_edit(
+        db,
+        meeting_id=meeting.id,
+        entity_type="meeting",
+        entity_id=meeting.id,
+        action="update",
+        actor_id=current_user.id,
+        field="title",
+        before={"title": old_title},
+        after={"title": new_title},
+        entity_version_after=new_version,
+        request_id=getattr(getattr(request, "state", None), "request_id", None),
+        created_at=now,
+    )
+    db.commit()
+    db.refresh(meeting)
+    return serialize_meeting_detail(meeting, db)
+
+
+@router.delete(
+    "/{meeting_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={
+        204: {"description": "Cuộc họp đã được xóa thành công"},
+        404: {"model": ErrorResponse, "description": "Không tìm thấy cuộc họp"},
+    },
+    summary="Xóa cuộc họp",
+)
+def delete_meeting(
+    meeting_id: Annotated[str, FastApiPath(description="UUID của cuộc họp cần xóa")],
+    current_user: CurrentUser,
+    db: Annotated[Session, Depends(get_db)],
+    storage: Annotated[Storage, Depends(get_storage)],
+) -> Response:
+    """Xóa cuộc họp cùng file audio, artifacts và toàn bộ dữ liệu liên quan."""
+    meeting = db.execute(select(Meeting).where(Meeting.id == meeting_id)).scalar_one_or_none()
+    if not meeting or meeting.owner_id != current_user.id:
+        raise APIError(
+            code="MEETING_NOT_FOUND",
+            message="Không tìm thấy cuộc họp được yêu cầu.",
+            status_code=status.HTTP_404_NOT_FOUND,
         )
 
-        speakers_out = [
-            SpeakerOut(
-                id=spk.id,
-                meeting_id=spk.meeting_id,
-                label=spk.label,
-                default_name=spk.default_name,
-                display_name=spk.display_name,
-                is_edited=spk.display_name != spk.default_name,
-                color_index=idx % 10,
-                segment_count=0,
-                speaking_time_sec=0.0,
-                version=spk.version,
+    # 1. Chuyển trạng thái các job đang active sang cancelled
+    active_jobs = (
+        db.execute(
+            select(Job).where(
+                Job.meeting_id == meeting.id,
+                Job.status.in_(["queued", "running", "retry_scheduled"]),
             )
-            for idx, spk in enumerate(speakers)
-        ]
-
-        job_out = None
-        if latest_job:
-            job_error = (
-                JobErrorOut(
-                    code=latest_job.error_code,
-                    message=latest_job.error_message or "",
-                    retryable=latest_job.attempt < latest_job.max_attempts,
-                    stage=latest_job.stage,
-                )
-                if latest_job.error_code
-                else None
-            )
-            job_out = JobOut(
-                id=latest_job.id,
-                meeting_id=latest_job.meeting_id,
-                status=latest_job.status,  # type: ignore[arg-type]
-                stage=latest_job.stage,  # type: ignore[arg-type]
-                from_stage=latest_job.from_stage,  # type: ignore[arg-type]
-                progress=latest_job.progress,
-                stages=latest_job.stage_status or {},
-                attempt=latest_job.attempt,
-                max_attempts=latest_job.max_attempts,
-                next_run_at=latest_job.next_run_at,
-                error=job_error,
-                created_at=latest_job.created_at,
-                started_at=None,
-                finished_at=None,
-            )
-
-        meeting_summary = serialize_meeting_summary(meeting, db)
-        return MeetingDetailOut(
-            **meeting_summary.model_dump(),
-            latest_job=job_out,
-            speakers=speakers_out,
         )
+        .scalars()
+        .all()
+    )
+    for aj in active_jobs:
+        aj.status = "cancelled"
+        aj.updated_at = datetime.now(UTC)
+    if active_jobs:
+        db.commit()
 
-    data = load_meeting_fixture()
-    data["id"] = meeting_id
-    data["latest_job"] = None
-    data["speakers"] = []
-    return MeetingDetailOut.model_validate(data)
+    # 2. Xóa audio và artifacts trên đĩa
+    storage.delete_meeting_files(meeting_id)
+
+    # 3. Xóa cuộc họp và các bảng liên quan khỏi DB
+    db.delete(meeting)
+    db.flush()
+    db.execute(delete(EditEvent).where(EditEvent.meeting_id == meeting_id))
+    db.commit()
+
+    # 4. Ghi log chỉ với meeting_id (bảo mật PRIV-12, không ghi tiêu đề hay nội dung)
+    logger.info("Đã xóa cuộc họp: meeting_id=%s", meeting_id)
+
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 AUDIO_MIME_TYPES: dict[str, str] = {
@@ -726,36 +828,6 @@ def get_meeting_audio(
     )
 
 
-TRANSCRIPT_READY_FIXTURE_PATH = FIXTURES_DIR / "transcript_ready.json"
-TRANSCRIPT_PENDING_FIXTURE_PATH = FIXTURES_DIR / "transcript_pending.json"
-
-
-def load_transcript_ready_fixture() -> dict:
-    """Đọc dữ liệu fixture transcript ở trạng thái sẵn sàng."""
-    if TRANSCRIPT_READY_FIXTURE_PATH.is_file():
-        with open(TRANSCRIPT_READY_FIXTURE_PATH, encoding="utf-8") as f:
-            return json.load(f)
-    return {
-        "status": "ready",
-        "diarization_status": "ok",
-        "speakers": [],
-        "segments": [],
-    }
-
-
-def load_transcript_pending_fixture() -> dict:
-    """Đọc dữ liệu fixture transcript ở trạng thái đang xử lý."""
-    if TRANSCRIPT_PENDING_FIXTURE_PATH.is_file():
-        with open(TRANSCRIPT_PENDING_FIXTURE_PATH, encoding="utf-8") as f:
-            return json.load(f)
-    return {
-        "status": "pending",
-        "diarization_status": "pending",
-        "speakers": [],
-        "segments": [],
-    }
-
-
 @router.get(
     "/{meeting_id}/transcript",
     response_model=TranscriptOut,
@@ -766,97 +838,88 @@ def load_transcript_pending_fixture() -> dict:
     summary="Lấy transcript của cuộc họp",
 )
 def get_meeting_transcript(
-    meeting_id: str = FastApiPath(..., description="UUID của cuộc họp"),
-    current_user: CurrentUser = None,  # type: ignore[assignment]
-    db: Annotated[Session, Depends(get_db)] = None,  # type: ignore[assignment]
+    meeting_id: Annotated[str, FastApiPath(description="UUID của cuộc họp")],
+    current_user: CurrentUser,
+    db: Annotated[Session, Depends(get_db)],
 ) -> TranscriptOut:
-    """Trả về dữ liệu transcript của cuộc họp (trạng thái pending trả về segments rỗng)."""
-    if db is not None and current_user is not None:
-        meeting = db.execute(select(Meeting).where(Meeting.id == meeting_id)).scalar_one_or_none()
-        if not meeting or meeting.owner_id != current_user.id:
-            raise APIError(
-                code="MEETING_NOT_FOUND",
-                message="Không tìm thấy cuộc họp được yêu cầu.",
-                status_code=status.HTTP_404_NOT_FOUND,
-            )
-
-        if meeting.status in ("ready", "partial"):
-            speakers = (
-                db.execute(
-                    select(Speaker)
-                    .where(Speaker.meeting_id == meeting.id)
-                    .order_by(Speaker.created_at.asc())
-                )
-                .scalars()
-                .all()
-            )
-
-            segments = (
-                db.execute(
-                    select(Segment)
-                    .where(Segment.meeting_id == meeting.id)
-                    .order_by(Segment.idx.asc())
-                )
-                .scalars()
-                .all()
-            )
-
-            if segments:
-                speakers_out = [
-                    SpeakerOut(
-                        id=spk.id,
-                        meeting_id=spk.meeting_id,
-                        label=spk.label,
-                        default_name=spk.default_name,
-                        display_name=spk.display_name,
-                        is_edited=spk.display_name != spk.default_name,
-                        color_index=idx % 10,
-                        segment_count=0,
-                        speaking_time_sec=0.0,
-                        version=spk.version,
-                    )
-                    for idx, spk in enumerate(speakers)
-                ]
-                segments_out = [
-                    TranscriptSegmentOut(
-                        id=seg.id,
-                        index=seg.idx,
-                        start_sec=seg.start_sec,
-                        end_sec=seg.end_sec,
-                        speaker_id=seg.speaker_id,
-                        ai_speaker_id=seg.ai_speaker_id,
-                        text=seg.text,
-                        ai_text=seg.ai_text,
-                        is_edited=seg.text != seg.ai_text or seg.speaker_id != seg.ai_speaker_id,
-                        confidence=seg.confidence,
-                        flags=list(seg.flags.keys())
-                        if isinstance(seg.flags, dict)
-                        else (list(seg.flags) if isinstance(seg.flags, list) else []),
-                        version=seg.version,
-                        updated_at=seg.updated_at,
-                    )
-                    for seg in segments
-                ]
-                return TranscriptOut(
-                    status="ready",
-                    diarization_status="ok",
-                    speakers=speakers_out,
-                    segments=segments_out,
-                )
-
-        status_val = "failed" if meeting.status == "failed" else "pending"
-        return TranscriptOut(
-            status=status_val,
-            diarization_status=status_val,
-            speakers=[],
-            segments=[],
+    """Trả về dữ liệu transcript của cuộc họp từ cơ sở dữ liệu."""
+    meeting = db.execute(select(Meeting).where(Meeting.id == meeting_id)).scalar_one_or_none()
+    if not meeting or meeting.owner_id != current_user.id:
+        raise APIError(
+            code="MEETING_NOT_FOUND",
+            message="Không tìm thấy cuộc họp được yêu cầu.",
+            status_code=status.HTTP_404_NOT_FOUND,
         )
 
-    if "pending" in meeting_id.lower():
-        data = load_transcript_pending_fixture()
-    else:
-        data = load_transcript_ready_fixture()
-    return TranscriptOut.model_validate(data)
+    if meeting.status in ("ready", "partial"):
+        speakers = (
+            db.execute(
+                select(Speaker)
+                .where(Speaker.meeting_id == meeting.id)
+                .order_by(Speaker.created_at.asc())
+            )
+            .scalars()
+            .all()
+        )
+
+        segments = (
+            db.execute(
+                select(Segment).where(Segment.meeting_id == meeting.id).order_by(Segment.idx.asc())
+            )
+            .scalars()
+            .all()
+        )
+
+        if segments:
+            speakers_out = [
+                SpeakerOut(
+                    id=spk.id,
+                    meeting_id=spk.meeting_id,
+                    label=spk.label,
+                    default_name=spk.default_name,
+                    display_name=spk.display_name,
+                    is_edited=spk.display_name != spk.default_name,
+                    color_index=idx % 10,
+                    segment_count=0,
+                    speaking_time_sec=0.0,
+                    version=spk.version,
+                )
+                for idx, spk in enumerate(speakers)
+            ]
+            segments_out = [
+                TranscriptSegmentOut(
+                    id=seg.id,
+                    index=seg.idx,
+                    start_sec=seg.start_sec,
+                    end_sec=seg.end_sec,
+                    speaker_id=seg.speaker_id,
+                    ai_speaker_id=seg.ai_speaker_id,
+                    text=seg.text,
+                    ai_text=seg.ai_text,
+                    is_edited=seg.text != seg.ai_text or seg.speaker_id != seg.ai_speaker_id,
+                    confidence=seg.confidence,
+                    flags=list(seg.flags.keys())
+                    if isinstance(seg.flags, dict)
+                    else (list(seg.flags) if isinstance(seg.flags, list) else []),
+                    version=seg.version,
+                    updated_at=seg.updated_at,
+                )
+                for seg in segments
+            ]
+            return TranscriptOut(
+                status="ready",
+                diarization_status="ok",
+                speakers=speakers_out,
+                segments=segments_out,
+            )
+
+    status_val = "failed" if meeting.status == "failed" else "pending"
+    return TranscriptOut(
+        status=status_val,
+        diarization_status=status_val,
+        speakers=[],
+        segments=[],
+    )
 
 
 @router.patch(
@@ -983,9 +1046,14 @@ def patch_meeting_segment(
             updated_at=segment.updated_at,
         )
 
+    old_text = segment.text
+    old_speaker_id = segment.speaker_id
+    text_changed = new_text != old_text
+    speaker_changed = new_speaker_id != old_speaker_id
+
     before_state = {
-        "text": segment.text,
-        "speaker_id": segment.speaker_id,
+        "text": old_text,
+        "speaker_id": old_speaker_id,
     }
     after_state = {
         "text": new_text,
@@ -993,32 +1061,81 @@ def patch_meeting_segment(
     }
 
     now = datetime.now(UTC)
-    segment.text = new_text
-    segment.speaker_id = new_speaker_id
-    segment.version += 1
-    segment.updated_at = now
+    new_version = payload.version + 1
 
-    field_name = None
-    if "text" in fields_set and "speaker_id" not in fields_set:
-        field_name = "text"
-    elif "speaker_id" in fields_set and "text" not in fields_set:
-        field_name = "speaker_id"
-
-    edit_event = EditEvent(
-        id=str(uuid.uuid4()),
-        meeting_id=meeting.id,
-        actor_id=current_user.id,
-        entity_type="segment",
-        entity_id=segment.id,
-        action="update",
-        field=field_name,
-        before=before_state,
-        after=after_state,
-        entity_version_after=segment.version,
-        request_id=getattr(getattr(request, "state", None), "request_id", None),
-        created_at=now,
+    # Cập nhật nguyên tử có điều kiện theo version (optimistic locking)
+    stmt = (
+        update(Segment)
+        .where(
+            Segment.id == segment.id,
+            Segment.meeting_id == meeting.id,
+            Segment.version == payload.version,
+        )
+        .values(
+            text=new_text,
+            speaker_id=new_speaker_id,
+            version=new_version,
+            updated_at=now,
+        )
     )
-    db.add(edit_event)
+    res = db.execute(stmt)
+    if res.rowcount == 0:
+        db.rollback()
+        current_segment = db.execute(
+            select(Segment).where(Segment.id == segment.id, Segment.meeting_id == meeting.id)
+        ).scalar_one_or_none()
+        curr_ver = current_segment.version if current_segment else payload.version
+        curr_text = current_segment.text if current_segment else segment.text
+        curr_spk = current_segment.speaker_id if current_segment else segment.speaker_id
+        raise APIError(
+            code="VERSION_CONFLICT",
+            message="Đoạn transcript đã được cập nhật ở nơi khác. Vui lòng tải lại.",
+            status_code=status.HTTP_409_CONFLICT,
+            details={
+                "entity": "segment",
+                "current": {
+                    "id": segment.id,
+                    "version": curr_ver,
+                    "text": curr_text,
+                    "speaker_id": curr_spk,
+                },
+            },
+        )
+
+    req_id = getattr(getattr(request, "state", None), "request_id", None)
+
+    if text_changed:
+        record_edit(
+            db,
+            meeting_id=meeting.id,
+            entity_type="segment",
+            entity_id=segment.id,
+            action="update",
+            actor_id=current_user.id,
+            field="text",
+            before=before_state,
+            after=after_state,
+            entity_version_after=new_version,
+            request_id=req_id,
+            created_at=now,
+        )
+
+    if speaker_changed:
+        record_edit(
+            db,
+            meeting_id=meeting.id,
+            entity_type="segment",
+            entity_id=segment.id,
+            action="update",
+            actor_id=current_user.id,
+            field="speaker_id",
+            before=before_state,
+            after=after_state,
+            entity_version_after=new_version,
+            request_id=req_id,
+            created_at=now,
+        )
+
     db.commit()
     db.refresh(segment)
 
@@ -1168,78 +1285,57 @@ def patch_meeting_speaker(
     after_state = {"display_name": cleaned_name}
 
     now = datetime.now(UTC)
-    speaker.display_name = cleaned_name
-    speaker.version += 1
-    speaker.updated_at = now
+    new_version = payload.version + 1
 
-    edit_event = EditEvent(
-        id=str(uuid.uuid4()),
+    # Cập nhật nguyên tử có điều kiện theo version (optimistic locking)
+    stmt = (
+        update(Speaker)
+        .where(
+            Speaker.id == speaker.id,
+            Speaker.meeting_id == meeting.id,
+            Speaker.version == payload.version,
+        )
+        .values(
+            display_name=cleaned_name,
+            version=new_version,
+            updated_at=now,
+        )
+    )
+    res = db.execute(stmt)
+    if res.rowcount == 0:
+        db.rollback()
+        current_speaker = db.execute(
+            select(Speaker).where(Speaker.id == speaker.id, Speaker.meeting_id == meeting.id)
+        ).scalar_one_or_none()
+        curr_ver = current_speaker.version if current_speaker else payload.version
+        raise APIError(
+            code="VERSION_CONFLICT",
+            message="Người nói đã được cập nhật ở nơi khác. Vui lòng tải lại.",
+            status_code=status.HTTP_409_CONFLICT,
+            details={
+                "entity": "speaker",
+                "current": {"id": speaker.id, "version": curr_ver},
+            },
+        )
+
+    record_edit(
+        db,
         meeting_id=meeting.id,
-        actor_id=current_user.id,
         entity_type="speaker",
         entity_id=speaker.id,
         action="update",
+        actor_id=current_user.id,
         field="display_name",
         before=before_state,
         after=after_state,
-        entity_version_after=speaker.version,
+        entity_version_after=new_version,
         request_id=getattr(getattr(request, "state", None), "request_id", None),
         created_at=now,
     )
-    db.add(edit_event)
     db.commit()
     db.refresh(speaker)
 
     return serialize_speaker(speaker, db, meeting.id)
-
-
-SUMMARY_READY_FIXTURE_PATH = FIXTURES_DIR / "summary_ready.json"
-SUMMARY_DISABLED_FIXTURE_PATH = FIXTURES_DIR / "summary_disabled.json"
-ACTION_ITEMS_FIXTURE_PATH = FIXTURES_DIR / "action_items.json"
-
-
-def load_summary_ready_fixture() -> dict:
-    """Đọc dữ liệu fixture summary ở trạng thái sẵn sàng."""
-    if SUMMARY_READY_FIXTURE_PATH.is_file():
-        with open(SUMMARY_READY_FIXTURE_PATH, encoding="utf-8") as f:
-            return json.load(f)
-    return {
-        "meeting_id": "test-id",
-        "status": "ready",
-        "content": None,
-        "ai_content": None,
-        "is_edited": False,
-        "model": None,
-        "prompt_version": None,
-        "generated_at": None,
-        "version": 1,
-    }
-
-
-def load_summary_disabled_fixture() -> dict:
-    """Đọc dữ liệu fixture summary ở trạng thái disabled."""
-    if SUMMARY_DISABLED_FIXTURE_PATH.is_file():
-        with open(SUMMARY_DISABLED_FIXTURE_PATH, encoding="utf-8") as f:
-            return json.load(f)
-    return {
-        "meeting_id": "test-id",
-        "status": "disabled",
-        "content": None,
-        "ai_content": None,
-        "is_edited": False,
-        "model": None,
-        "prompt_version": None,
-        "generated_at": None,
-        "version": 1,
-    }
-
-
-def load_action_items_fixture() -> dict:
-    """Đọc dữ liệu fixture danh sách action items."""
-    if ACTION_ITEMS_FIXTURE_PATH.is_file():
-        with open(ACTION_ITEMS_FIXTURE_PATH, encoding="utf-8") as f:
-            return json.load(f)
-    return {"items": []}
 
 
 @router.get(
@@ -1255,15 +1351,59 @@ def load_action_items_fixture() -> dict:
     summary="Lấy tóm tắt cuộc họp",
 )
 def get_meeting_summary(
-    meeting_id: str = FastApiPath(..., description="UUID của cuộc họp"),
+    meeting_id: Annotated[str, FastApiPath(description="UUID của cuộc họp")],
+    current_user: CurrentUser,
+    db: Annotated[Session, Depends(get_db)],
 ) -> SummaryOut:
-    """Lấy thông tin tóm tắt cuộc họp (stub contract v0)."""
-    if "disabled" in meeting_id.lower():
-        data = load_summary_disabled_fixture()
-    else:
-        data = load_summary_ready_fixture()
-    data["meeting_id"] = meeting_id
-    return SummaryOut.model_validate(data)
+    """Lấy thông tin tóm tắt cuộc họp từ cơ sở dữ liệu."""
+    meeting = db.execute(select(Meeting).where(Meeting.id == meeting_id)).scalar_one_or_none()
+    if not meeting or meeting.owner_id != current_user.id:
+        raise APIError(
+            code="MEETING_NOT_FOUND",
+            message="Không tìm thấy cuộc họp được yêu cầu.",
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    summary = db.execute(
+        select(Summary).where(Summary.meeting_id == meeting.id)
+    ).scalar_one_or_none()
+
+    if summary is None:
+        status_val = "failed" if meeting.status == "failed" else "pending"
+        return SummaryOut(
+            meeting_id=meeting.id,
+            status=status_val,
+            content=None,
+            ai_content=None,
+            is_edited=False,
+            model=None,
+            prompt_version=None,
+            generated_at=None,
+            version=1,
+        )
+
+    is_edited = (
+        summary.ai_content is not None
+        and summary.content is not None
+        and summary.content != summary.ai_content
+    )
+
+    content_out = SummaryContentOut.model_validate(summary.content) if summary.content else None
+    ai_content_out = (
+        SummaryContentOut.model_validate(summary.ai_content) if summary.ai_content else None
+    )
+
+    return SummaryOut(
+        meeting_id=meeting.id,
+        status=summary.status,
+        content=content_out,
+        ai_content=ai_content_out,
+        is_edited=is_edited,
+        model=summary.model,
+        prompt_version=summary.prompt_version,
+        generated_at=summary.created_at,
+        version=summary.version,
+    )
 
 
 @router.put(
@@ -1342,25 +1482,53 @@ def update_meeting_summary(
     after_state = {"content": new_content}
 
     now = datetime.now(UTC)
-    summary.content = new_content
-    summary.version += 1
-    summary.updated_at = now
+    new_version = payload.version + 1
 
-    edit_event = EditEvent(
-        id=str(uuid.uuid4()),
+    # Cập nhật nguyên tử có điều kiện theo version (optimistic locking)
+    stmt = (
+        update(Summary)
+        .where(
+            Summary.id == summary.id,
+            Summary.meeting_id == meeting.id,
+            Summary.version == payload.version,
+        )
+        .values(
+            content=new_content,
+            version=new_version,
+            updated_at=now,
+        )
+    )
+    res = db.execute(stmt)
+    if res.rowcount == 0:
+        db.rollback()
+        current_summary = db.execute(
+            select(Summary).where(Summary.meeting_id == meeting.id)
+        ).scalar_one_or_none()
+        curr_ver = current_summary.version if current_summary else payload.version
+        raise APIError(
+            code="VERSION_CONFLICT",
+            message="Tóm tắt cuộc họp đã được cập nhật ở nơi khác. Vui lòng tải lại.",
+            status_code=status.HTTP_409_CONFLICT,
+            details={
+                "entity": "summary",
+                "current": {"meeting_id": meeting.id, "version": curr_ver},
+            },
+        )
+
+    record_edit(
+        db,
         meeting_id=meeting.id,
-        actor_id=current_user.id,
         entity_type="summary",
         entity_id=summary.id,
         action="update",
+        actor_id=current_user.id,
         field=None,
         before=before_state,
         after=after_state,
-        entity_version_after=summary.version,
+        entity_version_after=new_version,
         request_id=getattr(getattr(request, "state", None), "request_id", None),
         created_at=now,
     )
-    db.add(edit_event)
     db.commit()
     db.refresh(summary)
 
@@ -1377,6 +1545,41 @@ def update_meeting_summary(
     )
 
 
+def serialize_action_item(item: ActionItem) -> ActionItemOut:
+    """Chuyển đổi ActionItem model sang ActionItemOut schema."""
+    ai_orig = None
+    if item.ai_original and isinstance(item.ai_original, dict):
+        ai_orig = ActionItemAiOriginal.model_validate(item.ai_original)
+
+    if item.source == "ai" and item.ai_original:
+        is_edited = (
+            item.description != item.ai_original.get("description")
+            or item.assignee_name != item.ai_original.get("assignee_name")
+            or item.due_date != item.ai_original.get("due_date")
+        )
+    else:
+        is_edited = item.version > 1
+
+    return ActionItemOut(
+        id=item.id,
+        meeting_id=item.meeting_id,
+        description=item.description,
+        assignee_name=item.assignee_name,
+        assignee_speaker_id=item.assignee_speaker_id,
+        due_date=item.due_date,
+        due_date_text=item.due_date_text,
+        status=item.status,
+        source=item.source,  # type: ignore[arg-type]
+        is_edited=is_edited,
+        needs_review=item.needs_review,
+        evidence_segment_ids=item.evidence_segment_ids or [],
+        ai_original=ai_orig,
+        version=item.version,
+        created_at=item.created_at,
+        updated_at=item.updated_at,
+    )
+
+
 @router.get(
     "/{meeting_id}/action-items",
     response_model=ActionItemListOut,
@@ -1387,11 +1590,31 @@ def update_meeting_summary(
     summary="Lấy danh sách các action items của cuộc họp",
 )
 def list_meeting_action_items(
-    meeting_id: str = FastApiPath(..., description="UUID của cuộc họp"),
+    meeting_id: Annotated[str, FastApiPath(description="UUID của cuộc họp")],
+    current_user: CurrentUser,
+    db: Annotated[Session, Depends(get_db)],
 ) -> ActionItemListOut:
     """Lấy danh sách các action item (công việc cần làm) của cuộc họp."""
-    data = load_action_items_fixture()
-    return ActionItemListOut.model_validate(data)
+    meeting = db.execute(
+        select(Meeting).where(Meeting.id == meeting_id, Meeting.owner_id == current_user.id)
+    ).scalar_one_or_none()
+    if meeting is None:
+        raise APIError(
+            code="NOT_FOUND",
+            message="Không tìm thấy cuộc họp được yêu cầu.",
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    stmt = (
+        select(ActionItem)
+        .where(
+            ActionItem.meeting_id == meeting.id,
+            ActionItem.deleted_at.is_(None),
+        )
+        .order_by(ActionItem.created_at.asc())
+    )
+    items = db.execute(stmt).scalars().all()
+    return ActionItemListOut(items=[serialize_action_item(item) for item in items])
 
 
 @router.post(
@@ -1405,29 +1628,108 @@ def list_meeting_action_items(
     summary="Tạo action item mới do người dùng thêm thủ công",
 )
 def create_meeting_action_item(
-    meeting_id: str = FastApiPath(..., description="UUID của cuộc họp"),
-    payload: ActionItemCreate = ...,
+    meeting_id: Annotated[str, FastApiPath(description="UUID của cuộc họp")],
+    payload: ActionItemCreate,
+    current_user: CurrentUser,
+    db: Annotated[Session, Depends(get_db)],
+    request: Request,
 ) -> ActionItemOut:
     """Tạo mới một action item với nguồn gốc source='user'."""
-    new_item = {
-        "id": "new-action-item-uuid-1",
-        "meeting_id": meeting_id,
-        "description": payload.description,
-        "assignee_name": payload.assignee_name,
-        "assignee_speaker_id": payload.assignee_speaker_id,
-        "due_date": payload.due_date,
-        "due_date_text": None,
-        "status": payload.status,
-        "source": "user",
-        "is_edited": False,
-        "needs_review": False,
-        "evidence_segment_ids": [],
-        "ai_original": None,
-        "version": 1,
-        "created_at": "2026-10-15T09:00:00Z",
-        "updated_at": "2026-10-15T09:00:00Z",
-    }
-    return ActionItemOut.model_validate(new_item)
+    meeting = db.execute(
+        select(Meeting).where(Meeting.id == meeting_id, Meeting.owner_id == current_user.id)
+    ).scalar_one_or_none()
+    if meeting is None:
+        raise APIError(
+            code="NOT_FOUND",
+            message="Không tìm thấy cuộc họp được yêu cầu.",
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    cleaned_desc = payload.description.strip()
+    if not cleaned_desc:
+        raise APIError(
+            code="VALIDATION_ERROR",
+            message="Mô tả công việc không được để trống.",
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        )
+    if len(cleaned_desc) > 1000:
+        raise APIError(
+            code="VALIDATION_ERROR",
+            message="Mô tả công việc không được vượt quá 1000 ký tự.",
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        )
+
+    item_status = payload.status or "open"
+    if item_status not in ("open", "done"):
+        raise APIError(
+            code="VALIDATION_ERROR",
+            message="Trạng thái công việc chỉ có thể là 'open' hoặc 'done'.",
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        )
+
+    speaker_id = None
+    assignee_name = payload.assignee_name
+    if payload.assignee_speaker_id is not None:
+        spk = db.execute(
+            select(Speaker).where(
+                Speaker.id == payload.assignee_speaker_id,
+                Speaker.meeting_id == meeting.id,
+            )
+        ).scalar_one_or_none()
+        if spk is None:
+            raise APIError(
+                code="SPEAKER_NOT_IN_MEETING",
+                message="Người nói không thuộc cuộc họp này.",
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            )
+        speaker_id = spk.id
+        if not assignee_name:
+            assignee_name = spk.display_name
+
+    now = datetime.now(UTC)
+    new_item = ActionItem(
+        id=str(uuid.uuid4()),
+        meeting_id=meeting.id,
+        description=cleaned_desc,
+        assignee_name=assignee_name,
+        assignee_speaker_id=speaker_id,
+        due_date=payload.due_date,
+        due_date_text=None,
+        status=item_status,
+        source="user",
+        ai_original=None,
+        evidence_segment_ids=[],
+        needs_review=False,
+        version=1,
+        created_at=now,
+        updated_at=now,
+    )
+    db.add(new_item)
+
+    record_edit(
+        db,
+        meeting_id=meeting.id,
+        entity_type="action_item",
+        entity_id=new_item.id,
+        action="create",
+        actor_id=current_user.id,
+        field=None,
+        before=None,
+        after={
+            "description": cleaned_desc,
+            "status": item_status,
+            "assignee_name": assignee_name,
+            "assignee_speaker_id": speaker_id,
+            "due_date": payload.due_date,
+        },
+        entity_version_after=1,
+        request_id=getattr(getattr(request, "state", None), "request_id", None),
+        created_at=now,
+    )
+    db.commit()
+    db.refresh(new_item)
+
+    return serialize_action_item(new_item)
 
 
 @router.patch(
@@ -1447,63 +1749,194 @@ def create_meeting_action_item(
     summary="Chỉnh sửa action item",
 )
 def patch_meeting_action_item(
-    meeting_id: str = FastApiPath(..., description="UUID của cuộc họp"),
-    item_id: str = FastApiPath(..., description="UUID của action item"),
-    payload: ActionItemPatch = ...,
+    meeting_id: Annotated[str, FastApiPath(description="UUID của cuộc họp")],
+    item_id: Annotated[str, FastApiPath(description="UUID của action item")],
+    payload: ActionItemPatch,
+    current_user: CurrentUser,
+    db: Annotated[Session, Depends(get_db)],
+    request: Request,
 ) -> ActionItemOut:
     """Chỉnh sửa thông tin action item có kiểm tra optimistic locking."""
-    if payload.version != 1:
+    meeting = db.execute(
+        select(Meeting).where(Meeting.id == meeting_id, Meeting.owner_id == current_user.id)
+    ).scalar_one_or_none()
+    if meeting is None:
+        raise APIError(
+            code="NOT_FOUND",
+            message="Không tìm thấy cuộc họp được yêu cầu.",
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    item = db.execute(
+        select(ActionItem).where(
+            ActionItem.id == item_id,
+            ActionItem.meeting_id == meeting.id,
+            ActionItem.deleted_at.is_(None),
+        )
+    ).scalar_one_or_none()
+    if item is None:
+        raise APIError(
+            code="NOT_FOUND",
+            message="Không tìm thấy công việc cần làm được yêu cầu.",
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    if payload.version != item.version:
         raise APIError(
             code="VERSION_CONFLICT",
             message="Action item đã được cập nhật ở nơi khác. Vui lòng tải lại.",
             status_code=status.HTTP_409_CONFLICT,
             details={
                 "entity": "action_item",
-                "current": {"id": item_id, "version": 2},
+                "current": {"id": item.id, "version": item.version},
             },
         )
 
-    data = load_action_items_fixture()
-    matched = None
-    for item in data.get("items", []):
-        if item.get("id") == item_id:
-            matched = dict(item)
-            break
+    fields_set = payload.model_fields_set
+    new_desc = item.description
+    if "description" in fields_set:
+        if payload.description is None:
+            raise APIError(
+                code="VALIDATION_ERROR",
+                message="Mô tả công việc không được để trống.",
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            )
+        cleaned = payload.description.strip()
+        if not cleaned:
+            raise APIError(
+                code="VALIDATION_ERROR",
+                message="Mô tả công việc không được để trống.",
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            )
+        if len(cleaned) > 1000:
+            raise APIError(
+                code="VALIDATION_ERROR",
+                message="Mô tả công việc không được vượt quá 1000 ký tự.",
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            )
+        new_desc = cleaned
 
-    if not matched:
-        matched = {
-            "id": item_id,
-            "meeting_id": meeting_id,
-            "description": payload.description or "Công việc cần làm",
-            "assignee_name": payload.assignee_name,
-            "assignee_speaker_id": payload.assignee_speaker_id,
-            "due_date": payload.due_date,
-            "due_date_text": None,
-            "status": payload.status or "open",
-            "source": "ai",
-            "is_edited": True,
-            "needs_review": False,
-            "evidence_segment_ids": [],
-            "ai_original": None,
-            "version": payload.version + 1,
-            "created_at": "2026-10-15T08:55:02Z",
-            "updated_at": "2026-10-15T09:10:00Z",
-        }
-    else:
-        if payload.description is not None:
-            matched["description"] = payload.description
-        if payload.assignee_name is not None:
-            matched["assignee_name"] = payload.assignee_name
+    new_status = item.status
+    if "status" in fields_set:
+        if payload.status not in ("open", "done"):
+            raise APIError(
+                code="VALIDATION_ERROR",
+                message="Trạng thái chỉ có thể là 'open' hoặc 'done'.",
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            )
+        new_status = payload.status
+
+    new_assignee_name = item.assignee_name
+    if "assignee_name" in fields_set:
+        new_assignee_name = payload.assignee_name
+
+    new_speaker_id = item.assignee_speaker_id
+    if "assignee_speaker_id" in fields_set:
         if payload.assignee_speaker_id is not None:
-            matched["assignee_speaker_id"] = payload.assignee_speaker_id
-        if payload.due_date is not None:
-            matched["due_date"] = payload.due_date
-        if payload.status is not None:
-            matched["status"] = payload.status
-        matched["is_edited"] = True
-        matched["version"] = payload.version + 1
+            spk = db.execute(
+                select(Speaker).where(
+                    Speaker.id == payload.assignee_speaker_id,
+                    Speaker.meeting_id == meeting.id,
+                )
+            ).scalar_one_or_none()
+            if spk is None:
+                raise APIError(
+                    code="SPEAKER_NOT_IN_MEETING",
+                    message="Người nói không thuộc cuộc họp này.",
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                )
+            new_speaker_id = spk.id
+            if "assignee_name" not in fields_set and not new_assignee_name:
+                new_assignee_name = spk.display_name
+        else:
+            new_speaker_id = None
 
-    return ActionItemOut.model_validate(matched)
+    new_due_date = item.due_date
+    if "due_date" in fields_set:
+        new_due_date = payload.due_date
+
+    # Kiểm tra no-op (không đổi giá trị)
+    if (
+        new_desc == item.description
+        and new_status == item.status
+        and new_assignee_name == item.assignee_name
+        and new_speaker_id == item.assignee_speaker_id
+        and new_due_date == item.due_date
+    ):
+        return serialize_action_item(item)
+
+    now = datetime.now(UTC)
+    new_version = payload.version + 1
+
+    stmt = (
+        update(ActionItem)
+        .where(
+            ActionItem.id == item.id,
+            ActionItem.meeting_id == meeting.id,
+            ActionItem.version == payload.version,
+            ActionItem.deleted_at.is_(None),
+        )
+        .values(
+            description=new_desc,
+            status=new_status,
+            assignee_name=new_assignee_name,
+            assignee_speaker_id=new_speaker_id,
+            due_date=new_due_date,
+            version=new_version,
+            updated_at=now,
+        )
+    )
+    res = db.execute(stmt)
+    if res.rowcount == 0:
+        db.rollback()
+        current_item = db.execute(
+            select(ActionItem).where(
+                ActionItem.id == item.id,
+                ActionItem.meeting_id == meeting.id,
+                ActionItem.deleted_at.is_(None),
+            )
+        ).scalar_one_or_none()
+        curr_ver = current_item.version if current_item else payload.version
+        raise APIError(
+            code="VERSION_CONFLICT",
+            message="Action item đã được cập nhật ở nơi khác. Vui lòng tải lại.",
+            status_code=status.HTTP_409_CONFLICT,
+            details={
+                "entity": "action_item",
+                "current": {"id": item.id, "version": curr_ver},
+            },
+        )
+
+    record_edit(
+        db,
+        meeting_id=meeting.id,
+        entity_type="action_item",
+        entity_id=item.id,
+        action="update",
+        actor_id=current_user.id,
+        field=None,
+        before={
+            "description": item.description,
+            "status": item.status,
+            "assignee_name": item.assignee_name,
+            "assignee_speaker_id": item.assignee_speaker_id,
+            "due_date": item.due_date,
+        },
+        after={
+            "description": new_desc,
+            "status": new_status,
+            "assignee_name": new_assignee_name,
+            "assignee_speaker_id": new_speaker_id,
+            "due_date": new_due_date,
+        },
+        entity_version_after=new_version,
+        request_id=getattr(getattr(request, "state", None), "request_id", None),
+        created_at=now,
+    )
+    db.commit()
+    db.refresh(item)
+
+    return serialize_action_item(item)
 
 
 @router.delete(
@@ -1522,57 +1955,138 @@ def patch_meeting_action_item(
     summary="Xóa action item (xóa mềm có audit)",
 )
 def delete_meeting_action_item(
-    meeting_id: str = FastApiPath(..., description="UUID của cuộc họp"),
-    item_id: str = FastApiPath(..., description="UUID của action item"),
+    meeting_id: Annotated[str, FastApiPath(description="UUID của cuộc họp")],
+    item_id: Annotated[str, FastApiPath(description="UUID của action item")],
+    current_user: CurrentUser,
+    db: Annotated[Session, Depends(get_db)],
+    request: Request,
     version: Annotated[int | None, Query(description="Phiên bản của action item")] = None,
 ) -> Response:
     """Xóa action item (xóa mềm) có kiểm tra version nếu được cung cấp."""
-    if version is not None and version != 1:
+    meeting = db.execute(
+        select(Meeting).where(Meeting.id == meeting_id, Meeting.owner_id == current_user.id)
+    ).scalar_one_or_none()
+    if meeting is None:
+        raise APIError(
+            code="NOT_FOUND",
+            message="Không tìm thấy cuộc họp được yêu cầu.",
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    item = db.execute(
+        select(ActionItem).where(
+            ActionItem.id == item_id,
+            ActionItem.meeting_id == meeting.id,
+            ActionItem.deleted_at.is_(None),
+        )
+    ).scalar_one_or_none()
+    if item is None:
+        raise APIError(
+            code="NOT_FOUND",
+            message="Không tìm thấy công việc cần làm được yêu cầu.",
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    if version is not None and version != item.version:
         raise APIError(
             code="VERSION_CONFLICT",
             message="Action item đã được cập nhật ở nơi khác. Vui lòng tải lại.",
             status_code=status.HTTP_409_CONFLICT,
             details={
                 "entity": "action_item",
-                "current": {"id": item_id, "version": 2},
+                "current": {"id": item.id, "version": item.version},
             },
         )
+
+    now = datetime.now(UTC)
+    new_version = item.version + 1
+
+    expected_ver = version if version is not None else item.version
+    stmt = (
+        update(ActionItem)
+        .where(
+            ActionItem.id == item.id,
+            ActionItem.meeting_id == meeting.id,
+            ActionItem.version == expected_ver,
+            ActionItem.deleted_at.is_(None),
+        )
+        .values(
+            deleted_at=now,
+            version=new_version,
+            updated_at=now,
+        )
+    )
+    res = db.execute(stmt)
+    if res.rowcount == 0:
+        db.rollback()
+        current_item = db.execute(
+            select(ActionItem).where(
+                ActionItem.id == item.id,
+                ActionItem.meeting_id == meeting.id,
+            )
+        ).scalar_one_or_none()
+        curr_ver = current_item.version if current_item else item.version
+        raise APIError(
+            code="VERSION_CONFLICT",
+            message="Action item đã được cập nhật ở nơi khác. Vui lòng tải lại.",
+            status_code=status.HTTP_409_CONFLICT,
+            details={
+                "entity": "action_item",
+                "current": {"id": item.id, "version": curr_ver},
+            },
+        )
+
+    record_edit(
+        db,
+        meeting_id=meeting.id,
+        entity_type="action_item",
+        entity_id=item.id,
+        action="delete",
+        actor_id=current_user.id,
+        field=None,
+        before={
+            "description": item.description,
+            "status": item.status,
+            "assignee_name": item.assignee_name,
+        },
+        after={"deleted_at": now.isoformat()},
+        entity_version_after=new_version,
+        request_id=getattr(getattr(request, "state", None), "request_id", None),
+        created_at=now,
+    )
+    db.commit()
+
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-EDITS_FIXTURE_PATH = FIXTURES_DIR / "edits.json"
-JOB_FIXTURE_PATH = FIXTURES_DIR / "job_retry_scheduled.json"
-
-
-def load_edits_fixture() -> dict:
-    """Đọc dữ liệu fixture lịch sử chỉnh sửa."""
-    if EDITS_FIXTURE_PATH.is_file():
-        with open(EDITS_FIXTURE_PATH, encoding="utf-8") as f:
-            return json.load(f)
-    return {"items": [], "total": 0}
-
-
-def load_job_fixture() -> dict:
-    """Đọc dữ liệu fixture job."""
-    if JOB_FIXTURE_PATH.is_file():
-        with open(JOB_FIXTURE_PATH, encoding="utf-8") as f:
-            return json.load(f)
-    return {
-        "id": "c1d2e3f4-a5b6-4c7d-8e9f-0a1b2c3d4e5f",
-        "meeting_id": "8f6c2a1e-b2c3-4d4e-8f9a-0b1c2d3e4f5a",
-        "status": "queued",
-        "stage": "preprocess",
-        "from_stage": None,
-        "progress": 0.0,
-        "stages": {},
-        "attempt": 1,
-        "max_attempts": 3,
-        "next_run_at": None,
-        "error": None,
-        "created_at": "2026-10-15T08:30:01Z",
-        "started_at": None,
-        "finished_at": None,
-    }
+def serialize_job(job: Job) -> JobOut:
+    """Chuyển đổi một thực thể Job trong DB sang schema JobOut."""
+    job_error = (
+        JobErrorOut(
+            code=job.error_code,
+            message=job.error_message or "",
+            retryable=job.attempt < job.max_attempts,
+            stage=job.stage,
+        )
+        if job.error_code
+        else None
+    )
+    return JobOut(
+        id=job.id,
+        meeting_id=job.meeting_id,
+        status=job.status,  # type: ignore[arg-type]
+        stage=job.stage,  # type: ignore[arg-type]
+        from_stage=job.from_stage,  # type: ignore[arg-type]
+        progress=job.progress,
+        stages=job.stage_status or {},
+        attempt=job.attempt,
+        max_attempts=job.max_attempts,
+        next_run_at=job.next_run_at,
+        error=job_error,
+        created_at=job.created_at,
+        started_at=None,
+        finished_at=None,
+    )
 
 
 @router.post(
@@ -1589,26 +2103,174 @@ def load_job_fixture() -> dict:
     summary="Chạy lại tiến trình xử lý cho cuộc họp",
 )
 def retry_meeting_job(
-    meeting_id: str = FastApiPath(..., description="UUID của cuộc họp"),
-    payload: JobRetryCreate = ...,
+    meeting_id: Annotated[str, FastApiPath(description="UUID của cuộc họp")],
+    payload: JobRetryCreate,
+    current_user: CurrentUser,
+    db: Annotated[Session, Depends(get_db)],
+    response: Response,
     idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
 ) -> JobOut:
     """Chạy lại tiến trình xử lý từ một stage nhất định (hoặc chạy lại toàn bộ)."""
-    if "active" in meeting_id.lower():
-        active_job = load_job_fixture()
-        active_job["status"] = "running"
+    meeting = db.execute(select(Meeting).where(Meeting.id == meeting_id)).scalar_one_or_none()
+    if not meeting or meeting.owner_id != current_user.id:
         raise APIError(
-            code="JOB_ALREADY_ACTIVE",
-            message="Cuộc họp hiện đang có một job đang được xử lý.",
-            status_code=status.HTTP_409_CONFLICT,
-            details={"job": active_job},
+            code="MEETING_NOT_FOUND",
+            message="Không tìm thấy cuộc họp được yêu cầu.",
+            status_code=status.HTTP_404_NOT_FOUND,
         )
 
-    data = load_job_fixture()
-    data["meeting_id"] = meeting_id
-    data["status"] = "queued"
-    data["from_stage"] = payload.from_stage
-    return JobOut.model_validate(data)
+    # 1. Kiểm tra tính idempotent nếu có Idempotency-Key
+    idempotency_service = None
+    idem_res = None
+    if idempotency_key and idempotency_key.strip():
+        idempotency_service = IdempotencyService()
+        endpoint_str = f"/api/v1/meetings/{meeting_id}/jobs"
+        idem_res = idempotency_service.check_or_start(
+            session=db,
+            user_id=current_user.id,
+            key=idempotency_key.strip(),
+            endpoint=endpoint_str,
+        )
+        if idem_res.is_replayed:
+            response.headers["Idempotent-Replayed"] = "true"
+            if idem_res.response_code:
+                response.status_code = idem_res.response_code
+            return JobOut.model_validate(idem_res.response_body)
+        db.commit()
+
+    # 2. Đang có job queued hoặc running (hoặc retry_scheduled) thì 409 JOB_ALREADY_ACTIVE kèm job
+    active_job = db.execute(
+        select(Job).where(
+            Job.meeting_id == meeting.id,
+            Job.status.in_(["queued", "running", "retry_scheduled"]),
+        )
+    ).scalar_one_or_none()
+    if active_job:
+        active_job_out = serialize_job(active_job)
+        if idempotency_service and idem_res and idem_res.record_id:
+            idempotency_service.fail(session=db, record_id=idem_res.record_id)
+            db.commit()
+        raise APIError(
+            code="JOB_ALREADY_ACTIVE",
+            message="Cuộc họp hiện đang có một tiến trình xử lý đang chạy.",
+            status_code=status.HTTP_409_CONFLICT,
+            details={"job": active_job_out.model_dump(mode="json")},
+        )
+
+    # 3. Job gần nhất đã thành công mà gửi lại cùng yêu cầu thì 409 JOB_ALREADY_SUCCEEDED
+    latest_job = (
+        db.execute(select(Job).where(Job.meeting_id == meeting.id).order_by(Job.created_at.desc()))
+        .scalars()
+        .first()
+    )
+    if (
+        latest_job
+        and latest_job.status == "succeeded"
+        and (payload.from_stage is None or payload.from_stage == latest_job.from_stage)
+    ):
+        if idempotency_service and idem_res and idem_res.record_id:
+            idempotency_service.fail(session=db, record_id=idem_res.record_id)
+            db.commit()
+        raise APIError(
+            code="JOB_ALREADY_SUCCEEDED",
+            message="Cuộc họp đã được xử lý thành công.",
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    # 4. Chạy lại từ asr/diarize khi người dùng đã sửa transcript -> 409 HAS_USER_EDITS
+    if payload.from_stage in (None, "preprocess", "vad", "asr", "diarize"):
+        has_user_edits = (
+            db.execute(
+                select(Segment).where(
+                    Segment.meeting_id == meeting.id,
+                    (Segment.text != Segment.ai_text)
+                    | (Segment.speaker_id != Segment.ai_speaker_id),
+                )
+            ).first()
+            is not None
+            or db.execute(
+                select(EditEvent).where(
+                    EditEvent.meeting_id == meeting.id,
+                    EditEvent.entity_type.in_(["segment", "speaker"]),
+                )
+            ).first()
+            is not None
+        )
+
+        if has_user_edits:
+            if idempotency_service and idem_res and idem_res.record_id:
+                idempotency_service.fail(session=db, record_id=idem_res.record_id)
+                db.commit()
+            raise APIError(
+                code="HAS_USER_EDITS",
+                message="Cuộc họp đã có chỉnh sửa thủ công, không thể chạy lại từ đầu.",
+                status_code=status.HTTP_409_CONFLICT,
+            )
+
+    # 5. Khởi tạo trạng thái stages và progress
+    all_stages = ["preprocess", "vad", "asr", "diarize", "merge", "summarize"]
+    stage_status = {stg: "queued" for stg in all_stages}
+    initial_progress = 0.0
+    start_stage = payload.from_stage or "preprocess"
+
+    if payload.from_stage and payload.from_stage in all_stages:
+        from_idx = all_stages.index(payload.from_stage)
+        for i in range(from_idx):
+            stage_status[all_stages[i]] = "succeeded"
+        initial_progress = from_idx / len(all_stages)
+
+    now = datetime.now(UTC)
+    new_job = Job(
+        id=str(uuid.uuid4()),
+        meeting_id=meeting.id,
+        status="queued",
+        stage=start_stage,
+        from_stage=payload.from_stage,
+        stage_status=stage_status,
+        progress=initial_progress,
+        attempt=1,
+        max_attempts=3,
+        created_at=now,
+        updated_at=now,
+    )
+    db.add(new_job)
+    meeting.status = "processing"
+    meeting.updated_at = now
+
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        if idempotency_service and idem_res and idem_res.record_id:
+            idempotency_service.fail(session=db, record_id=idem_res.record_id)
+            db.commit()
+        active_job = db.execute(
+            select(Job).where(
+                Job.meeting_id == meeting.id,
+                Job.status.in_(["queued", "running", "retry_scheduled"]),
+            )
+        ).scalar_one_or_none()
+        raise APIError(
+            code="JOB_ALREADY_ACTIVE",
+            message="Cuộc họp hiện đang có một tiến trình xử lý đang chạy.",
+            status_code=status.HTTP_409_CONFLICT,
+            details={
+                "job": serialize_job(active_job).model_dump(mode="json") if active_job else None
+            },
+        ) from exc
+
+    job_out = serialize_job(new_job)
+
+    if idempotency_service and idem_res and idem_res.record_id:
+        idempotency_service.complete(
+            session=db,
+            record_id=idem_res.record_id,
+            response_code=status.HTTP_202_ACCEPTED,
+            response_body=job_out.model_dump(mode="json"),
+        )
+        db.commit()
+
+    return job_out
 
 
 @router.get(
@@ -1621,16 +2283,78 @@ def retry_meeting_job(
     summary="Lấy lịch sử chỉnh sửa audit của cuộc họp",
 )
 def list_meeting_edits(
-    meeting_id: str = FastApiPath(..., description="UUID của cuộc họp"),
+    meeting_id: Annotated[str, FastApiPath(description="UUID của cuộc họp")],
+    current_user: CurrentUser,
+    db: Annotated[Session, Depends(get_db)],
     entity_type: Annotated[str | None, Query(description="Lọc theo loại entity")] = None,
     entity_id: Annotated[str | None, Query(description="Lọc theo ID entity")] = None,
     field: Annotated[str | None, Query(description="Lọc theo trường sửa")] = None,
     page: Annotated[int, Query(ge=1, description="Số trang")] = 1,
     page_size: Annotated[int, Query(ge=1, le=100, description="Kích thước trang")] = 10,
+    limit: Annotated[int | None, Query(ge=1, le=100, description="Số bản ghi tối đa")] = None,
+    offset: Annotated[int | None, Query(ge=0, description="Vị trí bắt đầu")] = None,
 ) -> EditListOut:
     """Lấy danh sách các sự kiện chỉnh sửa audit của cuộc họp."""
-    data = load_edits_fixture()
-    return EditListOut.model_validate(data)
+    meeting = db.execute(
+        select(Meeting).where(Meeting.id == meeting_id, Meeting.owner_id == current_user.id)
+    ).scalar_one_or_none()
+    if meeting is None:
+        raise APIError(
+            code="NOT_FOUND",
+            message="Không tìm thấy cuộc họp được yêu cầu.",
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    stmt = select(EditEvent).where(EditEvent.meeting_id == meeting.id)
+
+    if entity_type:
+        stmt = stmt.where(EditEvent.entity_type == entity_type)
+    if entity_id:
+        stmt = stmt.where(EditEvent.entity_id == entity_id)
+    if field:
+        stmt = stmt.where(EditEvent.field == field)
+
+    total_count = db.execute(select(func.count()).select_from(stmt.subquery())).scalar() or 0
+
+    take = limit if limit is not None else page_size
+    skip = offset if offset is not None else (page - 1) * page_size
+
+    stmt = stmt.order_by(EditEvent.created_at.desc(), EditEvent.id.desc()).offset(skip).limit(take)
+    events = db.execute(stmt).scalars().all()
+
+    actor_ids = {ev.actor_id for ev in events if ev.actor_id}
+    users_by_id: dict[str, User] = {}
+    if actor_ids:
+        users = db.execute(select(User).where(User.id.in_(actor_ids))).scalars().all()
+        users_by_id = {u.id: u for u in users}
+
+    items_out = []
+    for ev in events:
+        actor_name = "Unknown"
+        actor_id_val = ev.actor_id or "system"
+        if ev.actor_id and ev.actor_id in users_by_id:
+            actor_name = users_by_id[ev.actor_id].display_name
+        elif ev.actor_id == current_user.id:
+            actor_name = current_user.display_name
+
+        items_out.append(
+            EditEventOut(
+                id=ev.id,
+                meeting_id=ev.meeting_id,
+                entity_type=ev.entity_type,
+                entity_id=ev.entity_id,
+                action=ev.action,
+                field=ev.field,
+                before=ev.before,
+                after=ev.after,
+                actor=EditActorOut(id=actor_id_val, display_name=actor_name),
+                entity_version_after=ev.entity_version_after or 1,
+                request_id=ev.request_id,
+                created_at=ev.created_at,
+            )
+        )
+
+    return EditListOut(items=items_out, total=total_count)
 
 
 @router.get(

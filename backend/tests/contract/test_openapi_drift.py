@@ -162,7 +162,46 @@ def auto_auth_for_contract_tests(monkeypatch: pytest.MonkeyPatch, request: pytes
         status="queued",
         version=1,
     )
-    session.add_all([meeting_ready, meeting_1, meeting_pending])
+    meeting_disabled = Meeting(
+        id="meeting-disabled-1",
+        owner_id=fake_user.id,
+        title="Họp disabled",
+        source="upload",
+        status="ready",
+        version=1,
+    )
+    active_meeting = Meeting(
+        id="active-meeting-1",
+        owner_id=fake_user.id,
+        title="Họp active",
+        source="upload",
+        status="processing",
+        version=1,
+    )
+    active_job = Job(
+        id="active-job-1",
+        meeting_id="active-meeting-1",
+        status="running",
+        stage="asr",
+        from_stage=None,
+        progress=0.5,
+        stage_status={"preprocess": "succeeded", "vad": "succeeded", "asr": "running"},
+        attempt=1,
+        max_attempts=3,
+    )
+    session.add_all(
+        [meeting_ready, meeting_1, meeting_pending, meeting_disabled, active_meeting, active_job]
+    )
+
+    summary_disabled = Summary(
+        id="summary-disabled-1",
+        meeting_id="meeting-disabled-1",
+        status="disabled",
+        content=None,
+        ai_content=None,
+        version=1,
+    )
+    session.add(summary_disabled)
 
     spk_lan = Speaker(
         id="2c7a9d10-a1b2-4c3d-8e4f-5a6b7c8d9e0f",
@@ -203,6 +242,63 @@ def auto_auth_for_contract_tests(monkeypatch: pytest.MonkeyPatch, request: pytes
         version=2,
     )
     session.add(seg1)
+
+    ai_item_1 = ActionItem(
+        id="a1f0a2b3-c4d5-4e6f-8a9b-0c1d2e3f4a5b",
+        meeting_id="meeting-1",
+        description="Hoàn thiện API upload audio và viết test idempotency",
+        assignee_name="Anh Minh",
+        assignee_speaker_id=None,
+        due_date="2026-10-16",
+        due_date_text="thứ Sáu tuần này",
+        status="open",
+        source="ai",
+        needs_review=False,
+        evidence_segment_ids=["5b1e7c2a-b2c3-4d4e-8f9a-0b1c2d3e4f5a"],
+        ai_original={
+            "description": "Hoàn thiện API upload audio và viết test idempotency",
+            "assignee_name": "Anh Minh",
+            "due_date": "2026-10-16",
+            "due_date_text": "thứ Sáu tuần này",
+        },
+        version=1,
+    )
+    ai_item_2 = ActionItem(
+        id="b2e1a2b3-c4d5-4e6f-8a9b-0c1d2e3f4a5b",
+        meeting_id="meeting-1",
+        description="Tìm thêm dữ liệu audio có tiếng ồn để đánh giá",
+        assignee_name=None,
+        assignee_speaker_id=None,
+        due_date=None,
+        due_date_text=None,
+        status="open",
+        source="ai",
+        needs_review=True,
+        evidence_segment_ids=[],
+        ai_original={
+            "description": "Tìm thêm dữ liệu audio có tiếng ồn để đánh giá",
+            "assignee_name": None,
+            "due_date": None,
+            "due_date_text": None,
+        },
+        version=1,
+    )
+    session.add_all([ai_item_1, ai_item_2])
+
+    edit_1 = EditEvent(
+        id="e9c4a1b2-c3d4-4e5f-8a9b-0c1d2e3f4a5b",
+        meeting_id="meeting-1",
+        actor_id=fake_user.id,
+        entity_type="segment",
+        entity_id="5b1e7c2a-b2c3-4d4e-8f9a-0b1c2d3e4f5a",
+        action="update",
+        field="text",
+        before="Anh Minh phụ trách phần API áp lốt, hạn thứ sáu tuần này nhé.",
+        after="Anh Minh phụ trách phần API upload, hạn thứ Sáu tuần này nhé.",
+        entity_version_after=2,
+        request_id="req_7Hq2test001",
+    )
+    session.add(edit_1)
     session.commit()
 
     orig_create_app = app_main.create_app

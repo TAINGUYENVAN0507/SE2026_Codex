@@ -8,6 +8,7 @@ Bao gồm:
 """
 
 import json
+import os
 import uuid
 from collections.abc import Generator
 from datetime import UTC, datetime, timedelta
@@ -363,3 +364,206 @@ def test_run_worker_loop_calls_reaper(monkeypatch: pytest.MonkeyPatch) -> None:
         run_worker_loop(poll_interval_sec=0.01, reaper_interval_sec=0.0)
 
     assert reap_called[0] >= 1
+
+
+def test_process_job_stops_when_lease_lost_without_writing_results(
+    test_db: Session,
+    sample_meeting_with_audio: Meeting,
+    test_storage: Storage,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """BE-08: Reaper requeue và worker khác claim giữa chừng:
+    worker cũ dừng trong 1 lần heartbeat và không ghi gì vào DB.
+    """
+    if not hasattr(os, "killpg"):
+        monkeypatch.setattr("meeting_pipeline.runner._kill_group", lambda proc: proc.kill())
+
+    base_time = datetime(2026, 10, 24, 10, 0, 0, tzinfo=UTC)
+    enqueue_job(test_db, meeting_id=sample_meeting_with_audio.id, now=base_time)
+    test_db.commit()
+
+    claimed = claim_job(test_db, worker_id="worker-old", now=base_time)
+    assert claimed is not None
+
+    def on_stage_done_hook(stage, path):
+        if stage.value == "preprocess":
+            # Giả lập lease hết hạn, reaper thu hồi và worker-new claim
+            reaped = reap_expired_jobs(test_db, now=base_time + timedelta(seconds=70))
+            assert len(reaped) == 1
+            claimed_new = claim_job(
+                test_db, worker_id="worker-new", now=base_time + timedelta(seconds=70)
+            )
+            assert claimed_new is not None
+            assert claimed_new.locked_by == "worker-new"
+
+    process_job(
+        test_db,
+        claimed,
+        storage=test_storage,
+        backend="fake",
+        on_stage_done_callback=on_stage_done_hook,
+        now=base_time,
+    )
+
+    # Worker cũ dừng lại và không ghi đè gì vào DB
+    test_db.refresh(claimed)
+    assert claimed.locked_by == "worker-new"
+    # Meeting không chuyển sang ready hay failed bởi worker-old
+    test_db.refresh(sample_meeting_with_audio)
+    assert sample_meeting_with_audio.status != "ready"
+
+
+def test_rt14_regenerate_summary_from_edited_transcript(
+    test_db: Session,
+    sample_meeting_with_audio: Meeting,
+    test_storage: Storage,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """RT-14: Tạo lại tóm tắt từ transcript đã sửa (BE-10).
+
+    1. Chạy với FAKE_SCENARIO=summary_fail -> meeting chuyển partial, transcript đã lưu.
+    2. Người dùng sửa transcript (text, speaker display_name).
+    3. Tạo job retry với from_stage=summarize, chạy FAKE_SCENARIO=ok.
+    4. Meeting chuyển ready, ASR không chạy lại.
+    5. File transcript override chứa text và speaker display_name đã sửa.
+    6. Kiểm tra trường hợp người dùng đã sửa summary: giữ bản của user, cập nhật ai_content.
+    """
+    meeting = sample_meeting_with_audio
+    monkeypatch.setenv("FAKE_SCENARIO", "summary_fail")
+
+    # 1. Chạy lần đầu với lỗi summarize
+    initial_job = enqueue_job(test_db, meeting_id=meeting.id, max_attempts=3)
+    test_db.commit()
+
+    ran_1 = run_worker_once(
+        test_db,
+        storage=test_storage,
+        worker_id="worker-1",
+        backend="fake",
+    )
+    assert ran_1 is True
+
+    test_db.refresh(meeting)
+    assert meeting.status == "partial"
+    test_db.refresh(initial_job)
+    assert initial_job.status == "failed"
+
+    # Transcript đã được persist đầy đủ
+    segments = (
+        test_db.execute(
+            select(Segment).where(Segment.meeting_id == meeting.id).order_by(Segment.idx)
+        )
+        .scalars()
+        .all()
+    )
+    assert len(segments) > 0
+
+    speakers = (
+        test_db.execute(select(Speaker).where(Speaker.meeting_id == meeting.id)).scalars().all()
+    )
+    assert len(speakers) > 0
+
+    # 2. Người dùng chỉnh sửa transcript: sửa text phân đoạn 0 và display_name speaker 0
+    edited_text = "Nội dung phân đoạn đã được người dùng chỉnh sửa cho RT-14."
+    segments[0].text = edited_text
+    edited_speaker_name = "Chị Lan Quản Lý Dự Án"
+    speakers[0].display_name = edited_speaker_name
+    test_db.commit()
+
+    # 3. Retry với from_stage=summarize và kịch bản ok
+    monkeypatch.setenv("FAKE_SCENARIO", "ok")
+    retry_job = enqueue_job(
+        test_db,
+        meeting_id=meeting.id,
+        from_stage="summarize",
+        max_attempts=3,
+    )
+    # Khởi tạo trạng thái các stage trước là succeeded giống như endpoint POST /meetings/{id}/jobs
+    retry_job.stage_status = {
+        "preprocess": "succeeded",
+        "vad": "succeeded",
+        "asr": "succeeded",
+        "diarize": "succeeded",
+        "merge": "succeeded",
+        "summarize": "queued",
+    }
+    test_db.commit()
+
+    ran_2 = run_worker_once(
+        test_db,
+        storage=test_storage,
+        worker_id="worker-2",
+        backend="fake",
+    )
+    assert ran_2 is True
+
+    # 4. Xác minh meeting từ partial -> ready
+    test_db.refresh(meeting)
+    assert meeting.status == "ready"
+    test_db.refresh(retry_job)
+    assert retry_job.status == "succeeded"
+    assert retry_job.stage_status["asr"] == "succeeded"
+    assert retry_job.stage_status["summarize"] == "succeeded"
+
+    # 5. Xác minh file transcript override trên đĩa chứa text và speaker display_name đã sửa
+    override_file = (
+        Path(test_storage.base_dir)
+        / "artifacts"
+        / meeting.id
+        / retry_job.id
+        / "transcript_override.json"
+    )
+    assert override_file.is_file()
+    override_data = json.loads(override_file.read_text(encoding="utf-8"))
+    assert override_data["segments"][0]["text"] == edited_text
+    matched_spk = next(s for s in override_data["speakers"] if s["label"] == speakers[0].label)
+    assert matched_spk["display_name"] == edited_speaker_name
+
+    # Summary đã được lưu trong DB
+    summary = test_db.execute(
+        select(Summary).where(Summary.meeting_id == meeting.id)
+    ).scalar_one_or_none()
+    assert summary is not None
+    assert summary.status == "ready"
+    assert summary.content is not None
+    assert summary.ai_content is not None
+
+    # 6. Kiểm tra trường hợp người dùng đã sửa summary:
+    # Người dùng chỉnh sửa overview của summary
+    user_edited_overview = "Tóm tắt tổng quan đã được biên tập bởi người dùng."
+    summary.content = dict(summary.content)
+    summary.content["overview"] = user_edited_overview
+    test_db.commit()
+
+    # Retry lại summarize lần nữa
+    retry_job_3 = enqueue_job(
+        test_db,
+        meeting_id=meeting.id,
+        from_stage="summarize",
+        max_attempts=3,
+    )
+    retry_job_3.stage_status = {
+        "preprocess": "succeeded",
+        "vad": "succeeded",
+        "asr": "succeeded",
+        "diarize": "succeeded",
+        "merge": "succeeded",
+        "summarize": "queued",
+    }
+    test_db.commit()
+
+    ran_3 = run_worker_once(
+        test_db,
+        storage=test_storage,
+        worker_id="worker-3",
+        backend="fake",
+    )
+    assert ran_3 is True
+
+    test_db.refresh(summary)
+    # Bản của người dùng được bảo toàn
+    assert summary.content["overview"] == user_edited_overview
+    # Bản AI mới được lưu trong ai_content
+    assert summary.ai_content["overview"] != user_edited_overview
+    # Trạng thái thể hiện is_edited = True
+    assert summary.content != summary.ai_content
