@@ -1,9 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { ArrowLeftIcon } from '@phosphor-icons/react/dist/csr/ArrowLeft'
-import { CaretDownIcon } from '@phosphor-icons/react/dist/csr/CaretDown'
 import { CheckIcon } from '@phosphor-icons/react/dist/csr/Check'
 import { ClockIcon } from '@phosphor-icons/react/dist/csr/Clock'
-import { DownloadSimpleIcon } from '@phosphor-icons/react/dist/csr/DownloadSimple'
 import { PencilSimpleIcon } from '@phosphor-icons/react/dist/csr/PencilSimple'
 import { UsersIcon } from '@phosphor-icons/react/dist/csr/Users'
 import { Link, useParams } from 'react-router-dom'
@@ -13,11 +11,8 @@ import { getMeeting } from '../api/client'
 import { AudioPlayer, type PlayerHandle } from '../features/audio/AudioPlayer'
 import { validateAudio } from '../features/audio/validation'
 import { useMeetings } from '../features/meetings/DemoStore'
-import {
-  exportMeeting,
-  formatDate,
-  type Meeting,
-} from '../features/meetings/model'
+import { formatDate, type Meeting } from '../features/meetings/model'
+import { ExportMenu } from '../features/export/ExportMenu'
 import { Transcript } from '../features/meetings/Transcript'
 import { NotesPanel, type NotesTab } from '../features/meetings/NotesPanel'
 import { useActiveSegment } from '../features/meetings/useActiveSegment'
@@ -25,6 +20,8 @@ import { useTranscriptQuery } from '../features/meetings/useTranscriptQuery'
 import { apiMeetingToView } from '../features/meetings/apiModel'
 import { DEMO_ID } from '../features/meetings/model'
 import { NotFoundPage } from './NotFoundPage'
+import { LoadingSkeleton } from '../components/LoadingSkeleton'
+import { JobStatusCard } from '../features/jobs/JobStatusCard'
 
 export function MeetingDetailPage() {
   const { meetingId } = useParams()
@@ -42,12 +39,20 @@ function RemoteMeetingDetail({ meetingId }: { meetingId: string }) {
   const meetingQuery = useQuery({
     queryKey: ['meeting', meetingId],
     queryFn: () => getMeeting(meetingId),
+    refetchInterval: (query) =>
+      query.state.data &&
+      ['queued', 'processing'].includes(query.state.data.status)
+        ? 2_000
+        : false,
   })
   const transcriptQuery = useTranscriptQuery(meetingId)
   if (meetingQuery.isPending || transcriptQuery.isPending)
     return (
-      <main className="missing-meeting" role="status">
-        Đang tải cuộc họp và transcript…
+      <main className="loading-detail">
+        <LoadingSkeleton
+          kind="transcript"
+          label="Đang tải cuộc họp và transcript…"
+        />
       </main>
     )
   if (meetingQuery.isError || transcriptQuery.isError) {
@@ -69,9 +74,13 @@ function RemoteMeetingDetail({ meetingId }: { meetingId: string }) {
   }
   return (
     <RemoteMeetingContent
-      key={`${meetingId}-${transcriptQuery.data.status}`}
+      key={`${meetingId}-${transcriptQuery.data.status}-${meetingQuery.data.status}`}
       meeting={apiMeetingToView(meetingQuery.data, transcriptQuery.data)}
       pending={transcriptQuery.data.status === 'pending'}
+      ready={transcriptQuery.data.status === 'ready'}
+      jobId={
+        meetingQuery.data.latest_job_id || meetingQuery.data.latest_job?.id
+      }
     />
   )
 }
@@ -79,9 +88,13 @@ function RemoteMeetingDetail({ meetingId }: { meetingId: string }) {
 function RemoteMeetingContent({
   meeting: initial,
   pending,
+  ready,
+  jobId,
 }: {
   meeting: Meeting
   pending: boolean
+  ready: boolean
+  jobId?: string
 }) {
   const [meeting, setMeeting] = useState(initial)
   const { files } = useMeetings()
@@ -90,8 +103,10 @@ function RemoteMeetingContent({
       meeting={meeting}
       file={files[meeting.id]}
       pending={pending}
+      transcriptReady={ready}
       onUpdate={(transform) => setMeeting((current) => transform(current))}
       remote
+      jobId={jobId}
     />
   )
 }
@@ -125,12 +140,16 @@ function Detail({
   onUpdate,
   pending = false,
   remote = false,
+  transcriptReady = meeting.status === 'ready',
+  jobId,
 }: {
   meeting: Meeting
   file?: File
   onUpdate: (f: (m: Meeting) => Meeting) => void
   pending?: boolean
   remote?: boolean
+  transcriptReady?: boolean
+  jobId?: string
 }) {
   const [localFile, setLocalFile] = useState<File | undefined>(file)
   const [position, setPosition] = useState(
@@ -138,12 +157,10 @@ function Detail({
   )
   const [side, setSide] = useState<NotesTab>('summary')
   const [mobile, setMobile] = useState<'transcript' | NotesTab>('transcript')
-  const [exportOpen, setExportOpen] = useState(false)
   const [message, setMessage] = useState('')
   const [rename, setRename] = useState(false)
   const [title, setTitle] = useState(meeting.title)
   const player = useRef<PlayerHandle>(null)
-  const dropdown = useRef<HTMLDivElement>(null)
   const onPosition = useCallback((value: number) => setPosition(value), [])
   const timedSegments = useMemo(
     () =>
@@ -156,40 +173,9 @@ function Detail({
   )
   const active = useActiveSegment(timedSegments, position)
   const name = meeting.speakers.find((s) => s.id === active?.speakerId)?.name
-  useEffect(() => {
-    const close = (e: PointerEvent) => {
-      if (!dropdown.current?.contains(e.target as Node)) setExportOpen(false)
-    }
-    const escape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setExportOpen(false)
-    }
-    document.addEventListener('pointerdown', close)
-    document.addEventListener('keydown', escape)
-    return () => {
-      document.removeEventListener('pointerdown', close)
-      document.removeEventListener('keydown', escape)
-    }
-  }, [])
   const seek = (seconds: number) => {
     player.current?.seek(seconds)
     setMobile('transcript')
-  }
-  function download(format: 'txt' | 'md' | 'json') {
-    const url = URL.createObjectURL(
-      new Blob([exportMeeting(meeting, format)], {
-        type:
-          format === 'json'
-            ? 'application/json;charset=utf-8'
-            : 'text/plain;charset=utf-8',
-      }),
-    )
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `bien-ban-${meeting.id}.${format}`
-    a.click()
-    window.setTimeout(() => URL.revokeObjectURL(url), 1000)
-    setExportOpen(false)
-    setMessage('Đã xuất bản chỉnh sửa hiện tại.')
   }
   return (
     <main className="detail-page">
@@ -277,36 +263,9 @@ function Detail({
             <span>Tiếng Việt</span>
           </div>
         </div>
-        <div className="dropdown" ref={dropdown}>
-          <button
-            className="button primary"
-            aria-expanded={exportOpen}
-            aria-controls="export-menu"
-            onClick={() => setExportOpen((v) => !v)}
-            disabled={!meeting.segments.length}
-          >
-            <DownloadSimpleIcon />
-            Xuất biên bản
-            <CaretDownIcon size={12} />
-          </button>
-          {exportOpen && (
-            <div className="export-menu" id="export-menu">
-              <span>BẢN ĐÃ CHỈNH SỬA</span>
-              {(['txt', 'md', 'json'] as const).map((f) => (
-                <button key={f} onClick={() => download(f)}>
-                  {
-                    {
-                      txt: 'Văn bản (.txt)',
-                      md: 'Markdown (.md)',
-                      json: 'Dữ liệu (.json)',
-                    }[f]
-                  }
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        <ExportMenu meetingId={meeting.id} ready={transcriptReady} />
       </header>
+      {jobId && <JobStatusCard jobId={jobId} />}
       <AudioPlayer
         key={`${localFile?.name || 'demo'}-${localFile?.lastModified || 0}`}
         file={localFile}
@@ -331,7 +290,7 @@ function Detail({
           </button>
         </div>
       )}
-      {meeting.status !== 'ready' && (
+      {!remote && meeting.status !== 'ready' && (
         <div className="detail-notice" role="status">
           {
             {

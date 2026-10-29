@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   createActionItem,
@@ -9,6 +9,7 @@ import {
 } from '../../api/client'
 import { ApiError } from '../../api/errors'
 import { formatDate, type Meeting } from './model'
+import { Dialog } from '../../components/Dialog'
 
 interface Draft {
   description: string
@@ -38,6 +39,7 @@ export function RemoteTasks({ meeting }: { meeting: Meeting }) {
   const [error, setError] = useState('')
   const [conflict, setConflict] = useState(false)
   const [busy, setBusy] = useState(false)
+  const returnFocus = useRef<HTMLElement | null>(null)
 
   function validate(): boolean {
     const length = draft.description.trim().length
@@ -61,6 +63,10 @@ export function RemoteTasks({ meeting }: { meeting: Meeting }) {
 
   async function create() {
     if (!validate() || busy) return
+    returnFocus.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null
     setBusy(true)
     setError('')
     try {
@@ -82,6 +88,10 @@ export function RemoteTasks({ meeting }: { meeting: Meeting }) {
 
   async function update(item: ActionItemData) {
     if (!validate() || busy) return
+    returnFocus.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null
     setBusy(true)
     setError('')
     try {
@@ -103,6 +113,10 @@ export function RemoteTasks({ meeting }: { meeting: Meeting }) {
 
   async function toggle(item: ActionItemData) {
     if (busy) return
+    returnFocus.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null
     setBusy(true)
     setError('')
     try {
@@ -120,6 +134,10 @@ export function RemoteTasks({ meeting }: { meeting: Meeting }) {
 
   async function remove(item: ActionItemData) {
     if (!window.confirm('Xóa công việc này?') || busy) return
+    returnFocus.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null
     setBusy(true)
     setError('')
     try {
@@ -204,13 +222,17 @@ export function RemoteTasks({ meeting }: { meeting: Meeting }) {
         </p>
       )}
       {conflict && (
-        <div role="alertdialog" aria-label="Công việc đã thay đổi">
+        <Dialog
+          title="Công việc đã thay đổi"
+          returnFocusRef={returnFocus}
+          onClose={() => setConflict(false)}
+        >
           <p>Công việc đã thay đổi ở nơi khác. Bản nháp vẫn được giữ.</p>
           <button onClick={() => window.location.reload()}>
             Tải lại trang
           </button>
           <button onClick={() => setConflict(false)}>Để sau</button>
-        </div>
+        </Dialog>
       )}
       <div className="tasks">
         {items.map((item) => (

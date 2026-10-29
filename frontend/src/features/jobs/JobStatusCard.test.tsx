@@ -86,7 +86,7 @@ describe('JobStatusCard', () => {
     expect(await screen.findByText(label)).toBeInTheDocument()
     if (status === 'failed')
       expect(screen.getByRole('alert')).toHaveTextContent(
-        'File audio không hợp lệ.',
+        'File audio không hợp lệ hoặc không thể đọc.',
       )
   })
 
@@ -159,5 +159,68 @@ describe('JobStatusCard', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'Không thể kết nối máy chủ.',
     )
+  })
+
+  it('counts down to the server next_run_at and clears the timer on unmount', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(
+      new Date(Date.parse(jobRetryScheduled.next_run_at) - 10_000),
+    )
+    const { unmount } = renderCard()
+    await act(async () => vi.advanceTimersByTimeAsync(100))
+    expect(screen.getByRole('timer')).toHaveTextContent(
+      'Đang thử lại sau 10 giây',
+    )
+    await act(async () => vi.advanceTimersByTimeAsync(1_000))
+    expect(screen.getByRole('timer')).toHaveTextContent(
+      'Đang thử lại sau 9 giây',
+    )
+    unmount()
+    expect(screen.queryByRole('timer')).not.toBeInTheDocument()
+  })
+
+  it('starts the countdown from response time after a delayed job response', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(
+      new Date(Date.parse(jobRetryScheduled.next_run_at) - 10_000),
+    )
+    let release: () => void = () => {}
+    const waiting = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    server.use(
+      http.get('*/api/v1/jobs/:jobId', async () => {
+        await waiting
+        return HttpResponse.json(jobRetryScheduled)
+      }),
+    )
+    renderCard()
+    await act(async () => vi.advanceTimersByTimeAsync(3_000))
+    await act(async () => {
+      release()
+      await vi.advanceTimersByTimeAsync(100)
+    })
+    expect(screen.getByRole('timer')).toHaveTextContent(
+      'Đang thử lại sau 7 giây',
+    )
+  })
+
+  it.each([
+    ['AUDIO_INVALID', 'File audio không hợp lệ hoặc không thể đọc.'],
+    ['UNRECOGNIZED_CODE', 'Đã xảy ra lỗi không xác định. Hãy thử lại sau.'],
+  ])('does not render raw server messages for %s', async (code, expected) => {
+    server.use(
+      http.get('*/api/v1/jobs/:jobId', () =>
+        HttpResponse.json({
+          ...jobWithStatus('failed'),
+          error: { code, message: 'CANARY_TECHNICAL_TRACE_do_not_show' },
+        }),
+      ),
+    )
+    renderCard()
+    expect(await screen.findByRole('alert')).toHaveTextContent(expected)
+    expect(
+      screen.queryByText('CANARY_TECHNICAL_TRACE_do_not_show'),
+    ).not.toBeInTheDocument()
   })
 })

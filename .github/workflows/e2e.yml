@@ -1,0 +1,60 @@
+name: e2e
+on:
+  pull_request:
+    paths: ['frontend/**', 'backend/**', 'pipeline/**', 'contracts/**', '.github/workflows/e2e.yml']
+  push:
+    branches: [main]
+    paths: ['frontend/**', 'backend/**', 'pipeline/**', 'contracts/**', '.github/workflows/e2e.yml']
+permissions:
+  contents: read
+jobs:
+  chromium:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        scenario: [slow, permanent, transient_once, summary_fail]
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgrespassword
+          POSTGRES_DB: meeting_e2e
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d meeting_e2e"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      E2E_DATABASE_URL: postgresql+psycopg://postgres:postgrespassword@127.0.0.1:5432/meeting_e2e
+      # Chỉ dùng cho tài khoản demo trong database CI tạm thời.
+      SEED_DEMO_PASSWORD: ci-e2e-demo-only-password
+      FAKE_SCENARIO: ${{ matrix.scenario }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: frontend/.nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Install frontend and Chromium
+        working-directory: frontend
+        run: npm ci && npx playwright install --with-deps chromium
+      - name: Run real-stack E2E
+        working-directory: frontend
+        run: npx playwright test
+      - name: Upload failure evidence
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-${{ matrix.scenario }}
+          path: |
+            frontend/playwright-report/
+            frontend/test-results/
+          retention-days: 7

@@ -43,6 +43,111 @@ function notFound(message: string) {
 
 export const handlers = [
   ...authHandlers,
+  http.get('*/api/v1/meetings/:meetingId/export', ({ params, request }) => {
+    if (createdMeetings.has(String(params.meetingId)))
+      return HttpResponse.json(
+        {
+          error: {
+            code: 'TRANSCRIPT_NOT_READY',
+            message: 'Chưa có transcript.',
+          },
+        },
+        { status: 409 },
+      )
+    if (
+      params.meetingId !== meetingProcessing.id &&
+      params.meetingId !== 'sprint-42'
+    )
+      return notFound('Không tìm thấy cuộc họp.')
+    const url = new URL(request.url)
+    const format = url.searchParams.get('format') || 'txt'
+    const variant = url.searchParams.get('variant') || 'current'
+    if (
+      !['txt', 'json', 'md'].includes(format) ||
+      !['current', 'ai_original'].includes(variant)
+    )
+      return HttpResponse.json(
+        {
+          error: {
+            code: 'BAD_REQUEST',
+            message: 'Tùy chọn xuất không hợp lệ.',
+          },
+        },
+        { status: 422 },
+      )
+    const original = variant === 'ai_original'
+    const summary = editedSummary ?? summaryReady
+    const data = {
+      schema_version: '1.0',
+      variant,
+      meeting: {
+        id: String(params.meetingId),
+        title: meetingProcessing.title,
+        meeting_date: meetingProcessing.meeting_date,
+        duration_sec: meetingProcessing.duration_sec,
+      },
+      speakers: transcriptReady.speakers.map((s) => ({
+        id: s.id,
+        name: original ? s.default_name : s.display_name,
+      })),
+      segments: transcriptReady.segments.map((s) => {
+        const current = editedSegments.get(s.id) ?? s
+        return {
+          id: s.id,
+          start_sec: s.start_sec,
+          end_sec: s.end_sec,
+          speaker_id: original ? s.ai_speaker_id : current.speaker_id,
+          text: original ? s.ai_text : current.text,
+        }
+      }),
+      summary: original ? summary.ai_content : summary.content,
+      action_items: [...mockActionItems.values()]
+        .filter((item) => !original || item.ai_original)
+        .map((item) => ({
+          id: item.id,
+          description: original
+            ? item.ai_original!.description
+            : item.description,
+          assignee_name: original
+            ? item.ai_original!.assignee_name
+            : item.assignee_name,
+          due_date: original ? item.ai_original!.due_date : item.due_date,
+          due_date_text: original
+            ? item.ai_original!.due_date_text
+            : item.due_date_text,
+          status: original ? 'open' : item.status,
+          source: item.source,
+        })),
+    }
+    const lines = data.segments.map((s) => {
+      const seconds = Math.floor(s.start_sec)
+      const time = [
+        Math.floor(seconds / 3600),
+        Math.floor(seconds / 60) % 60,
+        seconds % 60,
+      ]
+        .map((n) => String(n).padStart(2, '0'))
+        .join(':')
+      return `[${time}] ${data.speakers.find((p) => p.id === s.speaker_id)?.name || 'Chưa xác định'}: ${s.text}`
+    })
+    const content =
+      format === 'json'
+        ? JSON.stringify(data, null, 2) + '\n'
+        : format === 'md'
+          ? `# ${data.meeting.title}\n\n## Tóm tắt\n\n${data.summary?.overview || 'Chưa có tóm tắt.'}\n\n## Transcript\n\n${lines.join('\n')}\n`
+          : lines.join('\n') + '\n'
+    return new HttpResponse(content, {
+      headers: {
+        'Content-Type':
+          format === 'json'
+            ? 'application/json; charset=utf-8'
+            : format === 'md'
+              ? 'text/markdown; charset=utf-8'
+              : 'text/plain; charset=utf-8',
+        'Content-Disposition': `attachment; filename*=UTF-8''hop-sprint-42-2026-10-15.${format}`,
+      },
+    })
+  }),
   http.get('*/api/v1/meetings/:meetingId/edits', ({ params, request }) => {
     if (
       params.meetingId !== meetingProcessing.id &&

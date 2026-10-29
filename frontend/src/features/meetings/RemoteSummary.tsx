@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { ApiError } from '../../api/errors'
 import {
@@ -9,6 +9,8 @@ import {
 } from '../../api/client'
 import type { Meeting } from './model'
 import { formatTranscriptTime } from './transcriptUtils'
+import { LoadingSkeleton } from '../../components/LoadingSkeleton'
+import { Dialog } from '../../components/Dialog'
 
 type Content = NonNullable<SummaryData['content']>
 
@@ -40,6 +42,7 @@ export function RemoteSummary({
   const [conflict, setConflict] = useState(false)
   const [saving, setSaving] = useState(false)
   const [retrying, setRetrying] = useState(false)
+  const returnFocus = useRef<HTMLElement | null>(null)
 
   async function save() {
     if (!draft || !query.data) return
@@ -65,6 +68,10 @@ export function RemoteSummary({
       setError('Tổng quan và mỗi ý cần có nội dung hợp lệ.')
       return
     }
+    returnFocus.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null
     setSaving(true)
     setError('')
     try {
@@ -104,7 +111,8 @@ export function RemoteSummary({
     })
   }
 
-  if (query.isPending) return <div role="status">Đang tải tóm tắt…</div>
+  if (query.isPending)
+    return <LoadingSkeleton kind="summary" label="Đang tải tóm tắt…" />
   if (query.isError)
     return (
       <div role="alert">
@@ -114,6 +122,8 @@ export function RemoteSummary({
     )
 
   const summary = query.data
+  if (summary.status === 'pending')
+    return <LoadingSkeleton kind="summary" label="Đang tạo tóm tắt…" />
   if (summary.status !== 'ready' || !summary.content) {
     const descriptions: Record<string, string> = {
       pending: 'Đang tạo tóm tắt…',
@@ -174,13 +184,17 @@ export function RemoteSummary({
       </div>
       {error && <p role="alert">{error}</p>}
       {conflict && (
-        <div role="alertdialog" aria-label="Tóm tắt đã thay đổi">
+        <Dialog
+          title="Tóm tắt đã thay đổi"
+          returnFocusRef={returnFocus}
+          onClose={() => setConflict(false)}
+        >
           <p>Tóm tắt đã thay đổi ở nơi khác. Chữ đang sửa vẫn được giữ.</p>
           <button onClick={() => window.location.reload()}>
             Tải lại trang
           </button>
           <button onClick={() => setConflict(false)}>Để sau</button>
-        </div>
+        </Dialog>
       )}
       <section className="note-section">
         <h2>Tổng quan</h2>

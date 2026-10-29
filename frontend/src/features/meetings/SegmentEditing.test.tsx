@@ -94,6 +94,10 @@ describe('FE-10 segment editing', () => {
         'textbox',
       ),
     ).toBeInTheDocument()
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+    expect(field).toHaveValue('Chữ cần giữ')
+    expect(screen.getByRole('button', { name: 'Lưu thay đổi' })).toHaveFocus()
   })
 
   it('rolls back optimistic text after a server error', async () => {

@@ -1,0 +1,302 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "ExportAction": {
+      "additionalProperties": false,
+      "description": "Công việc trong biến thể đã chọn.",
+      "properties": {
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "assignee_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Assignee Name"
+        },
+        "due_date": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Due Date"
+        },
+        "due_date_text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Due Date Text"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "open",
+            "done",
+            "cancelled"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "source": {
+          "enum": [
+            "ai",
+            "user"
+          ],
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "description",
+        "assignee_name",
+        "due_date",
+        "due_date_text",
+        "id",
+        "status",
+        "source"
+      ],
+      "title": "ExportAction",
+      "type": "object"
+    },
+    "ExportSegment": {
+      "additionalProperties": false,
+      "description": "Phân đoạn chỉ chứa nội dung của biến thể đã chọn.",
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "start_sec": {
+          "title": "Start Sec",
+          "type": "number"
+        },
+        "end_sec": {
+          "title": "End Sec",
+          "type": "number"
+        },
+        "speaker_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Speaker Id"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "start_sec",
+        "end_sec",
+        "speaker_id",
+        "text"
+      ],
+      "title": "ExportSegment",
+      "type": "object"
+    },
+    "ExportSpeaker": {
+      "additionalProperties": false,
+      "description": "Tên người nói trong biến thể đã chọn.",
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ],
+      "title": "ExportSpeaker",
+      "type": "object"
+    },
+    "MeetingInfo": {
+      "additionalProperties": false,
+      "description": "Metadata công khai cần có trong biên bản.",
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "meeting_date": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Meeting Date"
+        },
+        "duration_sec": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Duration Sec"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "meeting_date",
+        "duration_sec"
+      ],
+      "title": "MeetingInfo",
+      "type": "object"
+    },
+    "SummaryContent": {
+      "additionalProperties": false,
+      "description": "Nội dung tóm tắt được xuất.",
+      "properties": {
+        "overview": {
+          "title": "Overview",
+          "type": "string"
+        },
+        "key_points": {
+          "items": {
+            "$ref": "#/$defs/SummaryPoint"
+          },
+          "title": "Key Points",
+          "type": "array"
+        },
+        "decisions": {
+          "items": {
+            "$ref": "#/$defs/SummaryPoint"
+          },
+          "title": "Decisions",
+          "type": "array"
+        }
+      },
+      "required": [
+        "overview"
+      ],
+      "title": "SummaryContent",
+      "type": "object"
+    },
+    "SummaryPoint": {
+      "additionalProperties": false,
+      "description": "Ý chính hoặc quyết định và các đoạn bằng chứng.",
+      "properties": {
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "evidence_segment_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence Segment Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "SummaryPoint",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "JSON export v1; thứ tự field cũng là thứ tự key khi xuất.",
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "variant": {
+      "enum": [
+        "current",
+        "ai_original"
+      ],
+      "title": "Variant",
+      "type": "string"
+    },
+    "meeting": {
+      "$ref": "#/$defs/MeetingInfo"
+    },
+    "speakers": {
+      "items": {
+        "$ref": "#/$defs/ExportSpeaker"
+      },
+      "title": "Speakers",
+      "type": "array"
+    },
+    "segments": {
+      "items": {
+        "$ref": "#/$defs/ExportSegment"
+      },
+      "title": "Segments",
+      "type": "array"
+    },
+    "summary": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/SummaryContent"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "action_items": {
+      "items": {
+        "$ref": "#/$defs/ExportAction"
+      },
+      "title": "Action Items",
+      "type": "array"
+    }
+  },
+  "required": [
+    "variant",
+    "meeting",
+    "speakers",
+    "segments",
+    "summary",
+    "action_items"
+  ],
+  "title": "ExportDocument",
+  "type": "object"
+}

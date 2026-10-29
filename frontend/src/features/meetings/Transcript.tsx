@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { LoadingSkeleton } from '../../components/LoadingSkeleton'
+import { Dialog } from '../../components/Dialog'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { MagnifyingGlassIcon } from '@phosphor-icons/react/dist/csr/MagnifyingGlass'
 import { PencilSimpleIcon } from '@phosphor-icons/react/dist/csr/PencilSimple'
 import { CheckIcon } from '@phosphor-icons/react/dist/csr/Check'
@@ -59,6 +61,8 @@ export function Transcript({
   const [savingSegment, setSavingSegment] = useState(false)
   const [segmentConflict, setSegmentConflict] = useState(false)
   const [aiOriginal, setAiOriginal] = useState(false)
+  const segmentReturnFocus = useRef<HTMLElement | null>(null)
+  const speakerReturnFocus = useRef<HTMLElement | null>(null)
   const shownSpeakerId = (s: Segment) =>
     aiOriginal && s.aiSpeakerId !== undefined ? s.aiSpeakerId : s.speakerId
   const visible = meeting.segments.filter(
@@ -99,6 +103,10 @@ export function Transcript({
     }
     const previous = meeting.segments.find((segment) => segment.id === id)
     if (!previous || savingSegment) return
+    segmentReturnFocus.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null
     setError('')
     setSavingSegment(true)
     onUpdate((m) => ({
@@ -154,6 +162,10 @@ export function Transcript({
   async function changeSpeaker(id: string, speakerId: string | null) {
     const previous = meeting.segments.find((segment) => segment.id === id)
     if (!previous || savingSegment) return
+    segmentReturnFocus.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null
     setSavingSegment(true)
     setError('')
     onUpdate((m) => ({
@@ -205,6 +217,10 @@ export function Transcript({
     }
     const current = meeting.speakers.find((item) => item.id === editingSpeaker)
     if (!current) return
+    speakerReturnFocus.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null
     setSpeakerError('')
     setSavingSpeaker(true)
     try {
@@ -345,10 +361,10 @@ export function Transcript({
           </p>
         )}
         {versionConflict && (
-          <div
-            role="alertdialog"
-            aria-label="Dữ liệu đã thay đổi"
-            className="version-conflict"
+          <Dialog
+            title="Dữ liệu đã thay đổi"
+            returnFocusRef={speakerReturnFocus}
+            onClose={() => setVersionConflict(false)}
           >
             <p>
               Dữ liệu người nói đã thay đổi ở nơi khác. Bạn có thể tải lại trang
@@ -358,13 +374,13 @@ export function Transcript({
               Tải lại trang
             </button>
             <button onClick={() => setVersionConflict(false)}>Để sau</button>
-          </div>
+          </Dialog>
         )}
         {segmentConflict && (
-          <div
-            role="alertdialog"
-            aria-label="Đoạn transcript đã thay đổi"
-            className="version-conflict"
+          <Dialog
+            title="Đoạn transcript đã thay đổi"
+            returnFocusRef={segmentReturnFocus}
+            onClose={() => setSegmentConflict(false)}
           >
             <p>
               Đoạn transcript đã thay đổi ở nơi khác. Hãy tải lại trang để cập
@@ -374,7 +390,7 @@ export function Transcript({
               Tải lại trang
             </button>
             <button onClick={() => setSegmentConflict(false)}>Để sau</button>
-          </div>
+          </Dialog>
         )}
         {error && !editing && (
           <p className="form-error" role="alert">
@@ -382,11 +398,7 @@ export function Transcript({
           </p>
         )}
         {pending && (
-          <div className="empty-state" role="status">
-            <h2>Đang tạo transcript…</h2>
-            <p>Transcript sẽ xuất hiện khi xử lý xong.</p>
-            <div className="transcript-skeleton" aria-hidden="true" />
-          </div>
+          <LoadingSkeleton kind="transcript" label="Đang tạo transcript…" />
         )}
         {groups.flatMap((group) =>
           group.map((s, index) => {

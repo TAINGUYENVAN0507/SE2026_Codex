@@ -1,3 +1,4 @@
+import { LoadingSkeleton } from '../components/LoadingSkeleton'
 import { ArrowUpRightIcon } from '@phosphor-icons/react/dist/csr/ArrowUpRight'
 import { FileTextIcon } from '@phosphor-icons/react/dist/csr/FileText'
 import { MagnifyingGlassIcon } from '@phosphor-icons/react/dist/csr/MagnifyingGlass'
@@ -91,9 +92,7 @@ export function MeetingListPage() {
             <span />
           </div>
           {meetingsQuery.isPending && (
-            <div className="empty-state" role="status">
-              Đang tải danh sách cuộc họp…
-            </div>
+            <LoadingSkeleton kind="list" label="Đang tải danh sách cuộc họp…" />
           )}
           {meetingsQuery.isError && (
             <div className="empty-state" role="alert">

@@ -55,7 +55,8 @@ describe('meeting workspace', () => {
     expect(screen.getByRole('alert')).toHaveTextContent(
       'Nội dung không được để trống',
     )
-    await user.type(field, 'Nội dung đã sửa <script>không thực thi</script>')
+    await user.click(field)
+    await user.paste('Nội dung đã sửa <script>không thực thi</script>')
     await user.click(screen.getByRole('button', { name: /Lưu thay đổi/ }))
     expect(
       screen.getByText('Nội dung đã sửa <script>không thực thi</script>'),
