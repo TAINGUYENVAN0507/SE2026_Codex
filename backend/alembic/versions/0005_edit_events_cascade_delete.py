@@ -1,6 +1,6 @@
 """allow edit_events delete on meeting cascade
 
-Revision ID: 0005_allow_edit_events_delete_on_meeting_cascade
+Revision ID: 0005_edit_events_cascade_delete
 Revises: 0004_prevent_edit_events_delete
 Create Date: 2026-10-29 21:00:00
 
@@ -11,7 +11,7 @@ from collections.abc import Sequence
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "0005_allow_edit_events_delete_on_meeting_cascade"
+revision: str = "0005_edit_events_cascade_delete"
 down_revision: str | Sequence[str] | None = "0004_prevent_edit_events_delete"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
