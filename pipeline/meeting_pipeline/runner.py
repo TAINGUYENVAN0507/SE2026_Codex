@@ -103,20 +103,41 @@ class StageTimeout:
     per_audio_sec: float
 
 
+# Hiệu chỉnh timeout từ benchmark (AI-13): per_audio_sec = 2 × RTF lớn nhất đo được của stage,
+# làm tròn lên; base_sec giữ 300 s cho stage nạp model (đã nằm trong RTF đo được, nên chỉ là dự
+# phòng). RTF lớn nhất thường là audio ngắn nhất, vì thời gian nạp model chia cho ít giây audio
+# hơn. Nguồn: evaluation/performance/results/ (máy i7-10750H 12 luồng, GTX 1650 Ti 4 GB):
+#   preprocess  0.012 · vad 0.024 · merge 0.0095 (mọi lần đo)
+#   asr  GPU 0.178 (5')       · CPU 0.926 (1', int8)           → GPU 0.4 · CPU 2.0
+#   diarize  GPU 0.117 (5')   · CPU 0.988 (1')                 → GPU 0.25 · CPU 2.0
+#   summarize: chỉ đo khi LLM tắt (0.005); thời gian thật phụ thuộc mạng và API, giữ giá trị cũ.
+# `tests/unit/test_timeout_calibration.py` đọc lại các thư mục kết quả đó: đo được RTF chậm hơn thì
+# test đỏ cho tới khi sửa bảng này. Kiểm 60' bằng số đo, không bằng ngoại suy.
+CPU_TIMEOUTS: dict[Stage, StageTimeout] = {
+    Stage.PREPROCESS: StageTimeout(120, 0.05),
+    Stage.VAD: StageTimeout(120, 0.05),
+    Stage.ASR: StageTimeout(300, 2.0),
+    Stage.DIARIZE: StageTimeout(300, 2.0),
+    Stage.MERGE: StageTimeout(60, 0.02),
+    Stage.SUMMARIZE: StageTimeout(300, 0.1),
+}
+GPU_TIMEOUTS: dict[Stage, StageTimeout] = {
+    **CPU_TIMEOUTS,
+    Stage.ASR: StageTimeout(300, 0.4),
+    Stage.DIARIZE: StageTimeout(300, 0.25),
+}
+MAX_TIMEOUT_SCALE = 10.0
+
+
 @dataclass(frozen=True)
 class TimeoutPolicy:
-    """Giá trị khởi tạo, đặt bảo thủ. Hiệu chỉnh thành 2 × p95 sau benchmark AI-13."""
+    """Timeout của từng stage = `base_sec + per_audio_sec × thời lượng audio`.
 
-    stages: Mapping[Stage, StageTimeout] = field(
-        default_factory=lambda: {
-            Stage.PREPROCESS: StageTimeout(120, 0.2),
-            Stage.VAD: StageTimeout(120, 0.2),
-            Stage.ASR: StageTimeout(300, 2.0),
-            Stage.DIARIZE: StageTimeout(300, 1.5),
-            Stage.MERGE: StageTimeout(60, 0.02),
-            Stage.SUMMARIZE: StageTimeout(300, 0.1),
-        }
-    )
+    Mặc định là bảng CPU (chậm nhất, an toàn nhất). `from_env()` chọn bảng GPU cho `asr` và
+    `diarize` khi chúng chạy trên GPU.
+    """
+
+    stages: Mapping[Stage, StageTimeout] = field(default_factory=lambda: dict(CPU_TIMEOUTS))
     # Trước khi preprocess xong chưa biết thời lượng thật, dùng giới hạn trên.
     unknown_duration_sec: float = 3600
 
@@ -124,6 +145,41 @@ class TimeoutPolicy:
         t = self.stages[stage]
         duration = self.unknown_duration_sec if duration_sec is None else duration_sec
         return t.base_sec + t.per_audio_sec * duration
+
+    @classmethod
+    def from_env(cls, env: Mapping[str, str] | None = None) -> TimeoutPolicy:
+        """Chọn bảng theo thiết bị của từng stage và nhân với `PIPELINE_TIMEOUT_SCALE`.
+
+        - `asr`: `ASR_DEVICE` (mặc định `cuda`; `cuda` là GPU, giá trị khác là CPU).
+        - `diarize`: `DIARIZATION_DEVICE`; `auto` theo `ASR_DEVICE`, vì runner (venv của
+          backend) không import được torch để hỏi GPU. Image worker đặt hai biến này cùng bản.
+        - `PIPELINE_TIMEOUT_SCALE` (1 đến 10): máy chậm hơn máy đã đo thì nhân thêm.
+        """
+        env = os.environ if env is None else env
+        asr_gpu = env.get("ASR_DEVICE", "cuda") == "cuda"
+        diarize_device = env.get("DIARIZATION_DEVICE", "auto")
+        diarize_gpu = asr_gpu if diarize_device == "auto" else diarize_device == "cuda"
+        try:
+            scale = float(env.get("PIPELINE_TIMEOUT_SCALE", "1"))
+        except ValueError:
+            scale = 0.0
+        if not 1.0 <= scale <= MAX_TIMEOUT_SCALE:
+            raise PermanentPipelineError(
+                ErrorCode.INTERNAL_ERROR,
+                None,
+                f"PIPELINE_TIMEOUT_SCALE phải là số từ 1 đến {MAX_TIMEOUT_SCALE:g}",
+            )
+        stages = dict(CPU_TIMEOUTS)
+        if asr_gpu:
+            stages[Stage.ASR] = GPU_TIMEOUTS[Stage.ASR]
+        if diarize_gpu:
+            stages[Stage.DIARIZE] = GPU_TIMEOUTS[Stage.DIARIZE]
+        return cls(
+            stages={
+                stage: StageTimeout(t.base_sec * scale, t.per_audio_sec * scale)
+                for stage, t in stages.items()
+            }
+        )
 
 
 @dataclass
@@ -191,7 +247,7 @@ def run_job(
     và raise `PipelineCancelledError`. Callback nào ném lỗi thì stage đang chạy bị kill
     rồi lỗi được raise lại.
     """
-    timeouts = timeouts or TimeoutPolicy()
+    timeouts = timeouts or TimeoutPolicy.from_env({**os.environ, **(env or {})})
     workdir.mkdir(parents=True, exist_ok=True)
     write_job(workdir, spec)
     beat_due = _Every(heartbeat_sec)
