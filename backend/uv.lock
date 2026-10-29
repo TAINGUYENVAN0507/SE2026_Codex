@@ -599,11 +599,14 @@ requires-dist = [
     { name = "nvidia-cublas-cu12", marker = "sys_platform == 'linux' and extra == 'asr'", specifier = ">=12,<13" },
     { name = "nvidia-cudnn-cu12", marker = "sys_platform == 'linux' and extra == 'asr'", specifier = ">=9,<10" },
     { name = "pyannote-audio", marker = "extra == 'diarize'", specifier = ">=4.0,<5" },
+    { name = "pyannote-audio", marker = "extra == 'diarize-gpu'", specifier = ">=4.0,<5" },
     { name = "pydantic", specifier = ">=2.7,<3" },
-    { name = "torch", marker = "extra == 'diarize'", specifier = ">=2.8", index = "https://download.pytorch.org/whl/cpu" },
-    { name = "torchaudio", marker = "extra == 'diarize'", specifier = ">=2.8", index = "https://download.pytorch.org/whl/cpu" },
+    { name = "torch", marker = "extra == 'diarize'", specifier = ">=2.8", index = "https://download.pytorch.org/whl/cpu", conflict = { package = "meeting-pipeline", extra = "diarize" } },
+    { name = "torch", marker = "extra == 'diarize-gpu'", specifier = ">=2.8", index = "https://download.pytorch.org/whl/cu126", conflict = { package = "meeting-pipeline", extra = "diarize-gpu" } },
+    { name = "torchaudio", marker = "extra == 'diarize'", specifier = ">=2.8", index = "https://download.pytorch.org/whl/cpu", conflict = { package = "meeting-pipeline", extra = "diarize" } },
+    { name = "torchaudio", marker = "extra == 'diarize-gpu'", specifier = ">=2.8", index = "https://download.pytorch.org/whl/cu126", conflict = { package = "meeting-pipeline", extra = "diarize-gpu" } },
 ]
-provides-extras = ["asr", "diarize", "llm"]
+provides-extras = ["asr", "diarize", "diarize-gpu", "llm"]
 
 [package.metadata.requires-dev]
 dev = [
