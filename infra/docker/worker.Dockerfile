@@ -12,7 +12,7 @@
 #   interpreter này qua `PIPELINE_PYTHON`.
 #
 # VARIANT=cpu bỏ cuBLAS, cuDNN, NVRTC mà extra `asr` kéo theo trên Linux (image 2.57 GB so với
-# 4.87 GB của bản cuda, đo trên CI ngày 2026-10-25).
+# 8.38 GB của bản cuda có torch CUDA, đo trên CI ngày 2026-10-29).
 # VARIANT=cuda giữ chúng: CTranslate2 nạp thư viện từ wheel `nvidia-*` (`preload_cuda_libs`),
 # nên không cần base image CUDA; host chỉ cần driver NVIDIA và nvidia-container-toolkit
 # (`docker run --gpus all`). Bản cuda chạy cả ASR lẫn diarization trên GPU: torch CUDA 12.6 dùng
