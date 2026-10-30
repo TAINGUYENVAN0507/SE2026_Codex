@@ -1,0 +1,21 @@
+diff --git a/frontend/src/features/meetings/autosave.ts b/frontend/src/features/meetings/autosave.ts
+index bed4fa6..571f734 100644
+--- a/frontend/src/features/meetings/autosave.ts
++++ b/frontend/src/features/meetings/autosave.ts
+@@ -29,16 +29,6 @@ export function createAutosave(
+     while (!closed && !conflicted) {
+       const text = state.text.trim()
+       // Validation theo requirement; mutation experiment sẽ bỏ đúng guard này.
+-      if (text.length < 1 || text.length > 5000) {
+-        publish({
+-          status: 'error',
+-          error:
+-            text.length < 1
+-              ? 'Nội dung không được để trống.'
+-              : 'Nội dung không được quá 5000 ký tự.',
+-        })
+-        return false
+-      }
+       if (text === savedText) {
+         publish({ status: 'saved', error: '' })
+         return true

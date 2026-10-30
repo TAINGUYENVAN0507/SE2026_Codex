@@ -1,0 +1,12 @@
+$ node node_modules/@playwright/test/cli.js test --config vt019/playwright.config.ts
+
+Running 2 tests using 1 worker
+
+  ok 1 vt019\autosave.spec.ts:67:1 › TC16 browser: A response chậm không ghi đè C; reload đọc C (3.5s)
+  ok 2 vt019\autosave.spec.ts:87:1 › TC17 browser: hai tab, tab cũ 409 và giữ draft (2.6s)
+
+  2 passed (10.1s)
+(node:5176) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+EXIT=0

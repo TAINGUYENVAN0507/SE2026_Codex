@@ -1,0 +1,32 @@
+$ node node_modules/vitest/vitest.mjs run src/features/meetings/TranscriptAutosave.test.tsx
+
+ RUN  v5.0.5 D:/Project/SE2026/Lab01/tmp/bt3/SE2026_Codex/frontend
+
+ ❯ src/features/meetings/TranscriptAutosave.test.tsx (1 test | 1 failed) 119ms
+   × TC01 AC1 tự lưu sau debounce mà không cần bấm Lưu 118ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed (1)
+   Start at  21:34:59
+   Duration  1.93s (environment 58%, transform 16%, setup 11%, import 8%, tests 7%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/features/meetings/TranscriptAutosave.test.tsx > TC01 AC1 tự lưu sau debounce mà không cần bấm Lưu
+AssertionError: expected "patchSegment" to be called once with arguments: [ 'vt019-meeting', …(2) ]
+
+Number of calls: 0
+
+ ❯ src/features/meetings/TranscriptAutosave.test.tsx:35:17
+     33|     { target: { value: 'Bản nháp mới' } })
+     34|   await act(() => vi.advanceTimersByTimeAsync(501))
+     35|   expect(patch).toHaveBeenCalledExactlyOnceWith('vt019-meeting', 'vt01…
+       |                 ^
+     36|     { text: 'Bản nháp mới', version: 1 })
+     37|   expect(screen.getByRole('textbox', { name: 'Chỉnh sửa transcript' })…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+EXIT=1

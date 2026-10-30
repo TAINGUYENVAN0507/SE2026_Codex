@@ -1,0 +1,16 @@
+$ node node_modules/vitest/vitest.mjs run
+
+ RUN  v5.0.5 D:/Project/SE2026/Lab01/tmp/bt3/SE2026_Codex/frontend
+
+
+ Test Files  33 passed (33)
+      Tests  174 passed (174)
+   Start at  21:44:55
+   Duration  18.69s (environment 54%, tests 25%, import 10%, setup 9%, transform 2%)
+
+Environment  jsdom was created 33 times · 36.45s total, 54% of tracked time
+             create it once per worker with pool: 'vmThreads' (keeps per-file isolation) or isolate: false (shares it across files)
+             learn more: https://vitest.dev/guide/improving-performance#test-environments
+
+
+EXIT=0

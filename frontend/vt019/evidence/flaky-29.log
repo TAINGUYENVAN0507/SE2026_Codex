@@ -1,0 +1,13 @@
+$ node node_modules/vitest/vitest.mjs run src/features/meetings/autosave.test.ts src/features/meetings/AutosaveEditor.test.tsx src/features/meetings/autosaveApi.test.ts src/features/meetings/TranscriptAutosave.test.tsx --sequence.shuffle --sequence.seed=29
+
+ RUN  v5.0.5 D:/Project/SE2026/Lab01/tmp/bt3/SE2026_Codex/frontend
+      Running tests with seed "29"
+
+
+ Test Files  4 passed (4)
+      Tests  21 passed (21)
+   Start at  21:42:19
+   Duration  1.82s (environment 76%, setup 14%, tests 5%, import 3%, transform 1%)
+
+
+EXIT=0

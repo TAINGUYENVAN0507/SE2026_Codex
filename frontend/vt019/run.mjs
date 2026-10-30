@@ -11,6 +11,7 @@ const tools = {
   prettier: 'node_modules/prettier/bin/prettier.cjs',
   tsc: 'node_modules/typescript/bin/tsc',
   eslint: 'node_modules/eslint/bin/eslint.js',
+  oxlint: 'node_modules/oxlint/bin/oxlint',
   vite: 'node_modules/vite/bin/vite.js',
   playwright: 'node_modules/@playwright/test/cli.js',
 }

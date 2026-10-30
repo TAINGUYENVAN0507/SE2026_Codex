@@ -1,0 +1,3 @@
+$ node node_modules/oxlint/bin/oxlint .
+
+EXIT=0
