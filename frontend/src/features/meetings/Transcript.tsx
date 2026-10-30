@@ -9,6 +9,7 @@ import { type Meeting, type Segment } from './model'
 import { useActiveSegment } from './useActiveSegment'
 import { patchSegment, patchSpeaker } from '../../api/client'
 import { ApiError } from '../../api/errors'
+import { AutosaveEditor } from './AutosaveEditor'
 import { initials } from './model'
 import {
   formatTranscriptTime,
@@ -469,7 +470,38 @@ export function Transcript({
                     </div>
                   )}
                 </header>
-                {editing === s.id && !aiOriginal ? (
+                {editing === s.id && !aiOriginal && s.version != null ? (
+                  <AutosaveEditor
+                    key={s.id}
+                    meetingId={meeting.id}
+                    segmentId={s.id}
+                    text={s.text}
+                    version={s.version}
+                    onClose={() => setEditing(undefined)}
+                    onConflict={() => {
+                      segmentReturnFocus.current =
+                        document.activeElement instanceof HTMLElement
+                          ? document.activeElement
+                          : null
+                      setSegmentConflict(true)
+                    }}
+                    onSaved={(saved) =>
+                      onUpdate((m) => ({
+                        ...m,
+                        segments: m.segments.map((item) =>
+                          item.id === s.id
+                            ? {
+                                ...item,
+                                text: saved.text,
+                                version: saved.version,
+                                edited: saved.text !== item.originalText,
+                              }
+                            : item,
+                        ),
+                      }))
+                    }
+                  />
+                ) : editing === s.id && !aiOriginal ? (
                   <div className="segment-editor">
                     <textarea
                       autoFocus
