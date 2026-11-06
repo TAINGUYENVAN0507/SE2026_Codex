@@ -18,7 +18,7 @@ from fastapi import (
 )
 from fastapi import Path as FastApiPath
 from fastapi.responses import StreamingResponse
-from sqlalchemy import delete, func, select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -61,6 +61,7 @@ from app.schemas.transcript import (
 )
 from app.services.audio_validator import probe_audio, validate_extension_and_mime
 from app.services.audit import record_edit
+from app.services.erasure import erase_meeting
 from app.services.export import filename as export_filename
 from app.services.export import to_json, to_markdown, to_txt
 from app.services.idempotency.service import IdempotencyService
@@ -630,43 +631,13 @@ def delete_meeting(
     storage: Annotated[Storage, Depends(get_storage)],
 ) -> Response:
     """Xóa cuộc họp cùng file audio, artifacts và toàn bộ dữ liệu liên quan."""
-    meeting = db.execute(select(Meeting).where(Meeting.id == meeting_id)).scalar_one_or_none()
-    if not meeting or meeting.owner_id != current_user.id:
-        raise APIError(
-            code="MEETING_NOT_FOUND",
-            message="Không tìm thấy cuộc họp được yêu cầu.",
-            status_code=status.HTTP_404_NOT_FOUND,
-        )
-
-    # 1. Chuyển trạng thái các job đang active sang cancelled
-    active_jobs = (
-        db.execute(
-            select(Job).where(
-                Job.meeting_id == meeting.id,
-                Job.status.in_(["queued", "running", "retry_scheduled"]),
-            )
-        )
-        .scalars()
-        .all()
+    erase_meeting(
+        db=db,
+        storage=storage,
+        meeting_id=meeting_id,
+        current_user_id=current_user.id,
     )
-    for aj in active_jobs:
-        aj.status = "cancelled"
-        aj.updated_at = datetime.now(UTC)
-    if active_jobs:
-        db.commit()
-
-    # 2. Xóa audio và artifacts trên đĩa
-    storage.delete_meeting_files(meeting_id)
-
-    # 3. Xóa cuộc họp và các bảng liên quan khỏi DB
-    db.delete(meeting)
-    db.flush()
-    db.execute(delete(EditEvent).where(EditEvent.meeting_id == meeting_id))
-    db.commit()
-
-    # 4. Ghi log chỉ với meeting_id (bảo mật PRIV-12, không ghi tiêu đề hay nội dung)
     logger.info("Đã xóa cuộc họp: meeting_id=%s", meeting_id)
-
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 

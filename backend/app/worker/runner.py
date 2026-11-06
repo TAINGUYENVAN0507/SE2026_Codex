@@ -454,6 +454,12 @@ def process_job(
             job.status = JobStatus.CANCELLED.value
             if workdir.exists():
                 shutil.rmtree(workdir, ignore_errors=True)
+            meeting_artifacts_dir = workdir.parent
+            try:
+                if meeting_artifacts_dir.exists() and not any(meeting_artifacts_dir.iterdir()):
+                    meeting_artifacts_dir.rmdir()
+            except OSError:
+                pass
 
     except PipelineError as err:
         logger.error("Job %s gặp lỗi pipeline: %s", job.id, err)
