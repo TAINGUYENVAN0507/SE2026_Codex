@@ -123,4 +123,4 @@ Hiện `setup_logging()` không được gọi ở đâu cả, chỉ có test d�
 ## Cuối ngày
 
 - [x] Tick các ô ở trên và ghi hash.
-- [ ] Push `haquang`, mở PR vào `main`. **Không tự merge.**
+- [x] Push `haquang`, mở PR vào `main`. **Không tự merge.**
