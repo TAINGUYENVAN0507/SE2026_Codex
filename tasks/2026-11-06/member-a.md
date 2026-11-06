@@ -18,7 +18,8 @@ Kế hoạch các đợt sau: [`tasks/ROADMAP.md`](../ROADMAP.md).
   Test delete chạy lại trên API/worker Linux thật đạt.
 - QA ảnh desktop 1280px và mobile 360px: không tràn ngang; đã kiểm tra task
   evidence, xác nhận xóa, header và bố cục tiến độ. Ảnh chỉ lưu local ngoài Git.
-- Các ô nghiệm thu giữ `[ ]` vì chưa push/chưa chạy CI cho code mới. Không tự merge.
+- Đã push và mở [PR #34](https://github.com/TAINGUYENVAN0507/SE2026_Codex/pull/34).
+  Các ô nghiệm thu giữ `[ ]` trong lúc chờ CI/consumer review. Không tự merge.
 
 ### Bổ sung theo phản hồi giao diện của người dùng
 
@@ -162,5 +163,5 @@ Hiện chưa có UI gọi `DELETE /meetings/{id}`; API đã có từ BE-14.
 ## Cuối ngày
 
 - [x] Đã ghi hash và kết quả local; các ô nghiệm thu ở trên chờ CI/review.
-- [ ] Push `vantuong`, mở PR vào `main`. **Không tự merge.**
+- [x] Push `vantuong`, mở [PR #34](https://github.com/TAINGUYENVAN0507/SE2026_Codex/pull/34) vào `main`. **Chưa merge.**
 - [ ] E2E tóm tắt và export chưa làm hôm nay vì chờ commit 1 của B: đã có trong đợt 2 của `tasks/ROADMAP.md`.
