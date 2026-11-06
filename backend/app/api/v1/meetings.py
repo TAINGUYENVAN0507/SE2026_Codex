@@ -23,6 +23,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.api.deps import CurrentUser, get_current_user
+from app.core.config import get_settings
 from app.core.errors import APIError
 from app.db.models.action_item import ActionItem
 from app.db.models.edit_event import EditEvent
@@ -284,8 +285,9 @@ def create_meeting(
         ) from exc
 
     try:
+        settings = get_settings()
         now = datetime.now(UTC)
-        retention_until = now + timedelta(days=30)
+        retention_until = now + timedelta(days=settings.AUDIO_RETENTION_DAYS)
         meeting_title = (
             title.strip() if title and title.strip() else (file.filename or "Cuộc họp mới")
         )
@@ -673,6 +675,7 @@ def stream_file_range(file_path: Path, start: int, length: int, chunk_size: int 
         200: {"description": "Toàn bộ luồng tệp âm thanh"},
         206: {"description": "Một phần tệp âm thanh theo HTTP Range"},
         404: {"model": ErrorResponse, "description": "Không tìm thấy cuộc họp hoặc tệp âm thanh"},
+        410: {"model": ErrorResponse, "description": "Tệp âm thanh đã hết hạn lưu trữ"},
         416: {"model": ErrorResponse, "description": "Khoảng dữ liệu Range không hợp lệ"},
     },
     summary="Phát luồng dữ liệu âm thanh cuộc họp hỗ trợ HTTP Range",
@@ -700,6 +703,18 @@ def get_meeting_audio(
             status_code=status.HTTP_404_NOT_FOUND,
         )
 
+    now_utc = datetime.now(UTC)
+    retention_ts = meeting.retention_until
+    if retention_ts is not None and retention_ts.tzinfo is None:
+        retention_ts = retention_ts.replace(tzinfo=UTC)
+
+    if retention_ts is not None and now_utc >= retention_ts:
+        raise APIError(
+            code="AUDIO_EXPIRED",
+            message="Tệp âm thanh đã hết hạn lưu trữ và đã được dọn dẹp.",
+            status_code=status.HTTP_410_GONE,
+        )
+
     if not meeting.audio_path:
         raise APIError(
             code="NOT_FOUND",
@@ -717,6 +732,12 @@ def get_meeting_audio(
             audio_path = fallback_path
 
     if not audio_path.is_file():
+        if retention_ts is not None and now_utc >= retention_ts:
+            raise APIError(
+                code="AUDIO_EXPIRED",
+                message="Tệp âm thanh đã hết hạn lưu trữ và đã được dọn dẹp.",
+                status_code=status.HTTP_410_GONE,
+            )
         raise APIError(
             code="NOT_FOUND",
             message="Không tìm thấy tệp âm thanh trên hệ thống lưu trữ.",

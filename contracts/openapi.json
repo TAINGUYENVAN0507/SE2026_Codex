@@ -583,6 +583,16 @@
               }
             }
           },
+          "410": {
+            "description": "Tệp âm thanh đã hết hạn lưu trữ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "416": {
             "description": "Khoảng dữ liệu Range không hợp lệ",
             "content": {

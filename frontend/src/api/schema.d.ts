@@ -2020,6 +2020,15 @@ export interface operations {
           'application/json': components['schemas']['ErrorResponse']
         }
       }
+      /** @description Tệp âm thanh đã hết hạn lưu trữ */
+      410: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
       /** @description Khoảng dữ liệu Range không hợp lệ */
       416: {
         headers: {

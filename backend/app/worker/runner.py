@@ -31,6 +31,7 @@ from app.db.models.ai_output import AIOutput
 from app.db.models.job import Job
 from app.db.models.meeting import Meeting
 from app.db.models.transcript import Segment, Speaker
+from app.services.retention import run_retention_cleanup
 from app.services.storage import Storage
 from app.worker.persister import persist_summary, persist_transcript
 from app.worker.queue import (
@@ -54,6 +55,7 @@ from app.worker.retry import compute_backoff_delay
 logger = logging.getLogger("backend.worker")
 
 PROGRESS_THROTTLE_SEC = 1.0
+DEFAULT_CLEANUP_INTERVAL_SEC = 3600.0
 
 
 def export_transcript_override(db: Session, meeting: Meeting, workdir: Path) -> Path:
@@ -514,6 +516,7 @@ def run_worker_loop(
     worker_id: str | None = None,
     backend: str | None = None,
     reaper_interval_sec: float = DEFAULT_REAPER_INTERVAL_SEC,
+    cleanup_interval_sec: float = DEFAULT_CLEANUP_INTERVAL_SEC,
 ) -> None:
     """Vòng lặp thực thi của Worker: định kỳ claim job, chạy pipeline và quét reaper."""
     import signal
@@ -546,6 +549,7 @@ def run_worker_loop(
         signal.signal(signal.SIGTERM, _handle_signal)
 
     last_reaper_run = 0.0
+    last_cleanup_run = 0.0
 
     while running:
         with session_factory() as db:
@@ -558,6 +562,22 @@ def run_worker_loop(
                 except Exception as e:
                     logger.error("Lỗi khi chạy reaper trong worker: %s", e)
                 last_reaper_run = now_mono
+
+            if now_mono - last_cleanup_run >= cleanup_interval_sec:
+                try:
+                    cleanup_res = run_retention_cleanup(db, storage=storage)
+                    if (
+                        cleanup_res.audio_expired_meetings > 0
+                        or cleanup_res.operational_keys_cleaned > 0
+                    ):
+                        logger.info(
+                            "Cleanup đã dọn dẹp: %d cuộc họp hết hạn audio, %d idempotency_keys",
+                            cleanup_res.audio_expired_meetings,
+                            cleanup_res.operational_keys_cleaned,
+                        )
+                except Exception as e:
+                    logger.error("Lỗi khi chạy cleanup trong worker: %s", e)
+                last_cleanup_run = now_mono
 
             try:
                 processed = run_worker_once(
