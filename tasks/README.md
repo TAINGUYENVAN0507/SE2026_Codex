@@ -7,6 +7,7 @@ Phân công việc theo ngày cho cả 3 thành viên. **Đầu mỗi buổi là
 ```text
 tasks/
 ├── README.md                 # file này
+├── ROADMAP.md                # việc còn lại theo đợt, đọc khi tạo phân công ngày mới
 └── <YYYY-MM-DD>/
     ├── member-a.md           # A: frontend (@mactuongmvt, nhánh vantuong)
     ├── member-b.md           # B: backend (@minhquangha, nhánh haquang)
@@ -22,5 +23,5 @@ tasks/
 - Cuối ngày mở PR (hoặc push thêm vào PR đang mở) từ nhánh cá nhân vào `main`. **Không tự merge PR của mình:** nhóm trưởng review và merge ([`rules/git-workflow.md`](../rules/git-workflow.md)).
 - Việc chung (ví dụ ghi âm SH-01) không phải commit, ghi ở mục riêng trong file phân công.
 - Việc chưa xong trong ngày được chuyển sang file của ngày hôm sau, ghi rõ "chuyển từ <ngày>".
-- Nhóm trưởng tạo file phân công cho ngày mới. Muốn đổi việc: báo nhóm trưởng, hoặc sửa file của mình và ghi lý do.
+- Nhóm trưởng tạo file phân công cho ngày mới, lấy việc từ [`ROADMAP.md`](ROADMAP.md). Muốn đổi việc: báo nhóm trưởng, hoặc sửa file của mình và ghi lý do.
 - Việc trong file phân công phải theo kế hoạch triển khai và `structure/`, `rules/`. Khi khác nhau, theo `structure/` và `rules/`.
