@@ -2669,3 +2669,50 @@ mark {
   color: #a4332b;
   font-size: 14px;
 }
+/* FE-18: giữ dẫn chứng sát nội dung, xuống dòng theo chiều rộng panel. */
+.evidence-links {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.unverified-evidence {
+  font-size: 1rem;
+  color: #75412f;
+}
+.notes-panel .add-task,
+.task-body form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 12px;
+}
+.notes-panel .add-task input,
+.notes-panel .add-task select,
+.task-body form input,
+.task-body form select {
+  width: 100%;
+  min-width: 0;
+  min-height: 40px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  background: white;
+  font-size: 1rem;
+}
+.notes-panel .add-task > input:first-child,
+.notes-panel .add-task > button,
+.task-body form > input:first-child {
+  grid-column: 1 / -1;
+}
+.notes-panel .add-task > button,
+.task-body form > button {
+  min-height: 40px;
+}
+.task-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+}
+.task-body > .evidence-links {
+  margin: 6px 0;
+}

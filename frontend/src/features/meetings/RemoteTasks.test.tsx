@@ -33,7 +33,7 @@ afterEach(() => {
 })
 afterAll(() => server.close())
 
-function renderTasks() {
+function renderTasks(onSeek = vi.fn()) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   })
@@ -43,12 +43,27 @@ function renderTasks() {
   )
   render(
     <QueryClientProvider client={client}>
-      <RemoteTasks meeting={meeting} />
+      <RemoteTasks meeting={meeting} onSeek={onSeek} />
     </QueryClientProvider>,
   )
+  return onSeek
 }
 
 describe('FE-13 action item CRUD', () => {
+  it('links action evidence to the matching transcript time', async () => {
+    const user = userEvent.setup()
+    const onSeek = renderTasks()
+    const buttons = await screen.findAllByRole('button', {
+      name: /Nghe bằng chứng từ/,
+    })
+    await user.click(buttons[0])
+    const id = itemFixture.items[0].evidence_segment_ids[0]
+    expect(onSeek).toHaveBeenCalledWith(
+      transcriptFixture.segments.find((segment) => segment.id === id)!
+        .start_sec,
+    )
+    expect(screen.getAllByText('Chưa có bằng chứng').length).toBeGreaterThan(0)
+  })
   it('renders nullable fields and AI review badges', async () => {
     renderTasks()
     await screen.findByText(itemFixture.items[0].description)

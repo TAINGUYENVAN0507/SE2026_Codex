@@ -10,6 +10,7 @@ import {
 import { ApiError } from '../../api/errors'
 import { formatDate, type Meeting } from './model'
 import { Dialog } from '../../components/Dialog'
+import { EvidenceLinks } from './EvidenceLinks'
 
 interface Draft {
   description: string
@@ -27,7 +28,13 @@ function draftFrom(item?: ActionItemData): Draft {
   }
 }
 
-export function RemoteTasks({ meeting }: { meeting: Meeting }) {
+export function RemoteTasks({
+  meeting,
+  onSeek,
+}: {
+  meeting: Meeting
+  onSeek: (seconds: number) => void
+}) {
   const queryClient = useQueryClient()
   const queryKey = ['action-items', meeting.id]
   const query = useQuery({
@@ -280,6 +287,11 @@ export function RemoteTasks({ meeting }: { meeting: Meeting }) {
                     {item.needs_review && <span>Cần kiểm tra</span>}
                     {item.is_edited && <span>Đã sửa</span>}
                   </div>
+                  <EvidenceLinks
+                    ids={item.evidence_segment_ids}
+                    segments={meeting.segments}
+                    onSeek={onSeek}
+                  />
                   <button
                     aria-label={`Sửa công việc ${item.id}`}
                     onClick={() => {
