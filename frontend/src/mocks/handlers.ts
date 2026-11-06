@@ -78,7 +78,7 @@ export const handlers = [
     const original = variant === 'ai_original'
     const summary = editedSummary ?? summaryReady
     const data = {
-      schema_version: '1.0',
+      schema_version: '1.1',
       variant,
       meeting: {
         id: String(params.meetingId),

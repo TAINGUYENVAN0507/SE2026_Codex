@@ -18,7 +18,7 @@ Chưa có quyết định.
 
 | Nội dung | Người nhận | Hạn | Trạng thái |
 | --- | --- | --- | --- |
-| Công việc AI | Chưa giao | Chưa có hạn | Chưa hoàn thành |
+| Công việc AI (Chưa có bằng chứng, cần kiểm tra) | Chưa giao | Chưa có hạn | Chưa hoàn thành |
 
 ## Transcript
 
