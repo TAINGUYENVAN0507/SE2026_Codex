@@ -9,11 +9,13 @@ from app.api.v1.jobs import router as jobs_router
 from app.api.v1.meetings import router as meetings_router
 from app.core.config import get_settings
 from app.core.errors import setup_exception_handlers
+from app.core.logging import setup_logging
 from app.core.middleware import RequestIDAndLoggingMiddleware
 
 
 def create_app() -> FastAPI:
     """Khởi tạo và cấu hình instance FastAPI cho backend."""
+    setup_logging()
     settings = get_settings()
 
     application = FastAPI(

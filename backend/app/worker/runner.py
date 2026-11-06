@@ -27,6 +27,7 @@ from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
+from app.core.logging import setup_logging
 from app.db.models.ai_output import AIOutput
 from app.db.models.job import Job
 from app.db.models.meeting import Meeting
@@ -387,9 +388,36 @@ def process_job(
         meeting.status = "ready"
         meeting.updated_at = get_now()
         db.commit()
+        logger.info(
+            "Job %s đã hoàn thành thành công",
+            job.id,
+            extra={
+                "event": "job_succeeded",
+                "job_id": job.id,
+                "meeting_id": job.meeting_id,
+                "worker_id": current_worker_id,
+                "stage": job.stage,
+                "attempt": job.attempt,
+                "status": "succeeded",
+            },
+        )
 
     except PermanentPipelineError as err:
-        logger.error("Job %s gặp lỗi vĩnh viễn: %s", job.id, err)
+        logger.error(
+            "Job %s gặp lỗi vĩnh viễn: %s",
+            job.id,
+            err,
+            extra={
+                "event": "job_failed",
+                "job_id": job.id,
+                "meeting_id": job.meeting_id,
+                "worker_id": current_worker_id,
+                "stage": err.stage.value if err.stage else job.stage,
+                "attempt": job.attempt,
+                "error_code": err.code.value,
+                "status": "failed",
+            },
+        )
         fail_job(db, job, error_code=err.code.value, error_message=err.message, now=get_now())
         if err.stage == Stage.SUMMARIZE:
             meeting.status = "partial"
@@ -399,17 +427,28 @@ def process_job(
         db.commit()
 
     except TransientPipelineError as err:
-        logger.warning(
-            "Job %s gặp lỗi tạm thời: %s (attempt=%d/%d)",
-            job.id,
-            err,
-            job.attempt,
-            job.max_attempts,
-        )
         current_time = get_now()
         if job.attempt < job.max_attempts:
             delay_sec = compute_backoff_delay(job.attempt)
             next_run = current_time + timedelta(seconds=delay_sec)
+            logger.warning(
+                "Job %s gặp lỗi tạm thời: %s (attempt=%d/%d), lên lịch retry sau %ds",
+                job.id,
+                err,
+                job.attempt,
+                job.max_attempts,
+                delay_sec,
+                extra={
+                    "event": "job_retry_scheduled",
+                    "job_id": job.id,
+                    "meeting_id": job.meeting_id,
+                    "worker_id": current_worker_id,
+                    "stage": err.stage.value if err.stage else job.stage,
+                    "attempt": job.attempt,
+                    "error_code": err.code.value,
+                    "status": "retry_scheduled",
+                },
+            )
             schedule_retry(
                 db,
                 job,
@@ -419,6 +458,22 @@ def process_job(
                 now=current_time,
             )
         else:
+            logger.error(
+                "Job %s thất bại vĩnh viễn sau %d lần thử: %s",
+                job.id,
+                job.max_attempts,
+                err,
+                extra={
+                    "event": "job_failed",
+                    "job_id": job.id,
+                    "meeting_id": job.meeting_id,
+                    "worker_id": current_worker_id,
+                    "stage": err.stage.value if err.stage else job.stage,
+                    "attempt": job.attempt,
+                    "error_code": err.code.value,
+                    "status": "failed",
+                },
+            )
             fail_job(
                 db,
                 job,
@@ -440,6 +495,16 @@ def process_job(
             job.id,
             current_worker_id,
             err,
+            extra={
+                "event": "job_lease_lost",
+                "job_id": job.id,
+                "meeting_id": job.meeting_id,
+                "worker_id": current_worker_id,
+                "stage": job.stage,
+                "attempt": job.attempt,
+                "error_code": "LEASE_TIMEOUT",
+                "status": "lease_lost",
+            },
         )
         return job
 
@@ -464,8 +529,24 @@ def process_job(
                 pass
 
     except PipelineError as err:
-        logger.error("Job %s gặp lỗi pipeline: %s", job.id, err)
-        fail_job(db, job, error_code=err.code.value, error_message=err.message, now=get_now())
+        error_code_val = err.code.value if hasattr(err, "code") else "INTERNAL_ERROR"
+        stage_val = getattr(err, "stage", None)
+        logger.error(
+            "Job %s gặp lỗi pipeline: %s",
+            job.id,
+            err,
+            extra={
+                "event": "job_failed",
+                "job_id": job.id,
+                "meeting_id": job.meeting_id,
+                "worker_id": current_worker_id,
+                "stage": stage_val.value if stage_val else job.stage,
+                "attempt": job.attempt,
+                "error_code": error_code_val,
+                "status": "failed",
+            },
+        )
+        fail_job(db, job, error_code=error_code_val, error_message=err.message, now=get_now())
         meeting.status = "failed"
         meeting.updated_at = get_now()
         db.commit()
@@ -494,6 +575,21 @@ def run_worker_once(
     job = claim_job(db, worker_id=worker_id, now=now or (clock() if clock else None))
     if job is None:
         return False
+
+    logger.info(
+        "Worker %s đã claim job %s",
+        worker_id,
+        job.id,
+        extra={
+            "event": "job_claimed",
+            "job_id": job.id,
+            "meeting_id": job.meeting_id,
+            "worker_id": worker_id,
+            "stage": job.stage,
+            "attempt": job.attempt,
+            "status": "running",
+        },
+    )
 
     process_job(
         db,
@@ -524,6 +620,7 @@ def run_worker_loop(
     from app.db.session import get_session_factory
     from app.services.storage import get_storage
 
+    setup_logging()
     w_id = worker_id or f"worker-{os.getpid()}"
     storage = get_storage()
     session_factory = get_session_factory()
@@ -596,5 +693,5 @@ def run_worker_loop(
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
+    setup_logging()
     run_worker_loop()

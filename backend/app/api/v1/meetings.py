@@ -386,6 +386,19 @@ def create_meeting(
                 response_body=response_data,
             )
         db.commit()
+        logger.info(
+            "Job %s đã được tạo cho cuộc họp %s",
+            job.id,
+            meeting.id,
+            extra={
+                "event": "job_created",
+                "job_id": job.id,
+                "meeting_id": meeting.id,
+                "stage": job.stage,
+                "attempt": job.attempt,
+                "status": "queued",
+            },
+        )
     except Exception:
         db.rollback()
         storage.delete_meeting_files(meeting_id)
@@ -2234,6 +2247,19 @@ def retry_meeting_job(
 
     try:
         db.commit()
+        logger.info(
+            "Job %s đã được tạo lại cho cuộc họp %s",
+            new_job.id,
+            meeting.id,
+            extra={
+                "event": "job_created",
+                "job_id": new_job.id,
+                "meeting_id": meeting.id,
+                "stage": new_job.stage,
+                "attempt": new_job.attempt,
+                "status": "queued",
+            },
+        )
     except IntegrityError as exc:
         db.rollback()
         if idempotency_service and idem_res and idem_res.record_id:
