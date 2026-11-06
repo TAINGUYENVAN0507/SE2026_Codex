@@ -15,6 +15,7 @@ dependencies = [
     "sqlalchemy>=2.0,<3",
     "uvicorn[standard]>=0.30,<1",
     "meeting-pipeline",
+    "prometheus-client>=0.26.0",
 ]
 
 [tool.uv.sources]
