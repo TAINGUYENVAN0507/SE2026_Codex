@@ -33,6 +33,16 @@ Kế hoạch các đợt sau: [`tasks/ROADMAP.md`](../ROADMAP.md).
   permanent error, retry tự động và partial vẫn sửa transcript được.
 - Ảnh mới để local tại `.preview-stitch/anh-duyet/2026-11-06/` (không vào Git).
 
+### Kiểm tra cuối trước khi push
+
+- Sửa bố cục theo phản hồi người dùng: `554d289` (FE-19, FE-20).
+- Fetch `origin` và kiểm tra gộp với `origin/main`: không conflict; không sửa main.
+- Chạy lại frontend: lint, format, typecheck, **176 test** và build đạt;
+  `npm run gen:api` không tạo diff trong type API.
+- Chạy lại toàn bộ backend trên PostgreSQL QA: **283 test đạt, không skip**;
+  ruff check/format và export schema drift check đạt.
+- CI/consumer review vẫn phải xác nhận trên PR; kết quả local không thay CI.
+
 ### Những điểm cần phối hợp/review
 
 - B review bản sửa nhỏ `serialize_action_item()` ở commit FE-17: snapshot worker
