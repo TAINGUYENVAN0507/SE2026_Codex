@@ -1,55 +1,130 @@
 # Vietnamese Meeting Minutes Assistant
 
-Web app ghi âm hoặc tải audio cuộc họp tiếng Việt lên, sau đó tạo transcript có timestamp và speaker, tóm tắt cuộc họp và action items. Người dùng chỉnh sửa được kết quả và export ra TXT/JSON/Markdown.
+Hệ thống hỗ trợ ghi âm hoặc tải lên tệp âm thanh cuộc họp tiếng Việt, tự động nhận dạng giọng nói kèm timestamp và phân tách người nói (diarization), tạo bản tóm tắt có cấu trúc và danh sách công việc (action items). Người dùng có thể nghe lại audio, hiệu chỉnh trực tiếp nội dung trên giao diện web và xuất kết quả ra các định dạng TXT, Markdown, JSON.
 
-Dự án môn học SE2026, nhóm 3 người.
+Dự án môn học **SE2026 – Phát triển phần mềm với AI & Kỹ nghệ Kiểm thử**, nhóm 3 thành viên (SE2026-T05).
 
-## Đọc trước khi code
+---
 
-Mọi thành viên, kể cả AI coding assistant của từng người, đọc theo thứ tự:
+## 1. Đọc trước khi code
 
-1. [`structure/`](structure/README.md): cấu trúc repo, kiến trúc, ranh giới module, contracts.
-2. [`rules/`](rules/README.md): checklist trước khi code, nhánh và PR, quy ước code, test, privacy.
-3. [`tasks/`](tasks/README.md): việc trong ngày của mình, `tasks/<YYYY-MM-DD>/member-<a|b|c>.md`. Việc còn lại theo đợt: [`tasks/ROADMAP.md`](tasks/ROADMAP.md).
-4. README của module sắp sửa.
+Mọi thành viên và AI coding assistant bắt buộc đọc các tài liệu sau trước khi thực hiện thay đổi:
 
-## Thành viên và phần việc
+1. [`structure/`](structure/README.md): Cấu trúc repository, kiến trúc hệ thống, ranh giới module và contracts trao đổi dữ liệu.
+2. [`rules/`](rules/README.md): Checklist trước khi commit/mở PR, quy ước nhánh Git, chuẩn code, kiểm thử và bảo vệ quyền riêng tư (`privacy-security.md`).
+3. [`tasks/`](tasks/README.md): Nhiệm vụ phân công trong ngày (`tasks/<YYYY-MM-DD>/member-<a|b|c>.md`) và kế hoạch triển khai tổng thể ([`tasks/ROADMAP.md`](tasks/ROADMAP.md)).
+4. README chi tiết của từng module: [`frontend/`](frontend/README.md), [`backend/`](backend/README.md), [`pipeline/`](pipeline/README.md).
 
-| Member | Phần việc | Thư mục chính | GitHub | Nhánh |
+---
+
+## 2. Thành viên và Phân công
+
+| Thành viên | Vai trò & Phần việc chính | Thư mục phụ trách | GitHub | Nhánh làm việc |
 |---|---|---|---|---|
-| A | Frontend, UX, chỉnh sửa, export | `frontend/`, `backend/app/services/export/` | `@mactuongmvt` | `vantuong` |
-| B | Backend, API, DB, job orchestration, tích hợp | `backend/`, `contracts/openapi.json`, `tests/`, Docker, CI | `@minhquangha` | `haquang` |
-| C, nhóm trưởng | AI/Speech pipeline và evaluation; review và merge mọi PR | `pipeline/`, `contracts/pipeline/`, `evaluation/` | `@TAINGUYENVAN0507` | `tainguyen` |
+| **A** | Frontend SPA, UX, audio player, trình biên tập transcript/summary/action items, giao diện export | `frontend/`, `backend/app/services/export/` | `@mactuongmvt` | `vantuong` |
+| **B** | Backend API (FastAPI), cơ sở dữ liệu (PostgreSQL/SQLAlchemy), worker orchestration, erasure, retention, JSON logging, metrics, tìm kiếm & phân trang | `backend/`, `contracts/openapi.json`, `tests/`, Docker, CI | `@minhquangha` | `haquang` |
+| **C** *(Nhóm trưởng)* | AI/Speech pipeline (VAD, ASR, Diarization, LLM Summarization), evaluation datasets (WER/RTF), review & merge mọi PR | `pipeline/`, `contracts/pipeline/`, `evaluation/` | `@TAINGUYENVAN0507` | `tainguyen` |
 
-## Trạng thái
+---
 
-- Đã có trong `main`: pipeline (khung chạy, contracts, stage `preprocess` và `merge` thật, các stage khác có bản fake) và bộ đánh giá (datasets, normalizer, chấm WER).
-- Frontend: đã có scaffold FE-01 ở nhánh `vantuong`, đang chờ review và merge PR #5.
-- Backend: chưa bắt đầu.
+## 3. Trạng thái Hiện tại của Dự án
 
-Chi tiết từng thư mục ở [`structure/repository.md`](structure/repository.md). Mỗi module có README riêng.
+Toàn bộ 3 module chính đã được triển khai đầy đủ và tích hợp thông qua hợp đồng dữ liệu chuẩn:
 
-## Frontend (FE-01)
+- **AI/Speech Pipeline (`pipeline/`):**
+  - Đầy đủ 6 stage: `preprocess` → `vad` → `asr` → `diarize` → `merge` → `summarize`.
+  - Hỗ trợ cả 2 chế độ: `PIPELINE_BACKEND=real` (mô hình AI thật: Silero VAD, faster-whisper `large-v3-turbo`, pyannote diarization hỗ trợ GPU/CUDA, Claude API cho LLM summarization) và `PIPELINE_BACKEND=fake` (chạy giả lập nhanh cho dev, CI, test mà không cần GPU hay API key).
+  - Đã hiệu chỉnh timeout động theo RTF đo đạc thực tế; bộ đánh giá độ chính xác WER và hiệu năng RTF.
 
-Đã có nền Vite + React + TypeScript strict, router, TanStack Query provider và
-workflow kiểm tra frontend. Giao diện hiện dùng dữ liệu demo trong phiên, chưa
-kết nối đăng nhập, Backend hay AI thật.
+- **Backend (`backend/`):**
+  - REST API trên nền FastAPI + PostgreSQL 16 (Alembic migrations, cookie session auth, optimistic locking với `version`).
+  - Đầy đủ các luồng nghiệp vụ: upload file kiểm tra MIME/kích thước và SHA-256; ghi âm có consent; chỉnh sửa transcript, speaker, summary, action items; lịch sử chỉnh sửa (audit events).
+  - Xuất dữ liệu đa định dạng (TXT, Markdown, JSON schema 1.0) dựng từ database.
+  - Erasure Service (BE-18) xóa triệt để meeting và idempotency keys; Retention Reaper (BE-14) dọn dẹp file audio và dữ liệu vận hành quá hạn.
+  - JSON structured logging kèm `job_id`, `stage`, `attempt` (BE-19); endpoint Prometheus `/metrics` theo dõi request, độ trễ và trạng thái hàng đợi job.
+  - Tính năng tìm kiếm, lọc và phân trang có thứ tự ổn định (VT-017) với tie-breaker `Meeting.id`, đảm bảo tương thích ngược 100% với client cũ.
+  - Bộ kiểm thử > 300 test cases pass 100%, 0 drift hợp đồng OpenAPI (`contracts/openapi.json`).
 
-Yêu cầu Node.js 24 và npm. Từ thư mục gốc:
+- **Frontend (`frontend/`):**
+  - Ứng dụng React 18 SPA (Vite + TypeScript strict + Tailwind CSS + TanStack Query).
+  - Giao diện hoàn chỉnh: `/login`, danh sách cuộc họp `/meetings` (hỗ trợ tìm kiếm, lọc, phân trang), upload file mới `/meetings/new`, màn hình chi tiết `/meetings/:meetingId` và trang mẫu `/meetings/sprint-42`.
+  - Audio player đồng bộ timeline transcript; trình biên tập trực tiếp speaker, segment text, tóm tắt và action items; menu export TXT/MD/JSON theo bản chỉnh sửa hoặc bản gốc AI.
+  - Hỗ trợ chạy với Backend thật (`VITE_API_MOCK=0`) hoặc chế độ Mock Service Worker (`VITE_API_MOCK=1`). Kiểm thử E2E trên stack thật với Playwright.
 
+---
+
+## 4. Hướng dẫn Khởi chạy Nhanh (Quick Start)
+
+### 4.1. Yêu cầu hệ thống
+- Python 3.12+ và [uv](https://docs.astral.sh/uv/)
+- Node.js 24+ và npm
+- Docker & Docker Compose (cho PostgreSQL 16)
+- `ffmpeg` và `ffprobe` trong `PATH` hệ thống
+
+### 4.2. Khởi chạy từng bước
+
+#### Bước 1: Khởi động Cơ sở dữ liệu PostgreSQL
+Từ thư mục gốc dự án:
 ```bash
-cd frontend
-npm ci
-npm run dev
+# Sao chép cấu hình môi trường mẫu nếu chưa có
+cp .env.example .env
+
+# Khởi chạy container PostgreSQL 16
+docker compose up -d db
 ```
 
-Mở địa chỉ Vite in trong terminal (mặc định `http://localhost:5173`).
-Hướng dẫn chi tiết: [frontend/README.md](frontend/README.md).
-Checklist và bằng chứng FE-01: [docs/frontend/FE-01.md](docs/frontend/FE-01.md).
-
-Kiểm tra trước khi bàn giao (chạy trong `frontend/`):
-
+#### Bước 2: Khởi động Backend API Server
+Mở terminal 1:
 ```bash
+cd backend
+uv sync
+uv run uvicorn app.main:app --reload --port 8000
+```
+- API Server: `http://localhost:8000`
+- Tài liệu API tương tác: `http://localhost:8000/docs` hoặc `http://localhost:8000/redoc`
+
+#### Bước 3: Khởi động Background Worker
+Mở terminal 2:
+```bash
+cd backend
+# Chạy worker với pipeline giả lập (không cần GPU hay API key LLM)
+PIPELINE_BACKEND=fake uv run python -m app.worker.runner
+
+# Hoặc chạy với pipeline AI thật (yêu cầu cài đặt thêm extras của pipeline)
+# PIPELINE_BACKEND=real uv run python -m app.worker.runner
+```
+
+#### Bước 4: Khởi động Frontend Web App
+Mở terminal 3:
+```bash
+cd frontend
+npm install
+npm run dev
+```
+- Mở trình duyệt tại: `http://localhost:5173`
+- Mặc định Frontend gọi API backend thật tại `http://localhost:8000`. Để chuyển sang chế độ Mock độc lập, đặt `VITE_API_MOCK=1` trong `frontend/.env.local`.
+
+---
+
+## 5. Quy chuẩn Kiểm tra Chất lượng (Quality Gates)
+
+Trước khi commit mã nguồn hoặc mở Pull Request, mỗi thành viên phải bảo đảm toàn bộ lệnh lint và test của module phụ trách đều xanh:
+
+### Backend (`backend/`)
+```bash
+cd backend
+uv run ruff check .
+uv run ruff format --check .
+uv run pytest
+```
+*Lưu ý:* Kiểm tra OpenAPI drift trước khi commit:
+```bash
+uv run python scripts/generate_openapi.py --check
+```
+
+### Frontend (`frontend/`)
+```bash
+cd frontend
 npm run lint
 npm run format:check
 npm run typecheck
@@ -57,6 +132,25 @@ npm test
 npm run build
 ```
 
-Workflow `.github/workflows/frontend.yml` chạy khi có thay đổi frontend trong PR,
-push vào `main`/`vantuong`, hoặc chạy thủ công. Cấu hình workflow không đồng nghĩa
-CI đã xanh: cần xem kết quả GitHub Actions sau khi được phép push.
+### Pipeline (`pipeline/`)
+```bash
+cd pipeline
+uv run pytest
+```
+
+---
+
+## 6. Cấu trúc Thư mục Tổng quan
+
+```text
+SE2026_Codex/
+├── backend/            # FastAPI application, database models, worker runner, REST API routes
+├── contracts/          # Hợp đồng dữ liệu chung: openapi.json, schemas, fixtures, error codes
+├── docs/               # Tài liệu kiến trúc, ADRs, hướng dẫn kỹ thuật và chính sách dữ liệu
+├── evaluation/         # Bộ công cụ đánh giá pipeline: WER, RTF benchmark, test datasets
+├── frontend/           # Ứng dụng React SPA, audio player, editing UI, mock handlers
+├── pipeline/           # AI/Speech pipeline (preprocess, vad, asr, diarize, merge, summarize)
+├── rules/              # Quy tắc làm việc của nhóm: git-workflow, coding, testing, privacy
+├── structure/          # Quy định cấu trúc: repository, architecture, contracts
+└── tasks/              # Phân công công việc hàng ngày và roadmap tiến độ MVP
+```
