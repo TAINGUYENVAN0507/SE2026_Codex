@@ -31,6 +31,18 @@ test('RT-11: reload khi đang xử lý, tiếp tục job cũ và không tạo th
   })
   const { meeting, job } = await uploadMeeting(page, 'E2E RT-11 reload')
   await expect(page.locator('[data-status="running"]')).toBeVisible()
+  const progress = page.getByRole('progressbar', {
+    name: 'Tiến độ xử lý',
+    exact: true,
+  })
+  await expect(progress).toBeVisible()
+  const running = await (
+    await page.request.get(`/api/v1/jobs/${job.id}`)
+  ).json()
+  expect(
+    Number(await progress.getAttribute('aria-valuenow')),
+  ).toBeGreaterThanOrEqual(0)
+  expect(running.progress).toBeLessThanOrEqual(1)
   await page.reload()
   await expect(
     page.getByRole('region', { name: 'Tiến độ xử lý cuộc họp' }),

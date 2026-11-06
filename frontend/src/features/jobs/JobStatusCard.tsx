@@ -3,6 +3,7 @@ import { ApiError, errorMessageForCode } from '../../api/errors'
 import type { Job } from '../../api/client'
 import { PIPELINE_STAGES, type JobStatus, type PipelineStage } from './model'
 import { useJobQuery } from './useJobQuery'
+import { formatTime } from '../meetings/model'
 
 const stageLabels: Record<PipelineStage, string> = {
   preprocess: 'Chuẩn bị audio',
@@ -84,6 +85,21 @@ export function JobStatusCard({ jobId }: { jobId: string }) {
           Lượt thử {job.attempt}/{job.max_attempts}
         </span>
       </header>
+      <div className="job-progress-row">
+        <div
+          className="job-progress"
+          role="progressbar"
+          aria-label="Tiến độ xử lý"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={job.progress * 100}
+          aria-valuetext={`${Math.round(job.progress * 100)}%`}
+        >
+          <span style={{ width: `${job.progress * 100}%` }} />
+        </div>
+        <span>{Math.round(job.progress * 100)}%</span>
+        {job.started_at && <ElapsedTime key={job.started_at} job={job} />}
+      </div>
       <ol className="job-stage-list">
         {PIPELINE_STAGES.map((stage) => {
           const state = stageState(stage, job)
@@ -120,5 +136,28 @@ export function JobStatusCard({ jobId }: { jobId: string }) {
         </p>
       )}
     </section>
+  )
+}
+
+function ElapsedTime({ job }: { job: Job }) {
+  const [now, setNow] = useState(() => Date.now())
+  const active = ['queued', 'running', 'retry_scheduled'].includes(job.status)
+  useEffect(() => {
+    if (!active) return
+    const timer = window.setInterval(() => setNow(Date.now()), 1_000)
+    return () => window.clearInterval(timer)
+  }, [active])
+  const start = Date.parse(job.started_at!)
+  const end = job.finished_at ? Date.parse(job.finished_at) : now
+  if (
+    !Number.isFinite(start) ||
+    !Number.isFinite(end) ||
+    (!active && !job.finished_at)
+  )
+    return null
+  return (
+    <span className="job-elapsed">
+      Đã chạy {formatTime(Math.max(0, end - start) / 1000)}
+    </span>
   )
 }

@@ -2765,3 +2765,48 @@ mark {
     display: none;
   }
 }
+.job-progress-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 14px 0;
+}
+.job-progress {
+  flex: 1;
+  min-width: 100px;
+  height: 6px;
+  background: var(--line);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.job-progress > span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+.job-elapsed {
+  font-variant-numeric: tabular-nums;
+}
+.job-stage-list {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+}
+.job-stage {
+  grid-template-columns: 10px minmax(0, 1fr);
+  align-content: start;
+  gap: 4px 6px;
+}
+.job-stage-state {
+  grid-column: 2;
+}
+@media (max-width: 900px) {
+  .job-stage-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 600px) {
+  .job-stage-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

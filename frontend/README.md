@@ -2,6 +2,11 @@
 
 React SPA của Vietnamese Meeting Minutes Assistant. Owner: member A.
 
+Đợt 06/11: [dẫn chứng FE-18](../docs/frontend/FE-18.md),
+[xóa và hạn audio FE-19](../docs/frontend/FE-19.md),
+[tiến độ FE-20](../docs/frontend/FE-20.md). Các chức năng thật gọi API;
+chế độ MSW phục vụ xem thử và test component, không thay E2E stack thật.
+
 Kiểm thử trình duyệt trên stack thật: xem [FE-17](../docs/frontend/FE-17.md).
 Chạy `npm run e2e` sau khi cấu hình database E2E và mật khẩu demo theo tài liệu.
 
