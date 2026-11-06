@@ -61,7 +61,10 @@ from app.schemas.transcript import (
 )
 from app.services.audio_validator import probe_audio, validate_extension_and_mime
 from app.services.audit import record_edit
+from app.services.export import filename as export_filename
+from app.services.export import to_json, to_markdown, to_txt
 from app.services.idempotency.service import IdempotencyService
+from app.services.meeting_export import build_meeting_export
 from app.services.storage import FileTooLargeError, Storage, get_storage
 
 router = APIRouter(
@@ -2361,6 +2364,14 @@ def list_meeting_edits(
     "/{meeting_id}/export",
     status_code=status.HTTP_200_OK,
     responses={
+        status.HTTP_200_OK: {
+            "description": "Nội dung biên bản cuộc họp",
+            "content": {
+                "text/plain": {"schema": {"type": "string"}},
+                "text/markdown": {"schema": {"type": "string"}},
+                "application/json": {"schema": {"type": "string"}},
+            },
+        },
         404: {"model": ErrorResponse, "description": "Không tìm thấy cuộc họp"},
         409: {
             "model": ErrorResponse,
@@ -2375,38 +2386,48 @@ def list_meeting_edits(
 )
 def export_meeting(
     meeting_id: str = FastApiPath(..., description="UUID của cuộc họp"),
-    format: Annotated[str, Query(description="Định dạng xuất: txt, json, md, docx")] = "txt",
+    format: Annotated[str, Query(description="Định dạng xuất: txt, json, md")] = "txt",
     variant: Annotated[
         str, Query(description="Biến thể nội dung: current hoặc ai_original")
     ] = "current",
+    current_user: CurrentUser = None,
+    db: Annotated[Session, Depends(get_db)] = None,
 ) -> Response:
     """Xuất biên bản cuộc họp dưới định dạng mong muốn."""
     fmt = format.lower()
-    if fmt not in ("txt", "json", "md", "docx"):
+    if fmt not in ("txt", "json", "md"):
         raise APIError(
             code="FORMAT_NOT_SUPPORTED",
             message=f"Định dạng xuất '{format}' không được hỗ trợ.",
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         )
 
-    if "not-ready" in meeting_id.lower():
+    var = variant.lower()
+    if var not in ("current", "ai_original"):
         raise APIError(
-            code="TRANSCRIPT_NOT_READY",
-            message="Transcript chưa sẵn sàng để xuất dữ liệu.",
-            status_code=status.HTTP_409_CONFLICT,
+            code="FORMAT_NOT_SUPPORTED",
+            message=f"Biến thể nội dung '{variant}' không được hỗ trợ.",
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         )
+
+    meeting_export = build_meeting_export(db, meeting_id, current_user.id)
 
     media_types = {
         "txt": "text/plain; charset=utf-8",
         "md": "text/markdown; charset=utf-8",
         "json": "application/json; charset=utf-8",
-        "docx": ("application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
     }
 
-    content = f"# Biên bản cuộc họp {meeting_id}\nBiến thể: {variant}\n"
-    filename = f"meeting_{meeting_id}_{variant}.{fmt}"
+    if fmt == "txt":
+        content_bytes = to_txt(meeting_export, variant=var)
+    elif fmt == "md":
+        content_bytes = to_markdown(meeting_export, variant=var)
+    else:
+        content_bytes = to_json(meeting_export, variant=var)
+
+    download_name = export_filename(meeting_export, fmt)
     return Response(
-        content=content.encode("utf-8"),
-        media_type=media_types.get(fmt, "application/octet-stream"),
-        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{filename}"},
+        content=content_bytes,
+        media_type=media_types[fmt],
+        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{download_name}"},
     )
