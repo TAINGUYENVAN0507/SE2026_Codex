@@ -10,7 +10,7 @@ Mọi thành viên, kể cả AI coding assistant của từng người, đọc 
 
 1. [`structure/`](structure/README.md): cấu trúc repo, kiến trúc, ranh giới module, contracts.
 2. [`rules/`](rules/README.md): checklist trước khi code, nhánh và PR, quy ước code, test, privacy.
-3. [`tasks/`](tasks/README.md): việc trong ngày của mình, `tasks/<YYYY-MM-DD>/member-<a|b|c>.md`.
+3. [`tasks/`](tasks/README.md): việc trong ngày của mình, `tasks/<YYYY-MM-DD>/member-<a|b|c>.md`. Việc còn lại theo đợt: [`tasks/ROADMAP.md`](tasks/ROADMAP.md).
 4. README của module sắp sửa.
 
 ## Thành viên và phần việc
