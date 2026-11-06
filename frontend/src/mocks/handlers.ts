@@ -16,6 +16,7 @@ type CreatedMeeting = Omit<typeof meetingCreated.meeting, 'duration_sec'> & {
   duration_sec: number | null
 }
 const createdMeetings = new Map<string, CreatedMeeting>()
+const deletedMeetings = new Set<string>()
 const editedSegments = new Map<string, SegmentData>()
 let editedSummary: SummaryData | null = null
 const mockActionItems = new Map<string, ActionItemData>()
@@ -29,6 +30,7 @@ resetMockActionItems()
 
 export function resetMockMeetings() {
   createdMeetings.clear()
+  deletedMeetings.clear()
   editedSegments.clear()
   editedSummary = null
   resetMockActionItems()
@@ -43,6 +45,22 @@ function notFound(message: string) {
 
 export const handlers = [
   ...authHandlers,
+  http.delete('*/api/v1/meetings/:meetingId', ({ params }) => {
+    const id = String(params.meetingId)
+    if (
+      deletedMeetings.has(id) ||
+      (id !== meetingProcessing.id && !createdMeetings.has(id))
+    )
+      return notFound('Không tìm thấy cuộc họp.')
+    deletedMeetings.add(id)
+    createdMeetings.delete(id)
+    if (id === meetingProcessing.id) {
+      editedSegments.clear()
+      editedSummary = null
+      mockActionItems.clear()
+    }
+    return new HttpResponse(null, { status: 204 })
+  }),
   http.get('*/api/v1/meetings/:meetingId/export', ({ params, request }) => {
     if (createdMeetings.has(String(params.meetingId)))
       return HttpResponse.json(
@@ -192,7 +210,9 @@ export const handlers = [
     const url = new URL(request.url)
     const page = Number(url.searchParams.get('page') || 1)
     const status = url.searchParams.get('status')
-    const allItems = [...createdMeetings.values(), ...meetingList.items]
+    const allItems = [...createdMeetings.values(), ...meetingList.items].filter(
+      (item) => !deletedMeetings.has(item.id),
+    )
     const items = status
       ? allItems.filter((item) => item.status === status)
       : allItems
@@ -204,6 +224,8 @@ export const handlers = [
     })
   }),
   http.get('*/api/v1/meetings/:meetingId', ({ params }) => {
+    if (deletedMeetings.has(String(params.meetingId)))
+      return notFound('Không tìm thấy cuộc họp.')
     const created = createdMeetings.get(String(params.meetingId))
     if (created) return HttpResponse.json(created)
     return params.meetingId === meetingProcessing.id
@@ -211,16 +233,18 @@ export const handlers = [
       : notFound('Không tìm thấy cuộc họp.')
   }),
   http.get('*/api/v1/meetings/:meetingId/transcript', ({ params }) =>
-    createdMeetings.has(String(params.meetingId))
-      ? HttpResponse.json(transcriptPending)
-      : params.meetingId === meetingProcessing.id
-        ? HttpResponse.json({
-            ...transcriptReady,
-            segments: transcriptReady.segments.map(
-              (segment) => editedSegments.get(segment.id) ?? segment,
-            ),
-          })
-        : notFound('Không tìm thấy cuộc họp.'),
+    deletedMeetings.has(String(params.meetingId))
+      ? notFound('Không tìm thấy cuộc họp.')
+      : createdMeetings.has(String(params.meetingId))
+        ? HttpResponse.json(transcriptPending)
+        : params.meetingId === meetingProcessing.id
+          ? HttpResponse.json({
+              ...transcriptReady,
+              segments: transcriptReady.segments.map(
+                (segment) => editedSegments.get(segment.id) ?? segment,
+              ),
+            })
+          : notFound('Không tìm thấy cuộc họp.'),
   ),
   http.get('*/api/v1/meetings/:meetingId/summary', ({ params }) =>
     params.meetingId === meetingProcessing.id

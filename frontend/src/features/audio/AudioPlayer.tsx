@@ -21,6 +21,8 @@ export interface PlayerHandle {
 }
 interface Props {
   file?: File
+  src?: string
+  onPlaybackError?: () => void
   duration: number
   speaker?: string
   onPosition: (seconds: number) => void
@@ -28,13 +30,23 @@ interface Props {
 }
 
 export const AudioPlayer = forwardRef<PlayerHandle, Props>(function AudioPlayer(
-  { file, duration: fallbackDuration, speaker, onPosition, onFile },
+  {
+    file,
+    src,
+    onPlaybackError,
+    duration: fallbackDuration,
+    speaker,
+    onPosition,
+    onFile,
+  },
   ref,
 ) {
-  const url = useObjectUrl(file)
+  const localUrl = useObjectUrl(file)
+  const url = localUrl || src
+  const hasSource = Boolean(file || src)
   const audio = useRef<HTMLAudioElement>(null)
   const picker = useRef<HTMLInputElement>(null)
-  const initialPosition = file
+  const initialPosition = hasSource
     ? 0
     : Math.max(0, Math.min(255, fallbackDuration))
   const positionRef = useRef(initialPosition)
@@ -52,13 +64,13 @@ export const AudioPlayer = forwardRef<PlayerHandle, Props>(function AudioPlayer(
   }
   const seek = (seconds: number) => {
     const value = Math.max(0, Math.min(duration, seconds))
-    if (audio.current && file) audio.current.currentTime = value
+    if (audio.current && hasSource) audio.current.currentTime = value
     commitPosition(value)
   }
   useImperativeHandle(ref, () => ({ seek }))
 
   useEffect(() => {
-    if (!playing || file) return
+    if (!playing || hasSource) return
     let last = performance.now()
     const timer = window.setInterval(() => {
       const now = performance.now()
@@ -73,7 +85,7 @@ export const AudioPlayer = forwardRef<PlayerHandle, Props>(function AudioPlayer(
       if (value >= fallbackDuration) setPlaying(false)
     }, 100)
     return () => window.clearInterval(timer)
-  }, [playing, file, speed, fallbackDuration, onPosition])
+  }, [playing, hasSource, speed, fallbackDuration, onPosition])
   useEffect(() => {
     const element = audio.current
     return () => element?.pause()
@@ -86,7 +98,7 @@ export const AudioPlayer = forwardRef<PlayerHandle, Props>(function AudioPlayer(
       return
     }
     if (position >= duration) seek(0)
-    if (file) {
+    if (hasSource) {
       try {
         await audio.current?.play()
       } catch {
@@ -145,7 +157,12 @@ export const AudioPlayer = forwardRef<PlayerHandle, Props>(function AudioPlayer(
             <WaveformIcon size={17} />
             Bản ghi cuộc họp
           </span>
-          <small>{file?.name || 'Chưa chọn file audio · mô phỏng'}</small>
+          <small>
+            {file?.name ||
+              (src
+                ? 'Bản ghi cuộc họp trên máy chủ'
+                : 'Chưa chọn file audio · mô phỏng')}
+          </small>
           <button
             className="button secondary small"
             aria-label="Chọn audio để nghe thử"
@@ -216,7 +233,7 @@ export const AudioPlayer = forwardRef<PlayerHandle, Props>(function AudioPlayer(
               aria-label={
                 playing
                   ? 'Tạm dừng'
-                  : file
+                  : hasSource
                     ? 'Phát audio'
                     : 'Phát thử giao diện'
               }
@@ -289,9 +306,11 @@ export const AudioPlayer = forwardRef<PlayerHandle, Props>(function AudioPlayer(
         </div>
       </div>
       <p className="audio-note">
-        {file
-          ? 'File phát tại máy bạn; waveform và transcript bên dưới vẫn là minh họa.'
-          : 'Player đang mô phỏng. Chọn audio trên máy để nghe bản ghi thật.'}
+        {src && !file
+          ? 'Bản ghi từ máy chủ · bấm mốc dẫn chứng để nghe lại.'
+          : file
+            ? 'File phát tại máy bạn; waveform và transcript bên dưới vẫn là minh họa.'
+            : 'Player đang mô phỏng. Chọn audio trên máy để nghe bản ghi thật.'}
       </p>
       {error && (
         <p className="form-error" role="alert">
@@ -320,13 +339,14 @@ export const AudioPlayer = forwardRef<PlayerHandle, Props>(function AudioPlayer(
           setError('')
         }}
         onTimeUpdate={(e) => {
-          if (file) commitPosition(e.currentTarget.currentTime)
+          if (hasSource) commitPosition(e.currentTarget.currentTime)
         }}
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}
         onEnded={() => setPlaying(false)}
         onError={() => {
-          if (file) {
+          if (hasSource) {
+            onPlaybackError?.()
             setError('Trình duyệt không đọc được file audio này.')
             setPlaying(false)
           }

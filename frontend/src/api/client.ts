@@ -70,6 +70,17 @@ export function getMeeting(id: MeetingDetail['id']): Promise<MeetingDetail> {
   )
 }
 
+export async function deleteMeeting(id: string): Promise<void> {
+  try {
+    await client.DELETE('/meetings/{meeting_id}', {
+      params: { path: { meeting_id: id } },
+    })
+  } catch (error) {
+    if (error instanceof ApiError) throw error
+    throw toNetworkError()
+  }
+}
+
 export function login(email: string, password: string): Promise<UserSession> {
   return unwrap(client.POST('/auth/login', { body: { email, password } }))
 }

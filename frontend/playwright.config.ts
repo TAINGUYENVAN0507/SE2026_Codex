@@ -6,6 +6,7 @@ const cases: Record<string, string[]> = {
     'flows/login.spec.ts',
     'flows/upload.spec.ts',
     'flows/edit.spec.ts',
+    'flows/delete.spec.ts',
     'privacy/*.spec.ts',
   ],
   permanent: ['flows/permanent.spec.ts'],

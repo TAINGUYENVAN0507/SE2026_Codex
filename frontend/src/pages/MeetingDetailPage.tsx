@@ -7,7 +7,9 @@ import { UsersIcon } from '@phosphor-icons/react/dist/csr/Users'
 import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { ApiError } from '../api/errors'
-import { getMeeting } from '../api/client'
+import { getMeeting, type MeetingDetail } from '../api/client'
+import { DeleteMeetingButton } from '../features/meetings/DeleteMeetingButton'
+import { RemoteAudioPlayer } from '../features/audio/RemoteAudioPlayer'
 import { AudioPlayer, type PlayerHandle } from '../features/audio/AudioPlayer'
 import { validateAudio } from '../features/audio/validation'
 import { useMeetings } from '../features/meetings/DemoStore'
@@ -78,6 +80,7 @@ function RemoteMeetingDetail({ meetingId }: { meetingId: string }) {
       meeting={apiMeetingToView(meetingQuery.data, transcriptQuery.data)}
       pending={transcriptQuery.data.status === 'pending'}
       ready={transcriptQuery.data.status === 'ready'}
+      audioInfo={meetingQuery.data.audio}
       jobId={
         meetingQuery.data.latest_job_id || meetingQuery.data.latest_job?.id
       }
@@ -90,11 +93,13 @@ function RemoteMeetingContent({
   pending,
   ready,
   jobId,
+  audioInfo,
 }: {
   meeting: Meeting
   pending: boolean
   ready: boolean
   jobId?: string
+  audioInfo: MeetingDetail['audio']
 }) {
   const [meeting, setMeeting] = useState(initial)
   const { files } = useMeetings()
@@ -107,6 +112,7 @@ function RemoteMeetingContent({
       onUpdate={(transform) => setMeeting((current) => transform(current))}
       remote
       jobId={jobId}
+      audioInfo={audioInfo}
     />
   )
 }
@@ -142,6 +148,7 @@ function Detail({
   remote = false,
   transcriptReady = meeting.status === 'ready',
   jobId,
+  audioInfo,
 }: {
   meeting: Meeting
   file?: File
@@ -150,8 +157,11 @@ function Detail({
   remote?: boolean
   transcriptReady?: boolean
   jobId?: string
+  audioInfo?: MeetingDetail['audio']
 }) {
-  const [localFile, setLocalFile] = useState<File | undefined>(file)
+  const [localFile, setLocalFile] = useState<File | undefined>(
+    remote ? undefined : file,
+  )
   const [position, setPosition] = useState(
     file ? 0 : Math.max(0, Math.min(255, meeting.duration)),
   )
@@ -263,25 +273,48 @@ function Detail({
             <span>Tiếng Việt</span>
           </div>
         </div>
-        <ExportMenu meetingId={meeting.id} ready={transcriptReady} />
+        <div className="detail-actions">
+          {remote && (
+            <DeleteMeetingButton meetingId={meeting.id} jobId={jobId} />
+          )}
+          <ExportMenu meetingId={meeting.id} ready={transcriptReady} />
+        </div>
       </header>
       {jobId && <JobStatusCard jobId={jobId} />}
-      <AudioPlayer
-        key={`${localFile?.name || 'demo'}-${localFile?.lastModified || 0}`}
-        file={localFile}
-        duration={meeting.duration}
-        speaker={name}
-        onPosition={onPosition}
-        ref={player}
-        onFile={(f) => {
-          const error = validateAudio(f)
-          if (error) setMessage(error)
-          else {
-            setLocalFile(f)
-            setMessage('Đã chọn audio. Transcript vẫn là dữ liệu mẫu.')
-          }
-        }}
-      />
+      {remote && audioInfo ? (
+        <RemoteAudioPlayer
+          key={meeting.id}
+          audioInfo={audioInfo}
+          meetingId={meeting.id}
+          duration={meeting.duration}
+          speaker={name}
+          onPosition={onPosition}
+          ref={player}
+          onFile={(f) => {
+            const error = validateAudio(f)
+            if (error) setMessage(error)
+            else setLocalFile(f)
+          }}
+          file={localFile}
+        />
+      ) : (
+        <AudioPlayer
+          key={`${localFile?.name || 'demo'}-${localFile?.lastModified || 0}`}
+          file={localFile}
+          duration={meeting.duration}
+          speaker={name}
+          onPosition={onPosition}
+          ref={player}
+          onFile={(f) => {
+            const error = validateAudio(f)
+            if (error) setMessage(error)
+            else {
+              setLocalFile(f)
+              setMessage('Đã chọn audio. Transcript vẫn là dữ liệu mẫu.')
+            }
+          }}
+        />
+      )}
       {message && (
         <div className="detail-notice" role="status">
           {message}

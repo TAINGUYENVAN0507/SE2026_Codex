@@ -2716,3 +2716,52 @@ mark {
 .task-body > .evidence-links {
   margin: 6px 0;
 }
+.detail-actions,
+.delete-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.delete-actions {
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+.button.danger {
+  color: white;
+  background: #aa2f24;
+}
+.button.danger:hover:not(:disabled) {
+  background: #85251d;
+}
+.delete-meeting {
+  color: #aa2f24;
+}
+.audio-retention {
+  padding: 8px 24px;
+  font-size: 1rem;
+}
+.audio-expired {
+  padding: 16px 24px;
+  background: var(--soft);
+}
+.audio-expired p + p {
+  margin-top: 6px;
+}
+@media (max-width: 760px) {
+  .detail-actions {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .detail-actions .button {
+    font-size: 14px;
+    min-height: 40px;
+  }
+  .detail-actions .delete-meeting {
+    width: 40px;
+    padding: 8px;
+  }
+  .delete-meeting > span {
+    display: none;
+  }
+}
