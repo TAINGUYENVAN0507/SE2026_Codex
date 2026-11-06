@@ -4,6 +4,7 @@ import { AppShell } from './components/AppShell'
 import { DemoStore } from './features/meetings/DemoStore'
 import { LoginPage } from './pages/LoginPage'
 import { MeetingDetailPage } from './pages/MeetingDetailPage'
+import { MeetingProcessingPage } from './pages/MeetingProcessingPage'
 import { MeetingListPage } from './pages/MeetingListPage'
 import { NewMeetingPage } from './pages/NewMeetingPage'
 import { NotFoundPage } from './pages/NotFoundPage'
@@ -20,6 +21,10 @@ export default function App() {
             <Route index element={<Navigate to="/meetings" replace />} />
             <Route path="/meetings" element={<MeetingListPage />} />
             <Route path="/meetings/new" element={<NewMeetingPage />} />
+            <Route
+              path="/meetings/:meetingId/processing"
+              element={<MeetingProcessingPage />}
+            />
             <Route
               path="/meetings/:meetingId"
               element={<MeetingDetailPage />}

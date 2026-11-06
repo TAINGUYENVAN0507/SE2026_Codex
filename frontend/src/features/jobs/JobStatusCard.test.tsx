@@ -1,5 +1,6 @@
 import { act, render, screen, within } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { MemoryRouter } from 'react-router-dom'
 import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 import {
@@ -27,13 +28,18 @@ afterEach(() => {
 })
 afterAll(() => server.close())
 
-function renderCard() {
+function renderCard(compact = false) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: 0 } },
   })
   return render(
     <QueryClientProvider client={client}>
-      <JobStatusCard jobId={jobId} />
+      <MemoryRouter>
+        <JobStatusCard
+          jobId={jobId}
+          detailsHref={compact ? '/meetings/example/processing' : undefined}
+        />
+      </MemoryRouter>
     </QueryClientProvider>,
   )
 }
@@ -51,6 +57,17 @@ function jobWithStatus(status: JobStatus): Job {
 }
 
 describe('JobStatusCard', () => {
+  it('keeps progress and retry visible in compact mode and links to a separate stage view', async () => {
+    renderCard(true)
+    const link = await screen.findByRole('link', { name: 'Xem tiến độ' })
+    expect(link).toHaveAttribute('href', '/meetings/example/processing')
+    expect(screen.getByRole('progressbar')).toHaveAttribute(
+      'aria-valuenow',
+      '90',
+    )
+    expect(screen.queryByRole('list')).not.toBeInTheDocument()
+    expect(screen.getByRole('timer')).toBeInTheDocument()
+  })
   it.each([0, 0.42, 1])(
     'exposes server progress %s as an accessible percentage',
     async (progress) => {

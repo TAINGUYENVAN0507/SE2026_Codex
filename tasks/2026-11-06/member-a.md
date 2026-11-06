@@ -20,6 +20,19 @@ Kế hoạch các đợt sau: [`tasks/ROADMAP.md`](../ROADMAP.md).
   evidence, xác nhận xóa, header và bố cục tiến độ. Ảnh chỉ lưu local ngoài Git.
 - Các ô nghiệm thu giữ `[ ]` vì chưa push/chưa chạy CI cho code mới. Không tự merge.
 
+### Bổ sung theo phản hồi giao diện của người dùng
+
+- Tách `/meetings/:meetingId/processing` thành trang theo dõi riêng. Trang đọc
+  cuộc họp chỉ giữ dòng trạng thái gọn và link mở tiến độ.
+- Đưa hạn lưu audio xuống footer player; bản MSW dùng đồng hồ minh họa gần
+  thời điểm mở trang và không gọi URL audio không tồn tại của fixture.
+- Kiểm tra lại desktop 1536×800, mobile 360×780: không tràn ngang, thanh trạng
+  thái 53px trên desktop; không gian transcript/tóm tắt khoảng 499px.
+- Frontend sau sửa: **176 test / 33 file đạt**; lint, format, typecheck/build đạt.
+- Chạy lại **5 E2E đạt** sau tách trang: upload qua sáu bước, RT-11 reload,
+  permanent error, retry tự động và partial vẫn sửa transcript được.
+- Ảnh mới để local tại `.preview-stitch/anh-duyet/2026-11-06/` (không vào Git).
+
 ### Những điểm cần phối hợp/review
 
 - B review bản sửa nhỏ `serialize_action_item()` ở commit FE-17: snapshot worker

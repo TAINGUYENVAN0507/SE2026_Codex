@@ -14,9 +14,13 @@ type Props = Omit<
 > & {
   meetingId: string
   audioInfo: MeetingDetail['audio']
+  preview?: boolean
 }
 export const RemoteAudioPlayer = forwardRef<PlayerHandle, Props>(
-  function RemoteAudioPlayer({ meetingId, audioInfo, ...props }, ref) {
+  function RemoteAudioPlayer(
+    { meetingId, audioInfo, preview = false, ...props },
+    ref,
+  ) {
     const [expired, setExpired] = useState(false)
     const probe = useRef<AbortController | null>(null)
     useEffect(() => () => probe.current?.abort(), [])
@@ -41,29 +45,32 @@ export const RemoteAudioPlayer = forwardRef<PlayerHandle, Props>(
     const retention = audioInfo.retention_until
       ? new Date(audioInfo.retention_until)
       : null
+    const metadata =
+      retention && Number.isFinite(retention.getTime()) ? (
+        <p className="audio-retention">
+          Lưu audio đến{' '}
+          <time dateTime={audioInfo.retention_until!}>
+            {new Intl.DateTimeFormat('vi-VN', {
+              dateStyle: 'short',
+              timeStyle: 'short',
+            }).format(retention)}
+          </time>{' '}
+          (giờ địa phương)
+        </p>
+      ) : null
     return (
       <>
-        {retention && Number.isFinite(retention.getTime()) && (
-          <p className="audio-retention">
-            Audio được lưu đến{' '}
-            <time dateTime={audioInfo.retention_until!}>
-              {new Intl.DateTimeFormat('vi-VN', {
-                dateStyle: 'short',
-                timeStyle: 'short',
-              }).format(retention)}
-            </time>{' '}
-            (giờ địa phương).
-          </p>
-        )}
         {!audioInfo.available || expired ? (
           <section className="audio-expired" aria-label="Player audio cuộc họp">
             <p role="status">Audio đã hết hạn lưu trữ</p>
             <p>Transcript và nội dung cuộc họp vẫn có thể đọc được.</p>
+            {metadata}
           </section>
         ) : (
           <AudioPlayer
             {...props}
-            src={src}
+            src={preview ? undefined : src}
+            metadata={metadata}
             onPlaybackError={() => void checkExpiration()}
             ref={ref}
           />

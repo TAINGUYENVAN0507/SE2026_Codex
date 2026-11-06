@@ -3,14 +3,21 @@ import { uploadMeeting, expectReady } from '../meeting.js'
 
 test('Upload có consent qua đủ sáu stage tới ready', async ({ page }) => {
   const { meeting, job } = await uploadMeeting(page, 'E2E upload ready')
+  await page.getByRole('link', { name: 'Xem tiến độ' }).click()
   const stages = page
     .getByRole('region', { name: 'Tiến độ xử lý cuộc họp' })
     .getByRole('listitem')
   await expect(stages).toHaveCount(6)
-  await expectReady(page)
+  await expect(page.locator('[data-status="succeeded"]')).toBeVisible({
+    timeout: 90_000,
+  })
   await expect(page.locator('.job-stage[data-state="completed"]')).toHaveCount(
     6,
   )
+  await page.reload()
+  await expect(stages).toHaveCount(6)
+  await page.getByRole('link', { name: 'Về nội dung cuộc họp' }).click()
+  await expectReady(page)
   const result = await page.request.get(`/api/v1/meetings/${meeting.id}`)
   expect((await result.json()).status).toBe('ready')
   const processed = await page.request.get(`/api/v1/jobs/${job.id}`)

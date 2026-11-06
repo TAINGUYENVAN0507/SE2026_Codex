@@ -280,12 +280,18 @@ function Detail({
           <ExportMenu meetingId={meeting.id} ready={transcriptReady} />
         </div>
       </header>
-      {jobId && <JobStatusCard jobId={jobId} />}
+      {jobId && (
+        <JobStatusCard
+          jobId={jobId}
+          detailsHref={`/meetings/${meeting.id}/processing`}
+        />
+      )}
       {remote && audioInfo ? (
         <RemoteAudioPlayer
           key={meeting.id}
           audioInfo={audioInfo}
           meetingId={meeting.id}
+          preview={import.meta.env.DEV && import.meta.env.VITE_API_MOCK !== '0'}
           duration={meeting.duration}
           speaker={name}
           onPosition={onPosition}

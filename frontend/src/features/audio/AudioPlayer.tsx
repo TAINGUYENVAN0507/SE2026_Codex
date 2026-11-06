@@ -4,6 +4,7 @@ import {
   useImperativeHandle,
   useRef,
   useState,
+  type ReactNode,
 } from 'react'
 import { PauseIcon } from '@phosphor-icons/react/dist/csr/Pause'
 import { PlayIcon } from '@phosphor-icons/react/dist/csr/Play'
@@ -27,6 +28,7 @@ interface Props {
   speaker?: string
   onPosition: (seconds: number) => void
   onFile: (file: File) => void
+  metadata?: ReactNode
 }
 
 export const AudioPlayer = forwardRef<PlayerHandle, Props>(function AudioPlayer(
@@ -38,6 +40,7 @@ export const AudioPlayer = forwardRef<PlayerHandle, Props>(function AudioPlayer(
     speaker,
     onPosition,
     onFile,
+    metadata,
   },
   ref,
 ) {
@@ -305,13 +308,16 @@ export const AudioPlayer = forwardRef<PlayerHandle, Props>(function AudioPlayer(
           </div>
         </div>
       </div>
-      <p className="audio-note">
-        {src && !file
-          ? 'Bản ghi từ máy chủ · bấm mốc dẫn chứng để nghe lại.'
-          : file
-            ? 'File phát tại máy bạn; waveform và transcript bên dưới vẫn là minh họa.'
-            : 'Player đang mô phỏng. Chọn audio trên máy để nghe bản ghi thật.'}
-      </p>
+      <div className="audio-footer">
+        {metadata}
+        <p className="audio-note">
+          {src && !file
+            ? 'Bản ghi từ máy chủ · bấm mốc dẫn chứng để nghe lại.'
+            : file
+              ? 'File phát tại máy bạn; waveform và transcript bên dưới vẫn là minh họa.'
+              : 'Player đang mô phỏng. Chọn audio trên máy để nghe bản ghi thật.'}
+        </p>
+      </div>
       {error && (
         <p className="form-error" role="alert">
           {error}
