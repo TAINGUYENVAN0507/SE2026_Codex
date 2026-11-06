@@ -25,7 +25,7 @@
       #v(2pt)
       #grid(
         columns: (1fr, 1fr),
-        align(left)[*Đại học Quốc gia Hà Nội - Trường ĐH Công nghệ (UET)*],
+        align(left)[*Đại học Quốc gia Hà Nội - Trường ĐH Khoa học Tự nhiên (HUS)*],
         align(right)[Trang #counter(page).display()],
       )
     ]
@@ -79,8 +79,8 @@
 // -----------------------------------------------------------------------------
 
 #align(center)[
-  #text(10pt, weight: "bold", fill: rgb("#4a5568"))[ĐẠI HỌC QUỐC GIA HÀ NỘI — TRƯỜNG ĐẠI HỌC CÔNG NGHỆ (VNU-UET)] \
-  #text(9.5pt, fill: rgb("#718096"))[KHOA CÔNG NGHỆ THÔNG TIN — BỘ MÔN CÔNG NGHỆ PHẦN MỀM] \
+  #text(10pt, weight: "bold", fill: rgb("#4a5568"))[ĐẠI HỌC QUỐC GIA HÀ NỘI — TRƯỜNG ĐẠI HỌC KHOA HỌC TỰ NHIÊN (VNU-HUS)] \
+  #text(9.5pt, fill: rgb("#718096"))[KHOA TOÁN - CƠ - TIN HỌC] \
   #v(8pt)
   #text(16pt, weight: "bold", fill: rgb("#1a365d"))[BÁO CÁO BÀI TẬP CÁ NHÂN 3] \
   #text(11pt, weight: "bold", fill: rgb("#2b6cb0"))[AI-assisted Software Development & Software Testing & Quality Engineering] \
