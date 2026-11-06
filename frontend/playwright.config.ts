@@ -2,7 +2,12 @@ import { defineConfig, devices } from '@playwright/test'
 
 const scenario = process.env.FAKE_SCENARIO || 'slow'
 const cases: Record<string, string[]> = {
-  slow: ['flows/login.spec.ts', 'flows/upload.spec.ts', 'privacy/*.spec.ts'],
+  slow: [
+    'flows/login.spec.ts',
+    'flows/upload.spec.ts',
+    'flows/edit.spec.ts',
+    'privacy/*.spec.ts',
+  ],
   permanent: ['flows/permanent.spec.ts'],
   transient_once: ['flows/retry.spec.ts'],
   summary_fail: ['flows/partial.spec.ts'],

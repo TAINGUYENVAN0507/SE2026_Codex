@@ -1549,7 +1549,14 @@ def serialize_action_item(item: ActionItem) -> ActionItemOut:
     """Chuyển đổi ActionItem model sang ActionItemOut schema."""
     ai_orig = None
     if item.ai_original and isinstance(item.ai_original, dict):
-        ai_orig = ActionItemAiOriginal.model_validate(item.ai_original)
+        # Snapshot worker có thêm metadata; chỉ chiếu field thuộc contract phản hồi.
+        ai_orig = ActionItemAiOriginal.model_validate(
+            {
+                key: value
+                for key, value in item.ai_original.items()
+                if key in ActionItemAiOriginal.model_fields
+            }
+        )
 
     if item.source == "ai" and item.ai_original:
         is_edited = (
