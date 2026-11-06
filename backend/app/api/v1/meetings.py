@@ -1,6 +1,6 @@
 import logging
 import uuid
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Annotated
 
@@ -67,6 +67,7 @@ from app.services.export import filename as export_filename
 from app.services.export import to_json, to_markdown, to_txt
 from app.services.idempotency.service import IdempotencyService
 from app.services.meeting_export import build_meeting_export
+from app.services.meeting_search import SortColumn, SortOrder, search_meetings
 from app.services.storage import FileTooLargeError, Storage, get_storage
 
 router = APIRouter(
@@ -148,20 +149,31 @@ def list_meetings(
         MeetingStatus | None, Query(alias="status", description="Lọc theo trạng thái")
     ] = None,
     q: Annotated[str | None, Query(description="Tìm kiếm theo tiêu đề cuộc họp")] = None,
+    source: Annotated[
+        MeetingSource | None, Query(description="Lọc theo nguồn cuộc họp: upload hoặc recording")
+    ] = None,
+    from_date: Annotated[
+        date | None, Query(description="Lọc cuộc họp từ ngày (định dạng YYYY-MM-DD)")
+    ] = None,
+    to_date: Annotated[
+        date | None, Query(description="Lọc cuộc họp đến ngày (định dạng YYYY-MM-DD)")
+    ] = None,
+    sort_by: Annotated[SortColumn, Query(description="Trường sắp xếp kết quả")] = "created_at",
+    order: Annotated[SortOrder, Query(description="Chiều sắp xếp: asc hoặc desc")] = "desc",
 ) -> MeetingListOut:
-    """Lấy danh sách cuộc họp có phân trang và lọc theo trạng thái."""
-    base_query = select(Meeting).where(Meeting.owner_id == current_user.id)
-    if status_filter is not None:
-        base_query = base_query.where(Meeting.status == status_filter)
-    if q and q.strip():
-        base_query = base_query.where(Meeting.title.ilike(f"%{q.strip()}%"))
-
-    total = db.scalar(select(func.count()).select_from(base_query.subquery())) or 0
-    offset = (page - 1) * page_size
-    meetings = (
-        db.execute(base_query.order_by(Meeting.created_at.desc()).offset(offset).limit(page_size))
-        .scalars()
-        .all()
+    """Lấy danh sách cuộc họp có phân trang, lọc và thứ tự ổn định."""
+    meetings, total = search_meetings(
+        db=db,
+        owner_id=current_user.id,
+        page=page,
+        page_size=page_size,
+        status=status_filter,
+        q=q,
+        source=source,
+        from_date=from_date,
+        to_date=to_date,
+        sort_by=sort_by,
+        order=order,
     )
 
     items = [serialize_meeting_summary(m, db) for m in meetings]
