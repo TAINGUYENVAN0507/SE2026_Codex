@@ -8,7 +8,7 @@ import {
   type SummaryData,
 } from '../../api/client'
 import type { Meeting } from './model'
-import { formatTranscriptTime } from './transcriptUtils'
+import { EvidenceLinks } from './EvidenceLinks'
 import { LoadingSkeleton } from '../../components/LoadingSkeleton'
 import { Dialog } from '../../components/Dialog'
 
@@ -93,22 +93,6 @@ export function RemoteSummary({
     } finally {
       setSaving(false)
     }
-  }
-
-  function evidence(ids: string[] | undefined) {
-    return ids?.map((id) => {
-      const segment = meeting.segments.find((item) => item.id === id)
-      return segment ? (
-        <button
-          key={id}
-          className="evidence"
-          aria-label={`Nghe bằng chứng từ ${formatTranscriptTime(segment.start)}`}
-          onClick={() => onSeek(segment.start)}
-        >
-          {formatTranscriptTime(segment.start)} ↗
-        </button>
-      ) : null
-    })
   }
 
   if (query.isPending)
@@ -248,7 +232,12 @@ export function RemoteSummary({
                 </>
               ) : (
                 <p>
-                  {point.text} {evidence(point.evidence_segment_ids)}
+                  {point.text}{' '}
+                  <EvidenceLinks
+                    ids={point.evidence_segment_ids}
+                    segments={meeting.segments}
+                    onSeek={onSeek}
+                  />
                 </p>
               )}
             </div>

@@ -12,14 +12,14 @@ Chưa có ý chính.
 
 ## Quyết định
 
-- Chốt lịch.
+- Chốt lịch. (Bằng chứng: 00:01:05 Chưa xác định)
 
 ## Công việc
 
 | Nội dung | Người nhận | Hạn | Trạng thái |
 | --- | --- | --- | --- |
-| Công việc đã sửa | Chưa giao | Chưa có hạn | Hoàn thành |
-| Việc người dùng thêm | Người phụ trách | 2026-10-30 | Chưa hoàn thành |
+| Công việc đã sửa (Chưa có bằng chứng, cần kiểm tra) | Chưa giao | Chưa có hạn | Hoàn thành |
+| Việc người dùng thêm (Chưa có bằng chứng, cần kiểm tra) | Người phụ trách | 2026-10-30 | Chưa hoàn thành |
 
 ## Transcript
 

@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "variant": "current",
   "meeting": {
     "id": "demo-meeting",
@@ -47,6 +47,8 @@
       "assignee_name": null,
       "due_date": null,
       "due_date_text": null,
+      "evidence_segment_ids": [],
+      "needs_review": false,
       "id": "a1",
       "status": "done",
       "source": "ai"
@@ -56,6 +58,8 @@
       "assignee_name": "Người phụ trách",
       "due_date": "2026-10-30",
       "due_date_text": "thứ Sáu",
+      "evidence_segment_ids": [],
+      "needs_review": false,
       "id": "a2",
       "status": "open",
       "source": "user"

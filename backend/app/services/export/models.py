@@ -79,6 +79,8 @@ class ActionOriginal(ExportModel):
     assignee_name: str | None
     due_date: date | None
     due_date_text: str | None
+    evidence_segment_ids: list[str] = Field(default_factory=list)
+    needs_review: bool = False
 
 
 class ActionItem(ActionOriginal):
@@ -130,7 +132,7 @@ class ExportAction(ActionOriginal):
 class ExportDocument(ExportModel):
     """JSON export v1; thứ tự field cũng là thứ tự key khi xuất."""
 
-    schema_version: Literal["1.0"] = "1.0"
+    schema_version: Literal["1.1"] = "1.1"
     variant: Variant
     meeting: MeetingInfo
     speakers: list[ExportSpeaker]

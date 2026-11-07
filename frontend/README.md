@@ -2,6 +2,11 @@
 
 React SPA của Vietnamese Meeting Minutes Assistant. Owner: member A.
 
+Đợt 06/11: [dẫn chứng FE-18](../docs/frontend/FE-18.md),
+[xóa và hạn audio FE-19](../docs/frontend/FE-19.md),
+[tiến độ FE-20](../docs/frontend/FE-20.md). Các chức năng thật gọi API;
+chế độ MSW phục vụ xem thử và test component, không thay E2E stack thật.
+
 Kiểm thử trình duyệt trên stack thật: xem [FE-17](../docs/frontend/FE-17.md).
 Chạy `npm run e2e` sau khi cấu hình database E2E và mật khẩu demo theo tài liệu.
 
@@ -14,6 +19,7 @@ Giao diện graphite/cam được triển khai từ bộ ảnh đã duyệt, g�
 - `/meetings/new`
 - `/meetings/sprint-42`: cuộc họp mẫu đầy đủ để thử player và chỉnh sửa.
 - `/meetings/:meetingId`: chi tiết cuộc họp từ API.
+- `/meetings/:meetingId/processing`: theo dõi sáu bước xử lý, tách khỏi trang đọc transcript.
 
 `/meetings/sprint-42` vẫn là trang mẫu trong React Context. Danh sách,
 upload và transcript của các cuộc họp khác dùng API. Khi chạy dev, MSW bật

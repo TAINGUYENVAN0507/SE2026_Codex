@@ -43,6 +43,18 @@
           ],
           "title": "Due Date Text"
         },
+        "evidence_segment_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence Segment Ids",
+          "type": "array"
+        },
+        "needs_review": {
+          "default": false,
+          "title": "Needs Review",
+          "type": "boolean"
+        },
         "id": {
           "title": "Id",
           "type": "string"
@@ -241,8 +253,8 @@
   "description": "JSON export v1; thứ tự field cũng là thứ tự key khi xuất.",
   "properties": {
     "schema_version": {
-      "const": "1.0",
-      "default": "1.0",
+      "const": "1.1",
+      "default": "1.1",
       "title": "Schema Version",
       "type": "string"
     },

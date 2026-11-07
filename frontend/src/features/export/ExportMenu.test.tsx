@@ -81,7 +81,7 @@ describe('FE-15 export menu', () => {
     await waitFor(() => expect(save).toHaveBeenCalled())
     const blob = save.mock.calls[0][0]
     expect(JSON.parse(await blob.text())).toMatchObject({
-      schema_version: '1.0',
+      schema_version: '1.1',
       variant: 'current',
     })
   })

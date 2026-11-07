@@ -32,6 +32,39 @@ from app.db.session import get_db
 from app.main import create_app
 
 
+def test_worker_snapshot_is_projected_to_public_action_contract() -> None:
+    """Snapshot worker có field nội bộ không được làm GET action-items trả 500."""
+    from app.api.v1.meetings import serialize_action_item
+
+    snapshot = {
+        "description": "Công việc tổng hợp",
+        "assignee_name": None,
+        "due_date": None,
+        "due_date_text": None,
+        "needs_review": False,
+        "assignee_speaker_id": None,
+        "evidence_segment_ids": ["segment-test"],
+    }
+    now = datetime.now(UTC)
+    item = ActionItem(
+        id=str(uuid.uuid4()),
+        meeting_id=str(uuid.uuid4()),
+        description=snapshot["description"],
+        source="ai",
+        status="open",
+        ai_original=dict(snapshot),
+        version=1,
+        needs_review=False,
+        evidence_segment_ids=["segment-test"],
+        created_at=now,
+        updated_at=now,
+    )
+    result = serialize_action_item(item)
+    assert result.ai_original.description == snapshot["description"]
+    assert result.evidence_segment_ids == ["segment-test"]
+    assert item.ai_original == snapshot
+
+
 @pytest.fixture
 def test_db() -> Generator[Session, None, None]:
     """Tạo database SQLite in-memory dùng chung cho test."""

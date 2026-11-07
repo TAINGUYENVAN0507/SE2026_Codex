@@ -22,7 +22,7 @@ def test_export_text_golden_and_deterministic(variant, fmt, serializer) -> None:
     meeting = source()
     before = meeting.model_dump()
     output = serializer(meeting, variant)
-    assert output == serializer(meeting, variant)
+    assert output == serializer(meeting, variant) == serializer(meeting, variant)
     assert output == (FIXTURES / f"{variant}.{fmt}").read_text(encoding="utf-8").encode()
     assert meeting.model_dump() == before
 
@@ -58,8 +58,53 @@ def test_export_preserves_text_without_injecting_markdown_or_extra_txt_lines() -
     values = json.loads((FIXTURES / "source.json").read_text(encoding="utf-8"))
     values["segments"][0]["text"] = "<script>x</script>\n# heading | [link](https://example.com)"
     meeting = MeetingExport.model_validate(values)
-    assert len(to_txt(meeting).decode().splitlines()) == 2
+    assert (
+        len([line for line in to_txt(meeting).decode().splitlines() if line.startswith("[")]) == 2
+    )
     markdown = to_markdown(meeting).decode()
     assert "<script>" not in markdown
     assert "\\[link\\]" in markdown
     assert "\\|" in markdown
+
+
+@pytest.mark.parametrize("serializer", [to_txt, to_markdown])
+@pytest.mark.parametrize("variant", ["current", "ai_original"])
+def test_export_evidence_matches_variant_and_flags_missing_ids(serializer, variant) -> None:
+    values = source().model_dump()
+    values["summary"]["content"]["key_points"] = [
+        {"text": "Ý hiện tại", "evidence_segment_ids": ["seg1", "missing"]}
+    ]
+    values["summary"]["ai_content"]["key_points"] = [
+        {"text": "Ý gốc", "evidence_segment_ids": ["seg2"]}
+    ]
+    values["action_items"][0]["evidence_segment_ids"] = ["seg1"]
+    values["action_items"][0]["needs_review"] = True
+    values["action_items"][0]["ai_original"].update(
+        evidence_segment_ids=["seg2"], needs_review=False
+    )
+    result = serializer(MeetingExport.model_validate(values), variant).decode()
+    if variant == "current":
+        assert "00:00:00 Người phụ trách" in result
+        assert "Chưa có bằng chứng, cần kiểm tra" in result
+        assert "Cần kiểm tra" in result
+    else:
+        assert "00:01:05 Speaker 1" in result
+        assert "Ý gốc" in result
+        assert "Người phụ trách" not in result
+
+
+def test_export_evidence_fields_have_compatible_defaults() -> None:
+    import json
+
+    from app.services.export import to_json
+
+    values = source().model_dump()
+    for item in values["action_items"]:
+        item.pop("evidence_segment_ids", None)
+        item.pop("needs_review", None)
+        if item["ai_original"]:
+            item["ai_original"].pop("evidence_segment_ids", None)
+            item["ai_original"].pop("needs_review", None)
+    action = json.loads(to_json(MeetingExport.model_validate(values)))["action_items"][0]
+    assert action["evidence_segment_ids"] == []
+    assert action["needs_review"] is False

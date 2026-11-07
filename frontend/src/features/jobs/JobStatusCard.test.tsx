@@ -1,5 +1,6 @@
 import { act, render, screen, within } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { MemoryRouter } from 'react-router-dom'
 import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 import {
@@ -27,13 +28,18 @@ afterEach(() => {
 })
 afterAll(() => server.close())
 
-function renderCard() {
+function renderCard(compact = false) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: 0 } },
   })
   return render(
     <QueryClientProvider client={client}>
-      <JobStatusCard jobId={jobId} />
+      <MemoryRouter>
+        <JobStatusCard
+          jobId={jobId}
+          detailsHref={compact ? '/meetings/example/processing' : undefined}
+        />
+      </MemoryRouter>
     </QueryClientProvider>,
   )
 }
@@ -51,6 +57,70 @@ function jobWithStatus(status: JobStatus): Job {
 }
 
 describe('JobStatusCard', () => {
+  it('keeps progress and retry visible in compact mode and links to a separate stage view', async () => {
+    renderCard(true)
+    const link = await screen.findByRole('link', { name: 'Xem tiến độ' })
+    expect(link).toHaveAttribute('href', '/meetings/example/processing')
+    expect(screen.getByRole('progressbar')).toHaveAttribute(
+      'aria-valuenow',
+      '90',
+    )
+    expect(screen.queryByRole('list')).not.toBeInTheDocument()
+    expect(screen.getByRole('timer')).toBeInTheDocument()
+  })
+  it.each([0, 0.42, 1])(
+    'exposes server progress %s as an accessible percentage',
+    async (progress) => {
+      server.use(
+        http.get('*/api/v1/jobs/:jobId', () =>
+          HttpResponse.json({
+            ...jobWithStatus('running'),
+            progress,
+            started_at: null,
+          }),
+        ),
+      )
+      renderCard()
+      const bar = await screen.findByRole('progressbar', {
+        name: 'Tiến độ xử lý',
+      })
+      expect(bar).toHaveAttribute('aria-valuenow', String(progress * 100))
+      expect(screen.queryByText(/Đã chạy/)).not.toBeInTheDocument()
+    },
+  )
+
+  it('updates elapsed time from started_at and stops at finished_at', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-11-06T00:01:00Z'))
+    server.use(
+      http.get('*/api/v1/jobs/:jobId', () =>
+        HttpResponse.json({
+          ...jobWithStatus('running'),
+          started_at: '2026-11-06T00:00:00Z',
+          finished_at: null,
+        }),
+      ),
+    )
+    renderCard()
+    await act(async () => vi.advanceTimersByTimeAsync(100))
+    expect(screen.getByText('Đã chạy 01:00')).toBeInTheDocument()
+    await act(async () => vi.advanceTimersByTimeAsync(1000))
+    expect(screen.getByText('Đã chạy 01:01')).toBeInTheDocument()
+  })
+
+  it('uses finished_at instead of the current time for a completed job', async () => {
+    server.use(
+      http.get('*/api/v1/jobs/:jobId', () =>
+        HttpResponse.json({
+          ...jobWithStatus('succeeded'),
+          started_at: '2026-11-06T00:00:00Z',
+          finished_at: '2026-11-06T00:01:12Z',
+        }),
+      ),
+    )
+    renderCard()
+    expect(await screen.findByText('Đã chạy 01:12')).toBeInTheDocument()
+  })
   it('shows all six stages from the contract fixture', async () => {
     renderCard()
     await screen.findByText('Đã lên lịch thử lại')

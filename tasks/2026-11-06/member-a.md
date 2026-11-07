@@ -6,6 +6,59 @@
 
 Kế hoạch các đợt sau: [`tasks/ROADMAP.md`](../ROADMAP.md).
 
+## Kết quả local ngày 06/11
+
+- Đã triển khai đủ 5 phần, tách 5 commit đúng nội dung; hash ghi dưới từng mục.
+- Frontend: lint, format, typecheck, build đạt; **172 test / 32 file đạt**.
+  Nhóm xóa/audio/job chạy lại **30 test đạt** sau chỉnh UI cuối.
+- Backend: ruff check/format toàn module đạt; **21 test export** và **64 test
+  action API/contract** đạt. Schema export 1.1 sinh từ model, drift check đạt.
+- E2E trên stack thật: **17 test đạt** — 14 test slow gồm edit, delete, upload,
+  RT-11, login và PRIV-01…09; thêm 3 luồng permanent/transient_once/summary_fail.
+  Test delete chạy lại trên API/worker Linux thật đạt.
+- QA ảnh desktop 1280px và mobile 360px: không tràn ngang; đã kiểm tra task
+  evidence, xác nhận xóa, header và bố cục tiến độ. Ảnh chỉ lưu local ngoài Git.
+- Đã push và mở [PR #34](https://github.com/TAINGUYENVAN0507/SE2026_Codex/pull/34).
+  Các ô nghiệm thu giữ `[ ]` trong lúc chờ CI/consumer review. Không tự merge.
+
+### Bổ sung theo phản hồi giao diện của người dùng
+
+- Tách `/meetings/:meetingId/processing` thành trang theo dõi riêng. Trang đọc
+  cuộc họp chỉ giữ dòng trạng thái gọn và link mở tiến độ.
+- Đưa hạn lưu audio xuống footer player; bản MSW dùng đồng hồ minh họa gần
+  thời điểm mở trang và không gọi URL audio không tồn tại của fixture.
+- Kiểm tra lại desktop 1536×800, mobile 360×780: không tràn ngang, thanh trạng
+  thái 53px trên desktop; không gian transcript/tóm tắt khoảng 499px.
+- Frontend sau sửa: **176 test / 33 file đạt**; lint, format, typecheck/build đạt.
+- Chạy lại **5 E2E đạt** sau tách trang: upload qua sáu bước, RT-11 reload,
+  permanent error, retry tự động và partial vẫn sửa transcript được.
+- Ảnh mới để local tại `.preview-stitch/anh-duyet/2026-11-06/` (không vào Git).
+
+### Kiểm tra cuối trước khi push
+
+- Sửa bố cục theo phản hồi người dùng: `554d289` (FE-19, FE-20).
+- Fetch `origin` và kiểm tra gộp với `origin/main`: không conflict; không sửa main.
+- Chạy lại frontend: lint, format, typecheck, **176 test** và build đạt;
+  `npm run gen:api` không tạo diff trong type API.
+- Chạy lại toàn bộ backend trên PostgreSQL QA: **283 test đạt, không skip**;
+  ruff check/format và export schema drift check đạt.
+- CI/consumer review vẫn phải xác nhận trên PR; kết quả local không thay CI.
+
+### Những điểm cần phối hợp/review
+
+- B review bản sửa nhỏ `serialize_action_item()` ở commit FE-17: snapshot worker
+  có metadata ngoài schema làm GET action-items trả 500. Test đã fail trước sửa,
+  pass sau sửa; chỉ chiếu field theo contract, không sửa dữ liệu AI gốc/OpenAPI.
+- B review contract export **1.1**, truyền đủ evidence/needs_review từ DB.
+  Chữ ký serializer không đổi. E2E tóm tắt/export DB vẫn để đợt 2.
+- Native Windows: pipeline hủy process dùng `os.killpg`, chưa hỗ trợ Windows.
+  Không sửa pipeline của C. QA delete đã đối chiếu thêm trên Linux.
+- Linux worker còn log race khi job bị xóa: `MISSING_INPUT`/UPDATE không còn row.
+  UI/API delete/404 đạt nhưng không suy ra cleanup mọi nơi lưu đã hoàn hảo;
+  B/C cần xử lý ở BE-18/BE-17. Chi tiết trong FE-19.md.
+- `started_at` thật và invariant tiến độ không tụt chờ BE-17 của C; UI không
+  dựng timestamp giả hoặc giữ max tiến độ ở client.
+
 Đọc trước:
 - `backend/app/services/export/README.md` và `serializers.py`: TXT và Markdown chưa in evidence (`serializers.py:125`, `:131`).
 - `frontend/src/features/meetings/RemoteSummary.tsx:98`: hàm `evidence()` và `onSeek`, phần sẽ dùng chung.
@@ -50,7 +103,7 @@ Chuyển từ 2026-10-29. PR #28 đã vào `main` nên không còn bị chặn.
   - tab Lịch sử có đúng các event vừa tạo.
 - **Xong khi:** test xanh trên CI với backend thật, không mock, không dùng `waitForTimeout` cố định.
 - **Message:** `test(frontend): edits persist across reloads and show in history (FE-17)`
-- **Hash:**
+- **Hash:** `a3d759e` — E2E thật và regression snapshot; đạt local, chờ CI/B review.
 
 ### 2. [ ] File export có dẫn chứng (FE-18)
 
@@ -64,7 +117,7 @@ Chuyển từ 2026-10-29. PR #28 đã vào `main` nên không còn bị chặn.
   - có test cho id không tồn tại;
   - RT-13 vẫn đúng: 3 lần xuất ra cùng byte.
 - **Message:** `feat(backend): exports cite the evidence of each summary claim and action item (FE-18)`
-- **Hash:**
+- **Hash:** `849cb9c` — 21 test export/golden/schema đạt; chờ consumer review 1.1.
 
 ### 3. [ ] Action item có link evidence, ý không có evidence bị đánh dấu (FE-18)
 
@@ -75,7 +128,7 @@ Chuyển từ 2026-10-29. PR #28 đã vào `main` nên không còn bị chặn.
   - Id evidence không còn trong transcript: hiện nhãn đó, không crash.
 - **Xong khi:** Vitest cho 3 trường hợp: có evidence (bấm thì gọi `onSeek` đúng giây), không có evidence, id không tồn tại.
 - **Message:** `feat(frontend): action items link to their evidence and flag unverified claims (FE-18)`
-- **Hash:**
+- **Hash:** `b9574e6` — EvidenceLinks dùng chung; seek/rỗng/id mất và task API được kiểm tra.
 
 ### 4. [ ] Xóa cuộc họp từ giao diện và hiện hạn lưu trữ (FE-19)
 
@@ -91,7 +144,7 @@ Hiện chưa có UI gọi `DELETE /meetings/{id}`; API đã có từ BE-14.
   - Vitest cho hộp xác nhận, lỗi khi xóa và audio hết hạn;
   - E2E `frontend/e2e/flows/delete.spec.ts`: xóa khi job đang chạy (`FAKE_SCENARIO=slow`, RT-15), sau đó trang chi tiết báo không tìm thấy (PRIV-13).
 - **Message:** `feat(frontend): delete a meeting from the UI and show its retention date (FE-19)`
-- **Hash:**
+- **Hash:** `d1a4abe` — xác nhận/cache/lỗi/audio hết hạn, E2E delete đạt local; giới hạn backend ghi ở trên.
 
 ### 5. [ ] Thanh tiến độ và thời gian đã chạy (FE-20)
 
@@ -101,7 +154,7 @@ Hiện chưa có UI gọi `DELETE /meetings/{id}`; API đã có từ BE-14.
   - Không clamp tiến độ ở client. Sau reload client mất giá trị cũ, nên việc không tụt lùi là của backend (BE-17).
 - **Xong khi:** Vitest cho 0 %, giữa chừng, 100 %, `started_at=null`; E2E `upload.spec.ts` khẳng định có thanh tiến độ khi job đang chạy.
 - **Message:** `feat(frontend): progress bar with elapsed time on the job status card (FE-20)`
-- **Hash:**
+- **Hash:** `6406830` — progress/elapsed không clamp, unit và E2E có thanh khi running đạt local.
 
 ## Việc chung (không phải commit)
 
@@ -109,6 +162,6 @@ Hiện chưa có UI gọi `DELETE /meetings/{id}`; API đã có từ BE-14.
 
 ## Cuối ngày
 
-- [ ] Tick các ô ở trên và ghi hash.
-- [ ] Push `vantuong`, mở PR vào `main`. **Không tự merge.**
+- [x] Đã ghi hash và kết quả local; các ô nghiệm thu ở trên chờ CI/review.
+- [x] Push `vantuong`, mở [PR #34](https://github.com/TAINGUYENVAN0507/SE2026_Codex/pull/34) vào `main`. **Chưa merge.**
 - [ ] E2E tóm tắt và export chưa làm hôm nay vì chờ commit 1 của B: đã có trong đợt 2 của `tasks/ROADMAP.md`.

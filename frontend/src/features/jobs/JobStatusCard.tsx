@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { ArrowUpRightIcon } from '@phosphor-icons/react/dist/csr/ArrowUpRight'
 import { ApiError, errorMessageForCode } from '../../api/errors'
 import type { Job } from '../../api/client'
 import { PIPELINE_STAGES, type JobStatus, type PipelineStage } from './model'
 import { useJobQuery } from './useJobQuery'
+import { formatTime } from '../meetings/model'
 
 const stageLabels: Record<PipelineStage, string> = {
   preprocess: 'Chuẩn bị audio',
@@ -49,25 +52,72 @@ function RetryCountdown({ retryAt }: { retryAt: string }) {
   )
 }
 
-export function JobStatusCard({ jobId }: { jobId: string }) {
+export function JobStatusCard({
+  jobId,
+  detailsHref,
+}: {
+  jobId: string
+  detailsHref?: string
+}) {
   const { data: job, error, isPending } = useJobQuery(jobId)
   const retryAt = job?.status === 'retry_scheduled' ? job.next_run_at : null
 
   if (isPending)
     return (
-      <section className="job-status-card" aria-label="Tiến độ xử lý cuộc họp">
+      <section
+        className={detailsHref ? 'job-status-inline' : 'job-status-card'}
+        aria-label="Tiến độ xử lý cuộc họp"
+      >
         <p role="status">Đang tải tiến độ xử lý…</p>
       </section>
     )
 
   if (error || !job)
     return (
-      <section className="job-status-card" aria-label="Tiến độ xử lý cuộc họp">
+      <section
+        className={detailsHref ? 'job-status-inline' : 'job-status-card'}
+        aria-label="Tiến độ xử lý cuộc họp"
+      >
         <p className="job-error" role="alert">
           {error instanceof ApiError
             ? error.message
             : 'Không tải được tiến độ xử lý. Hãy thử lại sau.'}
         </p>
+      </section>
+    )
+
+  if (detailsHref)
+    return (
+      <section
+        className="job-status-inline"
+        aria-label="Tiến độ xử lý cuộc họp"
+      >
+        <div className="job-inline-label">
+          <span
+            className="job-inline-dot"
+            data-job-state={job.status}
+            aria-hidden="true"
+          />
+          <span role="status" data-status={job.status}>
+            {statusLabels[job.status]}
+          </span>
+          {job.stage && (
+            <span className="job-inline-stage">{stageLabels[job.stage]}</span>
+          )}
+        </div>
+        <div className="job-inline-progress">
+          <Progress job={job} />
+          {job.started_at && <ElapsedTime key={job.started_at} job={job} />}
+        </div>
+        <Link className="job-details-link" to={detailsHref}>
+          Xem tiến độ <ArrowUpRightIcon size={16} />
+        </Link>
+        {retryAt && <RetryCountdown key={retryAt} retryAt={retryAt} />}
+        {job.status === 'failed' && job.error && (
+          <p className="job-inline-error" role="alert">
+            {errorMessageForCode(job.error.code)}
+          </p>
+        )}
       </section>
     )
 
@@ -84,6 +134,10 @@ export function JobStatusCard({ jobId }: { jobId: string }) {
           Lượt thử {job.attempt}/{job.max_attempts}
         </span>
       </header>
+      <div className="job-progress-row">
+        <Progress job={job} />
+        {job.started_at && <ElapsedTime key={job.started_at} job={job} />}
+      </div>
       <ol className="job-stage-list">
         {PIPELINE_STAGES.map((stage) => {
           const state = stageState(stage, job)
@@ -120,5 +174,47 @@ export function JobStatusCard({ jobId }: { jobId: string }) {
         </p>
       )}
     </section>
+  )
+}
+
+function Progress({ job }: { job: Job }) {
+  return (
+    <>
+      <div
+        className="job-progress"
+        role="progressbar"
+        aria-label="Tiến độ xử lý"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={job.progress * 100}
+        aria-valuetext={`${Math.round(job.progress * 100)}%`}
+      >
+        <span style={{ width: `${job.progress * 100}%` }} />
+      </div>
+      <span className="job-percent">{Math.round(job.progress * 100)}%</span>
+    </>
+  )
+}
+
+function ElapsedTime({ job }: { job: Job }) {
+  const [now, setNow] = useState(() => Date.now())
+  const active = ['queued', 'running', 'retry_scheduled'].includes(job.status)
+  useEffect(() => {
+    if (!active) return
+    const timer = window.setInterval(() => setNow(Date.now()), 1_000)
+    return () => window.clearInterval(timer)
+  }, [active])
+  const start = Date.parse(job.started_at!)
+  const end = job.finished_at ? Date.parse(job.finished_at) : now
+  if (
+    !Number.isFinite(start) ||
+    !Number.isFinite(end) ||
+    (!active && !job.finished_at)
+  )
+    return null
+  return (
+    <span className="job-elapsed">
+      Đã chạy {formatTime(Math.max(0, end - start) / 1000)}
+    </span>
   )
 }

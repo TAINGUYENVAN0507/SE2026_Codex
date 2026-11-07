@@ -77,7 +77,7 @@ export function NotesPanel({
         ) : remote && tab === 'summary' ? (
           <RemoteSummary meeting={meeting} onSeek={onSeek} />
         ) : remote && tab === 'tasks' ? (
-          <RemoteTasks meeting={meeting} />
+          <RemoteTasks meeting={meeting} onSeek={onSeek} />
         ) : tab === 'summary' ? (
           <>
             <div className="notes-status">

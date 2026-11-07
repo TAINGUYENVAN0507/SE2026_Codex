@@ -28,7 +28,14 @@ def document(meeting: MeetingExport, variant: Variant = "current") -> ExportDocu
             values = item.ai_original.model_dump()
         else:
             values = item.model_dump(
-                include={"description", "assignee_name", "due_date", "due_date_text"}
+                include={
+                    "description",
+                    "assignee_name",
+                    "due_date",
+                    "due_date_text",
+                    "evidence_segment_ids",
+                    "needs_review",
+                }
             )
         actions.append(
             ExportAction(
@@ -97,12 +104,49 @@ def to_txt(meeting: MeetingExport, variant: Variant = "current") -> bytes:
     """Xuất mỗi segment đúng một dòng, kể cả text đầu vào có xuống dòng."""
     data = document(meeting, variant)
     names = {speaker.id: speaker.name for speaker in data.speakers}
-    lines = [
+    lines = []
+    if data.summary:
+        lines.append(f"Tóm tắt: {_line(data.summary.overview)}")
+        lines += [
+            f"Ý chính: {_line(p.text)} {_evidence(data, p.evidence_segment_ids)}"
+            for p in data.summary.key_points
+        ]
+        lines += [
+            f"Quyết định: {_line(p.text)} {_evidence(data, p.evidence_segment_ids)}"
+            for p in data.summary.decisions
+        ]
+    lines += [
+        f"Công việc: {_line(item.description)} {_evidence(data, item.evidence_segment_ids)}"
+        + (" (Cần kiểm tra)" if item.needs_review else "")
+        for item in data.action_items
+    ]
+    lines += [
         f"[{timestamp(s.start_sec)}] {_line(names.get(s.speaker_id, 'Chưa xác định'))}: "
         f"{_line(s.text)}"
         for s in data.segments
     ]
     return ("\n".join(lines) + ("\n" if lines else "")).encode("utf-8")
+
+
+def _evidence(data: ExportDocument, ids: list[str]) -> str:
+    """Chỉ dẫn tới segment thật của biến thể, báo rõ phần bằng chứng bị thiếu."""
+    segments = {segment.id: segment for segment in data.segments}
+    speakers = {speaker.id: speaker.name for speaker in data.speakers}
+    references = []
+    missing = not ids
+    for segment_id in dict.fromkeys(ids):
+        segment = segments.get(segment_id)
+        if segment is None:
+            missing = True
+            continue
+        references.append(
+            f"{timestamp(segment.start_sec)} "
+            f"{_line(speakers.get(segment.speaker_id, 'Chưa xác định'))}"
+        )
+    result = f"(Bằng chứng: {'; '.join(references)})" if references else ""
+    if missing:
+        result += (" " if result else "") + "(Chưa có bằng chứng, cần kiểm tra)"
+    return result
 
 
 def to_markdown(meeting: MeetingExport, variant: Variant = "current") -> bytes:
@@ -122,13 +166,19 @@ def to_markdown(meeting: MeetingExport, variant: Variant = "current") -> bytes:
         "",
     ]
     lines += (
-        [f"- {_markdown(p.text)}" for p in data.summary.key_points]
+        [
+            f"- {_markdown(p.text)} {_markdown(_evidence(data, p.evidence_segment_ids))}"
+            for p in data.summary.key_points
+        ]
         if data.summary and data.summary.key_points
         else ["Chưa có ý chính."]
     )
     lines += ["", "## Quyết định", ""]
     lines += (
-        [f"- {_markdown(p.text)}" for p in data.summary.decisions]
+        [
+            f"- {_markdown(p.text)} {_markdown(_evidence(data, p.evidence_segment_ids))}"
+            for p in data.summary.decisions
+        ]
         if data.summary and data.summary.decisions
         else ["Chưa có quyết định."]
     )
@@ -141,8 +191,11 @@ def to_markdown(meeting: MeetingExport, variant: Variant = "current") -> bytes:
     ]
     status_names = {"open": "Chưa hoàn thành", "done": "Hoàn thành", "cancelled": "Đã hủy"}
     for item in data.action_items:
+        evidence = _markdown(_evidence(data, item.evidence_segment_ids))
+        review = " (Cần kiểm tra)" if item.needs_review else ""
         lines.append(
-            f"| {_markdown(item.description)} | {_markdown(item.assignee_name or 'Chưa giao')} "
+            f"| {_markdown(item.description)} {evidence}{review} "
+            f"| {_markdown(item.assignee_name or 'Chưa giao')} "
             f"| {item.due_date or 'Chưa có hạn'} | {status_names[item.status]} |"
         )
     lines += ["", "## Transcript", ""]

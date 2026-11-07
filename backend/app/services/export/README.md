@@ -4,7 +4,7 @@ Owner: A; B review việc gọi từ router. Hàm thuần `MeetingExport -> byte
 đọc DB, file hoặc mạng. Router của B tập hợp DTO, xác thực owner và transcript
 ready trước khi gọi. Không đưa ORM, password, đường dẫn audio vào DTO.
 
-`to_json(dto, variant)` xuất schema 1.0, UTF-8, thứ tự key cố định; speaker được
+`to_json(dto, variant)` xuất schema 1.1, UTF-8, thứ tự key cố định; speaker được
 sắp theo ID, segment theo thời gian/ID, công việc theo ID. Không thêm timestamp
 thời điểm tải. `ai_original` dùng text/speaker AI, tên speaker mặc định và summary
 AI. Công việc người dùng thêm hoặc thiếu AI original không có trong bản AI gốc;
@@ -18,8 +18,15 @@ Test: `uv run pytest tests/unit/test_export*.py`. `jsonschema` (MIT, dev depende
 xác nhận output hợp lệ theo schema; fixture golden chỉ chứa dữ liệu mẫu tự viết.
 Endpoint export hiện là stub của B; module này không tự query DB hoặc thay router.
 
-`to_txt()` xuất mỗi segment một dòng `[hh:mm:ss] Người nói: text`.
+`to_txt()` xuất tóm tắt, ý chính, quyết định, công việc và mỗi segment một dòng `[hh:mm:ss] Người nói: text`.
 `to_markdown()` thêm tiêu đề, ngày họp, tóm tắt, ý chính, quyết định và bảng công
 việc. Giá trị null dùng “Chưa xác định”, “Chưa giao”, “Chưa có hạn”. Text được
 escape trước khi đưa vào Markdown, xuống dòng trong segment được gộp để không
 phá dòng TXT/bảng. `filename(dto, fmt)` trả slug ASCII + ngày, chỉ hỗ trợ txt/json/md.
+
+FE-18: mỗi ý chính, quyết định và công việc trong TXT/Markdown có dẫn chứng
+`(Bằng chứng: hh:mm:ss Tên người nói; ...)`. Thiếu evidence hoặc id không còn
+thì ghi `(Chưa có bằng chứng, cần kiểm tra)`; không tạo mốc giả. Bản AI gốc
+dùng evidence/needs_review của `ai_original`, speaker AI và tên mặc định.
+Schema 1.1 thêm `evidence_segment_ids=[]`, `needs_review=false` vào công việc;
+chữ ký bốn hàm xuất/tên file không đổi. B cần review contract và truyền các field này.
