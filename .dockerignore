@@ -13,7 +13,9 @@
 !.env.example
 reports/
 evaluation/
-frontend/
+frontend/dist/
+frontend/playwright-report/
+frontend/test-results/
 backend/appdata/
 models/
 artifacts/

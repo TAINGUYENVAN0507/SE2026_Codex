@@ -26,9 +26,10 @@ COPY infra/docker/nginx.conf /etc/nginx/conf.d/default.conf
 # Copy bản build frontend vào thư mục phục vụ web của Nginx
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Cấu hình quyền cho user nginx (non-root)
-RUN touch /var/run/nginx.pid \
-    && chown -R nginx:nginx /var/run/nginx.pid /usr/share/nginx/html /var/cache/nginx /var/log/nginx /etc/nginx
+# Cấu hình quyền cho user nginx (non-root) và chuyển PID sang /tmp/nginx.pid
+RUN sed -i 's,/var/run/nginx.pid,/tmp/nginx.pid,g' /etc/nginx/nginx.conf \
+    && touch /tmp/nginx.pid \
+    && chown -R nginx:nginx /tmp/nginx.pid /usr/share/nginx/html /var/cache/nginx /var/log/nginx /etc/nginx
 
 USER nginx
 

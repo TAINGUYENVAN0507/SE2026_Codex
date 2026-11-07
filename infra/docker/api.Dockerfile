@@ -60,3 +60,4 @@ EXPOSE 8000
 
 # Mặc định khởi chạy API server; có thể ghi đè lệnh để chạy worker loop
 CMD ["uvicorn", "app.main:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000"]
+

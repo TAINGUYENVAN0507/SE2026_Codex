@@ -66,3 +66,4 @@ jobs:
           cache-to: type=gha,mode=max,scope=web
       - name: Kiểm tra kích thước image Web
         run: docker image ls meeting-web:latest
+
