@@ -2178,7 +2178,7 @@ def retry_meeting_job(
         )
 
     # 4. Chạy lại từ asr/diarize khi người dùng đã sửa transcript -> 409 HAS_USER_EDITS
-    if payload.from_stage in (None, "preprocess", "vad", "asr", "diarize"):
+    if payload.from_stage in (None, "preprocess", "vad", "asr", "diarize", "merge"):
         has_user_edits = (
             db.execute(
                 select(Segment).where(

@@ -171,21 +171,14 @@ def env(session: Session, tmp_path: Path) -> Generator[Env, None, None]:
         yield Env(session, client, storage)
 
 
-XFAIL_DUP = pytest.mark.xfail(
-    strict=True, reason="BE-17: job mới của meeting đã có transcript nhân đôi segment"
-)
 XFAIL_PROGRESS = pytest.mark.xfail(
     strict=True, reason="BE-17: tiến độ job chạy lại bị ghi thấp hơn giá trị khởi tạo"
 )
 XFAIL_TIME = pytest.mark.xfail(
     strict=True, reason="BE-17: started_at và finished_at luôn null trong API"
 )
-XFAIL_MERGE = pytest.mark.xfail(
-    strict=True, reason="BE-17: from_stage=merge không nằm trong guard HAS_USER_EDITS"
-)
 
 
-@XFAIL_DUP
 def test_vt018_second_job_keeps_one_segment_set(env: Env) -> None:
     meeting_id, _ = env.upload()
     assert env.work()
@@ -247,7 +240,6 @@ def test_vt018_job_out_has_real_timestamps(env: Env) -> None:
     assert finished >= started
 
 
-@XFAIL_MERGE
 def test_vt018_merge_rerun_with_user_edits_is_rejected(env: Env) -> None:
     meeting_id, _ = env.upload()
     assert env.work()
@@ -275,3 +267,20 @@ def test_vt018_count_helper_is_sane(env: Env) -> None:
         select(func.count()).select_from(Segment).where(Segment.meeting_id == meeting_id)
     ).scalar_one()
     assert total == len(env.segment_rows(meeting_id))
+
+
+def test_vt018_failed_summarize_leaves_no_dangling_evidence(env: Env) -> None:
+    """Job mới thay segment rồi lỗi ở summarize: evidence cũ không được trỏ vào segment đã xóa."""
+    meeting_id, _ = env.upload()
+    assert env.work()
+    env.rerun(meeting_id, "asr")
+    assert env.work(env={"FAKE_SCENARIO": "summary_fail"})
+
+    env.db.expire_all()
+    valid = {s.id for s in env.db.execute(select(Segment)).scalars()}
+    summary = env.db.execute(select(Summary)).scalar_one()
+    for section in ("key_points", "decisions"):
+        for entry in (summary.content or {}).get(section, []):
+            assert set(entry["evidence_segment_ids"]) <= valid
+    for item in env.db.execute(select(ActionItem)).scalars():
+        assert set(item.evidence_segment_ids or []) <= valid

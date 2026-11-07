@@ -185,4 +185,5 @@ class Segment(Base):
             name="ck_segments_time_range",
         ),
         Index("ix_segments_meeting_time", "meeting_id", "start_sec", "end_sec"),
+        Index("uq_segments_meeting_idx", "meeting_id", "idx", unique=True),
     )
