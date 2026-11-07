@@ -265,7 +265,13 @@ function Detail({
               <ClockIcon />
               {formatDate(meeting.date)} · {meeting.time}
             </span>
-            <span>{Math.floor(meeting.duration / 60)} phút</span>
+            <span>
+              {meeting.duration > 0
+                ? meeting.duration < 60
+                  ? `${Math.round(meeting.duration)} giây`
+                  : `${Math.floor(meeting.duration / 60)} phút`
+                : 'Chưa rõ thời lượng'}
+            </span>
             <span>
               <UsersIcon />
               {meeting.speakers.length || 'Chưa xác định'} người nói

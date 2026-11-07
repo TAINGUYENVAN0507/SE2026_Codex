@@ -1,7 +1,6 @@
 // WAV PCM tổng hợp trong RAM; không commit audio hay dùng bản ghi thật.
-export function syntheticWav() {
+export function syntheticWav(seconds = 4) {
   const sampleRate = 16_000
-  const seconds = 4
   const size = sampleRate * seconds * 2
   const buffer = Buffer.alloc(44 + size)
   buffer.write('RIFF', 0)

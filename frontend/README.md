@@ -9,6 +9,7 @@ chế độ MSW phục vụ xem thử và test component, không thay E2E stack 
 
 Kiểm thử trình duyệt trên stack thật: xem [FE-17](../docs/frontend/FE-17.md).
 Chạy `npm run e2e` sau khi cấu hình database E2E và mật khẩu demo theo tài liệu.
+Ảnh mới, checklist và kịch bản demo 5 phút: [UX checklist](../docs/demo/ux-checklist.md).
 
 ## Trạng thái
 
@@ -20,6 +21,7 @@ Giao diện graphite/cam được triển khai từ bộ ảnh đã duyệt, g�
 - `/meetings/sprint-42`: cuộc họp mẫu đầy đủ để thử player và chỉnh sửa.
 - `/meetings/:meetingId`: chi tiết cuộc họp từ API.
 - `/meetings/:meetingId/processing`: theo dõi sáu bước xử lý, tách khỏi trang đọc transcript.
+- `/settings`: thông tin tài khoản và chuẩn bị xóa tài khoản. Nút xóa chỉ bật khi OpenAPI có `DELETE /auth/me`; hiện chờ B, chưa có E2E xóa tài khoản thật.
 
 `/meetings/sprint-42` vẫn là trang mẫu trong React Context. Danh sách,
 upload và transcript của các cuộc họp khác dùng API. Khi chạy dev, MSW bật
@@ -31,14 +33,14 @@ API auth; cookie phiên do backend đặt, không lưu token/mật khẩu vào W
 sửa transcript và speaker của segment, xem bản gốc, sửa tổng quan, quản lý công việc,
 menu tải TXT/MD/JSON theo bản hiện tại hoặc bản AI gốc, upload preview và recorder có consent.
 Waveform hiện là minh họa, không phân tích từ audio. Transcript mẫu không tự khớp
-với file người dùng chọn. Menu export lấy dữ liệu đã lưu qua API; backend có module
-JSON schema 1.0 nhưng router export hiện vẫn là stub cần B tích hợp. MSW trả file mẫu.
+với file người dùng chọn. Với cuộc họp API, router export đã đọc DB và gọi module
+JSON schema 1.1/TXT/Markdown; E2E kiểm download và evidence khớp UI. MSW vẫn chỉ trả file mẫu.
 
 API client có type sinh từ `contracts/openapi.json`; MSW đọc fixture chung trong
 `contracts/fixtures/api/`. Danh sách poll mỗi 5 giây khi còn cuộc họp đang chờ
 hoặc xử lý; transcript pending cũng được lấy lại. Upload dùng XHR với tiến độ,
-hủy và Idempotency-Key. `useJobQuery` và `JobStatusCard` đã poll endpoint job,
-nhưng chưa gắn vào trang demo. Giới hạn 200 MB cần được thay bằng `GET /config`
+hủy và Idempotency-Key. `useJobQuery` và `JobStatusCard` đã gắn vào trang chi tiết
+API và trang tiến độ riêng. Giới hạn 200 MB cần được thay bằng `GET /config`
 khi tích hợp backend. Tùy chọn số người nói đang disable vì chưa được xử lý.
 
 ## Thử giao diện
@@ -88,8 +90,8 @@ chạy `uv run python -m app.scripts.seed`, rồi bỏ biến đó. Tài khoản
 terminal chạy backend vì cấu hình này yêu cầu boolean.
 
 Đăng xuất xóa query cache và dữ liệu xem thử trong bộ nhớ. Tab Lịch sử hỗ trợ
-lọc và phân trang; backend hiện vẫn trả fixture lịch sử, nên audit thật còn cần
-phần backend hoàn thiện. Trang có thông báo mất mạng và lỗi giao diện an toàn.
+lọc và phân trang, lấy edit event từ backend thật; E2E kiểm đúng các event vừa sửa.
+Trang có thông báo mất mạng và lỗi giao diện an toàn.
 Font Inter Variable được self-host tại `public/fonts/InterVariable.woff2`, kèm giấy phép OFL trong `Inter-LICENSE.txt`.
 
 ## Kiểm tra

@@ -3027,3 +3027,103 @@ mark {
     font-size: 26px;
   }
 }
+.settings-page {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 40px 32px 64px;
+}
+.settings-intro {
+  margin-bottom: 32px;
+}
+.settings-intro h1 {
+  font-size: 30px;
+  letter-spacing: -0.025em;
+}
+.settings-intro p,
+.settings-section p {
+  color: #596170;
+  font-size: 16px;
+  line-height: 1.7;
+  max-width: 68ch;
+}
+.settings-intro p {
+  margin-top: 8px;
+}
+.settings-section {
+  border-top: 1px solid var(--line);
+  padding: 28px 0;
+}
+.settings-section h2 {
+  font-size: 20px;
+  margin-bottom: 16px;
+}
+.settings-profile {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  margin: 0;
+}
+.settings-profile dt {
+  font-size: 14px;
+  color: #636b78;
+}
+.settings-profile dd {
+  margin: 8px 0 0;
+  font-size: 16px;
+  overflow-wrap: anywhere;
+}
+.account-erasure > .button {
+  margin-top: 20px;
+  min-height: 44px;
+}
+.account-erasure .settings-unavailable {
+  margin-top: 12px;
+  font-size: 14px;
+}
+.delete-account-form {
+  display: grid;
+  gap: 12px;
+  margin-top: 20px;
+}
+.delete-account-form label {
+  font-size: 15px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.delete-account-form input {
+  min-height: 44px;
+  min-width: 0;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  font-size: 16px;
+}
+.delete-account-form .delete-actions {
+  margin-top: 8px;
+}
+.delete-account-form .button {
+  min-height: 44px;
+}
+.settings-link[aria-current='page'] {
+  background: #eceef1;
+}
+.settings-link {
+  min-width: 44px;
+  min-height: 44px;
+}
+@media (max-width: 760px) {
+  .settings-page {
+    padding: 24px 20px 40px;
+  }
+  .settings-intro h1 {
+    font-size: 26px;
+  }
+  .settings-profile {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .delete-account-form .delete-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+}
