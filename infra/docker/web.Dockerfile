@@ -4,19 +4,19 @@
 # Build từ gốc repo:
 #   docker build -f infra/docker/web.Dockerfile -t meeting-web .
 #
-FROM node:20-bookworm-slim AS builder
+FROM node:24-bookworm-slim AS builder
 
 WORKDIR /app
 
-# Cài đặt dependency theo layer để tối ưu cache
+# Cài đặt dependency theo layer để tối ưu cache (dùng --legacy-peer-deps cho tương thích React 19)
 COPY frontend/package.json frontend/package-lock.json ./
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 
 # Copy toàn bộ mã nguồn frontend
 COPY frontend/ ./
 
 # Build giao diện frontend tĩnh
-RUN npm run build || npx vite build
+RUN npx vite build
 
 FROM nginx:1.27-alpine
 
