@@ -31,7 +31,7 @@ def load_config_fixture() -> dict:
             ".webm",
             ".flac",
         ],
-        "export_formats": ["txt", "json", "md", "docx"],
+        "export_formats": ["txt", "json", "md"],
         "llm_enabled": True,
     }
 
