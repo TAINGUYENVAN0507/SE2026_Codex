@@ -1,6 +1,53 @@
-# Docker image (AI-16)
+# Docker image (AI-16, BE-16)
 
-## Worker
+Tài liệu hướng dẫn xây dựng và triển khai các Docker image cho hệ thống Vietnamese Meeting Minutes Assistant, bao gồm: API (kèm worker), Worker chuyên dụng cho mô hình AI, và Web Frontend phục vụ qua Nginx reverse proxy.
+
+---
+
+## 1. API (kèm Worker) (BE-16)
+
+`api.Dockerfile` đóng gói toàn bộ backend FastAPI và worker loop phục vụ xử lý công việc. Build từ gốc repo:
+
+```bash
+docker build -f infra/docker/api.Dockerfile -t meeting-api .
+```
+
+### Đặc điểm kỹ thuật:
+- **Base image:** `python:3.12-slim-bookworm` tối ưu dung lượng, tích hợp sẵn `ffmpeg` cho xử lý âm thanh.
+- **Quản lý gói:** Dùng `uv` với cache layer độc lập, không cài dev dependencies hay GPU runtime nặng (Torch/CUDA).
+- **Đa dụng (kèm worker):**
+  - Mặc định chạy API server: `uvicorn app.main:create_app --factory --host 0.0.0.0 --port 8000`.
+  - Có thể chạy worker loop bằng cách ghi đè lệnh: `python -m app.worker.runner`.
+- **Bảo mật và Phân quyền:**
+  - Chạy dưới user không phải root: `app` (UID `10001`).
+  - Không nhúng secret, file `.env` hay thông tin xác thực vào image.
+- **Kích thước image:** ~420 MB (tối ưu đáng kể so với worker có model nặng).
+
+---
+
+## 2. Web Frontend & Nginx Proxy (BE-16)
+
+`web.Dockerfile` thực hiện multi-stage build: biên dịch mã nguồn React qua Vite và phục vụ tệp tĩnh qua Nginx reverse proxy. Build từ gốc repo:
+
+```bash
+docker build -f infra/docker/web.Dockerfile -t meeting-web .
+```
+
+### Đặc điểm kỹ thuật:
+- **Giai đoạn Build:** `node:20-bookworm-slim`, cài đặt dependencies bằng `npm ci` và biên dịch qua `vite build` ra thư mục `dist/`.
+- **Giai đoạn Serve:** `nginx:1.27-alpine` siêu nhẹ.
+- **Cấu hình Nginx (`infra/docker/nginx.conf`):**
+  - Phục vụ Single Page Application (SPA) với fallback `try_files $uri $uri/ /index.html`.
+  - Giới hạn tải lên `client_max_body_size 250M` đáp ứng kích thước file ghi âm.
+  - Proxy an toàn: chuyển tiếp `/api/` và `/health` tới service backend `api:8000`.
+  - **Bảo vệ dữ liệu vận hành (PRIV-10):** Chặn hoàn toàn `/metrics` ở cấp proxy (trả HTTP 404), ngăn chặn lộ thông tin giám sát ra mạng công cộng.
+- **Bảo mật và Phân quyền:**
+  - Chạy dưới user không phải root: `nginx` (UID `101`), lắng nghe trên cổng unprivileged `8080`.
+- **Kích thước image:** ~48 MB.
+
+---
+
+## 3. Worker (AI-16)
 
 `worker.Dockerfile` đóng gói worker (`python -m app.worker.runner`) cùng pipeline thật. Build từ gốc repo:
 

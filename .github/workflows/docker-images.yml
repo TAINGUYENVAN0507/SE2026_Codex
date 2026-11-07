@@ -1,0 +1,68 @@
+name: docker-images
+
+# Tự động kiểm thử lint và build Docker image cho API và Web (BE-16).
+on:
+  pull_request:
+    paths:
+      - "infra/docker/**"
+      - "backend/**"
+      - "frontend/**"
+      - "pipeline/**"
+      - ".dockerignore"
+      - ".github/workflows/docker-images.yml"
+  push:
+    branches: [main, haquang]
+    paths:
+      - "infra/docker/**"
+      - "backend/**"
+      - "frontend/**"
+      - "pipeline/**"
+      - ".dockerignore"
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lint api.Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: infra/docker/api.Dockerfile
+      - name: Lint web.Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: infra/docker/web.Dockerfile
+
+  build-api:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build API image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: infra/docker/api.Dockerfile
+          tags: meeting-api:latest
+          load: true
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,mode=max,scope=api
+      - name: Kiểm tra kích thước image API
+        run: docker image ls meeting-api:latest
+
+  build-web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build Web image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: infra/docker/web.Dockerfile
+          tags: meeting-web:latest
+          load: true
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,mode=max,scope=web
+      - name: Kiểm tra kích thước image Web
+        run: docker image ls meeting-web:latest
