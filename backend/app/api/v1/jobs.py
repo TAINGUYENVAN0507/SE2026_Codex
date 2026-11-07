@@ -75,6 +75,6 @@ def get_job(
         next_run_at=job.next_run_at,
         error=job_error,
         created_at=job.created_at,
-        started_at=None,
-        finished_at=None,
+        started_at=job.started_at,
+        finished_at=job.finished_at,
     )

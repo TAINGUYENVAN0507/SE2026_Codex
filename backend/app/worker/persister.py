@@ -26,7 +26,7 @@ from pathlib import Path
 from meeting_pipeline.errors import ErrorCode, PermanentPipelineError
 from meeting_pipeline.schemas import Stage, SummaryOutput, Transcript
 from pydantic import ValidationError
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from app.db.models.action_item import ActionItem
@@ -35,6 +35,75 @@ from app.db.models.summary import Summary
 from app.db.models.transcript import Segment, Speaker
 
 logger = logging.getLogger("backend.worker.persister")
+
+
+def _replace_previous_transcript(db: Session, meeting_id: str, new_labels: set[str]) -> None:
+    """Xóa bộ segment cũ của meeting trước khi ghi bộ mới (BE-17, VT-018).
+
+    Guard idempotent ở persist_transcript chỉ đúng khi retry cùng một job. Job mới có id mới
+    nên phải thay bộ cũ, nếu không mỗi lần chạy lại nhân đôi segment. Speaker không còn trong
+    transcript mới cũng bị xóa. Việc này chạy cùng transaction với phần ghi mới.
+    """
+    db.execute(delete(Segment).where(Segment.meeting_id == meeting_id))
+    stale = (
+        db.execute(
+            select(Speaker).where(
+                Speaker.meeting_id == meeting_id,
+                Speaker.label.not_in(new_labels),
+            )
+        )
+        .scalars()
+        .all()
+    )
+    for spk in stale:
+        db.delete(spk)
+    db.flush()
+
+
+def _prune_dangling_evidence(db: Session, meeting_id: str) -> None:
+    """Bỏ evidence trỏ tới segment không còn tồn tại; action item bị bỏ thì needs_review=True.
+
+    Nếu job mới lỗi trước stage summarize thì summary cũ vẫn còn. Evidence treo sẽ làm giao
+    diện dẫn tới đoạn audio không có thật.
+    """
+    valid = set(db.execute(select(Segment.id).where(Segment.meeting_id == meeting_id)).scalars())
+
+    def _clean(items: list[dict] | None) -> list[dict] | None:
+        if not items:
+            return items
+        return [
+            {
+                **it,
+                "evidence_segment_ids": [
+                    i for i in it.get("evidence_segment_ids", []) if i in valid
+                ],
+            }
+            for it in items
+        ]
+
+    summary = db.execute(
+        select(Summary).where(Summary.meeting_id == meeting_id)
+    ).scalar_one_or_none()
+    if summary is not None:
+        for attr in ("content", "ai_content"):
+            value = getattr(summary, attr)
+            if isinstance(value, dict):
+                setattr(
+                    summary,
+                    attr,
+                    {
+                        **value,
+                        "key_points": _clean(value.get("key_points")),
+                        "decisions": _clean(value.get("decisions")),
+                    },
+                )
+
+    for item in db.execute(select(ActionItem).where(ActionItem.meeting_id == meeting_id)).scalars():
+        ids = item.evidence_segment_ids or []
+        kept = [i for i in ids if i in valid]
+        if len(kept) != len(ids):
+            item.evidence_segment_ids = kept
+            item.needs_review = True
 
 
 def persist_transcript(
@@ -96,6 +165,9 @@ def persist_transcript(
         return
 
     now = datetime.now(UTC)
+
+    # 0. Job mới thay transcript của job trước (BE-17), không nhân đôi
+    _replace_previous_transcript(db, meeting_id, {s.label for s in transcript.speakers})
 
     # 1. Ghi ai_outputs bất biến
     ai_output = AIOutput(
@@ -163,6 +235,8 @@ def persist_transcript(
         )
         db.add(segment)
 
+    db.flush()
+    _prune_dangling_evidence(db, meeting_id)
     db.commit()
     logger.info("Đã persist thành công transcript cho meeting %s từ job %s.", meeting_id, job_id)
 

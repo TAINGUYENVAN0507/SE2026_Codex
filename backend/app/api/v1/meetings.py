@@ -469,8 +469,8 @@ def serialize_meeting_detail(meeting: Meeting, db: Session) -> MeetingDetailOut:
             next_run_at=latest_job.next_run_at,
             error=job_error,
             created_at=latest_job.created_at,
-            started_at=None,
-            finished_at=None,
+            started_at=latest_job.started_at,
+            finished_at=latest_job.finished_at,
         )
 
     meeting_summary = serialize_meeting_summary(meeting, db)
@@ -2099,8 +2099,8 @@ def serialize_job(job: Job) -> JobOut:
         next_run_at=job.next_run_at,
         error=job_error,
         created_at=job.created_at,
-        started_at=None,
-        finished_at=None,
+        started_at=job.started_at,
+        finished_at=job.finished_at,
     )
 
 
@@ -2193,7 +2193,7 @@ def retry_meeting_job(
         )
 
     # 4. Chạy lại từ asr/diarize khi người dùng đã sửa transcript -> 409 HAS_USER_EDITS
-    if payload.from_stage in (None, "preprocess", "vad", "asr", "diarize"):
+    if payload.from_stage in (None, "preprocess", "vad", "asr", "diarize", "merge"):
         has_user_edits = (
             db.execute(
                 select(Segment).where(

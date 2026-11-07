@@ -18,9 +18,11 @@ from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.db.base import Base
+from app.db.models.action_item import ActionItem
 from app.db.models.ai_output import AIOutput
 from app.db.models.job import Job
 from app.db.models.meeting import Meeting
+from app.db.models.summary import Summary
 from app.db.models.transcript import Segment, Speaker
 from app.db.models.user import User
 from app.worker.persister import persist_transcript
@@ -41,6 +43,8 @@ def test_db() -> Generator[Session, None, None]:
         AIOutput.__table__,
         Speaker.__table__,
         Segment.__table__,
+        Summary.__table__,
+        ActionItem.__table__,
     ]
     Base.metadata.create_all(bind=engine, tables=tables)
     session_factory = sessionmaker(autocommit=False, autoflush=False, bind=engine)

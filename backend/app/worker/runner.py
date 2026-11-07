@@ -310,7 +310,9 @@ def process_job(
         now_ts = time.monotonic()
         # Throttling: chỉ ghi DB tối đa 1 lần mỗi giây hoặc khi stage hoàn thành (value=1.0)
         if (now_ts - last_db_update >= PROGRESS_THROTTLE_SEC) or value >= 1.0:
-            calc_progress = overall_progress(stage, value)
+            # Không bao giờ ghi giá trị nhỏ hơn tiến độ đã có (BE-17): job chạy lại từ
+            # stage giữa khởi tạo ở from_idx/6, retry đi lại stage đã qua.
+            calc_progress = max(overall_progress(stage, value), job.progress or 0.0)
             stages = dict(job.stage_status or {})
             stages[stage.value] = "running" if value < 1.0 else "succeeded"
 

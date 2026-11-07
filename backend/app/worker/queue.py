@@ -10,7 +10,7 @@ import uuid
 from datetime import UTC, datetime, timedelta
 from enum import StrEnum
 
-from sqlalchemy import and_, or_, select, update
+from sqlalchemy import and_, func, or_, select, update
 from sqlalchemy.orm import Session
 
 from app.db.models.job import Job
@@ -124,6 +124,7 @@ def transition_job_status(
     if tgt in (JobStatus.SUCCEEDED, JobStatus.FAILED, JobStatus.CANCELLED):
         job.locked_by = None
         job.locked_until = None
+        job.finished_at = current_time
 
 
 def enqueue_job(
@@ -204,6 +205,7 @@ def claim_job(
             locked_until=current_time + timedelta(seconds=lease_duration_sec),
             heartbeat_at=current_time,
             updated_at=current_time,
+            started_at=func.coalesce(Job.started_at, current_time),
         )
     )
     if res.rowcount == 0:
