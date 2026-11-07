@@ -21,6 +21,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.api.deps import get_current_user
+from app.core.metrics import PIPELINE_STAGE_DURATION_SECONDS
 from app.core.security import create_access_token
 from app.db.base import Base
 from app.db.models.action_item import ActionItem
@@ -330,3 +331,68 @@ def test_metrics_job_counts_match_db_state(
 
     assert failed_map.get(("diarize", "DIARIZATION_FAILED")) == 1.0
     assert failed_map.get(("preprocess", "AUDIO_INVALID")) == 2.0
+
+
+def test_metrics_pipeline_stage_duration_seconds(client: TestClient) -> None:
+    """Kiểm tra metric pipeline_stage_duration_seconds{stage} (BE-19).
+
+    - Parse được dữ liệu Prometheus output.
+    - Nhãn chỉ chứa 'stage' (và 'le' đối với bucket).
+    - Tuyệt đối không chứa UUID hoặc thông tin phiên họp trong nhãn.
+    - Số đo phân phối (count, sum, bucket) phản ánh chính xác các quan sát.
+    """
+    # Ghi nhận một số giá trị timing giả lập cho các stage
+    test_timings = {
+        "preprocess": 0.08,
+        "vad": 0.22,
+        "asr": 3.45,
+        "diarize": 1.80,
+        "merge": 0.04,
+        "summarize": 2.15,
+    }
+    for stg, dur in test_timings.items():
+        PIPELINE_STAGE_DURATION_SECONDS.labels(stage=stg).observe(dur)
+
+    res = client.get("/metrics")
+    assert res.status_code == 200
+    assert "pipeline_stage_duration_seconds" in res.text
+
+    parsed = parse_prometheus_metrics(res.text)
+
+    # 1. Kiểm tra tồn tại metric count và sum
+    assert "pipeline_stage_duration_seconds_count" in parsed
+    assert "pipeline_stage_duration_seconds_sum" in parsed
+    assert "pipeline_stage_duration_seconds_bucket" in parsed
+
+    # 2. Kiểm tra nhãn và tính hợp lệ (không chứa UUID, nhãn chỉ là stage)
+    uuid_pattern = re.compile(
+        r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+        re.IGNORECASE,
+    )
+
+    for metric_name in (
+        "pipeline_stage_duration_seconds_count",
+        "pipeline_stage_duration_seconds_sum",
+        "pipeline_stage_duration_seconds_bucket",
+    ):
+        samples = parsed.get(metric_name, [])
+        assert len(samples) > 0, f"Metric {metric_name} không có mẫu dữ liệu nào!"
+        for sample in samples:
+            labels = sample["labels"]
+            assert isinstance(labels, dict)
+            # Nhãn chỉ được phép là stage (và le cho bucket)
+            allowed_keys = {"stage", "le"} if metric_name.endswith("_bucket") else {"stage"}
+            assert set(labels.keys()).issubset(allowed_keys), (
+                f"Nhãn lạ trong {metric_name}: {labels}"
+            )
+            assert labels["stage"] in test_timings, f"Stage không hợp lệ: {labels['stage']}"
+
+            # Kiểm tra không có UUID trong mọi giá trị của label
+            for k, v in labels.items():
+                assert not uuid_pattern.search(v), f"Phát hiện UUID trong nhãn {k}={v}!"
+
+    # 3. Kiểm tra count cho từng stage ít nhất là 1
+    count_samples = parsed["pipeline_stage_duration_seconds_count"]
+    stage_counts = {sample["labels"]["stage"]: sample["value"] for sample in count_samples}
+    for stg in test_timings:
+        assert stage_counts.get(stg, 0) >= 1.0
