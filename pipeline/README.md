@@ -90,6 +90,20 @@ ls /tmp/job1   # preprocess.json vad.json asr.json diarization.json transcript.j
 
 Stdout là các dòng JSON (`progress`, `done`). Stderr là log kỹ thuật, không chứa transcript.
 
+### Sự kiện stage (AI-18)
+
+`meeting_pipeline.runner` ghi mỗi sự kiện qua logger `meeting_pipeline.runner` với `extra`, để formatter JSON của backend giữ được field:
+
+| `event` | Khi nào | `status` |
+|---|---|---|
+| `stage_started` | trước khi chạy stage | `running` |
+| `stage_finished` | stage xong | `succeeded`, `fallback` |
+| `stage_skipped` | đã có checkpoint hợp lệ | `skipped` |
+| `stage_failed` | stage lỗi (không tính hủy, không tính fallback) | `retry`, `failed` |
+| `stage_fallback` | diarize lỗi ở lượt cuối, dùng 1 speaker | `fallback` |
+
+Field: `event`, `job_id`, `meeting_id`, `stage`, `attempt`, và khi có thì `status`, `error_code`, `duration_sec`. Không ghi text transcript, tiêu đề, tên file hay đường dẫn tuyệt đối (PRIV-10); test canary ở `tests/unit/test_stage_events.py`.
+
 ### Fake pipeline
 
 `PIPELINE_BACKEND=fake` dùng dữ liệu mẫu. Chọn kịch bản lỗi bằng `FAKE_SCENARIO`: `ok`, `slow`, `transient_once`, `permanent`, `timeout`, `no_speech`, `diarize_fail`, `summary_fail`, `summary_flaky`, `summary_disabled`. Mô tả chi tiết ở đầu file `meeting_pipeline/fake/stages.py`.
