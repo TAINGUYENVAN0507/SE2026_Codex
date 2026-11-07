@@ -4,8 +4,8 @@ Mỗi test dựng API + worker thật trên SQLite in-memory với fake pipeline
 Tiến độ được ghi lại bằng trigger SQL để thấy mọi giá trị đã ghi vào DB, kể cả
 giá trị ban đầu lúc tạo job.
 
-Các test đang đánh dấu xfail(strict=True) vì tái hiện lỗi chưa sửa. Lấy log đỏ bằng
-``pytest --runxfail``. Khi vá xong thì gỡ xfail tương ứng.
+Lịch sử: các test này từng đánh dấu xfail(strict=True) để CI xanh lúc chúng còn đỏ; log đỏ
+nằm ở docs/evidence/vt-018/01-red.log.
 """
 
 import io
@@ -171,14 +171,6 @@ def env(session: Session, tmp_path: Path) -> Generator[Env, None, None]:
         yield Env(session, client, storage)
 
 
-XFAIL_PROGRESS = pytest.mark.xfail(
-    strict=True, reason="BE-17: tiến độ job chạy lại bị ghi thấp hơn giá trị khởi tạo"
-)
-XFAIL_TIME = pytest.mark.xfail(
-    strict=True, reason="BE-17: started_at và finished_at luôn null trong API"
-)
-
-
 def test_vt018_second_job_keeps_one_segment_set(env: Env) -> None:
     meeting_id, _ = env.upload()
     assert env.work()
@@ -193,7 +185,6 @@ def test_vt018_second_job_keeps_one_segment_set(env: Env) -> None:
     assert [i for i, _ in after] == list(range(len(after))), "idx bị lặp"
 
 
-@XFAIL_PROGRESS
 def test_vt018_progress_never_decreases_on_rerun(env: Env) -> None:
     meeting_id, _ = env.upload()
     assert env.work()
@@ -206,7 +197,6 @@ def test_vt018_progress_never_decreases_on_rerun(env: Env) -> None:
     assert seq[-1] == 1.0
 
 
-@XFAIL_PROGRESS
 def test_vt018_progress_never_decreases_after_transient_retry(env: Env) -> None:
     meeting_id, job1 = env.upload()
     assert env.work()
@@ -223,7 +213,6 @@ def test_vt018_progress_never_decreases_after_transient_retry(env: Env) -> None:
     assert env.db.get(Job, job2).status == "succeeded"
 
 
-@XFAIL_TIME
 def test_vt018_job_out_has_real_timestamps(env: Env) -> None:
     _, job_id = env.upload()
     before = datetime.now(UTC)

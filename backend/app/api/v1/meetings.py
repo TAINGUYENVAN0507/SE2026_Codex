@@ -450,8 +450,8 @@ def serialize_meeting_detail(meeting: Meeting, db: Session) -> MeetingDetailOut:
             next_run_at=latest_job.next_run_at,
             error=job_error,
             created_at=latest_job.created_at,
-            started_at=None,
-            finished_at=None,
+            started_at=latest_job.started_at,
+            finished_at=latest_job.finished_at,
         )
 
     meeting_summary = serialize_meeting_summary(meeting, db)
@@ -2084,8 +2084,8 @@ def serialize_job(job: Job) -> JobOut:
         next_run_at=job.next_run_at,
         error=job_error,
         created_at=job.created_at,
-        started_at=None,
-        finished_at=None,
+        started_at=job.started_at,
+        finished_at=job.finished_at,
     )
 
 

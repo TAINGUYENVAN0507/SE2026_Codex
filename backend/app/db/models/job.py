@@ -93,6 +93,16 @@ class Job(Base):
         nullable=True,
         comment="Thời điểm hết hạn khóa lease UTC",
     )
+    started_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        comment="Lần claim đầu tiên UTC, giữ nguyên qua retry",
+    )
+    finished_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        comment="Thời điểm vào trạng thái kết thúc UTC",
+    )
     heartbeat_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
