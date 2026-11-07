@@ -10,7 +10,10 @@ Bao gồm:
 - Log chỉ ghi meeting id, không ghi tiêu đề hay nội dung nhạy cảm.
 """
 
+import io
+import json
 import logging
+import shutil
 import uuid
 from collections.abc import Generator
 from pathlib import Path
@@ -35,6 +38,7 @@ from app.db.models.transcript import Segment, Speaker
 from app.db.models.user import User
 from app.db.session import get_db
 from app.main import create_app
+from app.services.audio_validator import AudioProbeResult
 from app.services.storage import Storage, get_storage
 from app.services.storage.local import LocalStorage
 
@@ -440,3 +444,192 @@ def test_delete_meeting_logging_privacy(
     logs = caplog.text
     assert meeting_id in logs
     assert sensitive_title not in logs
+
+
+def test_erasure_removes_canary_from_all_stores_and_logs(
+    test_db: Session,
+    users: dict[str, User],
+    test_storage: Storage,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Canary test (BE-18, PRIV-10): tiêu đề, transcript, tóm tắt, action item, idempotency_keys
+    và file chứa CANARY_PERSONAL_7f3a; sau khi xóa thì chuỗi này không còn trong mọi bảng DB,
+    cây appdata/ và log đã capture.
+    """
+    canary = "CANARY_PERSONAL_7f3a"
+    owner = users["a"]
+    meeting_id = str(uuid.uuid4())
+    meeting = Meeting(
+        id=meeting_id,
+        owner_id=owner.id,
+        title=f"Tiêu đề chứa {canary}",
+        source="upload",
+        status="ready",
+        meeting_date="2026-10-15",
+        duration_sec=120.0,
+        version=1,
+    )
+    test_db.add(meeting)
+    test_db.flush()
+
+    spk = Speaker(
+        id=str(uuid.uuid4()),
+        meeting_id=meeting.id,
+        label="SPEAKER_00",
+        default_name="Speaker 1",
+        display_name=f"Người nói {canary}",
+        version=1,
+    )
+    test_db.add(spk)
+    test_db.flush()
+
+    seg = Segment(
+        id=str(uuid.uuid4()),
+        meeting_id=meeting.id,
+        idx=0,
+        start_sec=0.0,
+        end_sec=5.0,
+        speaker_id=spk.id,
+        ai_speaker_id=spk.id,
+        text=f"Nội dung lời thoại chứa {canary}",
+        ai_text=f"Nội dung AI gốc chứa {canary}",
+        version=1,
+    )
+    test_db.add(seg)
+
+    summary = Summary(
+        id=str(uuid.uuid4()),
+        meeting_id=meeting.id,
+        status="ready",
+        content={"overview": f"Tổng quan {canary}", "key_points": [], "decisions": []},
+        ai_content={"overview": f"AI {canary}", "key_points": [], "decisions": []},
+        version=1,
+    )
+    test_db.add(summary)
+
+    action = ActionItem(
+        id=str(uuid.uuid4()),
+        meeting_id=meeting.id,
+        description=f"Công việc chứa {canary}",
+        assignee_name="Anh A",
+        status="open",
+        source="ai",
+        version=1,
+    )
+    test_db.add(action)
+
+    # Thêm idempotency key chứa canary
+    idem_key = IdempotencyKey(
+        id=str(uuid.uuid4()),
+        user_id=owner.id,
+        key=f"KEY_{canary}",
+        endpoint="/api/v1/meetings",
+        status="completed",
+        response_code=201,
+        response_body={"id": meeting_id, "title": f"Tiêu đề chứa {canary}"},
+    )
+    test_db.add(idem_key)
+    test_db.commit()
+
+    # Tạo file audio và artifact chứa canary
+    audio_path = test_storage.get_audio_path(meeting_id, "wav")
+    audio_path.parent.mkdir(parents=True, exist_ok=True)
+    audio_path.write_text(f"AUDIO_DATA_{canary}", encoding="utf-8")
+
+    art_dir = Path(test_storage.base_dir) / "artifacts" / meeting_id / "job-1"
+    art_dir.mkdir(parents=True, exist_ok=True)
+    (art_dir / "transcript.json").write_text(f'{{"text": "{canary}"}}', encoding="utf-8")
+
+    app = create_app()
+    client = create_auth_client(app, owner, test_storage, test_db)
+
+    with caplog.at_level(logging.INFO):
+        res = client.delete(f"/api/v1/meetings/{meeting_id}")
+        assert res.status_code == 204
+
+    # 1. Kiểm tra toàn bộ các bảng trong Base.metadata
+    test_db.expire_all()
+    for table in Base.metadata.sorted_tables:
+        rows = test_db.execute(select(table)).fetchall()
+        for row in rows:
+            row_dict = dict(row._mapping)
+            for col_name, val in row_dict.items():
+                val_str = json.dumps(val) if isinstance(val, (dict, list)) else str(val)
+                assert canary not in val_str, (
+                    f"Tìm thấy canary trong bảng {table.name}, cột {col_name}: {val_str}"
+                )
+
+    # 2. Kiểm tra cây thư mục appdata/ (storage base_dir)
+    storage_root = Path(test_storage.base_dir)
+    if storage_root.exists():
+        for path in storage_root.rglob("*"):
+            assert canary not in path.name, f"Tìm thấy canary trong tên file/thư mục: {path}"
+            if path.is_file():
+                content = path.read_text(encoding="utf-8", errors="ignore")
+                assert canary not in content, f"Tìm thấy canary trong nội dung file: {path}"
+
+    # Thư mục artifacts/{meeting_id} và audio/{meeting_id} không còn tồn tại
+    assert not (storage_root / "artifacts" / meeting_id).exists()
+    assert not (storage_root / "audio" / meeting_id).exists()
+
+    # 3. Kiểm tra log đã capture không chứa canary
+    assert canary not in caplog.text
+    # Log có ghi meeting_id
+    assert meeting_id in caplog.text
+
+
+def test_erasure_replay_idempotency_key_creates_new_meeting(
+    test_db: Session,
+    users: dict[str, User],
+    test_storage: Storage,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Test replay (BE-18): Sau khi xóa meeting, gửi lại cùng Idempotency-Key thì
+    tạo meeting mới, không trả lại dữ liệu cũ đã bị xóa.
+    """
+    owner = users["a"]
+    idem_key_str = f"test-key-{uuid.uuid4()}"
+
+    # Mock ffprobe cho endpoint upload meeting
+    if shutil.which("ffprobe") is None:
+
+        def _mock_probe(file_path, timeout_sec=10.0, ffprobe_bin=None):
+            return AudioProbeResult(
+                duration_sec=60.0,
+                format_name="wav",
+                sample_rate=16000,
+                channels=1,
+            )
+
+        monkeypatch.setattr("app.api.v1.meetings.probe_audio", _mock_probe)
+
+    app = create_app()
+    client = create_auth_client(app, owner, test_storage, test_db)
+
+    # 1. Tạo meeting đầu tiên với Idempotency-Key
+    audio_content = (
+        b"RIFF$\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x80>\x00\x00\x00}"
+        b"\x00\x00\x02\x00\x10\x00data\x00\x00\x00\x00"
+    )
+    files = {"file": ("test.wav", io.BytesIO(audio_content), "audio/wav")}
+    data = {"title": "Cuộc họp lần 1", "consent_confirmed": "true"}
+    headers = {"Idempotency-Key": idem_key_str}
+
+    res1 = client.post("/api/v1/meetings", data=data, files=files, headers=headers)
+    assert res1.status_code == 201, res1.text
+    meeting_id_1 = res1.json()["meeting"]["id"]
+
+    # 2. Xóa meeting_id_1
+    del_res = client.delete(f"/api/v1/meetings/{meeting_id_1}")
+    assert del_res.status_code == 204
+
+    # 3. Gửi lại request với CÙNG Idempotency-Key
+    files_replay = {"file": ("test.wav", io.BytesIO(audio_content), "audio/wav")}
+    data_replay = {"title": "Cuộc họp lần 2 sau khi xóa", "consent_confirmed": "true"}
+    res2 = client.post("/api/v1/meetings", data=data_replay, files=files_replay, headers=headers)
+
+    # Khẳng định tạo meeting MỚI với HTTP 201, ID mới khác ID cũ
+    assert res2.status_code == 201
+    meeting_id_2 = res2.json()["meeting"]["id"]
+    assert meeting_id_2 != meeting_id_1
+    assert res2.json()["meeting"]["title"] == "Cuộc họp lần 2 sau khi xóa"

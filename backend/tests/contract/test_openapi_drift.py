@@ -170,6 +170,14 @@ def auto_auth_for_contract_tests(monkeypatch: pytest.MonkeyPatch, request: pytes
         status="ready",
         version=1,
     )
+    meeting_not_ready = Meeting(
+        id="not-ready-meeting",
+        owner_id=fake_user.id,
+        title="Họp chưa sẵn sàng",
+        source="upload",
+        status="processing",
+        version=1,
+    )
     active_meeting = Meeting(
         id="active-meeting-1",
         owner_id=fake_user.id,
@@ -190,7 +198,15 @@ def auto_auth_for_contract_tests(monkeypatch: pytest.MonkeyPatch, request: pytes
         max_attempts=3,
     )
     session.add_all(
-        [meeting_ready, meeting_1, meeting_pending, meeting_disabled, active_meeting, active_job]
+        [
+            meeting_ready,
+            meeting_1,
+            meeting_pending,
+            meeting_disabled,
+            meeting_not_ready,
+            active_meeting,
+            active_job,
+        ]
     )
 
     summary_disabled = Summary(
@@ -241,7 +257,17 @@ def auto_auth_for_contract_tests(monkeypatch: pytest.MonkeyPatch, request: pytes
         ai_text="Xin chào mọi người",
         version=2,
     )
-    session.add(seg1)
+    seg_m1 = Segment(
+        id="seg-m1-uuid",
+        meeting_id="meeting-1",
+        idx=0,
+        start_sec=0.0,
+        end_sec=5.0,
+        text="Nội dung thảo luận cuộc họp",
+        ai_text="Nội dung thảo luận cuộc họp",
+        version=1,
+    )
+    session.add_all([seg1, seg_m1])
 
     ai_item_1 = ActionItem(
         id="a1f0a2b3-c4d5-4e6f-8a9b-0c1d2e3f4a5b",
@@ -974,7 +1000,7 @@ def test_export_meeting_success() -> None:
         response = client.get("/api/v1/meetings/meeting-1/export?format=txt&variant=current")
         assert response.status_code == 200
         assert "attachment;" in response.headers.get("content-disposition", "")
-        assert "Biên bản cuộc họp".encode() in response.content
+        assert "Nội dung thảo luận cuộc họp".encode() in response.content
 
 
 def test_export_meeting_unsupported_format() -> None:

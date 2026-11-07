@@ -43,7 +43,7 @@ Không thêm logic mới vào `meetings.py` (2412 dòng, 18 route). Logic mới 
 
 ## 5 commit
 
-### 1. [ ] Export dựng từ DB (BE-05, FE-15)
+### 1. [x] Export dựng từ DB (BE-05, FE-15)
 
 Chuyển từ 2026-10-29. PR #29 đã vào `main` nên không còn bị chặn.
 
@@ -54,9 +54,9 @@ Chuyển từ 2026-10-29. PR #29 đã vào `main` nên không còn bị chặn.
   - Bỏ `docx` khỏi danh sách cho phép vì không có serializer. Sinh lại `contracts/openapi.json` nếu mô tả đổi.
 - **Xong khi:** API test 3 định dạng × 2 biến thể; RT-13: gọi 3 lần cùng tham số ra cùng byte và không ghi gì vào DB; PRIV-12.
 - **Message:** `feat(backend): export built from the database for both variants (BE-05, FE-15)`
-- **Hash:**
+- **Hash:** 3c1036e
 
-### 2. [ ] Service xóa dữ liệu, gồm cả `idempotency_keys` (BE-18)
+### 2. [x] Service xóa dữ liệu, gồm cả `idempotency_keys` (BE-18)
 
 Lỗi đã tái hiện: sau khi xóa meeting, `idempotency_keys.response_body` vẫn còn tiêu đề cuộc họp. Bảng này chỉ có FK tới `users`, nên không bị cascade, và replay cùng key sẽ trả lại dữ liệu đã xóa.
 
@@ -69,9 +69,9 @@ Lỗi đã tái hiện: sau khi xóa meeting, `idempotency_keys.response_body` v
   - test canary: tiêu đề và transcript chứa `CANARY_PERSONAL_7f3a`, sau khi xóa thì chuỗi này không còn trong **mọi bảng** (duyệt `Base.metadata`), cây `appdata/` và log đã capture;
   - test replay: gửi lại cùng `Idempotency-Key` sau khi xóa thì tạo meeting mới, không trả dữ liệu cũ.
 - **Message:** `feat(backend): erasure service removes a meeting from every store (BE-18)`
-- **Hash:**
+- **Hash:** 9caad85
 
-### 3. [ ] Retention chạy thật (BE-14, PRIV-14)
+### 3. [x] Retention chạy thật (BE-14, PRIV-14)
 
 Hiện `AUDIO_RETENTION_DAYS=30` trong `.env.example` không có tác dụng: `Settings` không có field này, `meetings.py:284` hard-code 30 ngày, và không có gì xóa file hết hạn.
 
@@ -87,9 +87,9 @@ Hiện `AUDIO_RETENTION_DAYS=30` trong `.env.example` không có tác dụng: `S
   - PRIV-14 pass;
   - có `docs/privacy/data-policy.md`: dữ liệu gì, ở đâu, giữ bao lâu, xóa thế nào, gửi gì ra bên thứ ba, log giữ ra sao.
 - **Message:** `feat(backend): retention cleanup removes expired audio and operational data (BE-14)`
-- **Hash:**
+- **Hash:** 3c00eb5
 
-### 4. [ ] Log JSON có job id, stage, attempt (BE-19)
+### 4. [x] Log JSON có job id, stage, attempt (BE-19)
 
 Hiện `setup_logging()` không được gọi ở đâu cả, chỉ có test dùng formatter. Worker dùng `logging.basicConfig` (`runner.py:573`). Formatter chỉ giữ 4 field (`logging.py:30`), mọi `extra` khác bị bỏ.
 
@@ -102,9 +102,9 @@ Hiện `setup_logging()` không được gọi ở đâu cả, chỉ có test d�
   - chạy fake `permanent`, lọc log theo `job_id`, thấy chuỗi từ `job_created` tới `job_failed` có `error_code` và `stage`;
   - chuỗi canary không có trong log (PRIV-10).
 - **Message:** `feat(worker): JSON logs that carry job id, stage and attempt (BE-19)`
-- **Hash:**
+- **Hash:** 43515e3
 
-### 5. [ ] Endpoint `/metrics` (BE-19)
+### 5. [x] Endpoint `/metrics` (BE-19)
 
 - **Việc:**
   - Thêm `prometheus-client`, chạy `uv lock`. Endpoint đặt ngoài `/api/v1`, `include_in_schema=False`. Compose ở đợt sau sẽ không proxy endpoint này ra ngoài.
@@ -113,7 +113,7 @@ Hiện `setup_logging()` không được gọi ở đâu cả, chỉ có test d�
   - Viết `docs/backend/BE-19.md`: từ một `job_id` lỗi, các bước tìm ra stage và mã lỗi; ghi thời gian đo thật khi làm thử.
 - **Xong khi:** test parse được output; không có UUID trong output; số liệu job khớp DB.
 - **Message:** `feat(backend): /metrics endpoint for requests, jobs and queue depth (BE-19)`
-- **Hash:**
+- **Hash:** cc4d453
 
 ## Việc chung (không phải commit)
 
@@ -122,5 +122,5 @@ Hiện `setup_logging()` không được gọi ở đâu cả, chỉ có test d�
 
 ## Cuối ngày
 
-- [ ] Tick các ô ở trên và ghi hash.
-- [ ] Push `haquang`, mở PR vào `main`. **Không tự merge.**
+- [x] Tick các ô ở trên và ghi hash.
+- [x] Push `haquang`, mở PR vào `main`. **Không tự merge.**

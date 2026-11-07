@@ -13,9 +13,27 @@ current_request_id: ContextVar[str | None] = ContextVar("current_request_id", de
 class JSONLogFormatter(logging.Formatter):
     """Formatter chuyển log record thành định dạng JSON chuẩn.
 
-    Chỉ log metadata kỹ thuật: method, path, status, duration, request_id.
+    Chỉ log metadata kỹ thuật theo ROADMAP: event, job_id, meeting_id, request_id,
+    worker_id, stage, attempt, error_code, duration_sec, status, method, path...
     Cấm log body, cookie, Authorization token hay transcript người dùng (privacy-security.md).
     """
+
+    ALLOWED_FIELDS = (
+        "event",
+        "job_id",
+        "meeting_id",
+        "request_id",
+        "worker_id",
+        "stage",
+        "attempt",
+        "error_code",
+        "duration_sec",
+        "status",
+        "method",
+        "path",
+        "status_code",
+        "duration_ms",
+    )
 
     def format(self, record: logging.LogRecord) -> str:
         log_entry: dict[str, Any] = {
@@ -26,10 +44,11 @@ class JSONLogFormatter(logging.Formatter):
             "request_id": getattr(record, "request_id", None) or current_request_id.get(),
         }
 
-        # Nếu record có extra fields liên quan đến HTTP request
-        for key in ("method", "path", "status_code", "duration_ms"):
-            if hasattr(record, key):
-                log_entry[key] = getattr(record, key)
+        # Bổ sung các field cấu trúc được phép (ROADMAP & HTTP request)
+        for key in self.ALLOWED_FIELDS:
+            val = getattr(record, key, None)
+            if val is not None:
+                log_entry[key] = val
 
         if record.exc_info and not record.exc_text:
             # Chỉ ghi tên loại exception, không ghi message hoặc stack trace chứa PII
@@ -44,10 +63,19 @@ def setup_logging(log_level: int = logging.INFO) -> None:
     root_logger = logging.getLogger()
     root_logger.setLevel(log_level)
 
-    # Xóa các handler cũ nếu có
+    # Không xóa handler phục vụ kiểm thử (như pytest LogCaptureHandler)
+    has_json_handler = False
     for handler in list(root_logger.handlers):
+        if "LogCapture" in type(handler).__name__:
+            continue
+        if isinstance(handler, logging.StreamHandler) and isinstance(
+            handler.formatter, JSONLogFormatter
+        ):
+            has_json_handler = True
+            continue
         root_logger.removeHandler(handler)
 
-    stream_handler = logging.StreamHandler()
-    stream_handler.setFormatter(JSONLogFormatter())
-    root_logger.addHandler(stream_handler)
+    if not has_json_handler:
+        stream_handler = logging.StreamHandler()
+        stream_handler.setFormatter(JSONLogFormatter())
+        root_logger.addHandler(stream_handler)

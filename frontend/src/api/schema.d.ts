@@ -2020,6 +2020,15 @@ export interface operations {
           'application/json': components['schemas']['ErrorResponse']
         }
       }
+      /** @description Tệp âm thanh đã hết hạn lưu trữ */
+      410: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
       /** @description Khoảng dữ liệu Range không hợp lệ */
       416: {
         headers: {
@@ -2598,7 +2607,7 @@ export interface operations {
   export_meeting_api_v1_meetings__meeting_id__export_get: {
     parameters: {
       query?: {
-        /** @description Định dạng xuất: txt, json, md, docx */
+        /** @description Định dạng xuất: txt, json, md */
         format?: string
         /** @description Biến thể nội dung: current hoặc ai_original */
         variant?: string
@@ -2612,13 +2621,15 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description Successful Response */
+      /** @description Nội dung biên bản cuộc họp */
       200: {
         headers: {
           [name: string]: unknown
         }
         content: {
-          'application/json': unknown
+          'application/json': string
+          'text/plain': string
+          'text/markdown': string
         }
       }
       /** @description Không tìm thấy cuộc họp */

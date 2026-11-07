@@ -88,6 +88,8 @@ class ActionItem(ActionOriginal):
     status: Literal["open", "done", "cancelled"] = "open"
     source: Literal["ai", "user"] = "ai"
     ai_original: ActionOriginal | None
+    evidence_segment_ids: list[str] = Field(default_factory=list)
+    needs_review: bool = False
 
 
 class MeetingExport(ExportModel):

@@ -22,6 +22,10 @@ class Settings(BaseSettings):
     MAX_UPLOAD_MB: int = 200
     MAX_DURATION_SEC: int = 3600
 
+    # Chính sách lưu trữ (retention policy theo ROADMAP)
+    AUDIO_RETENTION_DAYS: int = 14
+    OPERATIONAL_RETENTION_DAYS: int = 28
+
     # Cấu hình xác thực JWT
     JWT_SECRET: str = DEFAULT_DEV_JWT_SECRET
     JWT_ALGORITHM: str = "HS256"

@@ -9,11 +9,14 @@ from app.api.v1.jobs import router as jobs_router
 from app.api.v1.meetings import router as meetings_router
 from app.core.config import get_settings
 from app.core.errors import setup_exception_handlers
+from app.core.logging import setup_logging
+from app.core.metrics import PrometheusMetricsMiddleware, metrics_endpoint
 from app.core.middleware import RequestIDAndLoggingMiddleware
 
 
 def create_app() -> FastAPI:
     """Khởi tạo và cấu hình instance FastAPI cho backend."""
+    setup_logging()
     settings = get_settings()
 
     application = FastAPI(
@@ -24,8 +27,9 @@ def create_app() -> FastAPI:
         openapi_url="/openapi.json",
     )
 
-    # Đăng ký middleware request_id và logging
+    # Đăng ký middleware request_id, logging và prometheus metrics
     application.add_middleware(RequestIDAndLoggingMiddleware)
+    application.add_middleware(PrometheusMetricsMiddleware)
 
     # Đăng ký exception handlers chuẩn hóa error envelope
     setup_exception_handlers(application)
@@ -39,6 +43,14 @@ def create_app() -> FastAPI:
 
     # Đăng ký health ở root cho liveness probe
     application.include_router(health_router)
+
+    # Đăng ký endpoint /metrics cho Prometheus (nằm ngoài /api/v1, không đưa vào openapi schema)
+    application.add_api_route(
+        "/metrics",
+        metrics_endpoint,
+        methods=["GET"],
+        include_in_schema=False,
+    )
 
     return application
 

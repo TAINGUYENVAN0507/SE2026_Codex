@@ -27,10 +27,12 @@ from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
+from app.core.logging import setup_logging
 from app.db.models.ai_output import AIOutput
 from app.db.models.job import Job
 from app.db.models.meeting import Meeting
 from app.db.models.transcript import Segment, Speaker
+from app.services.retention import run_retention_cleanup
 from app.services.storage import Storage
 from app.worker.persister import persist_summary, persist_transcript
 from app.worker.queue import (
@@ -54,6 +56,7 @@ from app.worker.retry import compute_backoff_delay
 logger = logging.getLogger("backend.worker")
 
 PROGRESS_THROTTLE_SEC = 1.0
+DEFAULT_CLEANUP_INTERVAL_SEC = 3600.0
 
 
 def export_transcript_override(db: Session, meeting: Meeting, workdir: Path) -> Path:
@@ -385,9 +388,36 @@ def process_job(
         meeting.status = "ready"
         meeting.updated_at = get_now()
         db.commit()
+        logger.info(
+            "Job %s đã hoàn thành thành công",
+            job.id,
+            extra={
+                "event": "job_succeeded",
+                "job_id": job.id,
+                "meeting_id": job.meeting_id,
+                "worker_id": current_worker_id,
+                "stage": job.stage,
+                "attempt": job.attempt,
+                "status": "succeeded",
+            },
+        )
 
     except PermanentPipelineError as err:
-        logger.error("Job %s gặp lỗi vĩnh viễn: %s", job.id, err)
+        logger.error(
+            "Job %s gặp lỗi vĩnh viễn: %s",
+            job.id,
+            err,
+            extra={
+                "event": "job_failed",
+                "job_id": job.id,
+                "meeting_id": job.meeting_id,
+                "worker_id": current_worker_id,
+                "stage": err.stage.value if err.stage else job.stage,
+                "attempt": job.attempt,
+                "error_code": err.code.value,
+                "status": "failed",
+            },
+        )
         fail_job(db, job, error_code=err.code.value, error_message=err.message, now=get_now())
         if err.stage == Stage.SUMMARIZE:
             meeting.status = "partial"
@@ -397,17 +427,28 @@ def process_job(
         db.commit()
 
     except TransientPipelineError as err:
-        logger.warning(
-            "Job %s gặp lỗi tạm thời: %s (attempt=%d/%d)",
-            job.id,
-            err,
-            job.attempt,
-            job.max_attempts,
-        )
         current_time = get_now()
         if job.attempt < job.max_attempts:
             delay_sec = compute_backoff_delay(job.attempt)
             next_run = current_time + timedelta(seconds=delay_sec)
+            logger.warning(
+                "Job %s gặp lỗi tạm thời: %s (attempt=%d/%d), lên lịch retry sau %ds",
+                job.id,
+                err,
+                job.attempt,
+                job.max_attempts,
+                delay_sec,
+                extra={
+                    "event": "job_retry_scheduled",
+                    "job_id": job.id,
+                    "meeting_id": job.meeting_id,
+                    "worker_id": current_worker_id,
+                    "stage": err.stage.value if err.stage else job.stage,
+                    "attempt": job.attempt,
+                    "error_code": err.code.value,
+                    "status": "retry_scheduled",
+                },
+            )
             schedule_retry(
                 db,
                 job,
@@ -417,6 +458,22 @@ def process_job(
                 now=current_time,
             )
         else:
+            logger.error(
+                "Job %s thất bại vĩnh viễn sau %d lần thử: %s",
+                job.id,
+                job.max_attempts,
+                err,
+                extra={
+                    "event": "job_failed",
+                    "job_id": job.id,
+                    "meeting_id": job.meeting_id,
+                    "worker_id": current_worker_id,
+                    "stage": err.stage.value if err.stage else job.stage,
+                    "attempt": job.attempt,
+                    "error_code": err.code.value,
+                    "status": "failed",
+                },
+            )
             fail_job(
                 db,
                 job,
@@ -438,6 +495,16 @@ def process_job(
             job.id,
             current_worker_id,
             err,
+            extra={
+                "event": "job_lease_lost",
+                "job_id": job.id,
+                "meeting_id": job.meeting_id,
+                "worker_id": current_worker_id,
+                "stage": job.stage,
+                "attempt": job.attempt,
+                "error_code": "LEASE_TIMEOUT",
+                "status": "lease_lost",
+            },
         )
         return job
 
@@ -454,10 +521,32 @@ def process_job(
             job.status = JobStatus.CANCELLED.value
             if workdir.exists():
                 shutil.rmtree(workdir, ignore_errors=True)
+            meeting_artifacts_dir = workdir.parent
+            try:
+                if meeting_artifacts_dir.exists() and not any(meeting_artifacts_dir.iterdir()):
+                    meeting_artifacts_dir.rmdir()
+            except OSError:
+                pass
 
     except PipelineError as err:
-        logger.error("Job %s gặp lỗi pipeline: %s", job.id, err)
-        fail_job(db, job, error_code=err.code.value, error_message=err.message, now=get_now())
+        error_code_val = err.code.value if hasattr(err, "code") else "INTERNAL_ERROR"
+        stage_val = getattr(err, "stage", None)
+        logger.error(
+            "Job %s gặp lỗi pipeline: %s",
+            job.id,
+            err,
+            extra={
+                "event": "job_failed",
+                "job_id": job.id,
+                "meeting_id": job.meeting_id,
+                "worker_id": current_worker_id,
+                "stage": stage_val.value if stage_val else job.stage,
+                "attempt": job.attempt,
+                "error_code": error_code_val,
+                "status": "failed",
+            },
+        )
+        fail_job(db, job, error_code=error_code_val, error_message=err.message, now=get_now())
         meeting.status = "failed"
         meeting.updated_at = get_now()
         db.commit()
@@ -487,6 +576,21 @@ def run_worker_once(
     if job is None:
         return False
 
+    logger.info(
+        "Worker %s đã claim job %s",
+        worker_id,
+        job.id,
+        extra={
+            "event": "job_claimed",
+            "job_id": job.id,
+            "meeting_id": job.meeting_id,
+            "worker_id": worker_id,
+            "stage": job.stage,
+            "attempt": job.attempt,
+            "status": "running",
+        },
+    )
+
     process_job(
         db,
         job,
@@ -508,6 +612,7 @@ def run_worker_loop(
     worker_id: str | None = None,
     backend: str | None = None,
     reaper_interval_sec: float = DEFAULT_REAPER_INTERVAL_SEC,
+    cleanup_interval_sec: float = DEFAULT_CLEANUP_INTERVAL_SEC,
 ) -> None:
     """Vòng lặp thực thi của Worker: định kỳ claim job, chạy pipeline và quét reaper."""
     import signal
@@ -515,6 +620,7 @@ def run_worker_loop(
     from app.db.session import get_session_factory
     from app.services.storage import get_storage
 
+    setup_logging()
     w_id = worker_id or f"worker-{os.getpid()}"
     storage = get_storage()
     session_factory = get_session_factory()
@@ -540,6 +646,7 @@ def run_worker_loop(
         signal.signal(signal.SIGTERM, _handle_signal)
 
     last_reaper_run = 0.0
+    last_cleanup_run = 0.0
 
     while running:
         with session_factory() as db:
@@ -552,6 +659,22 @@ def run_worker_loop(
                 except Exception as e:
                     logger.error("Lỗi khi chạy reaper trong worker: %s", e)
                 last_reaper_run = now_mono
+
+            if now_mono - last_cleanup_run >= cleanup_interval_sec:
+                try:
+                    cleanup_res = run_retention_cleanup(db, storage=storage)
+                    if (
+                        cleanup_res.audio_expired_meetings > 0
+                        or cleanup_res.operational_keys_cleaned > 0
+                    ):
+                        logger.info(
+                            "Cleanup đã dọn dẹp: %d cuộc họp hết hạn audio, %d idempotency_keys",
+                            cleanup_res.audio_expired_meetings,
+                            cleanup_res.operational_keys_cleaned,
+                        )
+                except Exception as e:
+                    logger.error("Lỗi khi chạy cleanup trong worker: %s", e)
+                last_cleanup_run = now_mono
 
             try:
                 processed = run_worker_once(
@@ -570,5 +693,5 @@ def run_worker_loop(
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
+    setup_logging()
     run_worker_loop()

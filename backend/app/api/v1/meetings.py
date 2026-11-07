@@ -18,11 +18,12 @@ from fastapi import (
 )
 from fastapi import Path as FastApiPath
 from fastapi.responses import StreamingResponse
-from sqlalchemy import delete, func, select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.api.deps import CurrentUser, get_current_user
+from app.core.config import get_settings
 from app.core.errors import APIError
 from app.db.models.action_item import ActionItem
 from app.db.models.edit_event import EditEvent
@@ -61,7 +62,11 @@ from app.schemas.transcript import (
 )
 from app.services.audio_validator import probe_audio, validate_extension_and_mime
 from app.services.audit import record_edit
+from app.services.erasure import erase_meeting
+from app.services.export import filename as export_filename
+from app.services.export import to_json, to_markdown, to_txt
 from app.services.idempotency.service import IdempotencyService
+from app.services.meeting_export import build_meeting_export
 from app.services.storage import FileTooLargeError, Storage, get_storage
 
 router = APIRouter(
@@ -280,8 +285,9 @@ def create_meeting(
         ) from exc
 
     try:
+        settings = get_settings()
         now = datetime.now(UTC)
-        retention_until = now + timedelta(days=30)
+        retention_until = now + timedelta(days=settings.AUDIO_RETENTION_DAYS)
         meeting_title = (
             title.strip() if title and title.strip() else (file.filename or "Cuộc họp mới")
         )
@@ -380,6 +386,19 @@ def create_meeting(
                 response_body=response_data,
             )
         db.commit()
+        logger.info(
+            "Job %s đã được tạo cho cuộc họp %s",
+            job.id,
+            meeting.id,
+            extra={
+                "event": "job_created",
+                "job_id": job.id,
+                "meeting_id": meeting.id,
+                "stage": job.stage,
+                "attempt": job.attempt,
+                "status": "queued",
+            },
+        )
     except Exception:
         db.rollback()
         storage.delete_meeting_files(meeting_id)
@@ -627,43 +646,13 @@ def delete_meeting(
     storage: Annotated[Storage, Depends(get_storage)],
 ) -> Response:
     """Xóa cuộc họp cùng file audio, artifacts và toàn bộ dữ liệu liên quan."""
-    meeting = db.execute(select(Meeting).where(Meeting.id == meeting_id)).scalar_one_or_none()
-    if not meeting or meeting.owner_id != current_user.id:
-        raise APIError(
-            code="MEETING_NOT_FOUND",
-            message="Không tìm thấy cuộc họp được yêu cầu.",
-            status_code=status.HTTP_404_NOT_FOUND,
-        )
-
-    # 1. Chuyển trạng thái các job đang active sang cancelled
-    active_jobs = (
-        db.execute(
-            select(Job).where(
-                Job.meeting_id == meeting.id,
-                Job.status.in_(["queued", "running", "retry_scheduled"]),
-            )
-        )
-        .scalars()
-        .all()
+    erase_meeting(
+        db=db,
+        storage=storage,
+        meeting_id=meeting_id,
+        current_user_id=current_user.id,
     )
-    for aj in active_jobs:
-        aj.status = "cancelled"
-        aj.updated_at = datetime.now(UTC)
-    if active_jobs:
-        db.commit()
-
-    # 2. Xóa audio và artifacts trên đĩa
-    storage.delete_meeting_files(meeting_id)
-
-    # 3. Xóa cuộc họp và các bảng liên quan khỏi DB
-    db.delete(meeting)
-    db.flush()
-    db.execute(delete(EditEvent).where(EditEvent.meeting_id == meeting_id))
-    db.commit()
-
-    # 4. Ghi log chỉ với meeting_id (bảo mật PRIV-12, không ghi tiêu đề hay nội dung)
     logger.info("Đã xóa cuộc họp: meeting_id=%s", meeting_id)
-
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -699,6 +688,7 @@ def stream_file_range(file_path: Path, start: int, length: int, chunk_size: int 
         200: {"description": "Toàn bộ luồng tệp âm thanh"},
         206: {"description": "Một phần tệp âm thanh theo HTTP Range"},
         404: {"model": ErrorResponse, "description": "Không tìm thấy cuộc họp hoặc tệp âm thanh"},
+        410: {"model": ErrorResponse, "description": "Tệp âm thanh đã hết hạn lưu trữ"},
         416: {"model": ErrorResponse, "description": "Khoảng dữ liệu Range không hợp lệ"},
     },
     summary="Phát luồng dữ liệu âm thanh cuộc họp hỗ trợ HTTP Range",
@@ -726,6 +716,18 @@ def get_meeting_audio(
             status_code=status.HTTP_404_NOT_FOUND,
         )
 
+    now_utc = datetime.now(UTC)
+    retention_ts = meeting.retention_until
+    if retention_ts is not None and retention_ts.tzinfo is None:
+        retention_ts = retention_ts.replace(tzinfo=UTC)
+
+    if retention_ts is not None and now_utc >= retention_ts:
+        raise APIError(
+            code="AUDIO_EXPIRED",
+            message="Tệp âm thanh đã hết hạn lưu trữ và đã được dọn dẹp.",
+            status_code=status.HTTP_410_GONE,
+        )
+
     if not meeting.audio_path:
         raise APIError(
             code="NOT_FOUND",
@@ -743,6 +745,12 @@ def get_meeting_audio(
             audio_path = fallback_path
 
     if not audio_path.is_file():
+        if retention_ts is not None and now_utc >= retention_ts:
+            raise APIError(
+                code="AUDIO_EXPIRED",
+                message="Tệp âm thanh đã hết hạn lưu trữ và đã được dọn dẹp.",
+                status_code=status.HTTP_410_GONE,
+            )
         raise APIError(
             code="NOT_FOUND",
             message="Không tìm thấy tệp âm thanh trên hệ thống lưu trữ.",
@@ -2239,6 +2247,19 @@ def retry_meeting_job(
 
     try:
         db.commit()
+        logger.info(
+            "Job %s đã được tạo lại cho cuộc họp %s",
+            new_job.id,
+            meeting.id,
+            extra={
+                "event": "job_created",
+                "job_id": new_job.id,
+                "meeting_id": meeting.id,
+                "stage": new_job.stage,
+                "attempt": new_job.attempt,
+                "status": "queued",
+            },
+        )
     except IntegrityError as exc:
         db.rollback()
         if idempotency_service and idem_res and idem_res.record_id:
@@ -2361,6 +2382,14 @@ def list_meeting_edits(
     "/{meeting_id}/export",
     status_code=status.HTTP_200_OK,
     responses={
+        status.HTTP_200_OK: {
+            "description": "Nội dung biên bản cuộc họp",
+            "content": {
+                "text/plain": {"schema": {"type": "string"}},
+                "text/markdown": {"schema": {"type": "string"}},
+                "application/json": {"schema": {"type": "string"}},
+            },
+        },
         404: {"model": ErrorResponse, "description": "Không tìm thấy cuộc họp"},
         409: {
             "model": ErrorResponse,
@@ -2375,38 +2404,48 @@ def list_meeting_edits(
 )
 def export_meeting(
     meeting_id: str = FastApiPath(..., description="UUID của cuộc họp"),
-    format: Annotated[str, Query(description="Định dạng xuất: txt, json, md, docx")] = "txt",
+    format: Annotated[str, Query(description="Định dạng xuất: txt, json, md")] = "txt",
     variant: Annotated[
         str, Query(description="Biến thể nội dung: current hoặc ai_original")
     ] = "current",
+    current_user: CurrentUser = None,
+    db: Annotated[Session, Depends(get_db)] = None,
 ) -> Response:
     """Xuất biên bản cuộc họp dưới định dạng mong muốn."""
     fmt = format.lower()
-    if fmt not in ("txt", "json", "md", "docx"):
+    if fmt not in ("txt", "json", "md"):
         raise APIError(
             code="FORMAT_NOT_SUPPORTED",
             message=f"Định dạng xuất '{format}' không được hỗ trợ.",
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         )
 
-    if "not-ready" in meeting_id.lower():
+    var = variant.lower()
+    if var not in ("current", "ai_original"):
         raise APIError(
-            code="TRANSCRIPT_NOT_READY",
-            message="Transcript chưa sẵn sàng để xuất dữ liệu.",
-            status_code=status.HTTP_409_CONFLICT,
+            code="FORMAT_NOT_SUPPORTED",
+            message=f"Biến thể nội dung '{variant}' không được hỗ trợ.",
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         )
+
+    meeting_export = build_meeting_export(db, meeting_id, current_user.id)
 
     media_types = {
         "txt": "text/plain; charset=utf-8",
         "md": "text/markdown; charset=utf-8",
         "json": "application/json; charset=utf-8",
-        "docx": ("application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
     }
 
-    content = f"# Biên bản cuộc họp {meeting_id}\nBiến thể: {variant}\n"
-    filename = f"meeting_{meeting_id}_{variant}.{fmt}"
+    if fmt == "txt":
+        content_bytes = to_txt(meeting_export, variant=var)
+    elif fmt == "md":
+        content_bytes = to_markdown(meeting_export, variant=var)
+    else:
+        content_bytes = to_json(meeting_export, variant=var)
+
+    download_name = export_filename(meeting_export, fmt)
     return Response(
-        content=content.encode("utf-8"),
-        media_type=media_types.get(fmt, "application/octet-stream"),
-        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{filename}"},
+        content=content_bytes,
+        media_type=media_types[fmt],
+        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{download_name}"},
     )
