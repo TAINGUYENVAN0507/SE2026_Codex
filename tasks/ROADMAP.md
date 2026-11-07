@@ -1,6 +1,6 @@
 # Kế hoạch còn lại
 
-> Cập nhật 2026-11-06, code tại `53f753b`. Nhóm trưởng cập nhật file này mỗi khi phân công.
+> Cập nhật 2026-11-07. Trạng thái bên dưới đọc từ code tại `53f753b` (2026-11-06); các dòng ✓ mới thêm ghi PR kèm theo. Nhóm trưởng cập nhật file này mỗi khi phân công.
 
 ## Tiếp tục vào ngày sau
 
@@ -83,7 +83,7 @@ Hiện trạng đọc từ code tại `53f753b`. ✓ đã có · ◐ một phầ
 | Xóa được cả tài khoản | ✗ Không có endpoint | BE-18 | B, A | 2 |
 | Log không giữ dữ liệu cá nhân | ◐ Cần test canary trên cả 3 tầng | BE-18, BE-19, AI-18 | B, C | 1 |
 | Adapter cho bên thứ ba | ✓ `engines/`, `llm/` có interface và bản fake | | C | |
-| Có cơ chế cưỡng chế boundary | ✗ Chỉ ghi trong tài liệu; `models.py:109` dùng API private của SDK | AI-17 | C | 1 |
+| Có cơ chế cưỡng chế boundary | ✓ Test AST, `docs/pipeline/AI-17.md` | AI-17 | C | 1 |
 | Tách controller quá lớn | ✗ `meetings.py` 2412 dòng, 18 route, `serialize_job` lặp với `jobs.py` | Tách từng phần, không đổi hành vi | B | 2, 3 |
 | ADR | ◐ Mới có `0001-asr.md` | `docs/adr/0002-*` | C | 3 |
 
@@ -92,21 +92,21 @@ Hiện trạng đọc từ code tại `53f753b`. ✓ đã có · ◐ một phầ
 | Yêu cầu | Hiện trạng | Việc | Owner | Đợt |
 |---|---|---|---|---|
 | Job chạy nền, poll trạng thái | ✓ `POST /meetings`, `GET /jobs/{id}`, poll 2 s | | | |
-| Retry không tạo bản ghi trùng | ✗ Đã tái hiện: job mới làm segment từ 6 thành 12 | BE-17 | C | 1 |
-| Tiến độ không tụt | ✗ Đã tái hiện: 0.333 xuống 0.05 | BE-17 | C | 1 |
-| Có thời gian bắt đầu và kết thúc | ✗ Luôn `null` ở 3 chỗ | BE-17 | C | 1 |
-| Giao diện hiện tiến độ | ◐ Có stepper; không hiện `job.progress` | FE-20 | A | 1 |
-| Test pairwise | ✗ | Đợt 2, commit 1 | C | 2 |
-| Mutation `>` thành `>=` có test bắt được | ✗ | Đợt 2, commit 2–3 | C | 2 |
-| Coverage, flaky | ✗ Chưa có `pytest-cov` | Đợt 2, commit 5 | C | 2 |
-| Tải 40 đồng thời, p95 ≤ 1.5 s | ✗ Không có harness | AI-19 | C | 2 |
-| README chạy test của bài | ✗ | Đợt 2, commit 5 | C | 2 |
+| Retry không tạo bản ghi trùng | ✓ PR #35 (chờ B review) | BE-17 | C | 1 |
+| Tiến độ không tụt | ✓ PR #35 | BE-17 | C | 1 |
+| Có thời gian bắt đầu và kết thúc | ✓ PR #35 | BE-17 | C | 1 |
+| Giao diện hiện tiến độ | ✓ PR #34 | FE-20 | A | 1 |
+| Test pairwise | ✓ `docs/evidence/vt-018/pairwise.md` | Đợt 2, commit 1 | C | 2 |
+| Mutation `>` thành `>=` có test bắt được | ✓ `mutation.md` | Đợt 2, commit 2–3 | C | 2 |
+| Coverage, flaky | ✓ `docs/evidence/vt-018/README.md` | Đợt 2, commit 5 | C | 2 |
+| Tải 40 đồng thời, p95 ≤ 1.5 s | ✓ p95 0,67 s, 0 lỗi (một lần đo, pipeline fake) | AI-19 | C | 2 |
+| README chạy test của bài | ✓ | Đợt 2, commit 5 | C | 2 |
 
 ## Lịch
 
 Đợt 1 là `tasks/2026-11-06/`. Các đợt sau chưa gắn ngày; tạo file phân công khi tới lượt.
 
-### Đợt 2
+### Đợt 2 (giao ngày 2026-11-07: `tasks/2026-11-07/`; phần C đã xong)
 
 | Member | Commit | Việc |
 |---|---|---|
@@ -135,6 +135,10 @@ Hiện trạng đọc từ code tại `53f753b`. ✓ đã có · ◐ một phầ
 | C | ADR `0002` (adapter boundary và xóa dữ liệu); đo tải ở 239 và 247; đồng bộ `README.md`, `structure/`, `rules/` với hiện trạng; DER nếu có SH-01 |
 
 ## Việc treo
+
+- Merge PR #33 (B) và #34 (A) vào `main`: nhóm trưởng đã review, CI xanh, gộp thử hai bên xanh; chưa merge. Đợt 2 của A và B chờ việc này.
+- PR #35 chờ B review (VT-018 cấm merge khi chưa review).
+- BT3 Bước 0 (plan AI, test AI thô) chưa làm.
 
 - SH-01: chưa có bản ghi âm họp thật. AI-12 phần thu thật, AI-14, benchmark trên audio họp phụ thuộc vào đây.
 - Quyết định về Claude API với audio họp thật và ngân sách API.

@@ -40,14 +40,14 @@ git switch -c tainguyen-vt018 origin/main   # không đặt tainguyen/vt018 đư
 git rev-parse HEAD                          # baseline, ghi vào dòng dưới
 ```
 
-- **Baseline:** *(điền hash)*
+- **Baseline:** `adacad9`
 - [ ] Dùng coding agent lập implementation plan **trước khi code**. Lưu prompt, assumptions, danh sách file dự định đổi và output thô vào `reports/bt3/` (cá nhân, không commit).
 - [ ] Review plan bằng repo thật. Ghi ít nhất 2 điểm sửa hoặc bác bỏ kèm file và dòng làm bằng chứng.
 - [ ] Cho AI sinh test cases. Lưu bản thô, sau đó xóa hoặc sửa ít nhất 2 test yếu hoặc trùng và ghi lý do. Việc này là yêu cầu bắt buộc của đề, nên phải có bản thô để đối chiếu.
 
 ## 5 commit
 
-### 1. [ ] Test đỏ: rerun và tiến độ (BE-17, VT-018) · nhánh `tainguyen-vt018`
+### 1. [x] Test đỏ: rerun và tiến độ (BE-17, VT-018) · nhánh `tainguyen-vt018`
 
 - **Việc:** thêm `backend/tests/unit/test_vt018_rerun_progress.py`:
   - `test_vt018_second_job_keeps_one_segment_set`: job 2 của cùng meeting không làm tăng số segment, không lặp `idx`;
@@ -62,9 +62,9 @@ git rev-parse HEAD                          # baseline, ghi vào dòng dưới
   (cd backend && uv run pytest --runxfail tests/unit/test_vt018_rerun_progress.py) 2>&1 | tee docs/evidence/vt-018/01-red.log
   ```
 - **Message:** `test(worker): reproduce duplicate rows and regressing progress on rerun (BE-17, VT-018)`
-- **Hash:**
+- **Hash:** `0722b05`
 
-### 2. [ ] Patch: job mới thay transcript cũ, có unique ở DB (BE-17, VT-018) · nhánh `tainguyen-vt018`
+### 2. [x] Patch: job mới thay transcript cũ, có unique ở DB (BE-17, VT-018) · nhánh `tainguyen-vt018`
 
 - **Việc:**
   - `persist_transcript`: job mới của meeting đã có segment thì xóa bộ cũ và ghi bộ mới trong cùng transaction. Speaker không còn trong transcript mới cũng xóa.
@@ -76,9 +76,9 @@ git rev-parse HEAD                          # baseline, ghi vào dòng dưới
   - Workdir theo từng job (`artifacts/{meeting}/{job}`), nên job mới `from_stage=asr` thực ra chạy lại từ `preprocess`. Không cần sửa hôm nay, nhưng khởi tạo progress phải đúng với việc này.
 - **Xong khi:** bỏ `xfail` của 2 test tương ứng; test xanh; log ở `docs/evidence/vt-018/02-green-rerun.log`; đã đọc lại toàn bộ diff.
 - **Message:** `fix(worker): a new job replaces the previous transcript instead of duplicating it (BE-17, VT-018)`
-- **Hash:**
+- **Hash:** `abe2205`
 
-### 3. [ ] Patch: tiến độ không tụt, thời gian job là thật (BE-17, VT-018) · nhánh `tainguyen-vt018`
+### 3. [x] Patch: tiến độ không tụt, thời gian job là thật (BE-17, VT-018) · nhánh `tainguyen-vt018`
 
 - **Việc:**
   - `handle_progress` (`runner.py:305`) không ghi giá trị nhỏ hơn progress hiện tại.
@@ -86,9 +86,9 @@ git rev-parse HEAD                          # baseline, ghi vào dòng dưới
   - Sửa cả 3 chỗ trả `None`: `jobs.py:78`, `meetings.py:453`, `meetings.py:2087`. Không đổi schema, nên `contracts/openapi.json` phải giữ nguyên: kiểm bằng test drift.
 - **Xong khi:** bỏ `xfail` còn lại; toàn bộ `uv run pytest` xanh; log ở `docs/evidence/vt-018/03-green-progress.log`.
 - **Message:** `fix(worker): progress never goes backwards and job timestamps are real (BE-17, VT-018)`
-- **Hash:**
+- **Hash:** `5112afb`
 
-### 4. [ ] Test khóa adapter boundary (AI-17, AD-018) · nhánh `tainguyen`
+### 4. [x] Test khóa adapter boundary (AI-17, AD-018) · nhánh `tainguyen`
 
 Hiện ranh giới chỉ ghi trong `structure/architecture.md`, không có gì chặn. `models.py:109` còn import `faster_whisper.utils._MODELS`, là API private của SDK, nằm ngoài `engines/`.
 
@@ -101,9 +101,9 @@ Hiện ranh giới chỉ ghi trong `structure/architecture.md`, không có gì c
   - Viết `docs/pipeline/AI-17.md`: bảng dịch vụ, adapter, bản fake, dữ liệu gửi đi, test bảo vệ.
 - **Xong khi:** thêm thử `import anthropic` vào `stages/` thì test đỏ, gỡ ra thì xanh; ghi kết quả vào `docs/pipeline/AI-17.md`.
 - **Message:** `test(pipeline,backend): adapter boundary enforced by an import check (AI-17, AD-018)`
-- **Hash:**
+- **Hash:** `09364f2`
 
-### 5. [ ] Pipeline ghi sự kiện có cấu trúc (AI-18, RE-018) · nhánh `tainguyen`
+### 5. [x] Pipeline ghi sự kiện có cấu trúc (AI-18, RE-018) · nhánh `tainguyen`
 
 - **Việc:**
   - `runner.py` ghi `stage_started`, `stage_finished`, `stage_failed`, `stage_skipped`, `stage_fallback` qua `log.info(..., extra=...)` với các field chung ở `tasks/ROADMAP.md`, mục Field log.
@@ -113,7 +113,7 @@ Hiện ranh giới chỉ ghi trong `structure/architecture.md`, không có gì c
   - test với fake pipeline: `ok` có đủ start và finish cho 6 stage kèm `duration_sec`; `permanent` có `stage_failed` kèm `error_code`; `diarize_fail` có `stage_fallback`;
   - canary `CANARY_TRANSCRIPT_7f3a` không có trong log (PRIV-10).
 - **Message:** `feat(pipeline): structured stage events with job id, duration and error code (AI-18, RE-018)`
-- **Hash:**
+- **Hash:** `72660e6`
 
 ## Việc của nhóm trưởng (không phải commit)
 
@@ -122,6 +122,13 @@ Hiện ranh giới chỉ ghi trong `structure/architecture.md`, không có gì c
 - [ ] Giữ `meetings.py` tại `53f753b` làm mốc phân tích cho AD-018. B sẽ đổi file này, nên mọi trích dẫn phải ghi hash.
 - [ ] SH-01: tổ chức buổi ghi âm pilot (vẫn chưa có). AI-12 phần thu thật, AI-14 và benchmark trên audio họp đang chờ dữ liệu này.
 - [ ] Quyết định có dùng Claude API với audio họp thật không (cần consent theo phiếu) và ngân sách API.
+
+## Kết quả (ghi ngày 2026-11-07)
+
+- Commit 1–3 nằm ở PR #35 (`tainguyen-vt018`), **chưa merge**: chờ B review theo yêu cầu VT-018. CI xanh.
+- Commit 4–5 trên `tainguyen`.
+- Bước 0 (plan AI, test AI thô, bác bỏ ≥ 2 điểm, xóa/sửa ≥ 2 test yếu) là việc của nhóm trưởng, nằm ở `reports/bt3/`, **chưa làm**: phải có trước khi nộp BT3.
+- Test local có 6 lỗi `AUDIO_INVALID` do máy có `ffprobe` thật; CI xanh. Không liên quan tới thay đổi này.
 
 ## Cuối ngày
 
