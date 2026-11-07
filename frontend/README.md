@@ -20,6 +20,7 @@ Giao diện graphite/cam được triển khai từ bộ ảnh đã duyệt, g�
 - `/meetings/sprint-42`: cuộc họp mẫu đầy đủ để thử player và chỉnh sửa.
 - `/meetings/:meetingId`: chi tiết cuộc họp từ API.
 - `/meetings/:meetingId/processing`: theo dõi sáu bước xử lý, tách khỏi trang đọc transcript.
+- `/settings`: thông tin tài khoản và chuẩn bị xóa tài khoản. Nút xóa chỉ bật khi OpenAPI có `DELETE /auth/me`; hiện chờ B, chưa có E2E xóa tài khoản thật.
 
 `/meetings/sprint-42` vẫn là trang mẫu trong React Context. Danh sách,
 upload và transcript của các cuộc họp khác dùng API. Khi chạy dev, MSW bật

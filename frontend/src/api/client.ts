@@ -89,6 +89,26 @@ export function getMe(): Promise<UserSession> {
   return unwrap(client.GET('/auth/me'))
 }
 
+export async function deleteAccount(): Promise<void> {
+  // FE-19: contract hiện chưa có DELETE; bỏ fetch tạm này khi B sinh type cho endpoint.
+  try {
+    const response = await fetch(
+      new URL('/api/v1/auth/me', window.location.origin),
+      {
+        method: 'DELETE',
+        credentials: 'include',
+      },
+    )
+    if (!response.ok) {
+      if (response.status === 401) notifySessionExpired()
+      throw await parseApiError(response)
+    }
+  } catch (error) {
+    if (error instanceof ApiError) throw error
+    throw toNetworkError()
+  }
+}
+
 export function listEdits(meetingId: string, page = 1, entityType?: string) {
   return unwrap(
     client.GET('/meetings/{meeting_id}/edits', {

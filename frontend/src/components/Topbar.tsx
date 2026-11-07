@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useMe } from '../features/auth/useMe'
 import { useEndSession } from '../features/auth/useEndSession'
 import { logout } from '../api/client'
+import { GearSixIcon } from '@phosphor-icons/react/dist/csr/GearSix'
 
 export function Topbar() {
   const me = useMe()
@@ -34,6 +35,14 @@ export function Topbar() {
         </nav>
       </div>
       <div className="top-right">
+        <NavLink
+          to="/settings"
+          className="icon-button settings-link"
+          aria-label="Cài đặt tài khoản"
+          title="Cài đặt tài khoản"
+        >
+          <GearSixIcon size={20} />
+        </NavLink>
         <span className="avatar dark">
           {name
             .split(/\s+/)

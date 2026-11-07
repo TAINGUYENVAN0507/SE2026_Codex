@@ -1,10 +1,21 @@
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vitest/config'
 import { loadEnv } from 'vite'
+import { readFileSync } from 'node:fs'
 import { createDevProxy } from './src/api/proxyConfig.js'
+
+// FE-19: chỉ bật thao tác xóa khi contract của B đã công bố endpoint.
+const apiContract = JSON.parse(
+  readFileSync(new URL('../contracts/openapi.json', import.meta.url), 'utf8'),
+) as { paths?: Record<string, { delete?: unknown }> }
 
 export default defineConfig(({ mode }) => ({
   plugins: [react()],
+  define: {
+    __ACCOUNT_DELETION_AVAILABLE__: JSON.stringify(
+      Boolean(apiContract.paths?.['/api/v1/auth/me']?.delete),
+    ),
+  },
   server: {
     proxy: createDevProxy(loadEnv(mode, process.cwd(), 'VITE_')),
   },

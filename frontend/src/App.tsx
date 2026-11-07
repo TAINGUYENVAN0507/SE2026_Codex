@@ -9,6 +9,7 @@ import { MeetingListPage } from './pages/MeetingListPage'
 import { NewMeetingPage } from './pages/NewMeetingPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { SessionEvents } from './features/auth/SessionEvents'
+import { SettingsPage } from './pages/SettingsPage'
 
 export default function App() {
   return (
@@ -21,6 +22,7 @@ export default function App() {
             <Route index element={<Navigate to="/meetings" replace />} />
             <Route path="/meetings" element={<MeetingListPage />} />
             <Route path="/meetings/new" element={<NewMeetingPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
             <Route
               path="/meetings/:meetingId/processing"
               element={<MeetingProcessingPage />}
