@@ -56,7 +56,7 @@ def get_job(
         JobErrorOut(
             code=job.error_code,
             message=job.error_message or "",
-            retryable=job.attempt < job.max_attempts,
+            retryable=job.can_retry,
             stage=job.stage,
         )
         if job.error_code
