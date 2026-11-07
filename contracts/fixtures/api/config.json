@@ -13,8 +13,7 @@
   "export_formats": [
     "txt",
     "json",
-    "md",
-    "docx"
+    "md"
   ],
   "llm_enabled": true
 }

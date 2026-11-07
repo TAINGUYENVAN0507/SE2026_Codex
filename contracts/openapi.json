@@ -154,6 +154,29 @@
             }
           }
         }
+      },
+      "delete": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Xóa tài khoản người dùng và toàn bộ dữ liệu thuộc sở hữu",
+        "description": "Xóa tài khoản người dùng, toàn bộ cuộc họp, file và session cookie.",
+        "operationId": "delete_me_api_v1_auth_me_delete",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Chưa đăng nhập hoặc session đã hết hạn",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/config": {

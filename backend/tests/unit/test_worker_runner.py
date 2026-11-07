@@ -20,6 +20,7 @@ from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from app.core.metrics import PIPELINE_STAGE_DURATION_SECONDS
 from app.db.base import Base
 from app.db.models.action_item import ActionItem
 from app.db.models.ai_output import AIOutput
@@ -186,6 +187,16 @@ def test_worker_run_queued_job_to_succeeded(
         .all()
     )
     assert len(action_items) > 0
+
+    # Kiểm tra metric thời lượng stage được ghi nhận từ outcome.timings (BE-19)
+    samples = PIPELINE_STAGE_DURATION_SECONDS.collect()[0].samples
+    stage_counts = {
+        s.labels.get("stage"): s.value
+        for s in samples
+        if s.name == "pipeline_stage_duration_seconds_count"
+    }
+    for stg in expected_stages:
+        assert stage_counts.get(stg, 0) >= 1.0
 
 
 def test_worker_run_empty_queue(

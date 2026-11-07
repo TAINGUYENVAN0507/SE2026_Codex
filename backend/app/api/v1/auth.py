@@ -12,6 +12,8 @@ from app.db.models.user import User
 from app.db.session import get_db
 from app.schemas.auth import LoginRequest, LoginResponse, UserMeOut, UserOut
 from app.schemas.common import ErrorResponse
+from app.services.erasure import erase_user
+from app.services.storage import Storage, get_storage
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -99,3 +101,32 @@ def get_me(current_user: CurrentUser) -> UserMeOut:
             display_name=current_user.display_name,
         )
     )
+
+
+@router.delete(
+    "/me",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={
+        401: {
+            "model": ErrorResponse,
+            "description": "Chưa đăng nhập hoặc session đã hết hạn",
+        },
+    },
+    summary="Xóa tài khoản người dùng và toàn bộ dữ liệu thuộc sở hữu",
+)
+def delete_me(
+    current_user: CurrentUser,
+    db: Annotated[Session, Depends(get_db)],
+    storage: Annotated[Storage, Depends(get_storage)],
+) -> Response:
+    """Xóa tài khoản người dùng, toàn bộ cuộc họp, file và session cookie."""
+    erase_user(db=db, storage=storage, user_id=current_user.id)
+    settings = get_settings()
+    res = Response(status_code=status.HTTP_204_NO_CONTENT)
+    res.delete_cookie(
+        key="session_token",
+        httponly=True,
+        samesite="lax",
+        secure=(settings.ENVIRONMENT == "production"),
+    )
+    return res
