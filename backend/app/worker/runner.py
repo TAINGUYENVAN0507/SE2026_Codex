@@ -407,7 +407,7 @@ def process_job(
             job.max_attempts,
         )
         current_time = get_now()
-        if job.attempt < job.max_attempts:
+        if job.can_retry:
             delay_sec = compute_backoff_delay(job.attempt)
             next_run = current_time + timedelta(seconds=delay_sec)
             schedule_retry(

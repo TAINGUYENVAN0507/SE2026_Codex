@@ -1,6 +1,7 @@
 """Cấu hình kết nối và session database SQLAlchemy 2."""
 
 from collections.abc import Generator
+from functools import lru_cache
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
@@ -8,14 +9,17 @@ from sqlalchemy.orm import Session, sessionmaker
 from app.core.config import get_settings
 
 
+@lru_cache
+def _engine_for(url: str):
+    # Một engine (một pool) cho mỗi URL trong suốt vòng đời process. Trước đây mỗi request tạo
+    # engine mới và không đóng, nên 40 request đồng thời cạn max_connections của Postgres.
+    # pool_pre_ping để tự reconnect khi connection bị ngắt.
+    return create_engine(url, pool_pre_ping=True)
+
+
 def get_engine():
-    """Tạo hoặc lấy SQLAlchemy engine từ DATABASE_URL trong settings."""
-    settings = get_settings()
-    # Cấu hình pool_pre_ping để tự động reconnect khi connection bị ngắt
-    return create_engine(
-        settings.DATABASE_URL,
-        pool_pre_ping=True,
-    )
+    """Lấy SQLAlchemy engine dùng chung theo DATABASE_URL trong settings."""
+    return _engine_for(get_settings().DATABASE_URL)
 
 
 def get_session_factory(engine=None):
