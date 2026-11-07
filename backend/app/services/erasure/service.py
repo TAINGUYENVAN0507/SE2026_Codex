@@ -22,6 +22,7 @@ from app.db.models.edit_event import EditEvent
 from app.db.models.idempotency import IdempotencyKey
 from app.db.models.job import Job
 from app.db.models.meeting import Meeting
+from app.db.models.user import User
 from app.services.storage import Storage
 
 logger = logging.getLogger("backend.services.erasure")
@@ -107,3 +108,36 @@ def erase_meeting(
 
     # 5. Ghi log bảo mật: chỉ ghi ID, không ghi tiêu đề, tên file, nội dung (PRIV-12, PRIV-10)
     logger.info("Đã xóa cuộc họp: meeting_id=%s", meeting_id)
+
+
+def erase_user(
+    db: Session,
+    storage: Storage,
+    user_id: str,
+) -> None:
+    """Xóa hoàn toàn tài khoản người dùng và toàn bộ dữ liệu thuộc sở hữu (BE-18).
+
+    Bao gồm:
+    - Xóa toàn bộ cuộc họp thuộc sở hữu của người dùng (audio, artifacts, jobs, segments, summary).
+    - Xóa các bản ghi idempotency_keys của người dùng.
+    - Xóa bản ghi người dùng khỏi cơ sở dữ liệu.
+    - Ghi log bảo mật: chỉ ghi ID (PRIV-10).
+    """
+    user = db.execute(select(User).where(User.id == user_id)).scalar_one_or_none()
+    if not user:
+        return
+
+    # 1. Tìm và xóa toàn bộ cuộc họp của người dùng
+    user_meetings = db.execute(select(Meeting).where(Meeting.owner_id == user_id)).scalars().all()
+    for m in user_meetings:
+        erase_meeting(db=db, storage=storage, meeting_id=m.id, current_user_id=user_id)
+
+    # 2. Xóa toàn bộ idempotency_keys của người dùng
+    db.execute(delete(IdempotencyKey).where(IdempotencyKey.user_id == user_id))
+
+    # 3. Xóa người dùng
+    db.delete(user)
+    db.commit()
+
+    # 4. Ghi log bảo mật: chỉ ghi user_id
+    logger.info("Đã xóa tài khoản người dùng: user_id=%s", user_id)
