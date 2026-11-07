@@ -104,16 +104,9 @@ class ModelSpec:
     gated: bool
 
 
-def asr_repo(model: str) -> str:
-    """Repo Hugging Face của model faster-whisper (`large-v3-turbo` → repo của nó)."""
-    from faster_whisper.utils import _MODELS
-
-    return _MODELS.get(model, model)
-
-
 def model_specs() -> list[ModelSpec]:
     from meeting_pipeline.engines.pyannote import PyannoteConfig
-    from meeting_pipeline.engines.whisper import WhisperConfig
+    from meeting_pipeline.engines.whisper import WhisperConfig, asr_repo
 
     asr = WhisperConfig.from_env().model
     diarize = PyannoteConfig.from_env().model

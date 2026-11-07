@@ -56,6 +56,16 @@ class WhisperConfig:
         )
 
 
+def asr_repo(model: str) -> str:
+    """Repo Hugging Face của model faster-whisper (`large-v3-turbo` → repo của nó).
+
+    Nằm ở adapter vì `_MODELS` là API private của SDK; ranh giới được test khóa (AI-17).
+    """
+    from faster_whisper.utils import _MODELS
+
+    return _MODELS.get(model, model)
+
+
 def preload_cuda_libs() -> None:
     """Nạp cuBLAS và cuDNN từ wheel `nvidia-*` để CTranslate2 tìm thấy.
 

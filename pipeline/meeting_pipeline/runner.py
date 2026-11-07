@@ -191,6 +191,37 @@ class PipelineOutcome:
     timings: dict[Stage, float]
 
 
+def _event(
+    name: str,
+    spec: JobSpec,
+    stage: Stage,
+    *,
+    status: str | None = None,
+    error_code: str | None = None,
+    duration_sec: float | None = None,
+    level: int = logging.INFO,
+) -> None:
+    """Ghi một sự kiện có cấu trúc (AI-18), field theo `tasks/ROADMAP.md` mục Field log.
+
+    Chỉ có id, tên stage, mã lỗi và số: không có text transcript, tiêu đề hay đường dẫn,
+    để lọc theo `job_id` mà không làm lộ nội dung cuộc họp (PRIV-10).
+    """
+    fields: dict[str, object] = {
+        "event": name,
+        "job_id": spec.job_id,
+        "meeting_id": spec.meeting_id,
+        "stage": stage.value,
+        "attempt": spec.attempt,
+    }
+    if status is not None:
+        fields["status"] = status
+    if error_code is not None:
+        fields["error_code"] = error_code
+    if duration_sec is not None:
+        fields["duration_sec"] = duration_sec
+    log.log(level, name, extra=fields)
+
+
 def _noop_progress(stage: Stage, value: float) -> None:
     pass
 
@@ -274,11 +305,13 @@ def run_job(
         if has_valid_artifact(workdir, stage):
             status[stage] = "skipped"
             timings[stage] = 0.0
+            _event("stage_skipped", spec, stage, status="skipped", duration_sec=0.0)
             on_progress(stage, 1.0)
             on_stage_done(stage, artifact_path(workdir, stage))
             continue
 
         started = time.monotonic()
+        _event("stage_started", spec, stage, status="running")
         try:
             _run_stage_subprocess(
                 stage,
@@ -295,14 +328,32 @@ def run_job(
             raise
         except PipelineError as e:
             if stage is not Stage.DIARIZE or (e.retryable and not spec.is_last_attempt):
+                _event(
+                    "stage_failed",
+                    spec,
+                    stage,
+                    status="retry" if e.retryable else "failed",
+                    error_code=e.code.value,
+                    duration_sec=round(time.monotonic() - started, 3),
+                    level=logging.WARNING,
+                )
                 raise
             log.warning("diarization lỗi (%s), dùng fallback 1 speaker", e.code.value)
+            _event(
+                "stage_fallback",
+                spec,
+                stage,
+                status="fallback",
+                error_code=e.code.value,
+                level=logging.WARNING,
+            )
             fallback = diarization_fallback(f"diarization lỗi ({e.code.value}), gộp 1 speaker")
             write_json_atomic(artifact_path(workdir, stage), fallback)
             status[stage] = "fallback"
         finally:
             timings[stage] = round(time.monotonic() - started, 3)
 
+        _event("stage_finished", spec, stage, status=status[stage], duration_sec=timings[stage])
         on_progress(stage, 1.0)
         on_stage_done(stage, artifact_path(workdir, stage))
 
