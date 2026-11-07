@@ -23,8 +23,9 @@ Kế hoạch: [`tasks/ROADMAP.md`](../ROADMAP.md), Đợt 2.
   duyệt ở `.preview-stitch/anh-duyet/2026-11-07/`; không có `pageerror` khi chụp.
 - Local Windows vẫn có log `os.killpg` khi hủy job: đã ghi trong FE-19/checklist
   để C xử lý. Test UI/API đạt không được coi là worker đã cleanup hoàn hảo.
-- Chưa push, mở PR hoặc merge cho đợt này. Năm commit nội dung được ghi dưới
-  từng mục; commit tài liệu sau đó chỉ ghi hash/trạng thái cuối.
+- Đã push `vantuong`, mở [PR #38](https://github.com/TAINGUYENVAN0507/SE2026_Codex/pull/38), chưa merge.
+  CI trên commit cuối đang chờ xác nhận. Năm commit nội dung được ghi dưới
+  từng mục; commit tài liệu sau đó chỉ ghi hash/trạng thái cuối và link PR.
 
 ## Bước 0
 
@@ -67,4 +68,4 @@ Lệnh kiểm tra mỗi commit, trong `frontend/`: `npm run lint && npm run form
 
 ## Cuối ngày
 - [x] Ghi hash và trạng thái local; giữ mục chờ CI/API chưa nghiệm thu.
-- [ ] Push `vantuong`, mở PR vào `main` khi người dùng cho phép. **Không tự merge.**
+- [x] Đã được người dùng cho phép push và mở [PR #38](https://github.com/TAINGUYENVAN0507/SE2026_Codex/pull/38) vào `main`. **Chưa merge.**
