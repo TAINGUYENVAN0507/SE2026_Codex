@@ -8,6 +8,10 @@ FROM node:24-bookworm-slim AS builder
 
 WORKDIR /app
 
+# Copy OpenAPI contract mà vite.config.ts tham chiếu khi build
+COPY contracts/openapi.json /contracts/openapi.json
+COPY contracts/openapi.json ./contracts/openapi.json
+
 # Cài đặt dependency theo layer để tối ưu cache (dùng --legacy-peer-deps cho tương thích React 19)
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci --legacy-peer-deps
