@@ -36,7 +36,11 @@ async function start(page: Page) {
   await page
     .getByRole('button', { name: 'Bắt đầu ghi âm', exact: true })
     .click()
-  await expect(page.getByRole('status')).toContainText('Đang ghi âm', {
+  await expect(
+    page
+      .getByRole('region', { name: 'Ghi âm', exact: true })
+      .getByRole('status'),
+  ).toContainText('Đang ghi âm', {
     timeout: 1_000,
   })
 }
@@ -89,7 +93,11 @@ test('PRIV-03: click bắt đầu chỉ gọi micro một lần, hiện indicato
   expect(await page.evaluate(() => window.recorderProbe.calls)).toBe(1)
   await expect(page.locator('.recorder-panel.recording')).toBeVisible()
   await expect(page.locator('.recorder-time')).not.toHaveText('00:00')
-  await expect(page.getByRole('status')).toHaveAttribute('role', 'status')
+  await expect(
+    page
+      .getByRole('region', { name: 'Ghi âm', exact: true })
+      .getByRole('status'),
+  ).toHaveAttribute('role', 'status')
 })
 
 test('PRIV-04: dừng ghi âm kết thúc mọi track và tắt indicator', async ({
