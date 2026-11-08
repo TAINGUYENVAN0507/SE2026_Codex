@@ -18,6 +18,7 @@ def get_alembic_config(db_url: str) -> Config:
     backend_dir = Path(__file__).resolve().parent.parent
     ini_path = backend_dir / "alembic.ini"
     cfg = Config(str(ini_path))
+    cfg.attributes["skip_logging_config"] = True
     cfg.set_main_option("script_location", str(backend_dir / "alembic"))
     cfg.set_main_option("sqlalchemy.url", db_url)
     return cfg

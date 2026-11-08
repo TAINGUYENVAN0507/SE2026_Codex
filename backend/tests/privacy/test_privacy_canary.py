@@ -155,7 +155,10 @@ def log_capture() -> Generator[io.StringIO, None, None]:
     root_logger = logging.getLogger()
     original_level = root_logger.level
     root_logger.setLevel(logging.DEBUG)
+    root_logger.disabled = False
     root_logger.addHandler(handler)
+    for name in ("backend.worker", "backend.api.meetings", "app.access"):
+        logging.getLogger(name).disabled = False
     try:
         yield stream
     finally:
