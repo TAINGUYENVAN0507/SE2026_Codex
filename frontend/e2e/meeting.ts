@@ -1,11 +1,11 @@
 import { expect, type Page } from '@playwright/test'
 import { syntheticWav } from './audio.js'
 
-export async function uploadMeeting(page: Page, title: string) {
+export async function uploadMeeting(page: Page, title: string, seconds = 4) {
   await page.goto('/meetings/new')
   await page
     .getByLabel('Chọn file audio', { exact: true })
-    .setInputFiles(syntheticWav())
+    .setInputFiles(syntheticWav(seconds))
   await page.getByRole('textbox', { name: 'Tên cuộc họp' }).fill(title)
   await page.getByRole('checkbox').check()
   const created = page.waitForResponse(
