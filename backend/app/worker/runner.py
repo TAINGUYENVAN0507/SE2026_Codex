@@ -413,9 +413,10 @@ def process_job(
 
     except PermanentPipelineError as err:
         logger.error(
-            "Job %s gặp lỗi vĩnh viễn: %s",
+            "Job %s gặp lỗi vĩnh viễn (mã lỗi=%s, stage=%s)",
             job.id,
-            err,
+            err.code.value,
+            err.stage.value if err.stage else job.stage,
             extra={
                 "event": "job_failed",
                 "job_id": job.id,
@@ -441,9 +442,9 @@ def process_job(
             delay_sec = compute_backoff_delay(job.attempt)
             next_run = current_time + timedelta(seconds=delay_sec)
             logger.warning(
-                "Job %s gặp lỗi tạm thời: %s (attempt=%d/%d), lên lịch retry sau %ds",
+                "Job %s gặp lỗi tạm thời (mã lỗi=%s, attempt=%d/%d), lên lịch retry sau %ds",
                 job.id,
-                err,
+                err.code.value,
                 job.attempt,
                 job.max_attempts,
                 delay_sec,
@@ -468,10 +469,10 @@ def process_job(
             )
         else:
             logger.error(
-                "Job %s thất bại vĩnh viễn sau %d lần thử: %s",
+                "Job %s thất bại vĩnh viễn sau %d lần thử (mã lỗi=%s)",
                 job.id,
                 job.max_attempts,
-                err,
+                err.code.value,
                 extra={
                     "event": "job_failed",
                     "job_id": job.id,
@@ -541,9 +542,9 @@ def process_job(
         error_code_val = err.code.value if hasattr(err, "code") else "INTERNAL_ERROR"
         stage_val = getattr(err, "stage", None)
         logger.error(
-            "Job %s gặp lỗi pipeline: %s",
+            "Job %s gặp lỗi pipeline (mã lỗi=%s)",
             job.id,
-            err,
+            error_code_val,
             extra={
                 "event": "job_failed",
                 "job_id": job.id,

@@ -183,14 +183,19 @@ def _assert_no_canaries_in_storage(storage_dir: Path, canaries: list[str]) -> No
     """Quét toàn bộ cây thư mục storage trên đĩa để khẳng định không file nào chứa canary."""
     for p in storage_dir.rglob("*"):
         if p.is_file():
-            try:
-                raw_bytes = p.read_bytes()
-                for canary in canaries:
-                    assert canary.encode("utf-8") not in raw_bytes, (
-                        f"Rò rỉ tệp tin: Canary '{canary}' vẫn còn tồn tại trong tệp '{p}'!"
-                    )
-            except Exception:
-                pass
+            raw_bytes = p.read_bytes()
+            for canary in canaries:
+                assert canary.encode("utf-8") not in raw_bytes, (
+                    f"Rò rỉ tệp tin: Canary '{canary}' vẫn còn tồn tại trong tệp '{p}'!"
+                )
+
+
+def test_storage_scanner_fails_when_canary_present(tmp_path: Path) -> None:
+    """Negative control: khẳng định helper quét storage phát hiện canary và ném lỗi."""
+    leaked_file = tmp_path / "leaked_canary.txt"
+    leaked_file.write_text(f"Dữ liệu nhạy cảm: {CANARY_TITLE}", encoding="utf-8")
+    with pytest.raises(AssertionError, match=f"Canary '{CANARY_TITLE}' vẫn còn tồn tại"):
+        _assert_no_canaries_in_storage(tmp_path, [CANARY_TITLE])
 
 
 def test_privacy_canary_end_to_end_flow(
@@ -227,7 +232,7 @@ def test_privacy_canary_end_to_end_flow(
             channels=1,
             format_name="wav",
         )
-        fake_wav = b"RIFF" + b"\x00" * 200
+        fake_wav = b"RIFF" + b"\x00" * 200 + CANARY_IDEMPOTENCY.encode("utf-8")
         res = client.post(
             "/api/v1/meetings",
             files={"file": ("meeting.wav", fake_wav, "audio/wav")},
@@ -311,6 +316,13 @@ def test_privacy_canary_end_to_end_flow(
     assert seg_in_db is not None
     assert seg_in_db.text == CANARY_TRANSCRIPT_EDIT
 
+    # 6b. Khẳng định tệp âm thanh trên đĩa thực sự tồn tại và chứa canary trước khi xóa
+    audio_path = test_storage.get_audio_path(meeting_id, "wav")
+    assert audio_path.exists(), "Tệp audio phải tồn tại trên đĩa trước khi xóa"
+    assert CANARY_IDEMPOTENCY.encode("utf-8") in audio_path.read_bytes(), (
+        "Canary phải có mặt trong tệp lưu trữ trên đĩa trước khi xóa"
+    )
+
     # 7. Thực hiện xóa toàn bộ cuộc họp qua erase_meeting
     erase_meeting(
         db=test_db,
@@ -359,7 +371,7 @@ def test_privacy_canary_account_erasure_flow(
             channels=1,
             format_name="wav",
         )
-        fake_wav = b"RIFF" + b"\x00" * 128
+        fake_wav = b"RIFF" + b"\x00" * 128 + canary_user_title.encode("utf-8")
         res = client.post(
             "/api/v1/meetings",
             files={"file": ("meeting.wav", fake_wav, "audio/wav")},
@@ -379,6 +391,13 @@ def test_privacy_canary_account_erasure_flow(
     )
     test_db.add(other_meeting)
     test_db.commit()
+
+    # Khẳng định tệp âm thanh của sample_user tồn tại trên đĩa và chứa canary trước khi xóa
+    audio_path_before = test_storage.get_audio_path(meeting_id, "wav")
+    assert audio_path_before.exists()
+    assert canary_user_title.encode("utf-8") in audio_path_before.read_bytes(), (
+        "Canary của người dùng phải tồn tại trên đĩa trước khi xóa tài khoản"
+    )
 
     # Xóa toàn bộ tài khoản sample_user
     erase_user(db=test_db, storage=test_storage, user_id=sample_user.id)
@@ -420,6 +439,7 @@ def test_privacy_canary_worker_internal_failure_does_not_log_error_data(
 ) -> None:
     """Ngoại lệ nội bộ bên trong worker/pipeline không làm rò rỉ dữ liệu canary vào log."""
     canary_error_title = "CANARY_JOB_TITLE_FAILURE_LEAK_CHECK"
+    canary_exception_message = f"Audio format cannot be decoded with secret: {canary_error_title}"
     now = test_db.execute(select(User.created_at)).scalar() or None
     meeting = Meeting(
         id=str(uuid.uuid4()),
@@ -443,12 +463,12 @@ def test_privacy_canary_worker_internal_failure_does_not_log_error_data(
     test_db.add(job)
     test_db.commit()
 
-    # Giả lập pipeline run_job ném PermanentPipelineError
+    # Giả lập pipeline run_job ném PermanentPipelineError với thông điệp chứa canary
     def failing_run_job(*args, **kwargs):
         raise PermanentPipelineError(
             code=ErrorCode.AUDIO_INVALID,
             stage=Stage.ASR,
-            message="Audio format cannot be decoded",
+            message=canary_exception_message,
         )
 
     monkeypatch.setattr("app.worker.runner.run_job", failing_run_job)
@@ -462,10 +482,13 @@ def test_privacy_canary_worker_internal_failure_does_not_log_error_data(
     )
     assert ran is True
 
-    # Kiểm tra log: tiêu đề canary tuyệt đối KHÔNG được ghi vào log
+    # Kiểm tra log: tiêu đề canary và thông điệp ngoại lệ tuyệt đối KHÔNG được ghi vào log
     logs_text = log_capture.getvalue()
     assert canary_error_title not in logs_text, (
         f"Lỗi bảo mật nghiêm trọng: Tiêu đề canary đã in vào log worker!\n{logs_text}"
+    )
+    assert canary_exception_message not in logs_text, (
+        f"Lỗi bảo mật nghiêm trọng: Thông điệp exception canary đã in vào log worker!\n{logs_text}"
     )
 
     # Khẳng định log chứa event job_failed có cấu trúc

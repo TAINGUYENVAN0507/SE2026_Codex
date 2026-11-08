@@ -7,6 +7,7 @@ on:
       - "infra/docker/**"
       - "backend/**"
       - "frontend/**"
+      - "contracts/openapi.json"
       - "pipeline/**"
       - ".dockerignore"
       - ".github/workflows/docker-images.yml"
@@ -16,6 +17,7 @@ on:
       - "infra/docker/**"
       - "backend/**"
       - "frontend/**"
+      - "contracts/openapi.json"
       - "pipeline/**"
       - ".dockerignore"
 
@@ -66,4 +68,6 @@ jobs:
           cache-to: type=gha,mode=max,scope=web
       - name: Kiểm tra kích thước image Web
         run: docker image ls meeting-web:latest
+      - name: Smoke test cấu hình Nginx
+        run: docker run --rm meeting-web:latest nginx -t
 

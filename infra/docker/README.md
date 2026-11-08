@@ -33,8 +33,10 @@ docker build -f infra/docker/api.Dockerfile -t meeting-api .
 docker build -f infra/docker/web.Dockerfile -t meeting-web .
 ```
 
+Builder giữ cấu trúc `/app/frontend` và `/app/contracts/openapi.json` để Vite đọc capability của API đúng như khi chạy từ repo. Contract chỉ nằm ở builder stage; image Nginx cuối chỉ nhận `dist/`. Workflow Docker chạy lại khi OpenAPI đổi.
+
 ### Đặc điểm kỹ thuật:
-- **Giai đoạn Build:** `node:20-bookworm-slim`, cài đặt dependencies bằng `npm ci` và biên dịch qua `vite build` ra thư mục `dist/`.
+- **Giai đoạn Build:** `node:24-bookworm-slim`, cài đặt dependencies bằng `npm ci --legacy-peer-deps` và biên dịch qua `vite build` ra thư mục `dist/`.
 - **Giai đoạn Serve:** `nginx:1.27-alpine` siêu nhẹ.
 - **Cấu hình Nginx (`infra/docker/nginx.conf`):**
   - Phục vụ Single Page Application (SPA) với fallback `try_files $uri $uri/ /index.html`.
