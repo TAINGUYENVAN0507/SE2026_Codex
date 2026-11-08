@@ -61,3 +61,4 @@ git checkout haquang && git fetch origin && git merge origin/main
 ## Cuối ngày
 - [x] Tick và ghi hash. Push `haquang`, mở PR vào `main`. **Không tự merge.**
 - **Commit sửa lỗi CI (BE-18, BE-19):** `1bc65b1` - `fix(backend): prevent alembic migrations from disabling application loggers (BE-18, BE-19)`: Sửa `alembic/env.py`, `conftest.py` và `logging.py` để fileConfig trong migration không vô hiệu hóa loggers của worker/API khi test trên Postgres ở CI.
+- **Commit sửa lỗi CI Docker (BE-16):** `75f987a` - `fix(infra): copy openapi contract for vite build in web dockerfile (BE-16)`: Bổ sung copy contracts/openapi.json vào builder stage của infra/docker/web.Dockerfile để frontend/vite.config.ts đọc contract khi chạy npx vite build trong Docker buildx.
