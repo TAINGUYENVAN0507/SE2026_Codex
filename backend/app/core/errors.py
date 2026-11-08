@@ -6,6 +6,7 @@ from typing import Any
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from sqlalchemy.exc import TimeoutError as PoolTimeoutError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 
@@ -152,9 +153,21 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
     )
 
 
+async def pool_timeout_handler(request: Request, exc: PoolTimeoutError) -> JSONResponse:
+    """Hết kết nối DB trong pool: quá tải tạm thời, client nên thử lại (không phải lỗi 500)."""
+    body = build_error_envelope(
+        code="SERVICE_UNAVAILABLE",
+        message="Hệ thống đang bận. Vui lòng thử lại sau ít giây.",
+        details=None,
+        request_id=get_request_id(request),
+    )
+    return JSONResponse(status_code=503, content=body, headers={"Retry-After": "2"})
+
+
 def setup_exception_handlers(application: FastAPI) -> None:
     """Đăng ký toàn bộ exception handlers cho ứng dụng FastAPI."""
     application.add_exception_handler(APIError, api_error_handler)  # type: ignore[arg-type]
     application.add_exception_handler(StarletteHTTPException, http_exception_handler)  # type: ignore[arg-type]
     application.add_exception_handler(RequestValidationError, validation_exception_handler)  # type: ignore[arg-type]
+    application.add_exception_handler(PoolTimeoutError, pool_timeout_handler)  # type: ignore[arg-type]
     application.add_exception_handler(Exception, unhandled_exception_handler)

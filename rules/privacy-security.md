@@ -55,4 +55,4 @@ Yêu cầu "no secret recording", kiểm chứng bằng PRIV-01…09:
 - Xóa meeting là xóa ngay audio, artifact và các row liên quan. Log của thao tác xóa chỉ ghi ID.
 - Audio tự xóa sau `AUDIO_RETENTION_DAYS` (đề xuất 30 ngày, nhóm chốt).
 - **Thêm chỗ lưu dữ liệu mới** (bảng, thư mục, cache, file log): cập nhật quy trình xóa và test PRIV-13 trong cùng PR.
-- Chính sách dữ liệu đầy đủ: `docs/privacy/data-policy.md` (B viết, chưa có).
+- Chính sách dữ liệu đầy đủ: `docs/privacy/data-policy.md` (B viết).

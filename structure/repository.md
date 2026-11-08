@@ -1,6 +1,6 @@
 # Cấu trúc repository
 
-> Trạng thái ngày 2026-10-25. ✓ đã có trong `main` · ◐ mới có một phần · ○ chưa có, sẽ làm theo kế hoạch.
+> Trạng thái ngày 2026-11-08. ✓ đã có trong `main` · ◐ mới có một phần · ○ chưa có, sẽ làm theo kế hoạch.
 
 ## Cây thư mục cấp cao
 
@@ -17,10 +17,10 @@
 ├── backend/              ✓ B (gồm app/scripts/: create_user.py, seed.py)
 ├── pipeline/             ✓ C
 ├── evaluation/           ✓ C
-├── tests/                ○ B: test liên module (integration, audit, reliability, privacy)
-├── infra/                ◐ docker/worker.Dockerfile ✓ (C, AI-16) · nginx.conf, Dockerfile của api/web ○ (B)
+├── tests/                ○ B: test liên module (hiện nằm trong `backend/tests/`; `tests/privacy`, `tests/reliability` là việc ngày 2026-11-08)
+├── infra/                ✓ docker/: api, web, worker Dockerfile, nginx.conf
 ├── scripts/              ✓ download_models.py (C, AI-16)
-├── docker-compose.yml    ◐ B: đã có db · api, worker, web, docker-compose.gpu.yml ○
+├── docker-compose.yml    ✓ B: db, api, worker, web · docker-compose.gpu.yml ○
 ├── Makefile              ○ B: up, down, test, seed, contract-check, eval-*
 ├── .env.example          ✓ B: chỉ chứa placeholder
 ├── .github/              ✓ workflows: pipeline, evaluation, frontend, backend, contracts, worker-image
@@ -64,10 +64,10 @@ frontend/
 │   ├── components/          # component dùng ở nhiều màn hình: AppShell, Topbar...
 │   ├── pages/               # mỗi route một file: LoginPage, MeetingListPage...
 │   ├── features/<feature>/  # logic và component theo tính năng: audio/, meetings/...
-│   ├── api/                 ○ client và type sinh từ contracts/openapi.json (FE-02)
-│   ├── mocks/               ○ MSW đọc contracts/fixtures/api/ (FE-02)
+│   ├── api/                 ✓ client và type sinh từ contracts/openapi.json (FE-02)
+│   ├── mocks/               ✓ MSW đọc contracts/fixtures/api/ (FE-02)
 │   └── test/setup.ts        # cấu hình Vitest
-├── e2e/                     ○ Playwright: flows/, privacy/ (FE-17)
+├── e2e/                     ✓ Playwright: flows/, privacy/ (FE-17)
 ├── public/
 └── package.json, package-lock.json, .nvmrc
 ```
@@ -104,7 +104,7 @@ pipeline/
 │   ├── stages/        # mỗi stage một file: preprocess.py, merge.py...
 │   ├── engines/       # adapter model AI (faster-whisper, Silero VAD) và bản fake cho test
 │   ├── fake/          # fake pipeline và dữ liệu mẫu cho test, dev của A và B
-│   └── llm/           ○ LLMProvider: anthropic, fake (AI-09)
+│   └── llm/           ✓ LLMProvider: anthropic, fake (AI-09)
 └── tests/{unit,edge,model}/
 ```
 

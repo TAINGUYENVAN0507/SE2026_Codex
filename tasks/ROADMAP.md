@@ -1,6 +1,6 @@
 # Kế hoạch còn lại
 
-> Cập nhật 2026-11-07. Trạng thái bên dưới đọc từ code tại `53f753b` (2026-11-06); các dòng ✓ mới thêm ghi PR kèm theo. Nhóm trưởng cập nhật file này mỗi khi phân công.
+> Cập nhật 2026-11-08. Trạng thái bên dưới đọc từ code tại `53f753b` (2026-11-06); các dòng ✓ mới thêm ghi PR kèm theo. Nhóm trưởng cập nhật file này mỗi khi phân công.
 
 ## Tiếp tục vào ngày sau
 
@@ -99,7 +99,7 @@ Hiện trạng đọc từ code tại `53f753b`. ✓ đã có · ◐ một phầ
 | Test pairwise | ✓ `docs/evidence/vt-018/pairwise.md` | Đợt 2, commit 1 | C | 2 |
 | Mutation `>` thành `>=` có test bắt được | ✓ `mutation.md` | Đợt 2, commit 2–3 | C | 2 |
 | Coverage, flaky | ✓ `docs/evidence/vt-018/README.md` | Đợt 2, commit 5 | C | 2 |
-| Tải 40 đồng thời, p95 ≤ 1.5 s | ✓ p95 0,67 s, 0 lỗi (một lần đo, pipeline fake) | AI-19 | C | 2 |
+| Tải 40 đồng thời, p95 ≤ 1.5 s | ✓ p95 0,67 s rồi 0,86 s, 0 lỗi (hai lần đo riêng, pipeline fake) | AI-19 | C | 2 |
 | README chạy test của bài | ✓ | Đợt 2, commit 5 | C | 2 |
 
 ## Lịch
@@ -134,10 +134,14 @@ Hiện trạng đọc từ code tại `53f753b`. ✓ đã có · ◐ một phầ
 | B | Tách tiếp `meetings.py` theo nhóm route; `tests/reliability`, `tests/privacy`, `docs/evidence/` (BE-15); `make` |
 | C | ADR `0002` (adapter boundary và xóa dữ liệu); đo tải ở 239 và 247; đồng bộ `README.md`, `structure/`, `rules/` với hiện trạng; DER nếu có SH-01 |
 
+### Đợt 3 (giao ngày 2026-11-08: `tasks/2026-11-08/`)
+
+Kết quả phần C: ADR 0002, test canary pipeline (sửa rò stderr), đồng bộ tài liệu; **đo tải 239 và 247 không đạt**, xem `docs/evidence/load-239/` và `load-247/`. A: bug bash giao diện. B: tách `meetings.py`, privacy, reliability, `make`.
+
 ## Việc treo
 
-- Merge PR #33 (B) và #34 (A) vào `main`: nhóm trưởng đã review, CI xanh, gộp thử hai bên xanh; chưa merge. Đợt 2 của A và B chờ việc này.
-- PR #35 chờ B review (VT-018 cấm merge khi chưa review).
+- Đã xong: #33–#39 vào `main`. Nhánh `tainguyen-vt018-tests` (Đợt 2 của C) vào `main` qua PR hôm 2026-11-08.
+- Đo tải 247 chưa đạt p95 ≤ 2,0 s; B profile `POST /meetings` (xem `docs/evidence/load-247/analysis.md`).
 - BT3 Bước 0 (plan AI, test AI thô) chưa làm.
 
 - SH-01: chưa có bản ghi âm họp thật. AI-12 phần thu thật, AI-14, benchmark trên audio họp phụ thuộc vào đây.

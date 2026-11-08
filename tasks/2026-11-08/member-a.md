@@ -88,3 +88,30 @@ nhỏ giả tạo để tăng số commit.
   chưa kiểm screen reader hay thiết bị điện thoại vật lý.
 - Nguy cơ worker native Windows `os.killpg` từng ghi ở FE-19 vẫn thuộc C;
   UI/API xóa đạt không thay thế kiểm chứng cleanup mọi nơi của backend/pipeline.
+
+## Đồng bộ main sau PR #40 — 08/11/2026
+
+Đã gộp `origin/main` tại `1c31ed2` vào `vantuong` (trước gộp: `49f20f4`).
+PR #40 và file giao việc nay đã ở main. Chỉ có conflict add/add ở
+`tasks/2026-11-08/member-a.md`: nội dung phân công không đổi; giữ bản của A
+đã bổ sung tiến độ, tick và hash. Không có conflict code frontend.
+
+- Code backend/pipeline, contract, quy tắc và README chung giữ đúng main;
+  không sửa hoặc bỏ thay đổi của thành viên khác để test xanh.
+- Không có thay đổi mã frontend khi gộp; không phải dựng lại giao diện.
+  Bộ 14 ảnh hiện tại vẫn tương ứng với mã giao diện đã kiểm tra.
+- Sau đồng bộ: lint, format, TypeScript, **238 test / 35 file** và production
+  build frontend đạt.
+- Chạy lại đầy đủ E2E trên API/worker/PostgreSQL với code main mới:
+  **19 slow + 1 permanent + 1 transient_once + 1 summary_fail** đạt, không skip.
+- Test liên quan đến phần main vừa thay: **36 backend** (DB pool, engine dùng
+  chung, retry, pairwise) và **6 pipeline** (canary log, biên thời lượng) đạt.
+  Đây là các bộ test chọn theo thay đổi, không phải chạy toàn bộ backend/pipeline.
+- Ruff check/format backend đạt (132 file); ba file pipeline liên quan thay
+  đổi cũng đạt lint/format, không sửa source của B/C.
+- Lần đầu test backend vướng quyền Temp Windows (32 đạt, 4 lỗi setup).
+  Chạy lại với basetemp riêng trong vùng QA cho 36/36 đạt; không sửa source
+  backend hoặc bỏ test. Còn một cảnh báo deprecation của TestClient.
+
+Đây là kết quả local sau cập nhật main. Chưa push, mở PR mới hoặc xác nhận CI.
+Merge commit này chỉ đồng bộ nhánh cá nhân, không phải merge PR lên GitHub.
