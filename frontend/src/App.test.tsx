@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import {
+  fireEvent,
+  render,
+  screen,
+  within,
+  waitFor,
+} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -125,6 +131,9 @@ describe('meeting workspace', () => {
     })
     const user = userEvent.setup()
     renderAt('/meetings/new')
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Ghi âm' })).toBeEnabled(),
+    )
     await user.click(screen.getByRole('button', { name: 'Ghi âm' }))
     expect(
       screen.getByRole('button', { name: 'Bắt đầu ghi âm' }),
@@ -132,9 +141,10 @@ describe('meeting workspace', () => {
     expect(getUserMedia).not.toHaveBeenCalled()
   })
 
-  it('rejects invalid uploads before creating a meeting', () => {
+  it('rejects invalid uploads before creating a meeting', async () => {
     renderAt('/meetings/new')
     const input = screen.getByLabelText('Chọn file audio')
+    await waitFor(() => expect(input).toBeEnabled())
     fireEvent.change(input, {
       target: {
         files: [new File(['hello'], 'notes.txt', { type: 'text/plain' })],

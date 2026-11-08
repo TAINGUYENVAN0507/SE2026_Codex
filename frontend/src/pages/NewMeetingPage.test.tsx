@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { DemoStore } from '../features/meetings/DemoStore'
 import { NewMeetingPage } from './NewMeetingPage'
 import userMe from '../../../contracts/fixtures/api/user_me.json'
+import configFixture from '../../../contracts/fixtures/api/config.json'
 
 class FakeXHR {
   static instances: FakeXHR[] = []
@@ -50,11 +51,12 @@ function Location() {
   return <output aria-label="Đường dẫn hiện tại">{location.pathname}</output>
 }
 
-function renderPage() {
+function renderPage(config: typeof configFixture | null = configFixture) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   })
   client.setQueryData(['me'], userMe)
+  if (config) client.setQueryData(['config'], config)
   return render(
     <QueryClientProvider client={client}>
       <DemoStore>
@@ -176,5 +178,85 @@ describe('FE-16: bàn phím và tiến độ upload', () => {
     expect(
       screen.getByRole('status', { name: 'Trạng thái tải lên' }),
     ).toHaveTextContent('Đã hủy tải lên')
+  })
+})
+
+describe('FE-16: lỗi hồi quy upload từ bug bash', () => {
+  it('uses server formats in the picker and rejects a format the server excludes', async () => {
+    renderPage({ ...configFixture, allowed_extensions: ['.wav'] })
+    expect(screen.getByLabelText('Chọn file audio')).toHaveAttribute(
+      'accept',
+      '.wav',
+    )
+    fireEvent.change(screen.getByLabelText('Chọn file audio'), {
+      target: {
+        files: [new File(['audio'], 'meeting.mp4', { type: 'video/mp4' })],
+      },
+    })
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Định dạng chưa hỗ trợ',
+    )
+    expect(screen.getByRole('button', { name: 'Tạo biên bản' })).toBeDisabled()
+    expect(FakeXHR.instances).toHaveLength(0)
+  })
+  it('rejects an audio file above the server upload limit', async () => {
+    renderPage({ ...configFixture, max_upload_mb: 1 })
+    fireEvent.change(screen.getByLabelText('Chọn file audio'), {
+      target: {
+        files: [
+          new File([new Uint8Array(2 * 1024 * 1024)], 'large.wav', {
+            type: 'audio/wav',
+          }),
+        ],
+      },
+    })
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'File vượt quá 1 MB',
+    )
+    expect(FakeXHR.instances).toHaveLength(0)
+  })
+  it('locks source and metadata while uploading and unlocks them after cancellation', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await submitFile()
+    for (const name of ['Tải file audio', 'Ghi âm'])
+      expect(screen.getByRole('button', { name })).toBeDisabled()
+    expect(screen.getByRole('textbox', { name: 'Tên cuộc họp' })).toBeDisabled()
+    expect(screen.getByRole('checkbox')).toBeDisabled()
+    await user.click(screen.getByRole('button', { name: 'Ghi âm' }))
+    expect(
+      screen.queryByRole('region', { name: 'Ghi âm' }),
+    ).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Hủy tải lên' }))
+    expect(screen.getByRole('button', { name: 'Ghi âm' })).toBeEnabled()
+    expect(screen.getByRole('textbox', { name: 'Tên cuộc họp' })).toBeEnabled()
+    expect(screen.getByRole('checkbox')).toBeEnabled()
+  })
+  it('blocks selection while config is unavailable and lets the user retry', async () => {
+    const user = userEvent.setup()
+    const request = vi
+      .spyOn(globalThis, 'fetch')
+      .mockRejectedValueOnce(new TypeError('offline'))
+      .mockResolvedValue(
+        new Response(JSON.stringify(configFixture), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      )
+    renderPage(null)
+    expect(
+      screen.getByRole('button', { name: 'Chọn file trên máy' }),
+    ).toBeDisabled()
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Không tải được giới hạn upload',
+    )
+    await user.click(
+      screen.getByRole('button', { name: 'Thử tải lại cấu hình' }),
+    )
+    expect(await screen.findByText(/tối đa 200 MB/)).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Chọn file trên máy' }),
+    ).toBeEnabled()
+    expect(request).toHaveBeenCalledTimes(2)
   })
 })

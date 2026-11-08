@@ -85,24 +85,17 @@ export function login(email: string, password: string): Promise<UserSession> {
   return unwrap(client.POST('/auth/login', { body: { email, password } }))
 }
 
+export function getConfig(): Promise<components['schemas']['ConfigOut']> {
+  return unwrap(client.GET('/config'))
+}
+
 export function getMe(): Promise<UserSession> {
   return unwrap(client.GET('/auth/me'))
 }
 
 export async function deleteAccount(): Promise<void> {
-  // FE-19: contract hiện chưa có DELETE; bỏ fetch tạm này khi B sinh type cho endpoint.
   try {
-    const response = await fetch(
-      new URL('/api/v1/auth/me', window.location.origin),
-      {
-        method: 'DELETE',
-        credentials: 'include',
-      },
-    )
-    if (!response.ok) {
-      if (response.status === 401) notifySessionExpired()
-      throw await parseApiError(response)
-    }
+    await client.DELETE('/auth/me')
   } catch (error) {
     if (error instanceof ApiError) throw error
     throw toNetworkError()
