@@ -35,6 +35,7 @@ export function NewMeetingPage() {
   const [dragging, setDragging] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
+  const [uploadStatus, setUploadStatus] = useState('')
   const activeUpload = useRef<ReturnType<typeof uploadMeeting> | null>(null)
   const picker = useRef<HTMLInputElement>(null)
   const alive = useRef(true)
@@ -91,6 +92,7 @@ export function NewMeetingPage() {
     }
     setError('')
     setProgress(0)
+    setUploadStatus('Đang tải bản ghi lên máy chủ…')
     setUploading(true)
     if (mode === 'record') record.startUpload()
     const upload = uploadMeeting(
@@ -131,6 +133,11 @@ export function NewMeetingPage() {
       if (mode === 'record') record.finishUpload()
       navigate(`/meetings/${result.meeting.id}`)
     } catch (cause) {
+      setUploadStatus(
+        cause instanceof ApiError && cause.code === 'UPLOAD_CANCELLED'
+          ? 'Đã hủy tải lên. Bản ghi vẫn ở trên máy, bạn có thể thử lại.'
+          : '',
+      )
       if (cause instanceof ApiError && cause.code !== 'UPLOAD_CANCELLED')
         setError(cause.message)
       else if (!(cause instanceof ApiError))
@@ -372,8 +379,22 @@ export function NewMeetingPage() {
                 {error || record.error}
               </p>
             )}
+            <p
+              role="status"
+              aria-label="Trạng thái tải lên"
+              className="local-audio-note"
+            >
+              {uploadStatus}
+            </p>
             {uploading && (
-              <div role="status" aria-label="Tiến độ tải lên">
+              <div
+                role="progressbar"
+                aria-label="Tiến độ tải lên"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={progress}
+                aria-valuetext={`${progress}%`}
+              >
                 Đang tải lên: {progress}%
               </div>
             )}

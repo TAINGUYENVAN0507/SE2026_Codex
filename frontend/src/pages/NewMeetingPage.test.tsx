@@ -142,3 +142,39 @@ describe('FE-05 upload page', () => {
     },
   )
 })
+
+describe('FE-16: bàn phím và tiến độ upload', () => {
+  it('opens the native picker with Tab/Enter and announces numeric progress', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    const picker = screen.getByLabelText('Chọn file audio')
+    const clicked = vi.spyOn(picker, 'click')
+    screen.getByRole('button', { name: 'Tải file audio' }).focus()
+    await user.tab()
+    expect(screen.getByRole('button', { name: 'Ghi âm' })).toHaveFocus()
+    await user.tab()
+    expect(
+      screen.getByRole('button', { name: 'Chọn file trên máy' }),
+    ).toHaveFocus()
+    await user.keyboard('{Enter}')
+    expect(clicked).toHaveBeenCalledOnce()
+    await submitFile()
+    act(() =>
+      FakeXHR.instances[0].upload.onprogress?.({
+        lengthComputable: true,
+        loaded: 42,
+        total: 100,
+      } as ProgressEvent),
+    )
+    const bar = screen.getByRole('progressbar', { name: 'Tiến độ tải lên' })
+    expect(bar).toHaveAttribute('aria-valuenow', '42')
+    expect(bar).toHaveAttribute('aria-valuemin', '0')
+    expect(bar).toHaveAttribute('aria-valuemax', '100')
+    screen.getByRole('button', { name: 'Hủy tải lên' }).focus()
+    await user.keyboard('{Enter}')
+    expect(FakeXHR.instances[0].aborted).toBe(true)
+    expect(
+      screen.getByRole('status', { name: 'Trạng thái tải lên' }),
+    ).toHaveTextContent('Đã hủy tải lên')
+  })
+})
