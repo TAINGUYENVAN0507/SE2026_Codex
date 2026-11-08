@@ -14,7 +14,14 @@ def _engine_for(url: str):
     # Một engine (một pool) cho mỗi URL trong suốt vòng đời process. Trước đây mỗi request tạo
     # engine mới và không đóng, nên 40 request đồng thời cạn max_connections của Postgres.
     # pool_pre_ping để tự reconnect khi connection bị ngắt.
-    return create_engine(url, pool_pre_ping=True)
+    settings = get_settings()
+    return create_engine(
+        url,
+        pool_pre_ping=True,
+        pool_size=settings.DB_POOL_SIZE,
+        max_overflow=settings.DB_MAX_OVERFLOW,
+        pool_timeout=settings.DB_POOL_TIMEOUT_SEC,
+    )
 
 
 def get_engine():
