@@ -12,7 +12,7 @@ Kế hoạch: [`tasks/ROADMAP.md`](../ROADMAP.md), Đợt 3. Kiểm tra trong `f
 - Đã cập nhật main `be9f08d` trước khi code; PR #38/#39 đã merge.
 - Năm tick bên dưới xác nhận đã triển khai/kiểm tra **local**, không phải DoD
   đã merge. Chưa push, chưa mở PR mới và chưa xác nhận CI của đợt này.
-- Frontend: **237 test / 35 file**, lint, format, typecheck, production build đạt.
+- Frontend: **238 test / 35 file**, lint, format, typecheck, production build đạt.
 - E2E stack thật: **19 slow + 1 permanent + 1 transient_once + 1 summary_fail**
   đạt, không skip. PostgreSQL/API/worker thật, pipeline fake, chỉ dữ liệu tổng hợp.
 - Docker build bản cuối đạt; nginx -t, HTTP /settings 200, /metrics 404 đạt.
@@ -88,4 +88,3 @@ nhỏ giả tạo để tăng số commit.
   chưa kiểm screen reader hay thiết bị điện thoại vật lý.
 - Nguy cơ worker native Windows `os.killpg` từng ghi ở FE-19 vẫn thuộc C;
   UI/API xóa đạt không thay thế kiểm chứng cleanup mọi nơi của backend/pipeline.
-

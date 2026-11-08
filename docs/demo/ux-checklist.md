@@ -22,7 +22,7 @@ thật. Đây là kiểm thử luồng sản phẩm, không phải đánh giá �
 | Bản ghi ngắn | Header hiện giây khi dưới một phút; không ghi 30 giây thành 0 phút. Chưa có thời lượng thì ghi rõ, không dựng số giả. |
 | Lỗi khi chạy | Không có `pageerror` trong luồng chụp ảnh. Lỗi nghiệp vụ được kiểm riêng bằng E2E permanent/retry/partial và Vitest. |
 
-Kết quả local: **237 Vitest**, **19 E2E slow + 3 E2E lỗi/retry/partial** đạt;
+Kết quả local: **238 Vitest**, **19 E2E slow + 3 E2E lỗi/retry/partial** đạt;
 lint, format, typecheck và build đạt. Ruff cho fixture Python retention đạt.
 Chưa push nên chưa xác nhận CI của đợt 08/11. CI mới chỉ được báo khi đã push và kiểm tra đúng commit.
 
@@ -86,9 +86,11 @@ liệu E2E, kiểm đường dẫn rồi gọi CLI cleanup chính thức.
 
 ## Còn chờ hoặc cần nhóm xác nhận
 
-- API `DELETE /auth/me` và E2E xóa user riêng, cookie, đăng nhập lại thất bại:
-  chờ commit BE-18 của B. Form đã có nhưng thao tác bị khóa theo contract.
-- Native Windows vẫn có log `os.killpg` khi hủy job đang chạy. Pipeline thuộc C;
+- Xóa tài khoản: phần frontend và E2E user riêng đã đạt local; chờ CI/review
+  của đợt 08/11, không còn chờ API BE-18. Bằng chứng xóa log/DB/file ở mọi
+  nơi lưu vẫn thuộc phần backend của B.
+- Review PR mới của B: chưa có PR `haquang` mới tại lần kiểm tra cuối buổi.
+- Native Windows từng có log `os.killpg` khi hủy job đang chạy. Pipeline thuộc C;
   cần xử lý riêng nếu hỗ trợ worker native Windows. Không giấu lỗi để báo sạch.
 - Race worker Linux từng được ghi nhận ngày 06/11 cần B/C xác nhận lại trên main
   mới; xem [FE-19](../frontend/FE-19.md). Test UI/API không thay evidence backend.
