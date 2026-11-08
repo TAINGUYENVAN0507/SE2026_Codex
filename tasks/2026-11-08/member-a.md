@@ -11,7 +11,8 @@ Kế hoạch: [`tasks/ROADMAP.md`](../ROADMAP.md), Đợt 3. Kiểm tra trong `f
 
 - Đã cập nhật main `be9f08d` trước khi code; PR #38/#39 đã merge.
 - Năm tick bên dưới xác nhận đã triển khai/kiểm tra **local**, không phải DoD
-  đã merge. Chưa push, chưa mở PR mới và chưa xác nhận CI của đợt này.
+  đã merge. Người dùng đã cho phép commit, push `vantuong` và mở PR ngày 08/11.
+  Kết quả CI của đợt này phải đọc trên đúng SHA của PR sau khi push.
 - Frontend: **238 test / 35 file**, lint, format, typecheck, production build đạt.
 - E2E stack thật: **19 slow + 1 permanent + 1 transient_once + 1 summary_fail**
   đạt, không skip. PostgreSQL/API/worker thật, pipeline fake, chỉ dữ liệu tổng hợp.
@@ -24,10 +25,15 @@ Kế hoạch: [`tasks/ROADMAP.md`](../ROADMAP.md), Đợt 3. Kiểm tra trong `f
 ## Việc đầu tiên (không tính commit): review PR của B
 B mở PR `haquang` hôm nay. Bạn review (18 giờ từ lúc mở). Ghi nhận xét thật vào PR: có route nào bị đổi hành vi, có test nào yếu.
 
-**Trạng thái:** chưa thực hiện vì chưa có PR mới từ `haquang`. Kiểm GitHub
-lúc khoảng 16:43 ngày 08/11 chỉ có PR #40 từ `tainguyen` đang mở. PR #39 của
-B đã merge là đợt trước, không thay cho review đợt này. Không đăng nhận xét
-khi chưa có PR hoặc tự nhận đã review.
+**Trạng thái:** đã review local PR #41 của B (`haquang`), SHA `489f9e0`,
+ngày 08/11. Báo cáo và nhận xét dự thảo:
+[`docs/frontend/reviews/PR-41-2026-11-08.md`](../../docs/frontend/reviews/PR-41-2026-11-08.md).
+116 test liên quan và lint/format đạt; hai vấn đề test privacy có kiểm chứng;
+Docker runtime còn lỗi nền trên main, A đã có bản sửa local cần phối hợp.
+**Chưa đăng nhận xét lên PR**, chưa approve/request changes hoặc merge.
+Vì yêu cầu phân công gồm ghi nhận xét thật vào PR, phần review chưa được đánh
+xong toàn bộ; chờ người dùng cho phép gửi nhận xét. Không dùng review PR #39
+cũ để thay cho PR #41.
 
 ## Bước 0
 ```bash
@@ -64,7 +70,7 @@ git checkout vantuong && git fetch origin && git merge origin/main
 
 ## Cuối ngày
 - [x] Tick và ghi hash cho phần đạt local.
-- [ ] Chờ người dùng cho phép push `vantuong` và mở PR mới vào `main`.
+- [x] Người dùng đã cho phép commit báo cáo, cập nhật file phân công, push `vantuong` và mở PR vào `main` ngày 08/11.
 - Không tự merge hoặc bật tự động merge. CI GitHub chỉ xác nhận sau khi push.
 
 ## Việc phát sinh và chuyển từ hôm trước
@@ -81,7 +87,7 @@ nhỏ giả tạo để tăng số commit.
 
 ## Chưa làm và giới hạn
 
-- Review PR mới của B: chờ B mở PR, không bị chặn bởi backend để làm frontend.
+- Review PR #41 của B: đã kiểm và soạn nhận xét local; chưa gửi lên GitHub. Xem báo cáo review ở trên.
 - SH-01/pilot có consent là việc chung, không làm trong buổi này.
 - Không dùng test pipeline fake để khẳng định chất lượng AI hoặc tải 239/247.
 - Kiểm bàn phím/role bằng Testing Library/Chromium, viewport mobile giả lập;
@@ -113,5 +119,29 @@ PR #40 và file giao việc nay đã ở main. Chỉ có conflict add/add ở
   Chạy lại với basetemp riêng trong vùng QA cho 36/36 đạt; không sửa source
   backend hoặc bỏ test. Còn một cảnh báo deprecation của TestClient.
 
-Đây là kết quả local sau cập nhật main. Chưa push, mở PR mới hoặc xác nhận CI.
+Đây là kết quả local sau cập nhật main, được ghi trước khi push. Trạng thái CI
+của lần bàn giao sẽ được kiểm tra trực tiếp trên PR sau khi push.
 Merge commit này chỉ đồng bộ nhánh cá nhân, không phải merge PR lên GitHub.
+
+## Rà soát và bàn giao PR — 08/11/2026
+
+- Commit báo cáo review PR #41 và sửa trạng thái cũ trong bug bash: `deb7056`.
+- File phân công này giữ đủ năm hash công việc được giao và ba hash phát sinh;
+  commit tài liệu review/cập nhật tiến độ không tính thêm vào năm task tính năng.
+- Chạy lại kiểm tra frontend cuối: lint, format, typecheck, **238 test / 35 file**
+  và production build đều đạt. Không đổi source frontend sau bộ kiểm tra này.
+- Giữ bằng chứng E2E sau đồng bộ main: **19 slow + 1 permanent + 1 transient_once
+  + 1 summary_fail** đạt, không skip. Không chạy lại E2E chỉ vì sửa tài liệu.
+- Đối chiếu log review: **95 + 21 = 116 test**, Ruff **139 file** đạt trên snapshot
+  `489f9e0` của B; không gộp các số này vào test frontend hoặc tuyên bố đã chạy
+  toàn bộ backend trên máy review.
+- Diff check sạch; 14 ảnh demo khớp SHA256 bản preview; kiểm chữ ký credential
+  không phát hiện mẫu khớp. Không đưa audio thật, `.env`, cache/build hoặc preview
+  ngoài Git vào PR. Không đổi backend/pipeline, contract hoặc README chung.
+- Main gần nhất tại lúc rà soát vẫn là `1c31ed2`, đã có trong `vantuong`.
+  PR #41 vẫn mở; thay đổi của B chưa được nhập vào nhánh A.
+- Nhận xét trên PR #41 vẫn là bản nháp local; không tự đăng thay người dùng.
+  B cần review phần `infra/` và workflow của A khi đọc PR bàn giao.
+- Phạm vi được phép: commit, push nhánh cá nhân, mở PR và kiểm tra CI.
+  **Không merge hoặc bật auto-merge.** Trạng thái push/PR/CI xem trực tiếp trên
+  GitHub và báo cáo bàn giao; các tick local không thay thế điều kiện CI/merge.
