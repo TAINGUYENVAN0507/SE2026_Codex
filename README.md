@@ -107,10 +107,10 @@ npm run dev
 
 ### 4.3. Khởi chạy Trọn gói Bằng Docker Compose (BE-16)
 
-Hệ thống hỗ trợ đóng gói và khởi chạy toàn bộ 4 service chỉ với một lệnh Docker Compose duy nhất:
+Hệ thống hỗ trợ đóng gói và khởi chạy toàn bộ 4 service chỉ với một lệnh Docker Compose duy nhất (hoặc qua `make up` / `make down`):
 
 ```bash
-# Xây dựng và khởi chạy cả 4 service ở chế độ nền
+# Xây dựng và khởi chạy cả 4 service ở chế độ nền (hoặc: make up)
 docker compose up --build -d
 ```
 
@@ -141,7 +141,7 @@ curl -b cookies.txt -X POST http://localhost/api/v1/meetings \
   -F "audio=@contracts/fixtures/pipeline/sample.wav"
 
 # Worker tự động nhận job từ hàng đợi, hoàn thành các stage và chuyển meeting sang ready!
-# Dừng cụm service:
+# Dừng cụm service (hoặc: make down):
 docker compose down
 ```
 
@@ -149,7 +149,17 @@ docker compose down
 
 ## 5. Quy chuẩn Kiểm tra Chất lượng (Quality Gates)
 
-Trước khi commit mã nguồn hoặc mở Pull Request, mỗi thành viên phải bảo đảm toàn bộ lệnh lint và test của module phụ trách đều xanh:
+Dự án cung cấp `Makefile` tại thư mục gốc để thuận tiện chạy kiểm tra nhanh cho toàn bộ hệ thống:
+
+```bash
+# Kiểm tra lint và định dạng cho toàn bộ module (backend, frontend, pipeline):
+make lint
+
+# Chạy test suites của toàn bộ module:
+make test
+```
+
+Trước khi commit mã nguồn hoặc mở Pull Request, mỗi thành viên phải bảo đảm toàn bộ lệnh lint và test của module phụ trách đều xanh (có thể chạy qua `make lint` / `make test` hoặc các lệnh trực tiếp của từng module bên dưới):
 
 ### Backend (`backend/`)
 ```bash
