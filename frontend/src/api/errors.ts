@@ -16,6 +16,46 @@ export type ApiErrorCode =
 export type ApiErrorDetails = Record<string, unknown> | null
 
 const messages: Record<string, string> = {
+  AUDIO_EXPIRED: 'Audio đã hết hạn lưu trữ. Bạn vẫn có thể đọc transcript.',
+  DIARIZATION_FAILED:
+    'Chưa phân biệt được người nói. Hãy kiểm tra và đặt tên người nói trong transcript.',
+  FORBIDDEN: 'Bạn không có quyền thực hiện thao tác này.',
+  FORMAT_NOT_SUPPORTED:
+    'Định dạng xuất chưa được hỗ trợ. Hãy chọn TXT, Markdown hoặc JSON.',
+  HAS_USER_EDITS:
+    'Nội dung đã được chỉnh sửa. Hãy xác nhận trước khi xử lý lại.',
+  HTTP_ERROR: 'Yêu cầu chưa được máy chủ xử lý. Hãy thử lại sau.',
+  INTERNAL_ERROR: 'Bước xử lý gặp lỗi nội bộ. Hãy thử xử lý lại.',
+  INTERNAL_SERVER_ERROR: 'Máy chủ gặp lỗi nội bộ. Hãy thử lại sau.',
+  JOB_ALREADY_ACTIVE:
+    'Cuộc họp đang được xử lý. Hãy theo dõi tiến độ hiện tại.',
+  JOB_ALREADY_SUCCEEDED: 'Lượt xử lý này đã hoàn tất. Hãy mở kết quả cuộc họp.',
+  LEASE_TIMEOUT: 'Lượt xử lý bị gián đoạn quá lâu. Hãy thử xử lý lại.',
+  LLM_OUTPUT_INVALID:
+    'Kết quả tóm tắt chưa đúng định dạng. Hãy thử tạo lại tóm tắt.',
+  LLM_UNAVAILABLE:
+    'Dịch vụ tóm tắt tạm thời không phản hồi. Hãy theo dõi tiến độ thử lại.',
+  METHOD_NOT_ALLOWED: 'Thao tác này chưa được hỗ trợ trên máy chủ hiện tại.',
+  MISSING_INPUT:
+    'Thiếu dữ liệu cho bước xử lý tiếp theo. Hãy kiểm tra bản ghi và thử lại.',
+  MODEL_UNAVAILABLE: 'Mô hình xử lý audio chưa sẵn sàng. Hãy thử lại sau.',
+  PIPELINE_CANCELLED: 'Quá trình xử lý cuộc họp đã bị hủy.',
+  PIPELINE_OUTPUT_INVALID: 'Kết quả xử lý chưa hợp lệ. Hãy thử xử lý lại.',
+  RANGE_NOT_SATISFIABLE: 'Mốc audio nằm ngoài bản ghi. Hãy chọn một mốc khác.',
+  REQUEST_IN_PROGRESS:
+    'Yêu cầu trước đang được xử lý. Hãy chờ kết quả trước khi gửi lại.',
+  SERVICE_UNAVAILABLE:
+    'Hệ thống đang bận hoặc tạm thời không sẵn sàng. Hãy thử lại sau.',
+  SPEAKER_NOT_IN_MEETING:
+    'Người nói không thuộc cuộc họp này. Hãy chọn lại người nói.',
+  STAGE_CRASHED: 'Một bước xử lý bị dừng đột ngột. Hãy thử xử lý lại.',
+  STAGE_NOT_IMPLEMENTED: 'Bước xử lý này hiện chưa được hỗ trợ.',
+  STAGE_TIMEOUT: 'Một bước xử lý quá thời gian cho phép. Hãy thử xử lý lại.',
+  TEXT_EMPTY: 'Nội dung không được để trống.',
+  TEXT_TOO_LONG: 'Nội dung vượt quá độ dài cho phép. Hãy rút gọn rồi lưu lại.',
+  UNPROCESSABLE_ENTITY:
+    'Dữ liệu gửi lên chưa hợp lệ. Hãy kiểm tra các trường rồi thử lại.',
+
   BAD_REQUEST: 'Yêu cầu không hợp lệ. Hãy kiểm tra thông tin rồi thử lại.',
   IDEMPOTENCY_KEY_REQUIRED: 'Thiếu khóa chống gửi trùng. Hãy thử lại.',
   CONFLICT: 'Yêu cầu xung đột với dữ liệu hiện tại. Hãy thử lại.',
