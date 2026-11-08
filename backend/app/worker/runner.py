@@ -28,6 +28,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.core.logging import setup_logging
+from app.core.metrics import PIPELINE_STAGE_DURATION_SECONDS
 from app.db.models.ai_output import AIOutput
 from app.db.models.job import Job
 from app.db.models.meeting import Meeting
@@ -386,6 +387,12 @@ def process_job(
         for k, v in outcome.stage_status.items():
             merged_stages[k.value] = v
         job.stage_status = merged_stages
+
+        if outcome.timings:
+            for stg, duration in outcome.timings.items():
+                stg_name = stg.value if hasattr(stg, "value") else str(stg)
+                PIPELINE_STAGE_DURATION_SECONDS.labels(stage=stg_name).observe(duration)
+
         complete_job(db, job, now=get_now())
         meeting.status = "ready"
         meeting.updated_at = get_now()

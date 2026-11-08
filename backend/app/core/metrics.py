@@ -61,6 +61,14 @@ JOBS_FAILED_TOTAL = Gauge(
     ["stage", "error_code"],
 )
 
+# 3. Pipeline Metrics
+PIPELINE_STAGE_DURATION_SECONDS = Histogram(
+    "pipeline_stage_duration_seconds",
+    "Thời gian thực thi từng stage trong pipeline tính bằng giây",
+    ["stage"],
+    buckets=(0.01, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0, 30.0, 60.0, 120.0, 300.0),
+)
+
 JOB_STATUSES = (
     "queued",
     "running",

@@ -101,7 +101,11 @@ export interface paths {
     get: operations['get_me_api_v1_auth_me_get']
     put?: never
     post?: never
-    delete?: never
+    /**
+     * Xóa tài khoản người dùng và toàn bộ dữ liệu thuộc sở hữu
+     * @description Xóa tài khoản người dùng, toàn bộ cuộc họp, file và session cookie.
+     */
+    delete: operations['delete_me_api_v1_auth_me_delete']
     options?: never
     head?: never
     patch?: never
@@ -1732,6 +1736,33 @@ export interface operations {
         content: {
           'application/json': components['schemas']['UserMeOut']
         }
+      }
+      /** @description Chưa đăng nhập hoặc session đã hết hạn */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+    }
+  }
+  delete_me_api_v1_auth_me_delete: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
       }
       /** @description Chưa đăng nhập hoặc session đã hết hạn */
       401: {

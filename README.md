@@ -104,6 +104,46 @@ npm run dev
 - Mở trình duyệt tại: `http://localhost:5173`
 - Mặc định Frontend gọi API backend thật tại `http://localhost:8000`. Để chuyển sang chế độ Mock độc lập, đặt `VITE_API_MOCK=1` trong `frontend/.env.local`.
 
+### 4.3. Khởi chạy Trọn gói Bằng Docker Compose (BE-16)
+
+Hệ thống hỗ trợ đóng gói và khởi chạy toàn bộ 4 service chỉ với một lệnh Docker Compose duy nhất:
+
+```bash
+# Xây dựng và khởi chạy cả 4 service ở chế độ nền
+docker compose up --build -d
+```
+
+#### Kiến trúc 4 service trong Compose:
+| Service | Image / Build | Vai trò & Cấu hình | Healthcheck |
+|---|---|---|---|
+| `db` | `postgres:16` | Cơ sở dữ liệu chính, cổng 5432, lưu trữ persistent trên volume `pgdata`. | `pg_isready -U postgres` |
+| `api` | `infra/docker/api.Dockerfile` | FastAPI backend, tự động chạy migration `alembic upgrade head` khi khởi động, cổng 8000. | `curl -f http://localhost:8000/ready` |
+| `worker` | `infra/docker/api.Dockerfile` | Background worker xử lý audio qua pipeline, chia sẻ volume `appdata` với `api`. | DB query `SELECT 1` |
+| `web` | `infra/docker/web.Dockerfile` | Nginx reverse proxy phục vụ frontend SPA trên cổng 80. Proxy `/api/` và `/health` về `api:8000`, **chặn hoàn toàn `/metrics`** để bảo mật hệ thống. | `wget http://localhost:8080/` |
+
+#### Smoke Test Luồng Xử lý Hoàn chỉnh (Upload → Transcript):
+Sau khi các container đều ở trạng thái `healthy`:
+```bash
+# 1. Kiểm tra trạng thái các service
+docker compose ps
+
+# 2. Thực hiện smoke test nhanh qua API (hoặc truy cập http://localhost trên trình duyệt):
+# Đăng nhập lấy phiên:
+curl -c cookies.txt -X POST http://localhost/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"demo@example.com","password":"demopassword123"}'
+
+# Tải lên tệp âm thanh WAV (có gắn cờ consent):
+curl -b cookies.txt -X POST http://localhost/api/v1/meetings \
+  -F "title=Smoke Test Cuộc Họp" \
+  -F "consent=true" \
+  -F "audio=@contracts/fixtures/pipeline/sample.wav"
+
+# Worker tự động nhận job từ hàng đợi, hoàn thành các stage và chuyển meeting sang ready!
+# Dừng cụm service:
+docker compose down
+```
+
 ---
 
 ## 5. Quy chuẩn Kiểm tra Chất lượng (Quality Gates)
