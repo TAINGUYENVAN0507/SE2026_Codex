@@ -60,3 +60,4 @@ git checkout haquang && git fetch origin && git merge origin/main
 
 ## Cuối ngày
 - [x] Tick và ghi hash. Push `haquang`, mở PR vào `main`. **Không tự merge.**
+- **Commit sửa lỗi CI (BE-18, BE-19):** `1bc65b1` - `fix(backend): prevent alembic migrations from disabling application loggers (BE-18, BE-19)`: Sửa `alembic/env.py`, `conftest.py` và `logging.py` để fileConfig trong migration không vô hiệu hóa loggers của worker/API khi test trên Postgres ở CI.
