@@ -37,5 +37,8 @@ git checkout haquang && git fetch origin && git merge origin/main
 - Mỗi target gọi đúng lệnh đã ghi trong README; README trỏ tới `make`.
 - **Message:** `chore(infra): Makefile for test, lint and compose (BE-16)`
 
+## Việc thêm nếu còn thời gian (ngoài 5 commit)
+- Đo tải 247 của C **không đạt** (p95 63 s, 155 × 503), chưa rõ nguyên nhân: xem `docs/evidence/load-247/analysis.md`. Profile `POST /meetings` (thời gian giữ kết nối DB, `ffprobe`), thử `uvicorn --workers N`, rồi chạy lại `backend/scripts/load_vt018.py --clients 247 --threshold 2.0`. Ghi số thật, kể cả khi vẫn không đạt.
+
 ## Cuối ngày
 - [ ] Tick và ghi hash. Push `haquang`, mở PR vào `main`. **Không tự merge.**
