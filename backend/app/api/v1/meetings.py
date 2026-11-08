@@ -450,7 +450,7 @@ def serialize_meeting_detail(meeting: Meeting, db: Session) -> MeetingDetailOut:
             JobErrorOut(
                 code=latest_job.error_code,
                 message=latest_job.error_message or "",
-                retryable=latest_job.attempt < latest_job.max_attempts,
+                retryable=latest_job.can_retry,
                 stage=latest_job.stage,
             )
             if latest_job.error_code
@@ -1562,7 +1562,7 @@ def serialize_job(job: Job) -> JobOut:
         JobErrorOut(
             code=job.error_code,
             message=job.error_message or "",
-            retryable=job.attempt < job.max_attempts,
+            retryable=job.can_retry,
             stage=job.stage,
         )
         if job.error_code

@@ -15,6 +15,11 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Vietnamese Meeting Minutes Assistant"
     API_V1_PREFIX: str = "/api/v1"
     DATABASE_URL: str = "postgresql+psycopg://postgres:postgres@localhost:5432/meeting_minutes"
+    # Pool kết nối DB. Mặc định cũ của SQLAlchemy (5 + 10) làm 239 upload đồng thời trả 500.
+    # Tổng phải nhỏ hơn max_connections của Postgres (100), chừa chỗ cho worker và migration.
+    DB_POOL_SIZE: int = 20
+    DB_MAX_OVERFLOW: int = 30
+    DB_POOL_TIMEOUT_SEC: int = 10
     ENVIRONMENT: str = "development"
     DEBUG: bool = False
 

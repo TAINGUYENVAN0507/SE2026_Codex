@@ -1,6 +1,6 @@
 # Kiến trúc hệ thống
 
-> Thiết kế theo kế hoạch 001. Trạng thái ngày 2026-10-19: ✓ đã có trong `main` · ◐ đang ở nhánh cá nhân · ○ chưa có.
+> Trạng thái ngày 2026-11-08: ✓ đã có trong `main` · ◐ có một phần · ○ chưa có. Phần "Trạng thái" bên dưới đọc từ code, không còn là kế hoạch.
 
 ## Tổng quan
 
@@ -22,14 +22,14 @@ flowchart LR
 
 | Thành phần | Thư mục | Trách nhiệm | Không làm | Owner | Trạng thái |
 |---|---|---|---|---|---|
-| React SPA | `frontend/` | Upload, recorder có consent, theo dõi xử lý, sửa transcript/speaker/summary/action items, export | Không chạy AI. Không giữ trạng thái xử lý: sau khi refresh, đọc lại từ server. | A | ◐ UI chạy dữ liệu demo, chưa gọi API |
-| nginx | `infra/` | Phục vụ file static, reverse proxy `/api`, giới hạn kích thước upload | | B | ○ |
-| FastAPI | `backend/app/` | Auth, CRUD meeting, upload, chỉnh sửa có audit, lịch sử, export | Không chạy AI | B | ○ |
-| Worker | `backend/app/worker/` | Claim job, lease, heartbeat, retry cấp job, gọi `run_job()`, persist kết quả | Không tự xử lý audio | B | ○ |
-| Pipeline | `pipeline/` | 6 stage, runner (subprocess, timeout, checkpoint), CLI | Không biết gì về DB hay HTTP | C | ✓ `preprocess`, `merge` thật; các stage khác mới có bản fake |
-| PostgreSQL | | Metadata, jobs, transcript, summary, action items, `ai_outputs`, `edit_events` | | B | ○ |
-| Volume `appdata` | | Audio gốc và artifact của từng job | | B (layout), C (artifact) | ○ |
-| Claude API | qua `pipeline/meeting_pipeline/llm/` | Tóm tắt và action items | Chỉ nhận transcript text, không nhận audio | C | ○ |
+| React SPA | `frontend/` | Upload, recorder có consent, theo dõi xử lý, sửa transcript/speaker/summary/action items, export | Không chạy AI. Không giữ trạng thái xử lý: sau khi refresh, đọc lại từ server. | A | ✓ gọi API thật; E2E Playwright trên stack thật |
+| nginx | `infra/` | Phục vụ file static, reverse proxy `/api`, giới hạn kích thước upload | | B | ✓ `infra/docker/nginx.conf`; chặn `/metrics` |
+| FastAPI | `backend/app/` | Auth, CRUD meeting, upload, chỉnh sửa có audit, lịch sử, export | Không chạy AI | B | ✓ auth, CRUD, upload, chỉnh sửa, export, xóa meeting và tài khoản; `meetings.py` còn lớn (đang tách, BE-12) |
+| Worker | `backend/app/worker/` | Claim job, lease, heartbeat, retry cấp job, gọi `run_job()`, persist kết quả | Không tự xử lý audio | B | ✓ lease, heartbeat, reaper, retry; `/metrics` có thời lượng từng stage |
+| Pipeline | `pipeline/` | 6 stage, runner (subprocess, timeout, checkpoint), CLI | Không biết gì về DB hay HTTP | C | ✓ 6 stage có bản thật và bản fake; log sự kiện có cấu trúc (AI-18) |
+| PostgreSQL | | Metadata, jobs, transcript, summary, action items, `ai_outputs`, `edit_events` | | B | ✓ migration 0001–0007 |
+| Volume `appdata` | | Audio gốc và artifact của từng job | | B (layout), C (artifact) | ✓ audio và artifact; dọn theo `AUDIO_RETENTION_DAYS` |
+| Claude API | qua `pipeline/meeting_pipeline/llm/` | Tóm tắt và action items | Chỉ nhận transcript text, không nhận audio | C | ✓ `llm/anthropic.py`; mặc định `LLM_PROVIDER=disabled` |
 
 ## Ranh giới module
 
@@ -105,12 +105,12 @@ Nguyên tắc dữ liệu:
 
 | Phần | Lựa chọn | Trạng thái |
 |---|---|---|
-| Frontend | React 19, TypeScript strict, Vite, React Router, TanStack Query, Vitest + React Testing Library, Node.js 24 | ◐ |
-| Backend | Python 3.12, FastAPI, Pydantic v2, SQLAlchemy 2 + Alembic, PostgreSQL 16, PyJWT, argon2 | ○ B chốt ở BE-01 |
+| Frontend | React 19, TypeScript strict, Vite, React Router, TanStack Query, Vitest + React Testing Library, Node.js 24 | ✓ |
+| Backend | Python 3.12, FastAPI, Pydantic v2, SQLAlchemy 2 + Alembic, PostgreSQL 16, PyJWT, argon2 | ✓ |
 | Pipeline | Python 3.12, Pydantic v2, FFmpeg/ffprobe | ✓ |
-| Model AI | faster-whisper + Silero VAD (ASR), pyannote.audio (diarization), Claude API `claude-opus-5-5` (tóm tắt) | ○ chốt ở Gate G1 sau spike AI-01, AI-02 |
+| Model AI | faster-whisper + Silero VAD (ASR), pyannote.audio (diarization), Claude API `claude-opus-5-5` (tóm tắt) | ✓ ASR chọn ở [ADR 0001](../docs/adr/0001-asr.md); ranh giới adapter ở [ADR 0002](../docs/adr/0002-adapter-boundary-and-erasure.md) |
 | Evaluation | jiwer (WER/CER), pyannote.metrics (DER) | ✓ jiwer · ○ pyannote.metrics |
-| Triển khai | Docker Compose, file override cho GPU | ○ |
+| Triển khai | Docker Compose (`db`, `api`, `worker`, `web`); file override cho GPU chưa có | ◐ |
 | CI | GitHub Actions, mỗi module một workflow | ✓ |
 
 Worker và pipeline chạy chung một môi trường Python: runner gọi `sys.executable -m meeting_pipeline run-stage …`. Vì vậy backend dùng Python 3.12, giống `pipeline/.python-version`.

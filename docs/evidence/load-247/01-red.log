@@ -1,0 +1,6 @@
+E       assert 500 == 503
+E        +  where 500 = <Response [500 Internal Server Error]>.status_code
+E                   AttributeError: 'Settings' object has no attribute 'DB_POOL_SIZE'
+FAILED tests/unit/test_db_pool_exhaustion.py::test_pool_timeout_returns_503_with_retry_after
+FAILED tests/unit/test_db_pool_exhaustion.py::test_pool_settings_have_safe_defaults_below_postgres_max_connections
+2 failed, 1 passed, 1 warning in 0.32s

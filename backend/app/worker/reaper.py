@@ -101,7 +101,7 @@ def reap_expired_jobs(
     reaped: list[Job] = []
 
     for job in expired_jobs:
-        if job.attempt < job.max_attempts:
+        if job.can_retry:
             logger.warning(
                 "Job %s hết hạn lease (locked_until=%s), đưa về queued và tăng attempt %d -> %d",
                 job.id,
