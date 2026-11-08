@@ -33,8 +33,12 @@ docker build -f infra/docker/api.Dockerfile -t meeting-api .
 docker build -f infra/docker/web.Dockerfile -t meeting-web .
 ```
 
+Builder giữ cấu trúc `/app/frontend` và `/app/contracts/openapi.json` để Vite
+đọc capability của API đúng như khi chạy từ repo. Contract chỉ nằm ở builder;
+image Nginx cuối chỉ nhận `dist/`. Workflow Docker chạy lại khi OpenAPI đổi.
+
 ### Đặc điểm kỹ thuật:
-- **Giai đoạn Build:** `node:20-bookworm-slim`, cài đặt dependencies bằng `npm ci` và biên dịch qua `vite build` ra thư mục `dist/`.
+- **Giai đoạn Build:** `node:24-bookworm-slim`, cài đặt dependencies bằng `npm ci --legacy-peer-deps` và biên dịch qua `vite build` ra thư mục `dist/`.
 - **Giai đoạn Serve:** `nginx:1.27-alpine` siêu nhẹ.
 - **Cấu hình Nginx (`infra/docker/nginx.conf`):**
   - Phục vụ Single Page Application (SPA) với fallback `try_files $uri $uri/ /index.html`.
@@ -107,3 +111,9 @@ Workflow `worker-image` trên CI chạy hadolint, build cả 2 bản, rồi ch�
 ```bash
 docker run --rm -v "$PWD/infra/docker/smoke_worker.sh:/smoke.sh:ro" meeting-worker:cpu sh /smoke.sh
 ```
+
+## Kiểm chứng Web ngày 08/11/2026
+
+- Trước sửa: Docker build lỗi ENOENT tại /contracts/openapi.json; sau khi bổ sung contract, nginx -t còn lỗi quyền ghi /run/nginx.pid.
+- Sau sửa: Docker build đạt; nginx -t đạt dưới user nginx; container QA trả HTTP 200 cho /settings và 404 cho /metrics.
+- Sửa phát sinh do tích hợp FE-19 với BE-16. PR cần B review Dockerfile và bộ lọc workflow; không đổi API hay contract.

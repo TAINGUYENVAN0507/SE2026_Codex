@@ -7,6 +7,7 @@ on:
       - "infra/docker/**"
       - "backend/**"
       - "frontend/**"
+      - "contracts/openapi.json"
       - "pipeline/**"
       - ".dockerignore"
       - ".github/workflows/docker-images.yml"
@@ -16,6 +17,7 @@ on:
       - "infra/docker/**"
       - "backend/**"
       - "frontend/**"
+      - "contracts/openapi.json"
       - "pipeline/**"
       - ".dockerignore"
 
