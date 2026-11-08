@@ -565,8 +565,15 @@ def run_process(
         log.warning("stage %s quá %.0f s, đã kill process group", stage.value, timeout_sec)
         raise StageTimeoutError(stage, timeout_sec=timeout_sec)
     if proc.returncode != 0:
-        # Chỉ ghi ở mức debug: stderr là log kỹ thuật của chính pipeline.
-        log.debug("stderr của stage %s:\n%s", stage.value, "\n".join(stderr_tail))
+        # Không chép nội dung stderr vào log: traceback của thư viện có thể kèm text
+        # transcript hoặc đường dẫn (PRIV-10). Chỉ ghi lượng, còn chi tiết nằm ở
+        # `<stage>.error.json` (đã được mô tả không lộ message).
+        log.debug(
+            "stage %s kết thúc mã %s, stderr %d dòng",
+            stage.value,
+            proc.returncode,
+            len(stderr_tail),
+        )
     return proc.returncode
 
 
