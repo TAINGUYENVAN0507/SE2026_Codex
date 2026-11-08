@@ -134,6 +134,16 @@ class Job(Base):
 
     meeting: Mapped["Meeting"] = relationship("Meeting", back_populates="jobs")  # noqa: F821
 
+    @property
+    def can_retry(self) -> bool:
+        """Còn lượt chạy: lượt hiện tại chưa phải lượt cuối (`attempt < max_attempts`).
+
+        Một điểm duy nhất cho API (`retryable`), worker (lên lịch retry) và reaper (đưa về
+        queued hay đánh dấu failed). Viết `max_attempts > attempt` để mutation đổi `>` thành
+        `>=` biến lượt cuối 3/3 thành còn retry, và test ở biên đó phải bắt được (VT-018).
+        """
+        return self.max_attempts > self.attempt
+
     __table_args__ = (
         CheckConstraint(
             "status IN ('queued', 'running', 'retry_scheduled', "

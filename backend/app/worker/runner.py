@@ -437,7 +437,7 @@ def process_job(
 
     except TransientPipelineError as err:
         current_time = get_now()
-        if job.attempt < job.max_attempts:
+        if job.can_retry:
             delay_sec = compute_backoff_delay(job.attempt)
             next_run = current_time + timedelta(seconds=delay_sec)
             logger.warning(
