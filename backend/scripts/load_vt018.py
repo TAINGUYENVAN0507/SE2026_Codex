@@ -35,6 +35,7 @@ import httpx
 
 BACKEND = Path(__file__).resolve().parent.parent
 PASSWORD = "LoadTest!2026"
+LOGIN_SLOTS = threading.Semaphore(8)
 EMAIL = "load@example.com"
 
 
@@ -73,13 +74,23 @@ def wait_ready(base: str, timeout: float = 60) -> None:
 
 
 def client_run(i, base, wav, barrier, polls, interval, rows, errors):
-    with httpx.Client(base_url=base, timeout=30) as c:
-        r = c.post("/api/v1/auth/login", json={"email": EMAIL, "password": PASSWORD})
-        if r.status_code != 200:
-            errors.append(("login", r.status_code))
+    with httpx.Client(base_url=base, timeout=120) as c:
+        try:
+            # Đăng nhập (argon2, tốn CPU) nằm ngoài phép đo. Giới hạn số lượt đồng thời để
+            # N lượt không timeout trước barrier và làm treo cả harness (đã gặp ở N = 239).
+            with LOGIN_SLOTS:
+                r = c.post("/api/v1/auth/login", json={"email": EMAIL, "password": PASSWORD})
+            ok, code = r.status_code == 200, r.status_code
+        except httpx.HTTPError as e:
+            ok, code = False, type(e).__name__
+        if not ok:
+            errors.append(("login", code))
             barrier.abort()
             return
-        barrier.wait()
+        try:
+            barrier.wait()
+        except threading.BrokenBarrierError:
+            return
         t0 = time.perf_counter()
         r = c.post(
             "/api/v1/meetings",
@@ -219,7 +230,7 @@ def main() -> int:
                     capture_output=True,
                     text=True,
                 ).stdout.strip(),
-                "postgres": subprocess.run(
+                "psycopg": subprocess.run(
                     ["uv", "run", "python", "-c", "import psycopg,sys;print(psycopg.__version__)"],
                     cwd=BACKEND,
                     env=env,
