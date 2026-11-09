@@ -16,8 +16,17 @@ docker build -f infra/docker/api.Dockerfile -t meeting-api .
 - **Base image:** `python:3.12-slim-bookworm` tối ưu dung lượng, tích hợp sẵn `ffmpeg` cho xử lý âm thanh.
 - **Quản lý gói:** Dùng `uv` với cache layer độc lập, không cài dev dependencies hay GPU runtime nặng (Torch/CUDA).
 - **Đa dụng (kèm worker):**
-  - Mặc định chạy API server: `uvicorn app.main:create_app --factory --host 0.0.0.0 --port 8000`.
+  - Mặc định chạy API server: `uvicorn app.main:create_app --factory --host 0.0.0.0 --port 8000 --workers "${API_WORKERS:-1}"`.
+  - Hỗ trợ biến môi trường `API_WORKERS` (mặc định 1) để cấu hình số process uvicorn phục vụ API song song.
   - Có thể chạy worker loop bằng cách ghi đè lệnh: `python -m app.worker.runner`.
+- **Phép tính kết nối DB theo `API_MAX_INFLIGHT` (AD-018, BE-16):**
+  - Mỗi process API độc lập có một giới hạn inflight riêng: `API_MAX_INFLIGHT` (mặc định 40 cho 1 worker, 20 khi chạy 4 worker).
+  - Vì mỗi request đang xử lý giữ một kết nối DB, tổng số kết nối DB tối đa mà cụm API có thể mở đồng thời là:
+    $$\text{Tổng kết nối} = \text{API\_WORKERS} \times \text{API\_MAX\_INFLIGHT}$$
+  - Phép tính này **bắt buộc phải nhỏ hơn** `max_connections` của PostgreSQL trong Docker Compose (mặc định 100), để chừa chỗ cho worker background và migration:
+    - 4 workers, `API_MAX_INFLIGHT=20`: $4 \times 20 = 80 < 100$ (Đạt).
+    - 1 worker, `API_MAX_INFLIGHT=40`: $1 \times 40 = 40 < 100$ (Đạt).
+    - Ứng dụng sẽ ném lỗi và từ chối khởi động nếu tổng kết nối $\ge 100$ (ví dụ: $4 \times 40 = 160 \ge 100$) để bảo vệ DB khỏi cạn kiệt kết nối.
 - **Bảo mật và Phân quyền:**
   - Chạy dưới user không phải root: `app` (UID `10001`).
   - Không nhúng secret, file `.env` hay thông tin xác thực vào image.

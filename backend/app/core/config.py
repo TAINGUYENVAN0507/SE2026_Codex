@@ -24,6 +24,10 @@ class Settings(BaseSettings):
     # và số kết nối của pool, xem app/core/admission.py. 0 = tắt giới hạn.
     API_MAX_INFLIGHT: int = 40
     API_QUEUE_TIMEOUT_SEC: float = 10.0
+    # Số process uvicorn chạy song song trong API image (AD-018, BE-16).
+    API_WORKERS: int = 1
+    # Giới hạn max_connections của PostgreSQL trong docker-compose (chừa chỗ cho worker & admin).
+    POSTGRES_MAX_CONNECTIONS: int = 100
     ENVIRONMENT: str = "development"
     DEBUG: bool = False
 
@@ -48,7 +52,17 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_production_settings(self) -> Self:
-        """Đảm bảo JWT_SECRET an toàn khi chạy trên môi trường production."""
+        """Đảm bảo JWT_SECRET an toàn và phép tính kết nối DB hợp lệ (AD-018, BE-16)."""
+        if self.API_WORKERS < 1:
+            raise ValueError("API_WORKERS phải lớn hơn hoặc bằng 1.")
+        total_inflight = self.API_WORKERS * self.API_MAX_INFLIGHT
+        if self.API_MAX_INFLIGHT > 0 and total_inflight >= self.POSTGRES_MAX_CONNECTIONS:
+            raise ValueError(
+                f"Tổng kết nối đồng thời ({self.API_WORKERS} workers × "
+                f"{self.API_MAX_INFLIGHT} inflight = {total_inflight}) "
+                f"phải nhỏ hơn max_connections của Postgres ({self.POSTGRES_MAX_CONNECTIONS}) "
+                "để tránh cạn kiệt pool kết nối cơ sở dữ liệu."
+            )
         if self.API_MAX_INFLIGHT > self.DB_POOL_SIZE + self.DB_MAX_OVERFLOW:
             raise ValueError(
                 "API_MAX_INFLIGHT không được lớn hơn DB_POOL_SIZE + DB_MAX_OVERFLOW: "
