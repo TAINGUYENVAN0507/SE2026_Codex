@@ -1,4 +1,4 @@
-# Checklist UX và demo — 07/11/2026
+# Checklist UX và demo — 08/11/2026
 
 Ảnh chụp Chromium từ ứng dụng đang chạy: API, worker và PostgreSQL thật;
 pipeline fake, WAV tổng hợp 30 giây. Không dùng cuộc họp hay ghi âm của người
@@ -16,30 +16,31 @@ thật. Đây là kiểm thử luồng sản phẩm, không phải đánh giá �
 | Sửa và lịch sử | Sửa segment, speaker, CRUD công việc; reload và đối chiếu audit; `edit.spec.ts`. |
 | Xóa cuộc họp | Có hộp xác nhận và hủy; E2E xóa khi job đang chạy rồi meeting/audio/job trả 404; `delete.spec.ts`. Không dùng kết quả UI để kết luận worker cleanup hoàn hảo. |
 | Audio hết hạn | Chạy CLI cleanup thật: audio/artifact biến mất, GET audio trả 410, transcript DB/API/UI không đổi; `retention.spec.ts`. |
-| Cài đặt tài khoản | Mở từ bánh răng, reload được; nút xóa bị khóa vì OpenAPI chưa có DELETE /auth/me. Không coi đây là luồng xóa tài khoản đã tích hợp. |
+| Cài đặt tài khoản | Mở từ bánh răng, reload được; nút xóa bật theo contract. E2E xóa user tổng hợp riêng kiểm mất cookie/phiên cũ, đăng nhập lại thất bại và user khác còn hoạt động. |
 | Form xác nhận tài khoản | Vitest: gõ lại email, hủy/Escape, focus, chống gửi lặp, lỗi mạng/5xx giữ email/cache, success xóa phiên. HTTP được giả lập riêng trong test component. |
-| Desktop/mobile | 11 ảnh ở 1280×900 và 360×800; không tràn ngang trong các màn đã chụp. Trang cài đặt còn được kiểm riêng ở 1280px/360px. |
+| Desktop/mobile | 14 ảnh ở viewport 1280×900 và 360×800; không tràn ngang trong các màn đã chụp. Trang cài đặt còn được kiểm riêng ở 1280px/360px. |
 | Bản ghi ngắn | Header hiện giây khi dưới một phút; không ghi 30 giây thành 0 phút. Chưa có thời lượng thì ghi rõ, không dựng số giả. |
 | Lỗi khi chạy | Không có `pageerror` trong luồng chụp ảnh. Lỗi nghiệp vụ được kiểm riêng bằng E2E permanent/retry/partial và Vitest. |
 
-Kết quả local: **183 Vitest**, **18 E2E slow + 3 E2E lỗi/retry/partial** đạt;
+Kết quả local: **238 Vitest**, **19 E2E slow + 3 E2E lỗi/retry/partial** đạt;
 lint, format, typecheck và build đạt. Ruff cho fixture Python retention đạt.
-Chưa push nên chưa xác nhận CI của đợt 07/11.
+Chưa push nên chưa xác nhận CI của đợt 08/11. CI mới chỉ được báo khi đã push và kiểm tra đúng commit.
 
 ## Ảnh mới từ ứng dụng
 
 | Màn | Desktop | Điện thoại |
 | --- | --- | --- |
-| Upload | [1280px](screenshots/2026-11-07-upload-desktop.png) | — |
-| Tiến độ riêng | [1280px](screenshots/2026-11-07-progress-desktop.png) | [360px](screenshots/2026-11-07-progress-mobile.png) |
-| Tóm tắt có evidence | [1280px](screenshots/2026-11-07-summary-desktop.png) | [360px](screenshots/2026-11-07-summary-mobile.png) |
-| Công việc có evidence | [1280px](screenshots/2026-11-07-tasks-desktop.png) | — |
-| Menu export | [1280px](screenshots/2026-11-07-export-desktop.png) | — |
-| Xác nhận xóa cuộc họp | [1280px](screenshots/2026-11-07-delete-desktop.png) | — |
-| Audio hết hạn, còn transcript | [1280px](screenshots/2026-11-07-expired-desktop.png) | — |
-| Cài đặt, chờ API xóa tài khoản | [1280px](screenshots/2026-11-07-settings-desktop.png) | [360px](screenshots/2026-11-07-settings-mobile.png) |
+| Upload | [1280px](screenshots/2026-11-08-upload-desktop.png) | [360px](screenshots/2026-11-08-upload-mobile.png) |
+| Tiến độ riêng | [1280px](screenshots/2026-11-08-progress-desktop.png) | [360px](screenshots/2026-11-08-progress-mobile.png) |
+| Tóm tắt có evidence | [1280px](screenshots/2026-11-08-summary-desktop.png) | [360px](screenshots/2026-11-08-summary-mobile.png) |
+| Công việc có evidence | [1280px](screenshots/2026-11-08-tasks-desktop.png) | — |
+| Menu export | [1280px](screenshots/2026-11-08-export-desktop.png) | — |
+| Xác nhận xóa cuộc họp | [1280px](screenshots/2026-11-08-delete-desktop.png) | — |
+| Audio hết hạn, còn transcript | [1280px](screenshots/2026-11-08-expired-desktop.png) | — |
+| Cài đặt tài khoản | [1280px](screenshots/2026-11-08-settings-desktop.png) | [360px](screenshots/2026-11-08-settings-mobile.png) |
+| Xác nhận xóa tài khoản | [1280px](screenshots/2026-11-08-account-confirm-desktop.png) | [360px](screenshots/2026-11-08-account-confirm-mobile.png) |
 
-Bản sao tiện duyệt ở `.preview-stitch/anh-duyet/2026-11-07/` (ngoài Git).
+Bản sao tiện duyệt ở `.preview-stitch/anh-duyet/2026-11-08/` (ngoài Git).
 Ảnh ở `docs/demo/screenshots/` là dữ liệu tổng hợp, dùng làm bằng chứng của tài liệu.
 
 ## Kịch bản demo 5 phút
@@ -58,7 +59,7 @@ fake chỉ là nhãn minh họa, không phải nhận dạng danh tính từ gi�
 | 02:40–03:40 | Mở Công việc, thử thêm/sửa một việc. Giải thích nhãn Chưa có bằng chứng với nội dung chưa có dẫn chứng. |
 | 03:40–04:20 | Tải TXT/MD/JSON; mở file TXT/MD, chỉ mốc dẫn chứng trùng giao diện. Giới thiệu lựa chọn bản hiện tại/bản AI gốc. |
 | 04:20–04:45 | Mở Xóa cuộc họp, đọc phạm vi dữ liệu, thử hủy rồi xác nhận xóa meeting tổng hợp. Mở lại link cũ để thấy không tìm thấy. |
-| 04:45–05:00 | Chỉ ảnh audio hết hạn còn transcript. Nêu phần còn chờ: xóa cả tài khoản cần API của B; không biểu diễn như đã hoạt động. |
+| 04:45–05:00 | Chỉ ảnh audio hết hạn còn transcript; mở Cài đặt, giải thích phạm vi xóa tài khoản và thử hủy. Chỉ thử xóa thật với user tổng hợp riêng, không xóa tài khoản demo chung. |
 
 Nếu máy xử lý chậm, dùng một meeting tổng hợp đã ready để trình bày phần đọc,
 chỉnh sửa và export. Phân bố 5 phút là kịch bản trình bày, không phải benchmark.
@@ -85,10 +86,26 @@ liệu E2E, kiểm đường dẫn rồi gọi CLI cleanup chính thức.
 
 ## Còn chờ hoặc cần nhóm xác nhận
 
-- API `DELETE /auth/me` và E2E xóa user riêng, cookie, đăng nhập lại thất bại:
-  chờ commit BE-18 của B. Form đã có nhưng thao tác bị khóa theo contract.
-- Native Windows vẫn có log `os.killpg` khi hủy job đang chạy. Pipeline thuộc C;
+- Xóa tài khoản: phần frontend và E2E user riêng đã đạt local; chờ CI/review
+  của đợt 08/11, không còn chờ API BE-18. Bằng chứng xóa log/DB/file ở mọi
+  nơi lưu vẫn thuộc phần backend của B.
+- Review PR mới của B: chưa có PR `haquang` mới tại lần kiểm tra cuối buổi.
+- Native Windows từng có log `os.killpg` khi hủy job đang chạy. Pipeline thuộc C;
   cần xử lý riêng nếu hỗ trợ worker native Windows. Không giấu lỗi để báo sạch.
 - Race worker Linux từng được ghi nhận ngày 06/11 cần B/C xác nhận lại trên main
   mới; xem [FE-19](../frontend/FE-19.md). Test UI/API không thay evidence backend.
 - SH-01 ghi âm pilot có consent là việc chung, chưa được thực hiện trong đợt này.
+
+## Bug bash và thay đổi 08/11
+
+Chi tiết tái hiện, mong đợi/thực tế, mức độ và test hồi quy:
+[`bug-bash-2026-11-08.md`](bug-bash-2026-11-08.md).
+
+- API hiện không có tự đăng ký; tài khoản do CLI quản trị cung cấp.
+- Upload dùng giới hạn/định dạng server, có trạng thái lỗi và thử tải lại config.
+  Khi upload đang chạy không đổi nguồn hoặc bật micro; bàn phím vẫn hủy được.
+- 48 mã lỗi công bố có thông báo riêng; không lộ raw message backend.
+- Docker Web build/khởi động được sau sửa contract path và PID Nginx.
+- Các ảnh chỉ xác nhận layout/overflow ở viewport giả lập Chromium; chưa kiểm
+  điện thoại vật lý hoặc screen reader thực tế. Detector trên trang sửa trả []
+  không đồng nghĩa toàn bộ ứng dụng đã đạt WCAG.

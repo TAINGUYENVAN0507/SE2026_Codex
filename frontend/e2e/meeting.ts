@@ -3,6 +3,9 @@ import { syntheticWav } from './audio.js'
 
 export async function uploadMeeting(page: Page, title: string, seconds = 4) {
   await page.goto('/meetings/new')
+  await expect(
+    page.getByLabel('Chọn file audio', { exact: true }),
+  ).toBeEnabled()
   await page
     .getByLabel('Chọn file audio', { exact: true })
     .setInputFiles(syntheticWav(seconds))

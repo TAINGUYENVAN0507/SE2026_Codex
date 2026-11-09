@@ -33,3 +33,32 @@ export async function expireSyntheticAudio(meetingId: string) {
     segments: number
   }
 }
+
+export async function createSyntheticUser(
+  key: string,
+): Promise<{ id: string; email: string }> {
+  const database = process.env.E2E_DATABASE_URL
+  if (!database || !new URL(database).pathname.toLowerCase().includes('e2e'))
+    throw new Error('Fixture chỉ chạy trên database E2E riêng.')
+  const result = await run(
+    process.env.UV || 'uv',
+    [
+      'run',
+      '--no-sync',
+      'python',
+      fileURLToPath(new URL('./create_user.py', import.meta.url)),
+      key,
+    ],
+    {
+      cwd: fileURLToPath(new URL('../../backend/', import.meta.url)),
+      env: {
+        ...process.env,
+        DATABASE_URL: database,
+        DEBUG: 'false',
+        PYTHONUTF8: '1',
+      },
+      timeout: 30_000,
+    },
+  )
+  return JSON.parse(result.stdout)
+}

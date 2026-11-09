@@ -21,7 +21,7 @@ Giao diện graphite/cam được triển khai từ bộ ảnh đã duyệt, g�
 - `/meetings/sprint-42`: cuộc họp mẫu đầy đủ để thử player và chỉnh sửa.
 - `/meetings/:meetingId`: chi tiết cuộc họp từ API.
 - `/meetings/:meetingId/processing`: theo dõi sáu bước xử lý, tách khỏi trang đọc transcript.
-- `/settings`: thông tin tài khoản và chuẩn bị xóa tài khoản. Nút xóa chỉ bật khi OpenAPI có `DELETE /auth/me`; hiện chờ B, chưa có E2E xóa tài khoản thật.
+- `/settings`: thông tin tài khoản và xóa tài khoản. Contract trên main đã có `DELETE /auth/me`; E2E dùng user tổng hợp riêng kiểm xóa thật, cookie/phiên cũ vô hiệu, đăng nhập lại thất bại và user khác không bị ảnh hưởng.
 
 `/meetings/sprint-42` vẫn là trang mẫu trong React Context. Danh sách,
 upload và transcript của các cuộc họp khác dùng API. Khi chạy dev, MSW bật
@@ -40,8 +40,10 @@ API client có type sinh từ `contracts/openapi.json`; MSW đọc fixture chung
 `contracts/fixtures/api/`. Danh sách poll mỗi 5 giây khi còn cuộc họp đang chờ
 hoặc xử lý; transcript pending cũng được lấy lại. Upload dùng XHR với tiến độ,
 hủy và Idempotency-Key. `useJobQuery` và `JobStatusCard` đã gắn vào trang chi tiết
-API và trang tiến độ riêng. Giới hạn 200 MB cần được thay bằng `GET /config`
-khi tích hợp backend. Tùy chọn số người nói đang disable vì chưa được xử lý.
+API và trang tiến độ riêng. Trang upload lấy giới hạn và đuôi file từ `GET /config`;
+khi chưa tải được cấu hình, khóa chọn file và có nút thử lại. Khóa nguồn, metadata
+và ghi âm trong lúc upload; hủy bằng bàn phím có thông báo trạng thái.
+Tùy chọn số người nói đang disable vì chưa được xử lý.
 
 ## Thử giao diện
 

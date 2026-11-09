@@ -1,6 +1,7 @@
 import { act, render, screen, within } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, useLocation } from 'react-router-dom'
+import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 import {
@@ -28,6 +29,12 @@ afterEach(() => {
 })
 afterAll(() => server.close())
 
+function CurrentPath() {
+  return (
+    <output aria-label="Đường dẫn hiện tại">{useLocation().pathname}</output>
+  )
+}
+
 function renderCard(compact = false) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: 0 } },
@@ -35,6 +42,7 @@ function renderCard(compact = false) {
   return render(
     <QueryClientProvider client={client}>
       <MemoryRouter>
+        <CurrentPath />
         <JobStatusCard
           jobId={jobId}
           detailsHref={compact ? '/meetings/example/processing' : undefined}
@@ -57,6 +65,17 @@ function jobWithStatus(status: JobStatus): Job {
 }
 
 describe('JobStatusCard', () => {
+  it('opens the processing page using Tab and Enter from the compact status', async () => {
+    const user = userEvent.setup()
+    renderCard(true)
+    const link = await screen.findByRole('link', { name: 'Xem tiến độ' })
+    await user.tab()
+    expect(link).toHaveFocus()
+    await user.keyboard('{Enter}')
+    expect(screen.getByLabelText('Đường dẫn hiện tại')).toHaveTextContent(
+      '/meetings/example/processing',
+    )
+  })
   it('keeps progress and retry visible in compact mode and links to a separate stage view', async () => {
     renderCard(true)
     const link = await screen.findByRole('link', { name: 'Xem tiến độ' })

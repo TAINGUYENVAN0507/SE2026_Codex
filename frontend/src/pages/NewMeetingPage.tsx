@@ -7,17 +7,15 @@ import { MicrophoneIcon } from '@phosphor-icons/react/dist/csr/Microphone'
 import { StopIcon } from '@phosphor-icons/react/dist/csr/Stop'
 import { UploadSimpleIcon } from '@phosphor-icons/react/dist/csr/UploadSimple'
 import { Link, useNavigate } from 'react-router-dom'
-import { useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Topbar } from '../components/Topbar'
 import { useObjectUrl } from '../features/audio/useObjectUrl'
 import { useIdempotencyKey } from '../features/audio/useIdempotencyKey'
 import { useRecorder } from '../features/audio/useRecorder'
 import { uploadMeeting } from '../features/audio/uploadMeeting'
 import { ApiError } from '../api/errors'
-import {
-  DEFAULT_UPLOAD_CONFIG,
-  validateAudio,
-} from '../features/audio/validation'
+import { getConfig } from '../api/client'
+import { validateAudio } from '../features/audio/validation'
 import { useMeetings } from '../features/meetings/DemoStore'
 import { formatTime } from '../features/meetings/model'
 
@@ -25,6 +23,13 @@ export function NewMeetingPage() {
   const { add } = useMeetings()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const configuration = useQuery({
+    queryKey: ['config'],
+    queryFn: getConfig,
+    staleTime: 60_000,
+    retry: false,
+  })
+  const uploadConfig = configuration.data
   const [mode, setMode] = useState<'upload' | 'record'>('upload')
   const [file, setFile] = useState<File>()
   const [duration, setDuration] = useState(0)
@@ -35,6 +40,7 @@ export function NewMeetingPage() {
   const [dragging, setDragging] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
+  const [uploadStatus, setUploadStatus] = useState('')
   const activeUpload = useRef<ReturnType<typeof uploadMeeting> | null>(null)
   const picker = useRef<HTMLInputElement>(null)
   const alive = useRef(true)
@@ -62,8 +68,8 @@ export function NewMeetingPage() {
   }, [recording])
 
   function choose(selected: File) {
-    if (uploading) return
-    const invalid = validateAudio(selected)
+    if (uploading || !uploadConfig) return
+    const invalid = validateAudio(selected, uploadConfig)
     if (invalid) {
       setError(invalid)
       return
@@ -77,6 +83,7 @@ export function NewMeetingPage() {
   async function submit() {
     if (
       !file ||
+      !uploadConfig ||
       !consent ||
       !idempotencyKey ||
       recording ||
@@ -84,13 +91,14 @@ export function NewMeetingPage() {
       uploading
     )
       return
-    const invalid = validateAudio(file)
+    const invalid = validateAudio(file, uploadConfig)
     if (invalid) {
       setError(invalid)
       return
     }
     setError('')
     setProgress(0)
+    setUploadStatus('Đang tải bản ghi lên máy chủ…')
     setUploading(true)
     if (mode === 'record') record.startUpload()
     const upload = uploadMeeting(
@@ -131,6 +139,11 @@ export function NewMeetingPage() {
       if (mode === 'record') record.finishUpload()
       navigate(`/meetings/${result.meeting.id}`)
     } catch (cause) {
+      setUploadStatus(
+        cause instanceof ApiError && cause.code === 'UPLOAD_CANCELLED'
+          ? 'Đã hủy tải lên. Bản ghi vẫn ở trên máy, bạn có thể thử lại.'
+          : '',
+      )
       if (cause instanceof ApiError && cause.code !== 'UPLOAD_CANCELLED')
         setError(cause.message)
       else if (!(cause instanceof ApiError))
@@ -167,7 +180,7 @@ export function NewMeetingPage() {
                 aria-pressed={mode === 'upload'}
                 className={mode === 'upload' ? 'selected' : ''}
                 onClick={() => setMode('upload')}
-                disabled={recording || requesting}
+                disabled={recording || requesting || uploading || !uploadConfig}
               >
                 <UploadSimpleIcon />
                 Tải file audio
@@ -177,7 +190,7 @@ export function NewMeetingPage() {
                 aria-pressed={mode === 'record'}
                 className={mode === 'record' ? 'selected' : ''}
                 onClick={() => setMode('record')}
-                disabled={recording || requesting}
+                disabled={recording || requesting || uploading || !uploadConfig}
               >
                 <MicrophoneIcon />
                 Ghi âm
@@ -187,8 +200,8 @@ export function NewMeetingPage() {
               type="file"
               hidden
               ref={picker}
-              disabled={uploading}
-              accept={DEFAULT_UPLOAD_CONFIG.allowed_extensions
+              disabled={uploading || !uploadConfig}
+              accept={(uploadConfig?.allowed_extensions ?? [])
                 .map((extension) => `.${extension.replace(/^\./, '')}`)
                 .join(',')}
               aria-label="Chọn file audio"
@@ -230,7 +243,9 @@ export function NewMeetingPage() {
                     className="button primary"
                     type="button"
                     onClick={() => void record.start(consent)}
-                    disabled={!consent || requesting}
+                    disabled={
+                      !consent || requesting || uploading || !uploadConfig
+                    }
                   >
                     <MicrophoneIcon />
                     {file ? 'Ghi lại' : 'Bắt đầu ghi âm'}
@@ -300,14 +315,14 @@ export function NewMeetingPage() {
                   </span>
                   <h2>Kéo file audio vào đây</h2>
                   <p>
-                    {DEFAULT_UPLOAD_CONFIG.allowed_extensions
-                      .map((extension) => extension.toUpperCase())
-                      .join(', ')}{' '}
-                    · tối đa {DEFAULT_UPLOAD_CONFIG.max_upload_mb} MB
+                    {uploadConfig
+                      ? `${uploadConfig.allowed_extensions.map((extension) => extension.replace(/^\./, '').toUpperCase()).join(', ')} · tối đa ${uploadConfig.max_upload_mb} MB`
+                      : 'Đang tải định dạng và giới hạn…'}
                   </p>
                   <button
                     className="button secondary"
                     type="button"
+                    disabled={uploading || !uploadConfig}
                     onClick={() => picker.current?.click()}
                   >
                     Chọn file trên máy
@@ -317,9 +332,29 @@ export function NewMeetingPage() {
             )}
           </div>
           <div className="create-settings">
+            {!uploadConfig &&
+              (configuration.isError ? (
+                <div>
+                  <p className="form-error" role="alert">
+                    Không tải được giới hạn upload. Hãy kiểm tra kết nối rồi thử
+                    lại.
+                  </p>
+                  <button
+                    className="button secondary small"
+                    type="button"
+                    onClick={() => void configuration.refetch()}
+                    disabled={configuration.isFetching}
+                  >
+                    Thử tải lại cấu hình
+                  </button>
+                </div>
+              ) : (
+                <p role="status">Đang tải cấu hình upload…</p>
+              ))}
             <label className="field">
               <span>Tên cuộc họp</span>
               <input
+                disabled={uploading}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Ví dụ: Họp kế hoạch sprint 42"
@@ -337,6 +372,7 @@ export function NewMeetingPage() {
                   <span>Ngày họp</span>
                   <input
                     type="date"
+                    disabled={uploading}
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
                     required
@@ -356,7 +392,7 @@ export function NewMeetingPage() {
                 checked={consent}
                 onChange={(e) => setConsent(e.target.checked)}
                 required
-                disabled={recording || requesting}
+                disabled={recording || requesting || uploading || !uploadConfig}
               />
               <span>
                 Tôi xác nhận đã có sự đồng ý cần thiết của người tham gia trước
@@ -372,8 +408,22 @@ export function NewMeetingPage() {
                 {error || record.error}
               </p>
             )}
+            <p
+              role="status"
+              aria-label="Trạng thái tải lên"
+              className="local-audio-note"
+            >
+              {uploadStatus}
+            </p>
             {uploading && (
-              <div role="status" aria-label="Tiến độ tải lên">
+              <div
+                role="progressbar"
+                aria-label="Tiến độ tải lên"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={progress}
+                aria-valuetext={`${progress}%`}
+              >
                 Đang tải lên: {progress}%
               </div>
             )}
@@ -387,6 +437,7 @@ export function NewMeetingPage() {
               type="submit"
               disabled={
                 !file ||
+                !uploadConfig ||
                 !consent ||
                 !title.trim() ||
                 recording ||
