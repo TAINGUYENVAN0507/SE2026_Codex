@@ -10,7 +10,7 @@
 | 2 | [x] `AdmissionControlMiddleware`, `API_MAX_INFLIGHT`, `API_QUEUE_TIMEOUT_SEC`; test đỏ trước (AD-018) | `a224812` |
 | 3 | [x] Đo lại 239, 247 (3 lần mỗi cấu hình) và 40, nêu giới hạn (AD-018, RE-018, AI-19) | `55d032a` |
 | 4 | [x] Metric `api_inflight_requests`, `api_admission_rejected_total`; test đỏ trước (RE-018, BE-19) | `a00c151` |
-| 5 | [x] Tài liệu lưu trữ khớp cấu hình (test đỏ trước: `rules/` ghi 30 ngày), `docs/evidence/README.md`, ROADMAP | xem `git log` |
+| 5 | [x] Tài liệu lưu trữ khớp cấu hình (test đỏ trước: `rules/` ghi 30 ngày), `docs/evidence/README.md`, ROADMAP | `c52f12f` |
 
 ## Kết quả và điều còn mở
 - 247 client: 247/247 upload, 0 lỗi, cả 6 lần chạy. **Không** tuyên bố đạt p95 ≤ 2,0 s: 1 process p95 tất cả 3,1 đến 3,4 s; 4 process 1,8 đến 1,9 s nhưng p95 chỉ-upload 2,2 đến 2,4 s. Chi tiết và giới hạn: `docs/evidence/load-247/after/README.md`.
