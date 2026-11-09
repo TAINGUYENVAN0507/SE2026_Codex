@@ -6,7 +6,11 @@ export function AppShell() {
   const location = useLocation()
   return (
     <>
-      <div className="demo-strip">
+      <div
+        className="demo-strip"
+        role="region"
+        aria-label="Thông báo bản xem thử"
+      >
         <span className="demo-indicator" />
         Bản xem thử{' '}
         <span className="demo-description">

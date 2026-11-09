@@ -121,3 +121,17 @@ CI trên GitHub chỉ được xác nhận sau khi được phép push và workf
 - Server state dùng TanStack Query. State cục bộ dùng React state.
 - Không import trực tiếp schema trong `contracts/pipeline/`; đó là contract giữa pipeline và backend.
 - Khi kết nối backend, frontend phải đọc giới hạn upload từ `GET /api/v1/config`.
+
+## Hardening và axe — 09/11/2026
+
+401 từ API (ngoài lỗi đăng nhập) dọn cache và về login có thông báo hết phiên,
+giữ URL đích qua `next`. Thông báo dùng router state, không lưu credential.
+Ma trận rỗng/tải/lỗi: `docs/demo/ux-checklist.md`, có test các trang và panel.
+
+`axe-core` 4.x (MPL-2.0) là dev dependency. `npm test` chạy kiểm cấu trúc trên
+bốn trang qua jsdom; chỉ kiểm Chromium mới bao gồm tương phản màu/layout.
+`FAKE_SCENARIO=slow npx playwright test` gồm bốn ca axe desktop/mobile cùng E2E
+hiện có. PowerShell đặt `$env:FAKE_SCENARIO='slow'` trước khi chạy lệnh.
+Không tắt color-contrast trong browser. JSON/ảnh được ghi ở `test-results/`
+(ngoài Git); bản tổng hợp đã soát ở `docs/demo/accessibility-2026-11-09.json`.
+Kết quả tự động không thay kiểm screen reader hoặc chứng nhận toàn bộ WCAG.

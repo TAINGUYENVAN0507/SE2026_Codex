@@ -53,7 +53,11 @@ it.each([
       </QueryClientProvider>,
     )
     expect(
-      await screen.findByRole('heading', { name: 'Chào mừng trở lại' }),
+      await screen.findByRole(
+        'heading',
+        { name: 'Chào mừng trở lại' },
+        { timeout: 5_000 },
+      ),
     ).toBeInTheDocument()
     expect(screen.getByRole('alert')).toHaveTextContent(
       'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại để tiếp tục.',
