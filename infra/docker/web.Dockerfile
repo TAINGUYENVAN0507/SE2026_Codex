@@ -29,7 +29,7 @@ COPY infra/docker/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=builder /app/frontend/dist /usr/share/nginx/html
 
 # Cấu hình quyền cho user nginx (non-root) và chuyển PID sang /tmp/nginx.pid
-RUN sed -i 's,^pid[[:space:]].*;,pid /var/run/nginx.pid;,' /etc/nginx/nginx.conf \
+RUN sed -i 's,^pid[[:space:]].*;,pid /tmp/nginx.pid;,' /etc/nginx/nginx.conf \
     && touch /tmp/nginx.pid \
     && chown -R nginx:nginx /tmp/nginx.pid /usr/share/nginx/html /var/cache/nginx /var/log/nginx /etc/nginx
 
