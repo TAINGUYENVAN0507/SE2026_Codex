@@ -57,7 +57,7 @@ Test về retry không dùng `sleep` chờ giờ thật: lượt chạy lại tr
 
 ## Tải 40 client
 
-`backend/scripts/load_vt018.py`, kết quả ở `load-40/summary.md`: p95 0,67 s, 0 lỗi, mục tiêu 1,5 s. Trước khi sửa `get_db` dùng chung engine: 10 lỗi 500 `too many clients already`. Phép đo là một lần chạy, một worker, pipeline fake, mọi thành phần chung một máy; xem phần giới hạn trong từng `summary.md`. Sau thay đổi giới hạn request đang xử lý (2026-11-09) chạy lại: p95 0,65 s, 0 lỗi (`../load-40/after/`).
+`backend/scripts/load_vt018.py`, kết quả ở `load-40/summary.md`: p95 0,67 s, 0 lỗi, mục tiêu 1,5 s. Trước khi sửa `get_db` dùng chung engine: 10 lỗi 500 `too many clients already`. Phép đo là một lần chạy, một worker, pipeline fake, mọi thành phần chung một máy; xem phần giới hạn trong từng `summary.md`. Sau thay đổi giới hạn request đang xử lý (2026-11-09) chạy lại: p95 0,65 s, 0 lỗi (`load-40-after/`).
 
 ## Tải 239 và 247 client (RE-018, AD-018)
 

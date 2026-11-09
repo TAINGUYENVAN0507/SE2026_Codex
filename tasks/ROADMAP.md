@@ -138,10 +138,21 @@ Hiện trạng đọc từ code tại `53f753b`. ✓ đã có · ◐ một phầ
 
 Kết quả phần C: ADR 0002, test canary pipeline (sửa rò stderr), đồng bộ tài liệu; **đo tải 239 và 247 không đạt**, xem `docs/evidence/load-239/` và `load-247/`. A: bug bash giao diện. B: tách `meetings.py`, privacy, reliability, `make`.
 
+### Đợt 4 (giao ngày 2026-11-09: `tasks/2026-11-09/`)
+
+| Member | Việc |
+|---|---|
+| A | CI chạy thật container web; 401 giữa phiên về đăng nhập; trạng thái rỗng, tải, lỗi; axe |
+| B | Profile `POST /meetings`; `API_WORKERS` với phép tính kết nối; tách tiếp `meetings.py`; `make smoke` |
+| C | Chẩn đoán 61 s ở 247 client và sửa (giới hạn request đang xử lý); metric quá tải; tài liệu lưu trữ khớp cấu hình; bản đồ bằng chứng `docs/evidence/README.md` |
+
+Kết quả phần C: nguyên nhân là thread và kết nối DB chặn nhau (`docs/evidence/load-247/diagnosis.md`). 247 client: 247/247 upload, 0 lỗi (trước: 91 thành công, 155 lỗi 503). p95 tất cả 3,1 đến 3,4 s với 1 process (**chưa đạt** 2,0 s), 1,8 đến 1,9 s với 4 process, nhưng p95 chỉ-upload 2,2 đến 2,4 s nên **không** ghi là đạt. 40 client: 0,65 s, đạt.
+
 ## Việc treo
 
 - Đã xong: #33–#39 vào `main`. Nhánh `tainguyen-vt018-tests` (Đợt 2 của C) vào `main` qua PR hôm 2026-11-08.
-- Đo tải 247 chưa đạt p95 ≤ 2,0 s; B profile `POST /meetings` (xem `docs/evidence/load-247/analysis.md`).
+- Đo tải 247: chưa đạt p95 ≤ 2,0 s ở cấu hình mặc định; B profile `POST /meetings` (xem `docs/evidence/load-247/after/README.md`).
+- PR #40 vào `main` ngày 2026-11-08 không có review ghi lại trong PR; #41 và #42 có review (A review #41, C review #42).
 - BT3 Bước 0 (plan AI, test AI thô) chưa làm.
 
 - SH-01: chưa có bản ghi âm họp thật. AI-12 phần thu thật, AI-14, benchmark trên audio họp phụ thuộc vào đây.
