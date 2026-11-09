@@ -21,7 +21,7 @@ Nhóm trưởng có 3 bài cá nhân phân tích trên chính repo này. Bài PD
 
 ## Tham số
 
-Quy ước của nhóm, để hai con số lưu trữ của RE-018 và AD-018 không mâu thuẫn:
+Quy ước của nhóm (nhóm trưởng giao quyền chọn ngày 2026-11-09, giữ 14 và 28), để hai con số lưu trữ của RE-018 và AD-018 không mâu thuẫn:
 
 | Biến | Mặc định | Áp dụng cho |
 |---|---|---|
@@ -148,7 +148,7 @@ Kết quả phần C: ADR 0002, test canary pipeline (sửa rò stderr), đồng
 
 Kết quả phần C: nguyên nhân là thread và kết nối DB chặn nhau (`docs/evidence/load-247/diagnosis.md`). 247 client: 247/247 upload, 0 lỗi (trước: 91 thành công, 155 lỗi 503). p95 tất cả 3,1 đến 3,4 s với 1 process (**chưa đạt** 2,0 s), 1,8 đến 1,9 s với 4 process, nhưng p95 chỉ-upload 2,2 đến 2,4 s nên **không** ghi là đạt. 40 client: 0,65 s, đạt.
 
-### Lịch tới hạn nộp (người dùng báo còn 5 ngày từ 2026-11-09, tức khoảng 2026-11-14)
+### Lịch tới hạn nộp (hạn nộp 2026-11-14, người dùng xác nhận ngày 2026-11-09)
 
 | Ngày | Mục tiêu | Ai |
 |---|---|---|
@@ -158,7 +158,7 @@ Kết quả phần C: nguyên nhân là thread và kết nối DB chặn nhau (`
 | 11-13 | **Đóng băng bằng chứng**: `docs/evidence/README.md` khớp số liệu cuối; mọi PR đã review và merge; ghi hash cuối | C |
 | 11-14 | Hạn nộp. Không đổi code. Dành cho PDF cá nhân (ngoài repo) | người dùng |
 
-Phần cá nhân của BT1/BT2/BT3 (phân tích, Bước 0 trước khi code, reflection, PDF) do người dùng viết; repo chỉ cung cấp bằng chứng. Hạn chính xác cần xác nhận trên Google Classroom.
+Phần cá nhân của BT1/BT2/BT3 (phân tích, Bước 0 trước khi code, reflection, PDF) do người dùng viết; repo chỉ cung cấp bằng chứng.
 
 ## Việc treo
 
