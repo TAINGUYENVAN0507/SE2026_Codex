@@ -31,7 +31,7 @@ Cập nhật 2026-11-09.
 | Retry không tạo bản ghi trùng | `backend/tests/reliability/`, `docs/evidence/reliability.md`, `docs/evidence/vt-018/01-red.log` | Có |
 | Pairwise | `docs/evidence/vt-018/pairwise.md` | Có |
 | Mutation `>` thành `>=` | `docs/evidence/vt-018/mutation.md` | Có |
-| 40 người dùng p95 ≤ 1,5 s | `docs/evidence/vt-018/load-40/`, `load-40-before/`, `load-40-after/` | Đạt: 0,65 s sau thay đổi mới nhất; fake pipeline, một máy |
+| 40 người dùng p95 ≤ 1,5 s | `docs/evidence/vt-018/load-40/`, `docs/evidence/vt-018/load-40-before/`, `docs/evidence/vt-018/load-40-after/` | Đạt: 0,65 s sau thay đổi mới nhất; fake pipeline, một máy |
 | Coverage, flaky | `docs/evidence/vt-018/README.md` | Có |
 
 ## Chưa làm, không có bằng chứng

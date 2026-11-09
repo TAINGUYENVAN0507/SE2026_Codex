@@ -148,6 +148,18 @@ Kết quả phần C: ADR 0002, test canary pipeline (sửa rò stderr), đồng
 
 Kết quả phần C: nguyên nhân là thread và kết nối DB chặn nhau (`docs/evidence/load-247/diagnosis.md`). 247 client: 247/247 upload, 0 lỗi (trước: 91 thành công, 155 lỗi 503). p95 tất cả 3,1 đến 3,4 s với 1 process (**chưa đạt** 2,0 s), 1,8 đến 1,9 s với 4 process, nhưng p95 chỉ-upload 2,2 đến 2,4 s nên **không** ghi là đạt. 40 client: 0,65 s, đạt.
 
+### Lịch tới hạn nộp (người dùng báo còn 5 ngày từ 2026-11-09, tức khoảng 2026-11-14)
+
+| Ngày | Mục tiêu | Ai |
+|---|---|---|
+| 11-10 | Xong phần còn lại của Đợt 4 (`tasks/2026-11-09/`); #43 được B review và merge; B có profile `POST /meetings` | A, B, C |
+| 11-11 | C đo lại 247 (3 lần, 1 và 4 process) trên `main` sau thay đổi của B; ghi kết quả thật, kể cả không đạt | C |
+| 11-12 | **Đóng băng code**: chỉ sửa lỗi. Chạy lại toàn bộ test, `make smoke`, E2E; README chạy được từ clone sạch | A, B, C |
+| 11-13 | **Đóng băng bằng chứng**: `docs/evidence/README.md` khớp số liệu cuối; mọi PR đã review và merge; ghi hash cuối | C |
+| 11-14 | Hạn nộp. Không đổi code. Dành cho PDF cá nhân (ngoài repo) | người dùng |
+
+Phần cá nhân của BT1/BT2/BT3 (phân tích, Bước 0 trước khi code, reflection, PDF) do người dùng viết; repo chỉ cung cấp bằng chứng. Hạn chính xác cần xác nhận trên Google Classroom.
+
 ## Việc treo
 
 - Đã xong: #33–#39 vào `main`. Nhánh `tainguyen-vt018-tests` (Đợt 2 của C) vào `main` qua PR hôm 2026-11-08.
