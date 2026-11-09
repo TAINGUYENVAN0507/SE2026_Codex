@@ -95,3 +95,26 @@ def test_default_max_inflight_fits_threadpool_and_db_pool():
 def test_inflight_above_db_pool_is_rejected_at_startup():
     with pytest.raises(ValueError, match="API_MAX_INFLIGHT"):
         Settings(API_MAX_INFLIGHT=100, DB_POOL_SIZE=5, DB_MAX_OVERFLOW=10)
+
+
+def sample(name: str) -> float:
+    from prometheus_client import REGISTRY
+
+    value = REGISTRY.get_sample_value(name)
+    return 0.0 if value is None else value
+
+
+@pytest.mark.anyio
+async def test_rejections_and_inflight_are_exposed_as_metrics():
+    """RE-018: người vận hành thấy quá tải từ /metrics, không phải đoán từ lỗi 503."""
+    before = sample("api_admission_rejected_total")
+    app, _ = make_app(max_inflight=1, queue_timeout_sec=0.05, sleep=0.3)
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://t") as c:
+        slow = asyncio.create_task(c.get("/work"))
+        await asyncio.sleep(0.1)
+        assert sample("api_inflight_requests") == 1
+        assert (await c.get("/work")).status_code == 503
+        assert (await slow).status_code == 200
+    assert sample("api_admission_rejected_total") == before + 1
+    assert sample("api_inflight_requests") == 0

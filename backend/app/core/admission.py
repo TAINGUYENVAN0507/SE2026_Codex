@@ -14,11 +14,19 @@ from __future__ import annotations
 
 import asyncio
 
+from prometheus_client import Counter, Gauge
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from app.core.errors import build_error_envelope, get_request_id
+
+# Không có nhãn nào chứa id hay dữ liệu người dùng (PRIV-10).
+INFLIGHT = Gauge("api_inflight_requests", "Số request đang xử lý trong process API")
+REJECTED = Counter(
+    "api_admission_rejected_total",
+    "Số request bị từ chối 503 vì chờ quá API_QUEUE_TIMEOUT_SEC",
+)
 
 # Đường dẫn không bị xếp hàng: health cho liveness probe, /metrics cho Prometheus.
 EXEMPT_PATHS = frozenset({"/health", "/api/v1/health", "/metrics"})
@@ -50,11 +58,14 @@ class AdmissionControlMiddleware:
         try:
             await asyncio.wait_for(self._semaphore.acquire(), timeout=self.queue_timeout_sec)
         except TimeoutError:
+            REJECTED.inc()
             await self._reject(scope, receive, send)
             return
+        INFLIGHT.inc()
         try:
             await self.app(scope, receive, send)
         finally:
+            INFLIGHT.dec()
             self._semaphore.release()
 
     async def _reject(self, scope: Scope, receive: Receive, send: Send) -> None:
