@@ -14,7 +14,7 @@ export function useEndSession() {
     const next = `${location.pathname}${location.search}${location.hash}`
     navigate(
       returnToPage ? `/login?next=${encodeURIComponent(next)}` : '/login',
-      { replace: true },
+      { replace: true, state: returnToPage ? { sessionExpired: true } : null },
     )
   }
 }
