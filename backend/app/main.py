@@ -7,6 +7,7 @@ from app.api.v1.config import router as config_router
 from app.api.v1.health import router as health_router
 from app.api.v1.jobs import router as jobs_router
 from app.api.v1.meetings import router as meetings_router
+from app.core.admission import AdmissionControlMiddleware
 from app.core.config import get_settings
 from app.core.errors import setup_exception_handlers
 from app.core.logging import setup_logging
@@ -25,6 +26,13 @@ def create_app() -> FastAPI:
         docs_url="/docs",
         redoc_url="/redoc",
         openapi_url="/openapi.json",
+    )
+
+    # Thêm đầu tiên nên nằm trong cùng: request chờ ở đây đã có request_id và được đo bởi metrics
+    application.add_middleware(
+        AdmissionControlMiddleware,
+        max_inflight=settings.API_MAX_INFLIGHT,
+        queue_timeout_sec=settings.API_QUEUE_TIMEOUT_SEC,
     )
 
     # Đăng ký middleware request_id, logging và prometheus metrics
