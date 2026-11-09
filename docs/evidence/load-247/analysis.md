@@ -1,5 +1,7 @@
 # Phân tích: 247 client đồng thời so với p95 ≤ 2,0 s (AD-018), lần đo 2026-11-08
 
+> **Cập nhật 2026-11-09:** nguyên nhân 63 s đã tìm ra, xem [`diagnosis.md`](diagnosis.md); số đo sau khi sửa ở [`after/README.md`](after/README.md). Ba giả thuyết bên dưới là của hôm 2026-11-08: giả thuyết 1 không phải nguyên nhân chính (`ffprobe` ~15 ms), giả thuyết 2 gần đúng nhất, giả thuyết 3 chưa loại được.
+
 Kết quả: **không đạt**. Số đo thật, một lần chạy; `summary.md`, `raw.csv`, `env.json` nằm cùng thư mục.
 
 ## So với lần đo 239 (trước khi sửa pool)

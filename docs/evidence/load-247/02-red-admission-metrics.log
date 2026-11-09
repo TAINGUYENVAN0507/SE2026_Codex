@@ -1,0 +1,6 @@
+E            +  where 0.0 = sample('api_inflight_requests')
+
+tests/unit/test_admission_control.py:116: AssertionError
+=========================== short test summary info ============================
+FAILED tests/unit/test_admission_control.py::test_rejections_and_inflight_are_exposed_as_metrics[asyncio]
+1 failed, 6 passed in 1.49s

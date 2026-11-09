@@ -92,12 +92,21 @@ def client_run(i, base, wav, barrier, polls, interval, rows, errors):
         except threading.BrokenBarrierError:
             return
         t0 = time.perf_counter()
-        r = c.post(
-            "/api/v1/meetings",
-            data={"title": f"Tải {i}", "consent_confirmed": "true", "meeting_date": "2026-11-07"},
-            files={"file": ("load.wav", wav.read_bytes(), "audio/wav")},
-            headers={"Idempotency-Key": str(uuid.uuid4())},
-        )
+        try:
+            r = c.post(
+                "/api/v1/meetings",
+                data={
+                    "title": f"Tải {i}",
+                    "consent_confirmed": "true",
+                    "meeting_date": "2026-11-07",
+                },
+                files={"file": ("load.wav", wav.read_bytes(), "audio/wav")},
+                headers={"Idempotency-Key": str(uuid.uuid4())},
+            )
+        except httpx.HTTPError as e:
+            # Trước đây lỗi ở đây làm thread chết im lặng: lượt đo biến mất khỏi kết quả (lệch 1/247).
+            errors.append(("create", type(e).__name__))
+            return
         rows.append(("create", r.status_code, time.perf_counter() - t0))
         if r.status_code != 201:
             errors.append(("create", r.status_code))
@@ -120,6 +129,10 @@ def main() -> int:
     ap.add_argument("--interval", type=float, default=2.0)
     ap.add_argument("--threshold", type=float, default=1.5, help="p95 mục tiêu (giây)")
     ap.add_argument("--port", type=int, default=18000)
+    ap.add_argument(
+        "--app", default="app.main:app", help="ASGI app (để thử biến thể khi chẩn đoán)"
+    )
+    ap.add_argument("--api-workers", type=int, default=1, help="số process uvicorn")
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
     out = Path(args.out)
@@ -151,9 +164,11 @@ def main() -> int:
             "uv",
             "run",
             "uvicorn",
-            "app.main:app",
+            args.app,
             "--port",
             str(args.port),
+            "--workers",
+            str(args.api_workers),
             "--log-level",
             "warning",
         ],
@@ -211,6 +226,7 @@ def main() -> int:
         "poll": stats(by["poll"]),
         "all_requests": stats(allv),
         "errors": len(errors),
+        "error_kinds": {f"{k}:{v}": errors.count((k, v)) for k, v in sorted(set(errors), key=str)},
         "wall_clock_s": round(wall, 2),
         "meeting_status_at_end": statuses,
         "verdict": "PASS" if allv and not errors and pct(allv, 0.95) <= args.threshold else "FAIL",
@@ -240,6 +256,7 @@ def main() -> int:
                 "args": {k: v for k, v in vars(args).items() if k != "db"},
                 "pipeline_backend": "fake",
                 "workers": 1,
+                "api_workers": args.api_workers,
             },
             indent=2,
         )
@@ -252,7 +269,7 @@ def main() -> int:
 | poll trạng thái job | {summary["poll"]["n"]} | {summary["poll"]["p50_s"]} | {summary["poll"]["p95_s"]} | {summary["poll"]["max_s"]} |
 | **tất cả** | {summary["all_requests"]["n"]} | {summary["all_requests"]["p50_s"]} | **{summary["all_requests"]["p95_s"]}** | {summary["all_requests"]["max_s"]} |
 
-Mục tiêu p95 ≤ {args.threshold} s: **{summary["verdict"]}**. Lỗi: {summary["errors"]}. Thời gian toàn bộ: {summary["wall_clock_s"]} s.
+Mục tiêu p95 ≤ {args.threshold} s: **{summary["verdict"]}**. Lỗi: {summary["errors"]} {summary["error_kinds"] or ""}. Thời gian toàn bộ: {summary["wall_clock_s"]} s.
 Trạng thái meeting khi kết thúc: {statuses}.
 
 ## Giới hạn của phép đo

@@ -20,6 +20,10 @@ class Settings(BaseSettings):
     DB_POOL_SIZE: int = 20
     DB_MAX_OVERFLOW: int = 30
     DB_POOL_TIMEOUT_SEC: int = 10
+    # Số request xử lý cùng lúc trong MỖI process API. Phải nhỏ hơn số thread của threadpool (40)
+    # và số kết nối của pool, xem app/core/admission.py. 0 = tắt giới hạn.
+    API_MAX_INFLIGHT: int = 40
+    API_QUEUE_TIMEOUT_SEC: float = 10.0
     ENVIRONMENT: str = "development"
     DEBUG: bool = False
 
@@ -45,6 +49,11 @@ class Settings(BaseSettings):
     @model_validator(mode="after")
     def validate_production_settings(self) -> Self:
         """Đảm bảo JWT_SECRET an toàn khi chạy trên môi trường production."""
+        if self.API_MAX_INFLIGHT > self.DB_POOL_SIZE + self.DB_MAX_OVERFLOW:
+            raise ValueError(
+                "API_MAX_INFLIGHT không được lớn hơn DB_POOL_SIZE + DB_MAX_OVERFLOW: "
+                "request đang xử lý sẽ tranh nhau kết nối DB."
+            )
         if self.ENVIRONMENT == "production" and (
             self.JWT_SECRET == DEFAULT_DEV_JWT_SECRET or len(self.JWT_SECRET) < 32
         ):
