@@ -109,3 +109,26 @@ Chi tiết tái hiện, mong đợi/thực tế, mức độ và test hồi quy:
 - Các ảnh chỉ xác nhận layout/overflow ở viewport giả lập Chromium; chưa kiểm
   điện thoại vật lý hoặc screen reader thực tế. Detector trên trang sửa trả []
   không đồng nghĩa toàn bộ ứng dụng đã đạt WCAG.
+
+## Ma trận trang × trạng thái — 09/11/2026
+
+Các ô dưới dẫn tới test hành vi, không chỉ kiểm render. MSW dùng dữ liệu tổng
+hợp; response đang tải được giữ bằng promise rồi giải phóng, không sleep đoán.
+N/A nghĩa là trạng thái không áp dụng, không phải đã kiểm một trạng thái giả.
+
+| Trang / khu vực | Rỗng / thiếu dữ liệu | Đang tải | Lỗi và đường phục hồi |
+| --- | --- | --- | --- |
+| Đăng nhập | Form trống có required; không có danh sách để kiểm empty | `LoginPage.test.tsx`: khóa submit khi chờ | `LoginPage.test.tsx`: sai mật khẩu/mạng, giữ email, xóa password; `SessionExpiry.test.tsx`: hết phiên có alert |
+| Danh sách | `MeetingListPage.test.tsx`: 0 meeting; `PageStates.test.tsx`: không có kết quả tìm và xóa bộ lọc khôi phục | `MeetingListPage.test.tsx`: skeleton → dữ liệu | `MeetingListPage.test.tsx`: thông báo lỗi/nút thử lại; không hiển thị raw backend |
+| Upload | `PageStates.test.tsx`: chưa có file, có nút chọn, submit tắt | `PageStates.test.tsx`: chờ config, chọn file tắt → dùng đúng giới hạn; `NewMeetingPage.test.tsx`: progress/hủy | `NewMeetingPage.test.tsx`: config lỗi/thử lại, lỗi HTTP, hủy không đổi trang; `SessionExpiry.test.tsx`: 401 |
+| Chi tiết | `PageStates.test.tsx`: transcript rỗng không chèn dữ liệu demo | `PageStates.test.tsx`: chưa hiện player khi meeting chưa về | `PageStates.test.tsx`: 503 có đường về danh sách; 404 không lộ dữ liệu meeting; `SessionExpiry.test.tsx`: 401 |
+| Tiến độ | `MeetingProcessingPage.test.tsx`: chưa có job, không dựng % giả | `PageStates.test.tsx`: thông báo tải trước khi có dữ liệu | `MeetingProcessingPage.test.tsx`: lỗi meeting; `JobStatusCard.test.tsx`: lỗi job/retry; `SessionExpiry.test.tsx`: 401 |
+| Cài đặt | `PageStates.test.tsx`: tên rỗng có fallback, vẫn giữ email thật | `PageStates.test.tsx`: guard chờ me, không hiện profile giả | `PageStates.test.tsx`: me 503 có thử lại, không nhầm thành hết phiên; `DeleteAccountSection.test.tsx`: lỗi xóa giữ form |
+| Tab tóm tắt | `RemoteSummary.test.tsx`: disabled/insufficient/failed | `PanelStates.test.tsx`: HTTP chờ; `RemoteSummary.test.tsx`: pending nghiệp vụ | `PanelStates.test.tsx`: HTTP 500 có alert an toàn; `RemoteSummary.test.tsx`: 409 giữ bản nháp |
+| Tab công việc | `PanelStates.test.tsx`: 0 việc, có form tạo thủ công | `PanelStates.test.tsx`: chờ HTTP → nội dung | `PanelStates.test.tsx`: HTTP 500 có alert, không raw text; `RemoteTasks.test.tsx`: 409 giữ draft |
+| Tab lịch sử | `HistoryPanel.test.tsx`: kết quả rỗng theo bộ lọc | `HistoryPanel.test.tsx`: thông báo chờ HTTP | `HistoryPanel.test.tsx`: lỗi an toàn, thử lại thành công |
+| Trang không tồn tại | `App.test.tsx` / scaffold: 404 có đường về danh sách | N/A: trang tĩnh không tải API | N/A: chính trang này là trạng thái phục hồi 404 |
+
+`PageStates.test.tsx` bổ sung 11 ca và `PanelStates.test.tsx` bổ sung 5 ca.
+Các test cũ được tái sử dụng khi đã kiểm đúng trạng thái; không thêm bản sao
+để tăng số lượng. Kiểm màu và bố cục thực tế thuộc lượt browser/axe riêng.
