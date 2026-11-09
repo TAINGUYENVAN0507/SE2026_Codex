@@ -12,7 +12,7 @@ on:
       - ".dockerignore"
       - ".github/workflows/docker-images.yml"
   push:
-    branches: [main, haquang]
+    branches: [main, haquang, vantuong-smoke-red-20261109]
     paths:
       - "infra/docker/**"
       - "backend/**"
@@ -20,6 +20,7 @@ on:
       - "contracts/openapi.json"
       - "pipeline/**"
       - ".dockerignore"
+      - ".github/workflows/docker-images.yml"
 
 jobs:
   lint:
@@ -69,3 +70,5 @@ jobs:
       - name: Kiểm tra kích thước image Web
         run: docker image ls meeting-web:latest
 
+      - name: Smoke Web container (non-root, nginx, HTTP)
+        run: sh infra/docker/smoke_web.sh meeting-web:latest
