@@ -93,8 +93,33 @@ git checkout vantuong && git fetch origin && git merge origin/main
 
 ## Bàn giao
 
-- Chưa push `vantuong`, mở PR cho ngày 09/11 hoặc tự merge. Chỉ nhánh tạm
-  CI negative control đã push theo điều kiện task 1 và đã trả PID an toàn.
+- Đã push `vantuong` và mở PR #44 vào `main` theo yêu cầu người dùng; không
+  tự merge. Nhánh tạm CI negative control đã trả PID an toàn.
 - Kết quả CI nhánh thử không thay cho CI PR của toàn bộ phần frontend ngày này.
 - Merge đồng bộ main không tính vào năm commit task. Commit metadata ghi
   hash cuối cũng không phải task tính năng mới; không chia nhỏ giả để tăng số.
+
+## Theo dõi CI PR #44
+
+- Đã push và mở https://github.com/TAINGUYENVAN0507/SE2026_Codex/pull/44 .
+  Không tự merge.
+- Hai run frontend đầu tại `4f3d554` fail cùng test 401 trang chi tiết do
+  timeout 5 giây; 261 test còn lại đạt. Log:
+  https://github.com/TAINGUYENVAN0507/SE2026_Codex/actions/runs/42578033600 .
+- Test riêng đạt trên Windows/Linux; một lượt full Linux 2 CPU trước sửa
+  cũng đạt 262 test. Khi chạy lại đã tái hiện vòng request 401 ở trang chi
+  tiết; chẩn đoán ghi 436 response/sự kiện trong 2 giây và URL chưa chuyển.
+  Vì vậy chỉ tăng timeout hoặc đổi cách tìm heading không giải quyết lỗi.
+- Thêm chốt kết thúc phiên một lần trên cùng route, giữ nguyên dọn cache
+  và đường dẫn quay lại; mở lại chốt khi router chuyển sang entry khác.
+- Regression mới ép hai API cùng trả 401: đỏ trước sửa do clear gọi 2 lần,
+  xanh sau sửa với clear 1 lần, đúng 2 request và về login có thông báo.
+  Các test vẫn kiểm cache transcript riêng tư bị xóa. Cache `me` chỉ được
+  undefined hoặc null (useMe trả null khi 401), không còn danh tính user.
+- Bổ sung cleanup QueryClient giữa các case; không skip test, không tăng
+  timeout toàn suite và đã gỡ đoạn chẩn đoán trước commit.
+- Đây là commit sửa CI phát sinh sau 5 task, không tính thêm task đã giao.
+  Kết quả CI của head mới được ghi trên PR sau khi chạy xong.
+
+- Sau bản sửa race: lint, format, typecheck, 263 Vitest/39 file và build
+  đều đạt trên Windows; 22 test auth chọn cũng đạt.
