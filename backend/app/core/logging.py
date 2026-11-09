@@ -62,6 +62,12 @@ def setup_logging(log_level: int = logging.INFO) -> None:
     """Cấu hình root logger và app logger sử dụng JSONLogFormatter."""
     root_logger = logging.getLogger()
     root_logger.setLevel(log_level)
+    root_logger.disabled = False
+
+    # Đảm bảo các logger ứng dụng không bị vô hiệu hóa bởi fileConfig bên ngoài
+    for logger in logging.root.manager.loggerDict.values():
+        if isinstance(logger, logging.Logger):
+            logger.disabled = False
 
     # Không xóa handler phục vụ kiểm thử (như pytest LogCaptureHandler)
     has_json_handler = False
