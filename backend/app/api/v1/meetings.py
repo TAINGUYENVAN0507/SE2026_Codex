@@ -228,11 +228,12 @@ def create_meeting(
         )
 
     clean_ext = validate_extension_and_mime(file.filename or "", file.content_type)
+    current_user_id = current_user.id
 
     idempotency_service = IdempotencyService()
     idem_res = idempotency_service.check_or_start(
         session=db,
-        user_id=current_user.id,
+        user_id=current_user_id,
         key=idempotency_key.strip(),
         endpoint="/api/v1/meetings",
     )
@@ -299,7 +300,7 @@ def create_meeting(
 
         meeting = Meeting(
             id=meeting_id,
-            owner_id=current_user.id,
+            owner_id=current_user_id,
             title=meeting_title,
             source=source,
             status="queued",
@@ -334,7 +335,6 @@ def create_meeting(
         )
         db.add(meeting)
         db.add(job)
-        db.flush()
 
         response_data = {
             "meeting": {
@@ -393,14 +393,14 @@ def create_meeting(
         db.commit()
         logger.info(
             "Job %s đã được tạo cho cuộc họp %s",
-            job.id,
-            meeting.id,
+            job_id,
+            meeting_id,
             extra={
                 "event": "job_created",
-                "job_id": job.id,
-                "meeting_id": meeting.id,
-                "stage": job.stage,
-                "attempt": job.attempt,
+                "job_id": job_id,
+                "meeting_id": meeting_id,
+                "stage": "preprocess",
+                "attempt": 1,
                 "status": "queued",
             },
         )
