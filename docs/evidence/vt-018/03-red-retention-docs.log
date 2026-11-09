@@ -1,0 +1,8 @@
+E         
+E         Extra items in the left set:
+E         30
+
+tests/unit/test_retention_docs_match_config.py:38: AssertionError
+=========================== short test summary info ============================
+FAILED tests/unit/test_retention_docs_match_config.py::test_documented_retention_value_equals_default[AUDIO_RETENTION_DAYS-14-rules/privacy-security.md]
+1 failed, 8 passed in 0.06s

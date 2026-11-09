@@ -21,7 +21,7 @@ Nhóm trưởng có 3 bài cá nhân phân tích trên chính repo này. Bài PD
 
 ## Tham số
 
-Quy ước của nhóm, để hai con số lưu trữ của RE-018 và AD-018 không mâu thuẫn:
+Quy ước của nhóm (nhóm trưởng giao quyền chọn ngày 2026-11-09, giữ 14 và 28), để hai con số lưu trữ của RE-018 và AD-018 không mâu thuẫn:
 
 | Biến | Mặc định | Áp dụng cho |
 |---|---|---|
@@ -138,10 +138,33 @@ Hiện trạng đọc từ code tại `53f753b`. ✓ đã có · ◐ một phầ
 
 Kết quả phần C: ADR 0002, test canary pipeline (sửa rò stderr), đồng bộ tài liệu; **đo tải 239 và 247 không đạt**, xem `docs/evidence/load-239/` và `load-247/`. A: bug bash giao diện. B: tách `meetings.py`, privacy, reliability, `make`.
 
+### Đợt 4 (giao ngày 2026-11-09: `tasks/2026-11-09/`)
+
+| Member | Việc |
+|---|---|
+| A | CI chạy thật container web; 401 giữa phiên về đăng nhập; trạng thái rỗng, tải, lỗi; axe |
+| B | Profile `POST /meetings`; `API_WORKERS` với phép tính kết nối; tách tiếp `meetings.py`; `make smoke` |
+| C | Chẩn đoán 61 s ở 247 client và sửa (giới hạn request đang xử lý); metric quá tải; tài liệu lưu trữ khớp cấu hình; bản đồ bằng chứng `docs/evidence/README.md` |
+
+Kết quả phần C: nguyên nhân là thread và kết nối DB chặn nhau (`docs/evidence/load-247/diagnosis.md`). 247 client: 247/247 upload, 0 lỗi (trước: 91 thành công, 155 lỗi 503). p95 tất cả 3,1 đến 3,4 s với 1 process (**chưa đạt** 2,0 s), 1,8 đến 1,9 s với 4 process, nhưng p95 chỉ-upload 2,2 đến 2,4 s nên **không** ghi là đạt. 40 client: 0,65 s, đạt.
+
+### Lịch tới hạn nộp (hạn nộp 2026-11-14, người dùng xác nhận ngày 2026-11-09)
+
+| Ngày | Mục tiêu | Ai |
+|---|---|---|
+| 11-10 | Xong phần còn lại của Đợt 4 (`tasks/2026-11-09/`); #43 được B review và merge; B có profile `POST /meetings` | A, B, C |
+| 11-11 | C đo lại 247 (3 lần, 1 và 4 process) trên `main` sau thay đổi của B; ghi kết quả thật, kể cả không đạt | C |
+| 11-12 | **Đóng băng code**: chỉ sửa lỗi. Chạy lại toàn bộ test, `make smoke`, E2E; README chạy được từ clone sạch | A, B, C |
+| 11-13 | **Đóng băng bằng chứng**: `docs/evidence/README.md` khớp số liệu cuối; mọi PR đã review và merge; ghi hash cuối | C |
+| 11-14 | Hạn nộp. Không đổi code. Dành cho PDF cá nhân (ngoài repo) | người dùng |
+
+Phần cá nhân của BT1/BT2/BT3 (phân tích, Bước 0 trước khi code, reflection, PDF) do người dùng viết; repo chỉ cung cấp bằng chứng.
+
 ## Việc treo
 
 - Đã xong: #33–#39 vào `main`. Nhánh `tainguyen-vt018-tests` (Đợt 2 của C) vào `main` qua PR hôm 2026-11-08.
-- Đo tải 247 chưa đạt p95 ≤ 2,0 s; B profile `POST /meetings` (xem `docs/evidence/load-247/analysis.md`).
+- Đo tải 247: chưa đạt p95 ≤ 2,0 s ở cấu hình mặc định; B profile `POST /meetings` (xem `docs/evidence/load-247/after/README.md`).
+- PR #40 vào `main` ngày 2026-11-08 không có review ghi lại trong PR; #41 và #42 có review (A review #41, C review #42).
 - BT3 Bước 0 (plan AI, test AI thô) chưa làm.
 
 - SH-01: chưa có bản ghi âm họp thật. AI-12 phần thu thật, AI-14, benchmark trên audio họp phụ thuộc vào đây.

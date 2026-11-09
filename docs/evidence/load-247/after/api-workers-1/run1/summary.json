@@ -1,0 +1,29 @@
+{
+  "clients": 247,
+  "threshold_p95_s": 2.0,
+  "create": {
+    "n": 247,
+    "p50_s": 2.2312,
+    "p95_s": 4.1924,
+    "max_s": 4.4402
+  },
+  "poll": {
+    "n": 1235,
+    "p50_s": 0.1704,
+    "p95_s": 0.9064,
+    "max_s": 1.6351
+  },
+  "all_requests": {
+    "n": 1482,
+    "p50_s": 0.2022,
+    "p95_s": 3.0865,
+    "max_s": 4.4402
+  },
+  "errors": 0,
+  "error_kinds": {},
+  "wall_clock_s": 36.11,
+  "meeting_status_at_end": {
+    "queued": 100
+  },
+  "verdict": "FAIL"
+}

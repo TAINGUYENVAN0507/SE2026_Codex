@@ -53,6 +53,6 @@ Yêu cầu "no secret recording", kiểm chứng bằng PRIV-01…09:
 - Mọi truy vấn lọc theo `owner_id`. Tài nguyên của user khác trả 404, không trả 403, để không lộ việc tài nguyên đó tồn tại.
 - File lưu ngoài web root, đặt tên bằng UUID, chỉ phục vụ qua endpoint có auth. Kiểm tra file bằng ffprobe, không tin MIME do client gửi.
 - Xóa meeting là xóa ngay audio, artifact và các row liên quan. Log của thao tác xóa chỉ ghi ID.
-- Audio tự xóa sau `AUDIO_RETENTION_DAYS` (đề xuất 30 ngày, nhóm chốt).
+- Audio tự xóa sau `AUDIO_RETENTION_DAYS` (mặc định 14 ngày theo RE-018; `OPERATIONAL_RETENTION_DAYS` mặc định 28 theo AD-018).
 - **Thêm chỗ lưu dữ liệu mới** (bảng, thư mục, cache, file log): cập nhật quy trình xóa và test PRIV-13 trong cùng PR.
 - Chính sách dữ liệu đầy đủ: `docs/privacy/data-policy.md` (B viết).
