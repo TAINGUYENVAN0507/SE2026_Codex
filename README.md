@@ -141,6 +141,10 @@ curl -b cookies.txt -X POST http://localhost/api/v1/meetings \
   -F "audio=@contracts/fixtures/pipeline/sample.wav"
 
 # Worker tự động nhận job từ hàng đợi, hoàn thành các stage và chuyển meeting sang ready!
+
+# Chạy kiểm thử khói End-to-End tự động trên Compose:
+make smoke
+
 # Dừng cụm service (hoặc: make down):
 docker compose down
 ```

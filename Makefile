@@ -1,4 +1,4 @@
-.PHONY: all test lint up down test-backend test-frontend test-pipeline lint-backend lint-frontend lint-pipeline openapi check-openapi help
+.PHONY: all test lint up down smoke test-backend test-frontend test-pipeline lint-backend lint-frontend lint-pipeline openapi check-openapi help
 
 all: lint test
 
@@ -29,7 +29,7 @@ test-pipeline:
 	cd pipeline && uv run pytest -m "not model"
 
 # -----------------------------------------------------------------------------
-# Quản lý Docker Compose (BE-16)
+# Quản lý Docker Compose & Smoke test (BE-16, BE-15)
 # -----------------------------------------------------------------------------
 
 up:
@@ -37,6 +37,10 @@ up:
 
 down:
 	docker compose down
+
+smoke:
+	docker compose up --build -d
+	cd backend && uv run python scripts/smoke_compose.py
 
 # -----------------------------------------------------------------------------
 # Hợp đồng REST API & OpenAPI
