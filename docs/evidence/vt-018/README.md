@@ -57,4 +57,8 @@ Test về retry không dùng `sleep` chờ giờ thật: lượt chạy lại tr
 
 ## Tải 40 client
 
-`backend/scripts/load_vt018.py`, kết quả ở `load-40/summary.md`: p95 0,67 s, 0 lỗi, mục tiêu 1,5 s. Trước khi sửa `get_db` dùng chung engine: 10 lỗi 500 `too many clients already`. Phép đo là một lần chạy, một worker, pipeline fake, mọi thành phần chung một máy; xem phần giới hạn trong từng `summary.md`.
+`backend/scripts/load_vt018.py`, kết quả ở `load-40/summary.md`: p95 0,67 s, 0 lỗi, mục tiêu 1,5 s. Trước khi sửa `get_db` dùng chung engine: 10 lỗi 500 `too many clients already`. Phép đo là một lần chạy, một worker, pipeline fake, mọi thành phần chung một máy; xem phần giới hạn trong từng `summary.md`. Sau thay đổi giới hạn request đang xử lý (2026-11-09) chạy lại: p95 0,65 s, 0 lỗi (`../load-40/after/`).
+
+## Tải 239 và 247 client (RE-018, AD-018)
+
+Chẩn đoán và sửa: [`../load-247/diagnosis.md`](../load-247/diagnosis.md). Số đo sau sửa: [`../load-247/after/README.md`](../load-247/after/README.md). Tóm tắt trung thực: hết lỗi và hết độ trễ 61 s, nhưng cấu hình mặc định (1 process) vẫn có p95 3,1 đến 3,4 s ở 247 client, trên mốc 2,0 s; 4 process cho p95 1,8 đến 1,9 s khi tính cả poll nhưng p95 chỉ-upload vẫn 2,2 đến 2,4 s.

@@ -26,3 +26,7 @@ Khóa `postgres` trong `env.json` thực ra là phiên bản `psycopg`; đã đ�
 ## Giới hạn
 
 Một lần chạy, một worker uvicorn, pipeline giả, mọi thành phần chung một máy 12 CPU. Số đo này không nói hệ thống "chịu được" hay "không chịu được" 239 người dùng thật: nó chỉ cho thấy cấu hình pool mặc định không đủ cho 239 upload cùng lúc.
+
+## Cập nhật 2026-11-09: sau khi sửa pool và giới hạn request đang xử lý
+
+Chạy lại 239 client với cấu hình mặc định (1 process, `API_MAX_INFLIGHT=40`), `after/`: **239/239 upload thành công, 0 lỗi** (trước đó 1 thành công và 101 lỗi 500). Latency: upload p50 2,56 s, p95 4,36 s; p95 tất cả 3,73 s. Thời gian chạy khoảng 35 s thay vì 208 s. RE-018 không nêu mục tiêu độ trễ cho 239 người dùng; con số 2,0 s ở trên chỉ là mốc tham chiếu của AD-018, và cấu hình này vượt mốc đó. Một lần chạy, cùng giới hạn đo như trên; nguyên nhân và cách sửa ở `../load-247/diagnosis.md`.
