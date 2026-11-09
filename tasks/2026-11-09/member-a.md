@@ -45,6 +45,7 @@ git checkout vantuong && git fetch origin && git merge origin/main
 ### 5. [x] Tick, hash, cập nhật kịch bản demo (FE-16)
 - Ghi hash vào file này; kịch bản demo khớp giao diện hiện tại; không có dữ liệu thật trong ảnh.
 - **Message:** `docs(tasks): record 2026-11-09 member A results (G0)`
+- **Hash:** `1a3c078` — tài liệu, tick/hash và tám ảnh tổng hợp ngày 09/11; hash này ghi bằng commit metadata sau khi commit task 5 tồn tại.
 
 ## Kết quả local và đồng bộ main
 
