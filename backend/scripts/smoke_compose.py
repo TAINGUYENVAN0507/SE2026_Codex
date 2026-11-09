@@ -135,7 +135,8 @@ def run_smoke(base_url: str, timeout_sec: int = 60) -> None:
         while time.time() < deadline:
             poll_res = client.get(f"/api/v1/jobs/{job_id}")
             assert poll_res.status_code == 200, f"Lỗi truy vấn job: {poll_res.text}"
-            job_data = poll_res.json()["job"]
+            res_json = poll_res.json()
+            job_data = res_json.get("job", res_json)
             job_status = job_data["status"]
             stage = job_data.get("stage", "unknown")
             print(f"   ... trạng thái: {job_status} (giai đoạn: {stage})")
