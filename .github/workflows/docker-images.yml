@@ -82,6 +82,9 @@ jobs:
         run: docker compose up --build -d
       - name: Chạy Smoke test End-to-End
         run: uv --directory backend run python scripts/smoke_compose.py
+      - name: In logs container khi smoke test thất bại
+        if: failure()
+        run: docker compose logs api worker
       - name: Dừng Docker Compose
         if: always()
         run: docker compose down
