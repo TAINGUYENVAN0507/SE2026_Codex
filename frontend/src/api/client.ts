@@ -122,9 +122,9 @@ export async function logout(): Promise<void> {
   }
 }
 
-export function getJob(id: Job['id']): Promise<Job> {
+export function getJob(id: Job['id'], signal?: AbortSignal): Promise<Job> {
   return unwrap(
-    client.GET('/jobs/{job_id}', { params: { path: { job_id: id } } }),
+    client.GET('/jobs/{job_id}', { params: { path: { job_id: id } }, signal }),
   )
 }
 

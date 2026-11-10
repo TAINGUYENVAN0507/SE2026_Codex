@@ -59,7 +59,7 @@ export function JobStatusCard({
   jobId: string
   detailsHref?: string
 }) {
-  const { data: job, error, isPending } = useJobQuery(jobId)
+  const { data: job, error, isPending, pollDelayMs } = useJobQuery(jobId)
   const retryAt = job?.status === 'retry_scheduled' ? job.next_run_at : null
 
   if (isPending)
@@ -72,7 +72,7 @@ export function JobStatusCard({
       </section>
     )
 
-  if (error || !job)
+  if (!job)
     return (
       <section
         className={detailsHref ? 'job-status-inline' : 'job-status-card'}
@@ -85,6 +85,13 @@ export function JobStatusCard({
         </p>
       </section>
     )
+
+  const pollingNotice = error ? (
+    <p className="job-error" role="alert">
+      {error instanceof ApiError ? error.message : 'Không tải được tiến độ.'} Tự
+      động kiểm tra lại sau {Math.ceil(pollDelayMs / 1000)} giây.
+    </p>
+  ) : null
 
   if (detailsHref)
     return (
@@ -112,6 +119,7 @@ export function JobStatusCard({
         <Link className="job-details-link" to={detailsHref}>
           Xem tiến độ <ArrowUpRightIcon size={16} />
         </Link>
+        {pollingNotice}
         {retryAt && <RetryCountdown key={retryAt} retryAt={retryAt} />}
         {job.status === 'failed' && job.error && (
           <p className="job-inline-error" role="alert">
@@ -138,6 +146,7 @@ export function JobStatusCard({
         <Progress job={job} />
         {job.started_at && <ElapsedTime key={job.started_at} job={job} />}
       </div>
+      {pollingNotice}
       <ol className="job-stage-list">
         {PIPELINE_STAGES.map((stage) => {
           const state = stageState(stage, job)
