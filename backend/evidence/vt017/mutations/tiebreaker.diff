@@ -1,0 +1,8 @@
+--- clean
++++ tiebreaker
+@@ -95 +95 @@
+-        query_ordered = base_query.order_by(primary_column.asc(), Meeting.id.asc())
++        query_ordered = base_query.order_by(primary_column.asc())
+@@ -97 +97 @@
+-        query_ordered = base_query.order_by(primary_column.desc(), Meeting.id.desc())
++        query_ordered = base_query.order_by(primary_column.desc())

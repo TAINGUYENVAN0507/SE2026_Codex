@@ -1,0 +1,14 @@
+[
+  {
+    "mutation": "authorization",
+    "exit_code": 1,
+    "killed": true,
+    "test": "test_failure_path_owner_scoping_isolation"
+  },
+  {
+    "mutation": "tiebreaker",
+    "exit_code": 1,
+    "killed": true,
+    "test": "test_stable_result_ordering_deterministic_tiebreaker"
+  }
+]

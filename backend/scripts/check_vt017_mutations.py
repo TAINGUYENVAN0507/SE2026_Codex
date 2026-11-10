@@ -45,10 +45,16 @@ def main():
             service.write_bytes(mutated.encode("utf-8"))
             difference = "".join(
                 difflib.unified_diff(
-                    source.splitlines(True), mutated.splitlines(True), fromfile="clean", tofile=name
+                    source.splitlines(True),
+                    mutated.splitlines(True),
+                    fromfile="clean",
+                    tofile=name,
+                    n=0,
                 )
             )
-            (args.output / f"{name}.diff").write_text(difference, encoding="utf-8")
+            (args.output / f"{name}.diff").write_text(
+                difference.replace("\r\n", "\n"), encoding="utf-8"
+            )
             command = [
                 sys.executable,
                 "-B",

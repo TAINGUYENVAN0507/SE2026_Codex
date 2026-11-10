@@ -1,0 +1,23 @@
+[
+  {
+    "run": 1,
+    "files_order": "forward",
+    "TZ": "UTC",
+    "exit_code": 0,
+    "note": "TZ environment alone may not switch OS timezone on Windows"
+  },
+  {
+    "run": 2,
+    "files_order": "reverse",
+    "TZ": "Asia/Bangkok",
+    "exit_code": 0,
+    "note": "TZ environment alone may not switch OS timezone on Windows"
+  },
+  {
+    "run": 3,
+    "files_order": "forward",
+    "TZ": "UTC",
+    "exit_code": 0,
+    "note": "TZ environment alone may not switch OS timezone on Windows"
+  }
+]

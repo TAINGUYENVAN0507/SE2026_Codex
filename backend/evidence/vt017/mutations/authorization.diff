@@ -1,0 +1,5 @@
+--- clean
++++ authorization
+@@ -56 +56 @@
+-    base_query = select(Meeting).where(Meeting.owner_id == owner_id)
++    base_query = (select(Meeting) if q and q.strip() else select(Meeting).where(Meeting.owner_id == owner_id))

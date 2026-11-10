@@ -1,0 +1,26 @@
+unformatted: File would be reformatted
+   --> tests\api\test_metrics.py:288:21
+    |
+287 |
+    -     test_db.add_all([
+    -         job_queued_old,
+    -         job_queued_recent,
+    -         job_running,
+    -         job_failed_diarize,
+    -         job_failed_audio1,
+    -         job_failed_audio2,
+    -     ])
+288 +     test_db.add_all(
+289 +         [
+290 +             job_queued_old,
+291 +             job_queued_recent,
+292 +             job_running,
+293 +             job_failed_diarize,
+294 +             job_failed_audio1,
+295 +             job_failed_audio2,
+296 +         ]
+297 +     )
+298 |     test_db.commit()
+    |
+
+1 file would be reformatted, 122 files already formatted

@@ -1,0 +1,101 @@
+task,query,status,oracle_ok,latency_s,error_type
+0,"{""status"": ""ready""}",200,True,30.42951099999982,
+1,"{""status"": ""ready""}",200,True,30.625642399999833,
+2,"{""from_date"": ""2026-11-05"", ""to_date"": ""2026-11-05""}",200,True,30.600706199999877,
+3,"{""page"": 2}",200,True,30.712860099999943,
+4,"{""page_size"": 100}",0,False,30.28897670000015,TimeoutError
+5,"{""status"": ""ready""}",200,True,30.422935900000084,
+6,"{""q"": ""missing""}",200,True,30.520154999999704,
+7,"{""page_size"": 100}",200,True,31.211046500000066,
+8,"{""page_size"": 100}",200,True,31.15107339999986,
+9,"{""page_size"": 100}",200,True,31.2772688,
+10,{},200,True,30.535694899999726,
+11,"{""from_date"": ""2026-11-05"", ""to_date"": ""2026-11-05""}",200,True,30.71305540000003,
+12,"{""source"": ""recording""}",200,True,30.637877800000297,
+13,"{""page_size"": 5, ""source"": ""upload"", ""status"": ""ready""}",200,True,30.69477149999966,
+14,"{""q"": ""missing""}",200,True,30.355340199999773,
+15,"{""page"": 2}",200,True,30.626628600000004,
+16,"{""status"": ""ready""}",0,False,30.352948799999922,TimeoutError
+17,"{""q"": ""  PLANNING  ""}",0,False,30.390091499999926,TimeoutError
+18,"{""from_date"": ""2026-11-05"", ""to_date"": ""2026-11-05""}",200,True,30.518793000000187,
+19,"{""page_size"": 100}",0,False,30.387690900000052,TimeoutError
+20,"{""from_date"": ""2026-11-05"", ""to_date"": ""2026-11-05""}",0,False,30.329958199999965,TimeoutError
+21,"{""q"": ""  PLANNING  ""}",200,True,30.534583599999678,
+22,{},200,True,30.569672300000093,
+23,"{""order"": ""asc"", ""sort_by"": ""title""}",200,True,30.637756199999785,
+24,"{""order"": ""asc"", ""sort_by"": ""title""}",0,False,30.3058317,TimeoutError
+25,"{""source"": ""recording""}",0,False,30.304768800000147,TimeoutError
+26,"{""q"": ""missing""}",200,True,30.33602140000039,
+27,"{""from_date"": ""2026-11-05"", ""to_date"": ""2026-11-05""}",0,False,30.331797199999983,TimeoutError
+28,"{""order"": ""asc"", ""sort_by"": ""title""}",200,True,30.50851220000004,
+29,"{""page"": 2}",200,True,30.85778479999999,
+30,{},200,True,30.71858390000034,
+31,"{""order"": ""asc"", ""sort_by"": ""title""}",0,False,30.36392079999996,TimeoutError
+32,"{""page"": 2}",0,False,30.306123399999706,TimeoutError
+33,"{""source"": ""recording""}",200,True,30.668917399999827,
+34,"{""q"": ""missing""}",0,False,30.254609699999946,TimeoutError
+35,"{""source"": ""recording""}",200,True,30.414462400000048,
+36,"{""q"": ""  PLANNING  ""}",200,True,30.495556999999735,
+37,"{""page_size"": 5, ""source"": ""upload"", ""status"": ""ready""}",0,False,30.29913859999988,TimeoutError
+38,"{""page_size"": 5, ""source"": ""upload"", ""status"": ""ready""}",0,False,30.317511900000227,TimeoutError
+39,"{""page_size"": 5, ""source"": ""upload"", ""status"": ""ready""}",200,True,30.671335400000316,
+40,"{""q"": ""  PLANNING  ""}",0,False,30.367149200000313,TimeoutError
+41,"{""status"": ""ready""}",200,True,30.734138899999834,
+42,"{""q"": ""missing""}",200,True,30.635703599999943,
+43,"{""q"": ""missing""}",0,False,30.38231339999993,TimeoutError
+44,"{""source"": ""recording""}",200,True,30.526711299999988,
+45,"{""page_size"": 5, ""source"": ""upload"", ""status"": ""ready""}",0,False,30.33269599999994,TimeoutError
+46,"{""page"": 2}",200,True,30.758876399999735,
+47,"{""page_size"": 5, ""source"": ""upload"", ""status"": ""ready""}",200,True,30.53502959999969,
+48,"{""q"": ""  PLANNING  ""}",0,False,30.328532099999848,TimeoutError
+49,{},200,True,30.86826209999981,
+50,"{""order"": ""asc"", ""sort_by"": ""title""}",200,True,30.499909600000137,
+51,{},200,True,30.530041500000152,
+52,"{""page_size"": 5, ""source"": ""upload"", ""status"": ""ready""}",0,False,30.291096699999798,TimeoutError
+53,"{""source"": ""recording""}",200,True,30.401211500000045,
+54,"{""from_date"": ""2026-11-05"", ""to_date"": ""2026-11-05""}",200,True,30.594806000000062,
+55,"{""page_size"": 100}",0,False,30.269509599999765,TimeoutError
+56,"{""status"": ""ready""}",0,False,30.33262190000005,TimeoutError
+57,"{""q"": ""  PLANNING  ""}",200,True,30.522383699999864,
+58,"{""source"": ""recording""}",0,False,30.275308700000096,TimeoutError
+59,"{""status"": ""ready""}",0,False,30.277964399999746,TimeoutError
+60,"{""q"": ""  PLANNING  ""}",200,True,30.584585099999913,
+61,"{""page_size"": 100}",200,True,31.233489499999905,
+62,"{""q"": ""missing""}",0,False,30.338854999999967,TimeoutError
+63,"{""page_size"": 5, ""source"": ""upload"", ""status"": ""ready""}",200,True,30.399216599999818,
+64,"{""source"": ""recording""}",200,True,30.403871900000013,
+65,"{""status"": ""ready""}",200,True,30.413714999999684,
+66,"{""q"": ""  PLANNING  ""}",200,True,30.41556189999983,
+67,"{""source"": ""recording""}",0,False,30.279909000000316,TimeoutError
+68,"{""order"": ""asc"", ""sort_by"": ""title""}",0,False,30.332993400000305,TimeoutError
+69,"{""from_date"": ""2026-11-05"", ""to_date"": ""2026-11-05""}",200,True,30.399843000000146,
+70,{},0,False,30.32237929999974,TimeoutError
+71,"{""page_size"": 5, ""source"": ""upload"", ""status"": ""ready""}",200,True,30.40268190000006,
+72,"{""page"": 2}",0,False,30.25704399999995,TimeoutError
+73,"{""order"": ""asc"", ""sort_by"": ""title""}",0,False,30.254194200000256,TimeoutError
+74,"{""q"": ""missing""}",0,False,30.339190600000165,TimeoutError
+75,{},200,True,30.41384190000008,
+76,"{""q"": ""  PLANNING  ""}",0,False,30.30947930000002,TimeoutError
+77,"{""page"": 2}",200,True,30.603842299999997,
+78,"{""from_date"": ""2026-11-05"", ""to_date"": ""2026-11-05""}",200,True,30.415410600000087,
+79,"{""from_date"": ""2026-11-05"", ""to_date"": ""2026-11-05""}",0,False,30.35170960000005,TimeoutError
+80,"{""q"": ""missing""}",200,True,30.520548899999994,
+81,"{""q"": ""  PLANNING  ""}",200,True,30.48113289999992,
+82,"{""from_date"": ""2026-11-05"", ""to_date"": ""2026-11-05""}",0,False,30.340802300000178,TimeoutError
+83,"{""order"": ""asc"", ""sort_by"": ""title""}",0,False,30.32350570000017,TimeoutError
+84,"{""page_size"": 100}",200,True,31.246302500000183,
+85,"{""source"": ""recording""}",200,True,30.485815300000013,
+86,"{""order"": ""asc"", ""sort_by"": ""title""}",0,False,30.283553700000084,TimeoutError
+87,"{""page"": 2}",200,True,30.502399200000127,
+88,"{""page"": 2}",200,True,30.65994529999989,
+89,"{""page"": 2}",200,True,30.746531100000084,
+90,"{""q"": ""missing""}",0,False,30.372944700000062,TimeoutError
+91,"{""status"": ""ready""}",0,False,30.326815900000383,TimeoutError
+92,{},0,False,30.30981699999984,TimeoutError
+93,"{""page_size"": 5, ""source"": ""upload"", ""status"": ""ready""}",200,True,30.39477940000006,
+94,"{""order"": ""asc"", ""sort_by"": ""title""}",0,False,30.300858300000073,TimeoutError
+95,"{""status"": ""ready""}",0,False,30.302312899999833,TimeoutError
+96,{},200,True,30.747985399999834,
+97,{},200,True,30.66964549999966,
+98,"{""page_size"": 100}",200,True,31.16467479999983,
+99,"{""page_size"": 100}",200,True,31.262194200000067,
