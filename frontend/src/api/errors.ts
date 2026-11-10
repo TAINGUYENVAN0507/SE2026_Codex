@@ -1,3 +1,4 @@
+import { retryAfterMs } from './retryAfter'
 import { notifyNetworkFailure } from './networkEvents'
 
 export type ApiErrorCode =
@@ -92,6 +93,7 @@ export class ApiError extends Error {
   readonly details: ApiErrorDetails
   readonly request_id: string | null
   readonly status: number
+  readonly retryAfterMs: number | null
 
   constructor(
     code: ApiErrorCode,
@@ -99,6 +101,7 @@ export class ApiError extends Error {
     details: ApiErrorDetails = null,
     requestId: string | null = null,
     status = 0,
+    retryAfter: number | null = null,
   ) {
     super(message)
     this.name = 'ApiError'
@@ -106,6 +109,7 @@ export class ApiError extends Error {
     this.details = details
     this.request_id = requestId
     this.status = status
+    this.retryAfterMs = retryAfter
   }
 }
 
@@ -123,6 +127,7 @@ export async function parseApiError(response: Response): Promise<ApiError> {
         null,
         null,
         response.status,
+        retryAfterMs(response.headers.get('Retry-After')),
       )
 
     const { code, message, details, request_id: requestId } = body.error
@@ -133,6 +138,7 @@ export async function parseApiError(response: Response): Promise<ApiError> {
         null,
         null,
         response.status,
+        retryAfterMs(response.headers.get('Retry-After')),
       )
 
     return new ApiError(
@@ -141,6 +147,7 @@ export async function parseApiError(response: Response): Promise<ApiError> {
       isRecord(details) ? details : null,
       typeof requestId === 'string' ? requestId : null,
       response.status,
+      retryAfterMs(response.headers.get('Retry-After')),
     )
   } catch {
     return new ApiError(
@@ -149,6 +156,7 @@ export async function parseApiError(response: Response): Promise<ApiError> {
       null,
       null,
       response.status,
+      retryAfterMs(response.headers.get('Retry-After')),
     )
   }
 }
