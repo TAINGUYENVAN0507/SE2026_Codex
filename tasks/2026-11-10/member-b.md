@@ -39,11 +39,11 @@ git checkout haquang && git fetch origin && git merge origin/main
 - **Message:** `refactor(backend): move speaker and edit-history routes out of meetings.py (BE-12)`
 
 ### 5. [ ] Một `serialize_job` duy nhất (BE-12)
-- Hiện `jobs.py` và `meetings.py` mỗi nơi tự serialize job (đã ghi ở ROADMAP từ 11-06). Gom về một chỗ. Test đối chiếu response của hai route trên cùng job.
+- `jobs.py:44` có `serialize_job`, nhưng `serialize_meeting_detail` trong `meetings.py` (khoảng dòng 466) vẫn tự dựng `JobOut` cho job mới nhất. Gom về `serialize_job`. Test đối chiếu `job` trong `GET /meetings/{id}` với `GET /jobs/{id}` trên cùng job.
 - **Message:** `refactor(backend): one job serializer for both routes (BE-12)`
 
 ### 6. [ ] Test giữ cho controller không phình lại (AD-018)
-- Test kiến trúc: mọi file trong `app/api/v1/` không quá 500 dòng; route module không import `app.worker`. **Đỏ trước** khi chạy trên `main` hiện tại (`meetings.py` 946 dòng), xanh sau commit 3–5. Ghi vào `docs/adr/` hoặc `docs/backend/` lý do chọn 500.
+- Test kiến trúc: mọi file trong `app/api/v1/` không quá 500 dòng; route module không import `app.worker`. **Đỏ trước** khi chạy trên `main` hiện tại: có hai file vượt, `meetings.py` 946 dòng và `action_items.py` 558 dòng. Xanh sau commit 3–5, cộng phần tách `action_items.py` (ví dụ đưa serializer và kiểm tra evidence ra service). Ghi vào `docs/adr/` hoặc `docs/backend/` lý do chọn 500.
 - **Message:** `test(backend): route modules stay under 500 lines and never import the worker (AD-018)`
 
 ### 7. [ ] Smoke dễ đọc khi fail (BE-16)
