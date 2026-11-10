@@ -1,7 +1,6 @@
 import logging
 import uuid
 from datetime import UTC, datetime, timedelta
-from pathlib import Path
 from typing import Annotated
 
 from fastapi import (
@@ -17,7 +16,6 @@ from fastapi import (
     status,
 )
 from fastapi import Path as FastApiPath
-from fastapi.responses import StreamingResponse
 from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
@@ -27,6 +25,9 @@ from app.api.v1.action_items import (
 )
 from app.api.v1.action_items import (
     serialize_action_item,
+)
+from app.api.v1.audio import (
+    router as audio_router,
 )
 from app.api.v1.export import (
     router as export_router,
@@ -39,6 +40,9 @@ from app.api.v1.segments import (
 )
 from app.api.v1.summary import (
     router as summary_router,
+)
+from app.api.v1.transcript import (
+    router as transcript_router,
 )
 from app.core.config import get_settings
 from app.core.errors import APIError
@@ -63,8 +67,6 @@ from app.schemas.meeting import (
 )
 from app.schemas.transcript import (
     SpeakerPatch,
-    TranscriptOut,
-    TranscriptSegmentOut,
 )
 from app.services.audio_validator import probe_audio, validate_extension_and_mime
 from app.services.audit import record_edit
@@ -228,11 +230,12 @@ def create_meeting(
         )
 
     clean_ext = validate_extension_and_mime(file.filename or "", file.content_type)
+    current_user_id = current_user.id
 
     idempotency_service = IdempotencyService()
     idem_res = idempotency_service.check_or_start(
         session=db,
-        user_id=current_user.id,
+        user_id=current_user_id,
         key=idempotency_key.strip(),
         endpoint="/api/v1/meetings",
     )
@@ -299,7 +302,7 @@ def create_meeting(
 
         meeting = Meeting(
             id=meeting_id,
-            owner_id=current_user.id,
+            owner_id=current_user_id,
             title=meeting_title,
             source=source,
             status="queued",
@@ -334,7 +337,6 @@ def create_meeting(
         )
         db.add(meeting)
         db.add(job)
-        db.flush()
 
         response_data = {
             "meeting": {
@@ -393,14 +395,14 @@ def create_meeting(
         db.commit()
         logger.info(
             "Job %s đã được tạo cho cuộc họp %s",
-            job.id,
-            meeting.id,
+            job_id,
+            meeting_id,
             extra={
                 "event": "job_created",
-                "job_id": job.id,
-                "meeting_id": meeting.id,
-                "stage": job.stage,
-                "attempt": job.attempt,
+                "job_id": job_id,
+                "meeting_id": meeting_id,
+                "stage": "preprocess",
+                "attempt": 1,
                 "status": "queued",
             },
         )
@@ -661,280 +663,8 @@ def delete_meeting(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-AUDIO_MIME_TYPES: dict[str, str] = {
-    "mp3": "audio/mpeg",
-    "wav": "audio/wav",
-    "m4a": "audio/mp4",
-    "webm": "audio/webm",
-    "ogg": "audio/ogg",
-    "flac": "audio/flac",
-    "aac": "audio/aac",
-}
-
-
-def stream_file_range(file_path: Path, start: int, length: int, chunk_size: int = 64 * 1024):
-    """Đọc và yield các chunk nhị phân từ file theo khoảng byte xác định."""
-    bytes_remaining = length
-    with open(file_path, "rb") as f:
-        f.seek(start)
-        while bytes_remaining > 0:
-            bytes_to_read = min(chunk_size, bytes_remaining)
-            data = f.read(bytes_to_read)
-            if not data:
-                break
-            bytes_remaining -= len(data)
-            yield data
-
-
-@router.get(
-    "/{meeting_id}/audio",
-    status_code=status.HTTP_200_OK,
-    responses={
-        200: {"description": "Toàn bộ luồng tệp âm thanh"},
-        206: {"description": "Một phần tệp âm thanh theo HTTP Range"},
-        404: {"model": ErrorResponse, "description": "Không tìm thấy cuộc họp hoặc tệp âm thanh"},
-        410: {"model": ErrorResponse, "description": "Tệp âm thanh đã hết hạn lưu trữ"},
-        416: {"model": ErrorResponse, "description": "Khoảng dữ liệu Range không hợp lệ"},
-    },
-    summary="Phát luồng dữ liệu âm thanh cuộc họp hỗ trợ HTTP Range",
-)
-def get_meeting_audio(
-    meeting_id: str = FastApiPath(..., description="UUID của cuộc họp"),
-    range_header: Annotated[str | None, Header(alias="Range")] = None,
-    current_user: CurrentUser = None,  # type: ignore[assignment]
-    db: Annotated[Session, Depends(get_db)] = None,  # type: ignore[assignment]
-    storage: Annotated[Storage, Depends(get_storage)] = None,  # type: ignore[assignment]
-) -> Response:
-    """Stream tệp âm thanh của cuộc họp hỗ trợ HTTP Range (RFC 7233)."""
-    if db is None or current_user is None or storage is None:
-        raise APIError(
-            code="NOT_FOUND",
-            message="Không tìm thấy cuộc họp.",
-            status_code=status.HTTP_404_NOT_FOUND,
-        )
-
-    meeting = db.execute(select(Meeting).where(Meeting.id == meeting_id)).scalar_one_or_none()
-    if meeting is None or meeting.owner_id != current_user.id:
-        raise APIError(
-            code="NOT_FOUND",
-            message="Không tìm thấy cuộc họp.",
-            status_code=status.HTTP_404_NOT_FOUND,
-        )
-
-    now_utc = datetime.now(UTC)
-    retention_ts = meeting.retention_until
-    if retention_ts is not None and retention_ts.tzinfo is None:
-        retention_ts = retention_ts.replace(tzinfo=UTC)
-
-    if retention_ts is not None and now_utc >= retention_ts:
-        raise APIError(
-            code="AUDIO_EXPIRED",
-            message="Tệp âm thanh đã hết hạn lưu trữ và đã được dọn dẹp.",
-            status_code=status.HTTP_410_GONE,
-        )
-
-    if not meeting.audio_path:
-        raise APIError(
-            code="NOT_FOUND",
-            message="Cuộc họp không có tệp âm thanh.",
-            status_code=status.HTTP_404_NOT_FOUND,
-        )
-
-    clean_ext = (
-        meeting.audio_path.rsplit(".", 1)[-1].lower() if "." in meeting.audio_path else "wav"
-    )
-    audio_path = storage.get_audio_path(meeting_id=meeting.id, extension=clean_ext)
-    if not audio_path.is_file() and hasattr(storage, "base_dir"):
-        fallback_path = Path(storage.base_dir) / meeting.audio_path
-        if fallback_path.is_file():
-            audio_path = fallback_path
-
-    if not audio_path.is_file():
-        if retention_ts is not None and now_utc >= retention_ts:
-            raise APIError(
-                code="AUDIO_EXPIRED",
-                message="Tệp âm thanh đã hết hạn lưu trữ và đã được dọn dẹp.",
-                status_code=status.HTTP_410_GONE,
-            )
-        raise APIError(
-            code="NOT_FOUND",
-            message="Không tìm thấy tệp âm thanh trên hệ thống lưu trữ.",
-            status_code=status.HTTP_404_NOT_FOUND,
-        )
-
-    file_size = audio_path.stat().st_size
-    mime_type = AUDIO_MIME_TYPES.get(clean_ext, "application/octet-stream")
-
-    if range_header:
-        if not range_header.startswith("bytes="):
-            raise APIError(
-                code="RANGE_NOT_SATISFIABLE",
-                message="Khoảng dữ liệu Range không hợp lệ.",
-                status_code=status.HTTP_416_RANGE_NOT_SATISFIABLE,
-                headers={"Content-Range": f"bytes */{file_size}"},
-            )
-
-        range_val = range_header[6:].strip()
-        if "," in range_val:
-            range_val = range_val.split(",", 1)[0].strip()
-
-        parts = range_val.split("-", 1)
-        if len(parts) != 2:
-            raise APIError(
-                code="RANGE_NOT_SATISFIABLE",
-                message="Khoảng dữ liệu Range không hợp lệ.",
-                status_code=status.HTTP_416_RANGE_NOT_SATISFIABLE,
-                headers={"Content-Range": f"bytes */{file_size}"},
-            )
-
-        start_str, end_str = parts[0].strip(), parts[1].strip()
-
-        try:
-            if not start_str and end_str:
-                suffix_len = int(end_str)
-                if suffix_len <= 0:
-                    raise ValueError
-                start = 0 if suffix_len >= file_size else file_size - suffix_len
-                end = file_size - 1
-            elif start_str and not end_str:
-                start = int(start_str)
-                if start < 0 or start >= file_size:
-                    raise ValueError
-                end = file_size - 1
-            elif start_str and end_str:
-                start = int(start_str)
-                end = int(end_str)
-                if start < 0 or start > end or start >= file_size:
-                    raise ValueError
-                if end >= file_size:
-                    end = file_size - 1
-            else:
-                raise ValueError
-        except ValueError:
-            raise APIError(
-                code="RANGE_NOT_SATISFIABLE",
-                message="Khoảng dữ liệu Range không hợp lệ.",
-                status_code=status.HTTP_416_RANGE_NOT_SATISFIABLE,
-                headers={"Content-Range": f"bytes */{file_size}"},
-            ) from None
-
-        content_length = end - start + 1
-        return StreamingResponse(
-            stream_file_range(audio_path, start, content_length),
-            status_code=status.HTTP_206_PARTIAL_CONTENT,
-            headers={
-                "Content-Range": f"bytes {start}-{end}/{file_size}",
-                "Accept-Ranges": "bytes",
-                "Content-Length": str(content_length),
-                "Content-Type": mime_type,
-            },
-        )
-
-    return StreamingResponse(
-        stream_file_range(audio_path, 0, file_size),
-        status_code=status.HTTP_200_OK,
-        headers={
-            "Accept-Ranges": "bytes",
-            "Content-Length": str(file_size),
-            "Content-Type": mime_type,
-        },
-    )
-
-
-@router.get(
-    "/{meeting_id}/transcript",
-    response_model=TranscriptOut,
-    status_code=status.HTTP_200_OK,
-    responses={
-        404: {"model": ErrorResponse, "description": "Không tìm thấy cuộc họp"},
-    },
-    summary="Lấy transcript của cuộc họp",
-)
-def get_meeting_transcript(
-    meeting_id: Annotated[str, FastApiPath(description="UUID của cuộc họp")],
-    current_user: CurrentUser,
-    db: Annotated[Session, Depends(get_db)],
-) -> TranscriptOut:
-    """Trả về dữ liệu transcript của cuộc họp từ cơ sở dữ liệu."""
-    meeting = db.execute(select(Meeting).where(Meeting.id == meeting_id)).scalar_one_or_none()
-    if not meeting or meeting.owner_id != current_user.id:
-        raise APIError(
-            code="MEETING_NOT_FOUND",
-            message="Không tìm thấy cuộc họp được yêu cầu.",
-            status_code=status.HTTP_404_NOT_FOUND,
-        )
-
-    if meeting.status in ("ready", "partial"):
-        speakers = (
-            db.execute(
-                select(Speaker)
-                .where(Speaker.meeting_id == meeting.id)
-                .order_by(Speaker.created_at.asc())
-            )
-            .scalars()
-            .all()
-        )
-
-        segments = (
-            db.execute(
-                select(Segment).where(Segment.meeting_id == meeting.id).order_by(Segment.idx.asc())
-            )
-            .scalars()
-            .all()
-        )
-
-        if segments:
-            speakers_out = [
-                SpeakerOut(
-                    id=spk.id,
-                    meeting_id=spk.meeting_id,
-                    label=spk.label,
-                    default_name=spk.default_name,
-                    display_name=spk.display_name,
-                    is_edited=spk.display_name != spk.default_name,
-                    color_index=idx % 10,
-                    segment_count=0,
-                    speaking_time_sec=0.0,
-                    version=spk.version,
-                )
-                for idx, spk in enumerate(speakers)
-            ]
-            segments_out = [
-                TranscriptSegmentOut(
-                    id=seg.id,
-                    index=seg.idx,
-                    start_sec=seg.start_sec,
-                    end_sec=seg.end_sec,
-                    speaker_id=seg.speaker_id,
-                    ai_speaker_id=seg.ai_speaker_id,
-                    text=seg.text,
-                    ai_text=seg.ai_text,
-                    is_edited=seg.text != seg.ai_text or seg.speaker_id != seg.ai_speaker_id,
-                    confidence=seg.confidence,
-                    flags=list(seg.flags.keys())
-                    if isinstance(seg.flags, dict)
-                    else (list(seg.flags) if isinstance(seg.flags, list) else []),
-                    version=seg.version,
-                    updated_at=seg.updated_at,
-                )
-                for seg in segments
-            ]
-            return TranscriptOut(
-                status="ready",
-                diarization_status="ok",
-                speakers=speakers_out,
-                segments=segments_out,
-            )
-
-    status_val = "failed" if meeting.status == "failed" else "pending"
-    return TranscriptOut(
-        status=status_val,
-        diarization_status=status_val,
-        speakers=[],
-        segments=[],
-    )
-
-
+router.include_router(audio_router)
+router.include_router(transcript_router)
 router.include_router(segments_router)
 
 

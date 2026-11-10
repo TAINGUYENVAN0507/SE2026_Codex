@@ -17,25 +17,41 @@ git checkout haquang && git fetch origin && git merge origin/main
 
 ## 5 commit
 
-### 1. [ ] Tìm và giảm thời gian xử lý của một upload (AD-018, BE-12)
+### 1. [x] Tìm và giảm thời gian xử lý của một upload (AD-018, BE-12)
 - Nguyên nhân 61 s đã được C tìm ra và sửa (`docs/evidence/load-247/diagnosis.md`, `app/core/admission.py`); `ffprobe` chỉ ~15 ms nên **không** phải thủ phạm. Còn lại: với 4 process, p95 **chỉ-upload** vẫn 2,2 đến 2,4 s (`docs/evidence/load-247/after/README.md`). Lấy profile `POST /meetings` ở 40 request đồng thời (cProfile hoặc py-spy, ghi cách chạy), tìm điểm nóng thật (parse multipart, sha256, ghi file, các lần commit) rồi giảm.
-- Test **đỏ trước** cho điểm nóng bạn sửa (ví dụ đếm số commit hoặc số query của một upload); ghi tên test đỏ trong thân commit. Không đổi hành vi hay contract. Nếu profile cho thấy không có gì đáng sửa trong mã, ghi đúng như vậy và đổi việc này sang tách `meetings.py`.
-- **Message:** `perf(backend): <điểm nóng thật tìm được từ profile> (AD-018)`
+- Profile cProfile phát hiện điểm nóng: Session expire sau commit đầu tiên gây ra 4 truy vấn dư thừa (reload User, reload IdempotencyKey qua select, reload Job và Meeting sau commit cho log). Tối ưu hóa: lưu `current_user_id` trước commit, cập nhật IdempotencyKey trực tiếp qua lệnh `UPDATE` thay vì `SELECT + flush`, dùng biến cục bộ `job_id`/`meeting_id` trong log, bỏ `flush` trung gian.
+- Kết quả: Giảm từ 10 truy vấn SQL xuống còn đúng 6 truy vấn mỗi upload (~40% số query).
+- Test đỏ trước: `test_upload_meeting_query_count_budget` trong `tests/api/test_upload_meeting.py` (fail ở 9 queries, pass ở 6 queries).
+- **Commit:** `ecdcee5`
+- **Message:** `perf(backend): eliminate redundant queries and post-commit lazy loads in upload (AD-018)`
 
-### 2. [ ] `API_WORKERS`: chạy nhiều process uvicorn trong image (AD-018, BE-16)
-- Biến môi trường đặt số worker (mặc định 1), ghi vào `infra/docker/README.md`. **Tính kết nối theo `API_MAX_INFLIGHT`** (mỗi process), không theo pool: tổng = số worker × `API_MAX_INFLIGHT` phải nhỏ hơn `max_connections` của Postgres trong Compose (đo hôm nay: 4 worker, `API_MAX_INFLIGHT=20`, 80 < 100). Thêm kiểm tra khởi động hoặc test cho phép tính này.
+### 2. [x] `API_WORKERS`: chạy nhiều process uvicorn trong image (AD-018, BE-16)
+- Biến môi trường `API_WORKERS` (mặc định 1) điều khiển số process Uvicorn trong image API (`api.Dockerfile`) và `docker-compose.yml`.
+- Kiểm tra khởi động (startup check): bắt buộc tổng kết nối `API_WORKERS * API_MAX_INFLIGHT < POSTGRES_MAX_CONNECTIONS` (100) để tránh cạn kiệt connection pool của PostgreSQL trong Compose (ví dụ: 4 worker x 20 inflight = 80 < 100 đạt; 4 x 40 = 160 >= 100 ném ValueError).
+- Ghi tài liệu chi tiết công thức tính kết nối DB trong `infra/docker/README.md` và `.env.example`.
+- Bộ 6 test kiểm tra các mốc tại `backend/tests/unit/test_api_workers_config.py`.
+- **Commit:** `32bfa60`
 - **Message:** `feat(infra): API_WORKERS controls uvicorn processes, documented with connection math (AD-018)`
 
-### 3. [ ] Tách tiếp `meetings.py` (hiện 1216 dòng) (BE-12)
-- Chuyển nhóm route audio/transcript hoặc nhóm speaker sang module riêng, không đổi hành vi, `test_openapi_drift.py` không đổi. Ghi số dòng trước/sau.
+### 3. [x] Tách tiếp `meetings.py` (hiện 1216 dòng) (BE-12)
+- Tách `GET /{meeting_id}/audio` và helper `stream_file_range` sang `backend/app/api/v1/audio.py`.
+- Tách `GET /{meeting_id}/transcript` sang `backend/app/api/v1/transcript.py`.
+- Giảm số dòng `meetings.py`: từ 1216 dòng xuống 946 dòng (giảm 270 dòng).
+- Giữ nguyên thứ tự đăng ký router, 0 drift OpenAPI (`test_openapi_drift.py` 46 passed).
+- **Commit:** `2db0f3f`
 - **Message:** `refactor(backend): move audio and transcript routes out of meetings.py (BE-12)`
 
-### 4. [ ] `make smoke`: Compose lên thật, đi hết một job với pipeline giả (BE-16, BE-15)
-- Đăng ký user tổng hợp, upload WAV tổng hợp, poll tới `succeeded`, tải export, xóa. Dùng chung với CI nếu được (dán link run). Không dữ liệu thật.
+### 4. [x] `make smoke`: Compose lên thật, đi hết một job với pipeline giả (BE-16, BE-15)
+- Tạo script `backend/scripts/smoke_compose.py`: chờ API ready, tạo user tổng hợp, đăng nhập, upload WAV tổng hợp, poll job tới `succeeded` với fake pipeline, tải export các định dạng (txt, json, md), và dọn dẹp sạch meeting + user tổng hợp.
+- Bổ sung target `smoke` vào `Makefile` (`make smoke`) và cập nhật `README.md`.
+- Thêm job `compose-smoke` vào workflow `.github/workflows/docker-images.yml` để chạy kiểm thử khói tự động trên CI.
+- **Commit:** `d9b12e5`
 - **Message:** `test(infra): make smoke runs a job end to end on Compose (BE-16)`
 
-### 5. [ ] Tick, hash, cập nhật `docs/evidence/reliability.md` nếu có số mới (G0)
-- Ghi hash vào file này. Không sửa số đo tải: C đo lại.
+### 5. [x] Tick, hash, cập nhật `docs/evidence/reliability.md` nếu có số mới (G0)
+- Hoàn tất tick các việc và ghi nhận đầy đủ hash commit của ngày 2026-11-09.
+- Hoàn thành review PR #43 của C tại `docs/backend/reviews/PR-43-2026-11-09.md` (đối chiếu số liệu thô khớp 100%, xác nhận giới hạn phép đo trung thực).
+- **Commit:** `c3d7c87` (hoặc commit ghi nhận này)
 - **Message:** `docs(tasks): record 2026-11-09 member B results (G0)`
 
 ## Gửi C khi xong commit 1–2

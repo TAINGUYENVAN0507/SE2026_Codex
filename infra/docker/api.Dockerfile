@@ -58,6 +58,6 @@ VOLUME ["/app/backend/appdata"]
 
 EXPOSE 8000
 
-# Mặc định khởi chạy API server; có thể ghi đè lệnh để chạy worker loop
-CMD ["uvicorn", "app.main:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000"]
+# Mặc định khởi chạy API server với số worker từ API_WORKERS (mặc định 1) (AD-018, BE-16)
+CMD ["sh", "-c", "exec uvicorn app.main:create_app --factory --host 0.0.0.0 --port 8000 --workers \"${API_WORKERS:-1}\""]
 

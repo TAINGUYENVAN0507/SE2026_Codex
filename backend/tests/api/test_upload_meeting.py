@@ -292,3 +292,43 @@ def test_upload_meeting_db_error_rolls_back_and_cleans_file(
     audio_dir = test_storage.base_dir / "audio"
     if audio_dir.exists():
         assert len(list(audio_dir.iterdir())) == 0
+
+
+def test_upload_meeting_query_count_budget(
+    client: TestClient,
+    test_db: Session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """POST /meetings không được vượt quá 6 truy vấn SQL (loại bỏ query thừa và lazy load)."""
+    from sqlalchemy import event
+
+    mock_probe = AudioProbeResult(
+        duration_sec=10.0,
+        sample_rate=16000,
+        channels=1,
+        format_name="wav",
+    )
+    monkeypatch.setattr("app.api.v1.meetings.probe_audio", lambda **_: mock_probe)
+
+    query_count = 0
+    engine = test_db.bind
+
+    def before_cursor_execute(conn, cursor, statement, parameters, context, executemany):
+        nonlocal query_count
+        query_count += 1
+
+    event.listen(engine, "before_cursor_execute", before_cursor_execute)
+    try:
+        fake_audio = io.BytesIO(b"RIFF" + b"\x00" * 100)
+        files = {"file": ("budget.wav", fake_audio, "audio/wav")}
+        data = {"consent_confirmed": "true", "title": "Budget Meeting"}
+        headers = {"Idempotency-Key": str(uuid.uuid4())}
+
+        response = client.post("/api/v1/meetings", data=data, files=files, headers=headers)
+        assert response.status_code == 201
+
+        # Ngân sách: tối đa 6 câu lệnh SQL (1 auth, 1 idempotency select, 1 idempotency insert,
+        # 1 insert meeting, 1 insert job, 1 update idempotency). Không được có lazy load sau commit.
+        assert query_count <= 6, f"Số lượng truy vấn thực tế là {query_count}, vượt ngưỡng 6"
+    finally:
+        event.remove(engine, "before_cursor_execute", before_cursor_execute)

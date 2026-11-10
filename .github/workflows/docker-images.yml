@@ -72,3 +72,16 @@ jobs:
 
       - name: Smoke Web container (non-root, nginx, HTTP)
         run: sh infra/docker/smoke_web.sh meeting-web:latest
+
+  compose-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: Khởi động hệ thống qua Docker Compose
+        run: docker compose up --build -d
+      - name: Chạy Smoke test End-to-End
+        run: uv --directory backend run python scripts/smoke_compose.py
+      - name: Dừng Docker Compose
+        if: always()
+        run: docker compose down

@@ -7,7 +7,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from fastapi import status
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -135,21 +135,17 @@ class IdempotencyService:
         response_code: int,
         response_body: dict[str, Any],
     ) -> None:
-        """Đánh dấu hoàn thành yêu cầu và lưu response body/code."""
-        record = session.execute(
-            select(IdempotencyKey).where(IdempotencyKey.id == record_id)
-        ).scalar_one_or_none()
-        if record:
-            record.status = "completed"
-            record.response_code = response_code
-            record.response_body = response_body
-            session.flush()
+        """Đánh dấu hoàn thành yêu cầu và lưu response body/code (trực tiếp qua UPDATE)."""
+        session.execute(
+            update(IdempotencyKey)
+            .where(IdempotencyKey.id == record_id)
+            .values(
+                status="completed",
+                response_code=response_code,
+                response_body=response_body,
+            )
+        )
 
     def fail(self, session: Session, record_id: str) -> None:
         """Xóa hoặc đánh dấu thất bại khi xảy ra lỗi để cho phép thử lại sau."""
-        record = session.execute(
-            select(IdempotencyKey).where(IdempotencyKey.id == record_id)
-        ).scalar_one_or_none()
-        if record:
-            session.delete(record)
-            session.flush()
+        session.execute(delete(IdempotencyKey).where(IdempotencyKey.id == record_id))
