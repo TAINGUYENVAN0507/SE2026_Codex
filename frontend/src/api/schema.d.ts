@@ -136,7 +136,7 @@ export interface paths {
     }
     /**
      * Lấy danh sách cuộc họp có phân trang và lọc
-     * @description Lấy danh sách cuộc họp có phân trang và lọc theo trạng thái.
+     * @description Lấy danh sách cuộc họp có phân trang, lọc và thứ tự ổn định.
      */
     get: operations['list_meetings_api_v1_meetings_get']
     put?: never
@@ -1776,6 +1776,16 @@ export interface operations {
           ('queued' | 'processing' | 'ready' | 'partial' | 'failed') | null
         /** @description Tìm kiếm theo tiêu đề cuộc họp */
         q?: string | null
+        /** @description Lọc theo nguồn cuộc họp: upload hoặc recording */
+        source?: ('upload' | 'recording') | null
+        /** @description Lọc cuộc họp từ ngày (định dạng YYYY-MM-DD) */
+        from_date?: string | null
+        /** @description Lọc cuộc họp đến ngày (định dạng YYYY-MM-DD) */
+        to_date?: string | null
+        /** @description Trường sắp xếp kết quả */
+        sort_by?: 'created_at' | 'updated_at' | 'title' | 'meeting_date'
+        /** @description Chiều sắp xếp: asc hoặc desc */
+        order?: 'asc' | 'desc'
       }
       header?: never
       path?: never

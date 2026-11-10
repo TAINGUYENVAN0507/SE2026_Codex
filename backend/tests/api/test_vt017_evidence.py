@@ -9,6 +9,7 @@ import jsonschema
 import pytest
 
 from app.db.models.meeting import Meeting
+
 pytest_plugins = ("tests.api.test_meeting_search_pagination",)
 
 

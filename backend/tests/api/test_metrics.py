@@ -285,14 +285,16 @@ def test_metrics_job_counts_match_db_state(
         created_at=now,
     )
 
-    test_db.add_all([
-        job_queued_old,
-        job_queued_recent,
-        job_running,
-        job_failed_diarize,
-        job_failed_audio1,
-        job_failed_audio2,
-    ])
+    test_db.add_all(
+        [
+            job_queued_old,
+            job_queued_recent,
+            job_running,
+            job_failed_diarize,
+            job_failed_audio1,
+            job_failed_audio2,
+        ]
+    )
     test_db.commit()
 
     # Scrape metrics

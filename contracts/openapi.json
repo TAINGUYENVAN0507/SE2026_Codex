@@ -184,7 +184,7 @@
           "Meetings"
         ],
         "summary": "Lấy danh sách cuộc họp có phân trang và lọc",
-        "description": "Lấy danh sách cuộc họp có phân trang và lọc theo trạng thái.",
+        "description": "Lấy danh sách cuộc họp có phân trang, lọc và thứ tự ổn định.",
         "operationId": "list_meetings_api_v1_meetings_get",
         "parameters": [
           {
@@ -256,6 +256,100 @@
               "title": "Q"
             },
             "description": "Tìm kiếm theo tiêu đề cuộc họp"
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "upload",
+                    "recording"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Lọc theo nguồn cuộc họp: upload hoặc recording",
+              "title": "Source"
+            },
+            "description": "Lọc theo nguồn cuộc họp: upload hoặc recording"
+          },
+          {
+            "name": "from_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Lọc cuộc họp từ ngày (định dạng YYYY-MM-DD)",
+              "title": "From Date"
+            },
+            "description": "Lọc cuộc họp từ ngày (định dạng YYYY-MM-DD)"
+          },
+          {
+            "name": "to_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Lọc cuộc họp đến ngày (định dạng YYYY-MM-DD)",
+              "title": "To Date"
+            },
+            "description": "Lọc cuộc họp đến ngày (định dạng YYYY-MM-DD)"
+          },
+          {
+            "name": "sort_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "created_at",
+                "updated_at",
+                "title",
+                "meeting_date"
+              ],
+              "type": "string",
+              "description": "Trường sắp xếp kết quả",
+              "default": "created_at",
+              "title": "Sort By"
+            },
+            "description": "Trường sắp xếp kết quả"
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "type": "string",
+              "description": "Chiều sắp xếp: asc hoặc desc",
+              "default": "desc",
+              "title": "Order"
+            },
+            "description": "Chiều sắp xếp: asc hoặc desc"
           }
         ],
         "responses": {
