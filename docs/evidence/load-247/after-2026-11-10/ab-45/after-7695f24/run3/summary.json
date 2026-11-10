@@ -1,0 +1,59 @@
+{
+  "clients": 247,
+  "threshold_p95_s": 2.0,
+  "create": {
+    "n": 246,
+    "p50_s": 1.2924,
+    "p95_s": 1.9245,
+    "max_s": 2.0265
+  },
+  "poll": {
+    "n": 1230,
+    "p50_s": 0.0153,
+    "p95_s": 0.0714,
+    "max_s": 0.1295
+  },
+  "all_requests": {
+    "n": 1476,
+    "p50_s": 0.0177,
+    "p95_s": 1.6389,
+    "max_s": 2.0265
+  },
+  "errors": 1,
+  "create_error_detail": [
+    {
+      "kind": "RemoteProtocolError",
+      "message": "Server disconnected without sending a response.",
+      "idle_before_s": 4.998,
+      "after_s": 0.091
+    }
+  ],
+  "idle_before_upload": {
+    "n": 247,
+    "p50_s": 8.7183,
+    "p95_s": 16.779,
+    "max_s": 18.0631,
+    "over_uvicorn_keepalive_5s": 176
+  },
+  "error_kinds": {
+    "create:RemoteProtocolError": 1
+  },
+  "client_share_within": {
+    "create": {
+      "le_1.5": 0.6382,
+      "le_2.0": 0.9959
+    },
+    "poll": {
+      "le_1.5": 1.0,
+      "le_2.0": 1.0
+    }
+  },
+  "server": {
+    "skipped": "nhiều process API: /metrics chỉ của một process"
+  },
+  "burst_wall_clock_s": 12.34,
+  "meeting_status_at_end": {
+    "queued": 100
+  },
+  "verdict": "FAIL"
+}

@@ -1,0 +1,50 @@
+{
+  "clients": 247,
+  "threshold_p95_s": 2.0,
+  "create": {
+    "n": 247,
+    "p50_s": 1.5206,
+    "p95_s": 2.0383,
+    "max_s": 2.1686
+  },
+  "poll": {
+    "n": 1235,
+    "p50_s": 0.0119,
+    "p95_s": 0.0368,
+    "max_s": 0.147
+  },
+  "all_requests": {
+    "n": 1482,
+    "p50_s": 0.0143,
+    "p95_s": 1.7137,
+    "max_s": 2.1686
+  },
+  "errors": 0,
+  "create_error_detail": [],
+  "idle_before_upload": {
+    "n": 247,
+    "p50_s": 8.5999,
+    "p95_s": 16.6725,
+    "max_s": 18.4106,
+    "over_uvicorn_keepalive_5s": 175
+  },
+  "error_kinds": {},
+  "client_share_within": {
+    "create": {
+      "le_1.5": 0.4737,
+      "le_2.0": 0.919
+    },
+    "poll": {
+      "le_1.5": 1.0,
+      "le_2.0": 1.0
+    }
+  },
+  "server": {
+    "skipped": "nhiều process API: /metrics chỉ của một process"
+  },
+  "burst_wall_clock_s": 12.31,
+  "meeting_status_at_end": {
+    "queued": 100
+  },
+  "verdict": "PASS"
+}

@@ -1,0 +1,7 @@
+# 2026-11-10, C, trước khi sửa (commit 29635f6): chưa có histogram chờ admission; bucket HTTP không có 1.5 và 2.0
+$ .venv/bin/python -m pytest -q tests/unit/test_admission_control.py
+E       AssertionError: assert 0.0 == (0.0 + 3)
+E       ImportError: cannot import name 'LATENCY_BUCKETS' from 'app.core.metrics' (~/Project/SE2026_Codex/backend/app/core/metrics.py)
+FAILED tests/unit/test_admission_control.py::test_admission_wait_is_measured_for_admitted_requests[asyncio]
+FAILED tests/unit/test_admission_control.py::test_latency_targets_are_bucket_bounds
+2 failed, 7 passed, 1 warning in 2.28s

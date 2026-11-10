@@ -13,19 +13,28 @@ quá `queue_timeout_sec` thì trả 503 kèm `Retry-After`.
 from __future__ import annotations
 
 import asyncio
+import time
 
-from prometheus_client import Counter, Gauge
+from prometheus_client import Counter, Gauge, Histogram
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from app.core.errors import build_error_envelope, get_request_id
+from app.core.metrics import LATENCY_BUCKETS
 
 # Không có nhãn nào chứa id hay dữ liệu người dùng (PRIV-10).
 INFLIGHT = Gauge("api_inflight_requests", "Số request đang xử lý trong process API")
 REJECTED = Counter(
     "api_admission_rejected_total",
     "Số request bị từ chối 503 vì chờ quá API_QUEUE_TIMEOUT_SEC",
+)
+# Chỉ đo request được nhận; request bị từ chối đã đếm ở REJECTED (chờ đúng bằng timeout).
+# http_request_duration_seconds trừ phần này là thời gian xử lý thật của request.
+ADMISSION_WAIT = Histogram(
+    "api_admission_wait_seconds",
+    "Thời gian request chờ ở hàng đợi admission trước khi được xử lý",
+    buckets=LATENCY_BUCKETS,
 )
 
 # Đường dẫn không bị xếp hàng: health cho liveness probe, /metrics cho Prometheus.
@@ -55,12 +64,14 @@ class AdmissionControlMiddleware:
 
         if self._semaphore is None:
             self._semaphore = asyncio.Semaphore(self.max_inflight)
+        start = time.perf_counter()
         try:
             await asyncio.wait_for(self._semaphore.acquire(), timeout=self.queue_timeout_sec)
         except TimeoutError:
             REJECTED.inc()
             await self._reject(scope, receive, send)
             return
+        ADMISSION_WAIT.observe(time.perf_counter() - start)
         INFLIGHT.inc()
         try:
             await self.app(scope, receive, send)

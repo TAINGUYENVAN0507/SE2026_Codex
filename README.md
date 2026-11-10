@@ -43,7 +43,7 @@ Toàn bộ 3 module chính đã được triển khai đầy đủ và tích h�
   - Dịch vụ xóa (BE-18) xóa cuộc họp hoặc cả tài khoản (`DELETE /auth/me`) khỏi DB, `idempotency_keys`, audio và artifact ([ADR 0002](docs/adr/0002-adapter-boundary-and-erasure.md)); Retention Reaper (BE-14) dọn dẹp file audio và dữ liệu vận hành quá hạn.
   - JSON structured logging kèm `job_id`, `stage`, `attempt` (BE-19); endpoint Prometheus `/metrics` theo dõi request, độ trễ và trạng thái hàng đợi job.
   - Tính năng tìm kiếm, lọc và phân trang có thứ tự ổn định (VT-017) với tie-breaker `Meeting.id`, đảm bảo tương thích ngược 100% với client cũ.
-  - Hơn 300 test backend, CI xanh, không drift hợp đồng OpenAPI (`contracts/openapi.json`). Trên máy có `ffprobe` thật, 5 test upload lỗi `AUDIO_INVALID` vì fixture âm thanh giả (chỉ ảnh hưởng chạy cục bộ).
+  - Hơn 300 test backend, CI xanh, không drift hợp đồng OpenAPI (`contracts/openapi.json`). Kết quả giống nhau dù máy có hay không có `ffprobe`; CI cài ffmpeg và đặt `REQUIRE_FFPROBE=1` để test ffprobe thật (`backend/tests/integration/test_ffprobe_real.py`) không bị skip.
   - Bằng chứng kiểm thử và đo tải: [`docs/evidence/`](docs/evidence/) (chạy lại: `docs/evidence/vt-018/README.md`). Số đo là một lần chạy trên một máy với pipeline giả, không phải cam kết hiệu năng.
 
 - **Frontend (`frontend/`):**

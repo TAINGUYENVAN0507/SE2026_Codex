@@ -30,3 +30,7 @@ Một lần chạy, một worker uvicorn, pipeline giả, mọi thành phần ch
 ## Cập nhật 2026-11-09: sau khi sửa pool và giới hạn request đang xử lý
 
 Chạy lại 239 client với cấu hình mặc định (1 process, `API_MAX_INFLIGHT=40`), `after/`: **239/239 upload thành công, 0 lỗi** (trước đó 1 thành công và 101 lỗi 500). Latency: upload p50 2,56 s, p95 4,36 s; p95 tất cả 3,73 s. Thời gian chạy khoảng 35 s thay vì 208 s. RE-018 không nêu mục tiêu độ trễ cho 239 người dùng; con số 2,0 s ở trên chỉ là mốc tham chiếu của AD-018, và cấu hình này vượt mốc đó. Một lần chạy, cùng giới hạn đo như trên; nguyên nhân và cách sửa ở `../load-247/diagnosis.md`.
+
+## Cập nhật 2026-11-10: trên `main` sau #44, #45
+
+`after-2026-11-10/`: 4 lượt, 239/239 upload, 0 lỗi; p95 upload 2,09 đến 2,37 s; phía server 92 đến 100 % upload xong trong 2,0 s. RE-018 không nêu mục tiêu độ trễ.

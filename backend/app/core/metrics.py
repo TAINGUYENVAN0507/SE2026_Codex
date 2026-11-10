@@ -2,7 +2,8 @@
 
 Bao gồm:
 - http_requests_total: Đếm tổng số HTTP requests theo method, route template và status.
-- http_request_duration_seconds: Histogram đo thời gian xử lý request theo route template.
+- http_request_duration_seconds: Histogram đo thời gian xử lý request theo route template
+  (gồm thời gian chờ admission; phần chờ riêng ở api_admission_wait_seconds).
 - jobs_total: Gauge số lượng job theo trạng thái (queued, running, retry_scheduled,
   succeeded, failed, cancelled).
 - job_oldest_queued_seconds: Gauge độ tuổi của job đang queued lâu nhất.
@@ -36,11 +37,31 @@ HTTP_REQUESTS_TOTAL = Counter(
     ["method", "route", "status"],
 )
 
+# 1.5 và 2.0 là mốc p95 của VT-018 và AD-018: tỷ lệ request dưới mốc đọc thẳng từ bucket.
+LATENCY_BUCKETS = (
+    0.001,
+    0.005,
+    0.01,
+    0.025,
+    0.05,
+    0.1,
+    0.25,
+    0.5,
+    0.75,
+    1.0,
+    1.5,
+    2.0,
+    2.5,
+    3.0,
+    5.0,
+    10.0,
+)
+
 HTTP_REQUEST_DURATION_SECONDS = Histogram(
     "http_request_duration_seconds",
-    "Thời gian xử lý HTTP request tính bằng giây",
+    "Thời gian xử lý HTTP request tính bằng giây (gồm cả thời gian chờ admission)",
     ["route"],
-    buckets=(0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0),
+    buckets=LATENCY_BUCKETS,
 )
 
 # 2. Job / Queue Metrics

@@ -38,8 +38,6 @@ def auto_auth_for_contract_tests(monkeypatch: pytest.MonkeyPatch, request: pytes
     if request.node.name.startswith("test_auth_") or request.node.name == "test_openapi_json_drift":
         return
 
-    import shutil
-
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
     from sqlalchemy.pool import StaticPool
@@ -59,17 +57,15 @@ def auto_auth_for_contract_tests(monkeypatch: pytest.MonkeyPatch, request: pytes
     from app.db.session import get_db
     from app.services.audio_validator import AudioProbeResult
 
-    if shutil.which("ffprobe") is None:
+    def _mock_probe(file_path, timeout_sec=10.0, ffprobe_bin=None):
+        return AudioProbeResult(
+            duration_sec=120.0,
+            format_name="wav",
+            sample_rate=16000,
+            channels=1,
+        )
 
-        def _mock_probe(file_path, timeout_sec=10.0, ffprobe_bin=None):
-            return AudioProbeResult(
-                duration_sec=120.0,
-                format_name="wav",
-                sample_rate=16000,
-                channels=1,
-            )
-
-        monkeypatch.setattr("app.api.v1.meetings.probe_audio", _mock_probe)
+    monkeypatch.setattr("app.api.v1.meetings.probe_audio", _mock_probe)
 
     engine = create_engine(
         "sqlite:///:memory:",

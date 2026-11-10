@@ -33,9 +33,13 @@ jobs:
           --health-retries 5
     env:
       DATABASE_URL: postgresql://postgres:postgrespassword@localhost:5432/meeting_assistant_test
+      # Test ffprobe thật không được skip trên CI (tests/integration/test_ffprobe_real.py).
+      REQUIRE_FFPROBE: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
+      - name: Install ffmpeg (ffprobe thật, như trong image API)
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg && ffprobe -version | head -1
       - name: Install dependencies
         run: uv sync --locked
       - name: Lint
