@@ -115,7 +115,8 @@ describe('FE-03 session guard and logout', () => {
     expect(screen.getByLabelText('URL')).toHaveTextContent(
       '/login?next=%2Fmeetings%3Fpage%3D2',
     )
-    expect(client.getQueryData(['me'])).toBeUndefined()
+    // useMe có thể ghi null từ 401 sau khi cache được dọn; cả hai đều không còn danh tính.
+    expect([undefined, null]).toContain(client.getQueryData(['me']))
   })
 
   it('keeps the session when logout fails on the network', async () => {

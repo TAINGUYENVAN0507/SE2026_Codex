@@ -1,0 +1,78 @@
+{
+  "date": "2026-11-09",
+  "tool": "axe-core",
+  "version": "4.14.0",
+  "environment": "Chromium; frontend production build; API/worker/PostgreSQL thật; pipeline fake; dữ liệu tổng hợp",
+  "base_commit": "720fae9",
+  "working_tree_modified": true,
+  "scope": "Bốn trang ở trạng thái hiển thị mặc định; chưa kiểm screen reader hoặc thiết bị vật lý; không phải chứng nhận WCAG.",
+  "vitest": {
+    "tests": 4,
+    "environment": "jsdom",
+    "color_contrast": "tắt vì jsdom không có layout/canvas, kiểm lại trong Chromium"
+  },
+  "chromium": {
+    "tests": 4,
+    "analyses": 8,
+    "height": 900,
+    "rules": "mặc định, không tắt color-contrast",
+    "results": [
+      {
+        "file": "axe-upload-1280.json",
+        "width": 1280,
+        "violations": 0,
+        "blocking": 0,
+        "incomplete": []
+      },
+      {
+        "file": "axe-upload-360.json",
+        "width": 360,
+        "violations": 0,
+        "blocking": 0,
+        "incomplete": []
+      },
+      {
+        "file": "axe-detail-1280.json",
+        "width": 1280,
+        "violations": 0,
+        "blocking": 0,
+        "incomplete": []
+      },
+      {
+        "file": "axe-detail-360.json",
+        "width": 360,
+        "violations": 0,
+        "blocking": 0,
+        "incomplete": []
+      },
+      {
+        "file": "axe-settings-1280.json",
+        "width": 1280,
+        "violations": 0,
+        "blocking": 0,
+        "incomplete": []
+      },
+      {
+        "file": "axe-settings-360.json",
+        "width": 360,
+        "violations": 0,
+        "blocking": 0,
+        "incomplete": []
+      },
+      {
+        "file": "axe-list-1280.json",
+        "width": 1280,
+        "violations": 0,
+        "blocking": 0,
+        "incomplete": []
+      },
+      {
+        "file": "axe-list-360.json",
+        "width": 360,
+        "violations": 0,
+        "blocking": 0,
+        "incomplete": []
+      }
+    ]
+  }
+}

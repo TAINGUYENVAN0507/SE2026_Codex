@@ -1,4 +1,4 @@
-# Checklist UX và demo — 08/11/2026
+# Checklist UX và demo — 09/11/2026
 
 Ảnh chụp Chromium từ ứng dụng đang chạy: API, worker và PostgreSQL thật;
 pipeline fake, WAV tổng hợp 30 giây. Không dùng cuộc họp hay ghi âm của người
@@ -22,11 +22,31 @@ thật. Đây là kiểm thử luồng sản phẩm, không phải đánh giá �
 | Bản ghi ngắn | Header hiện giây khi dưới một phút; không ghi 30 giây thành 0 phút. Chưa có thời lượng thì ghi rõ, không dựng số giả. |
 | Lỗi khi chạy | Không có `pageerror` trong luồng chụp ảnh. Lỗi nghiệp vụ được kiểm riêng bằng E2E permanent/retry/partial và Vitest. |
 
-Kết quả local: **238 Vitest**, **19 E2E slow + 3 E2E lỗi/retry/partial** đạt;
-lint, format, typecheck và build đạt. Ruff cho fixture Python retention đạt.
-Chưa push nên chưa xác nhận CI của đợt 08/11. CI mới chỉ được báo khi đã push và kiểm tra đúng commit.
+Kết quả local 09/11 sau đồng bộ main `b654a99`: **262 Vitest / 39 file**,
+**23 E2E slow + 3 E2E lỗi/retry/partial** đạt, không skip. Lint, format,
+typecheck và production build đạt. Bốn ca axe browser quét tám viewport:
+0 violation, 0 incomplete. Xem `accessibility-2026-11-09.json` và giới hạn
+ở bug bash. PR #42 của đợt 08/11 đã merge; kết quả local ngày 09/11 không
+thay cho CI của PR ngày 09/11 (chưa push nhánh `vantuong`).
 
-## Ảnh mới từ ứng dụng
+## Ảnh cập nhật 09/11/2026
+
+Ảnh Chromium trên stack thật với pipeline fake, user/meeting tổng hợp; desktop
+1280×900 và mobile giả lập 360×900, không tràn ngang. Bản sao đúng SHA256 ở
+`.preview-stitch/anh-duyet/2026-11-09/` ngoài Git. Không dùng ảnh/trace thật.
+
+| Màn | Desktop | Mobile |
+| --- | --- | --- |
+| Danh sách | [1280px](screenshots/2026-11-09-list-desktop.png) | [360px](screenshots/2026-11-09-list-mobile.png) |
+| Upload | [1280px](screenshots/2026-11-09-upload-desktop.png) | [360px](screenshots/2026-11-09-upload-mobile.png) |
+| Chi tiết | [1280px](screenshots/2026-11-09-detail-desktop.png) | [360px](screenshots/2026-11-09-detail-mobile.png) |
+| Cài đặt | [1280px](screenshots/2026-11-09-settings-desktop.png) | [360px](screenshots/2026-11-09-settings-mobile.png) |
+
+## Ảnh bằng chứng 08/11/2026
+
+Các ảnh sau giữ để đối chiếu những luồng không đổi; không thay cho ảnh giao diện
+mới ở trên. Mobile của đợt này là 360×800.
+
 
 | Màn | Desktop | Điện thoại |
 | --- | --- | --- |
@@ -86,10 +106,10 @@ liệu E2E, kiểm đường dẫn rồi gọi CLI cleanup chính thức.
 
 ## Còn chờ hoặc cần nhóm xác nhận
 
-- Xóa tài khoản: phần frontend và E2E user riêng đã đạt local; chờ CI/review
-  của đợt 08/11, không còn chờ API BE-18. Bằng chứng xóa log/DB/file ở mọi
-  nơi lưu vẫn thuộc phần backend của B.
-- Review PR mới của B: chưa có PR `haquang` mới tại lần kiểm tra cuối buổi.
+- Xóa tài khoản đã vào main qua PR #42; E2E ngày 09/11 tiếp tục đạt. Bằng
+  chứng UI/API không thay cho kiểm tra cleanup ở mọi nơi của backend/pipeline.
+- Review PR mới của B ngày 09/11: chưa có PR mới tại lúc kiểm tra. PR #41
+  thuộc ngày 08/11 đã review và merge, không tính thay cho review đợt mới.
 - Native Windows từng có log `os.killpg` khi hủy job đang chạy. Pipeline thuộc C;
   cần xử lý riêng nếu hỗ trợ worker native Windows. Không giấu lỗi để báo sạch.
 - Race worker Linux từng được ghi nhận ngày 06/11 cần B/C xác nhận lại trên main
@@ -109,3 +129,34 @@ Chi tiết tái hiện, mong đợi/thực tế, mức độ và test hồi quy:
 - Các ảnh chỉ xác nhận layout/overflow ở viewport giả lập Chromium; chưa kiểm
   điện thoại vật lý hoặc screen reader thực tế. Detector trên trang sửa trả []
   không đồng nghĩa toàn bộ ứng dụng đã đạt WCAG.
+
+## Ma trận trang × trạng thái — 09/11/2026
+
+Các ô dưới dẫn tới test hành vi, không chỉ kiểm render. MSW dùng dữ liệu tổng
+hợp; response đang tải được giữ bằng promise rồi giải phóng, không sleep đoán.
+N/A nghĩa là trạng thái không áp dụng, không phải đã kiểm một trạng thái giả.
+
+| Trang / khu vực | Rỗng / thiếu dữ liệu | Đang tải | Lỗi và đường phục hồi |
+| --- | --- | --- | --- |
+| Đăng nhập | Form trống có required; không có danh sách để kiểm empty | `LoginPage.test.tsx`: khóa submit khi chờ | `LoginPage.test.tsx`: sai mật khẩu/mạng, giữ email, xóa password; `SessionExpiry.test.tsx`: hết phiên có alert |
+| Danh sách | `MeetingListPage.test.tsx`: 0 meeting; `PageStates.test.tsx`: không có kết quả tìm và xóa bộ lọc khôi phục | `MeetingListPage.test.tsx`: skeleton → dữ liệu | `MeetingListPage.test.tsx`: thông báo lỗi/nút thử lại; không hiển thị raw backend |
+| Upload | `PageStates.test.tsx`: chưa có file, có nút chọn, submit tắt | `PageStates.test.tsx`: chờ config, chọn file tắt → dùng đúng giới hạn; `NewMeetingPage.test.tsx`: progress/hủy | `NewMeetingPage.test.tsx`: config lỗi/thử lại, lỗi HTTP, hủy không đổi trang; `SessionExpiry.test.tsx`: 401 |
+| Chi tiết | `PageStates.test.tsx`: transcript rỗng không chèn dữ liệu demo | `PageStates.test.tsx`: chưa hiện player khi meeting chưa về | `PageStates.test.tsx`: 503 có đường về danh sách; 404 không lộ dữ liệu meeting; `SessionExpiry.test.tsx`: 401 |
+| Tiến độ | `MeetingProcessingPage.test.tsx`: chưa có job, không dựng % giả | `PageStates.test.tsx`: thông báo tải trước khi có dữ liệu | `MeetingProcessingPage.test.tsx`: lỗi meeting; `JobStatusCard.test.tsx`: lỗi job/retry; `SessionExpiry.test.tsx`: 401 |
+| Cài đặt | `PageStates.test.tsx`: tên rỗng có fallback, vẫn giữ email thật | `PageStates.test.tsx`: guard chờ me, không hiện profile giả | `PageStates.test.tsx`: me 503 có thử lại, không nhầm thành hết phiên; `DeleteAccountSection.test.tsx`: lỗi xóa giữ form |
+| Tab tóm tắt | `RemoteSummary.test.tsx`: disabled/insufficient/failed | `PanelStates.test.tsx`: HTTP chờ; `RemoteSummary.test.tsx`: pending nghiệp vụ | `PanelStates.test.tsx`: HTTP 500 có alert an toàn; `RemoteSummary.test.tsx`: 409 giữ bản nháp |
+| Tab công việc | `PanelStates.test.tsx`: 0 việc, có form tạo thủ công | `PanelStates.test.tsx`: chờ HTTP → nội dung | `PanelStates.test.tsx`: HTTP 500 có alert, không raw text; `RemoteTasks.test.tsx`: 409 giữ draft |
+| Tab lịch sử | `HistoryPanel.test.tsx`: kết quả rỗng theo bộ lọc | `HistoryPanel.test.tsx`: thông báo chờ HTTP | `HistoryPanel.test.tsx`: lỗi an toàn, thử lại thành công |
+| Trang không tồn tại | `App.test.tsx` / scaffold: 404 có đường về danh sách | N/A: trang tĩnh không tải API | N/A: chính trang này là trạng thái phục hồi 404 |
+
+`PageStates.test.tsx` bổ sung 11 ca và `PanelStates.test.tsx` bổ sung 5 ca.
+Các test cũ được tái sử dụng khi đã kiểm đúng trạng thái; không thêm bản sao
+để tăng số lượng. Kiểm màu và bố cục thực tế thuộc lượt browser/axe riêng.
+
+## Lưu ý demo sau hardening 09/11
+
+Giữ kịch bản 5 phút ở trên, ưu tiên ảnh 09/11 khi minh họa bốn trang chính.
+Nếu phiên hết hạn, trang login có thông báo; đăng nhập lại trở về URL đích.
+Đây là xử lý lỗi thật, không cố tình làm mất phiên giữa phần trình bày chính.
+Axe là bằng chứng kiểm tra tự động, không đưa mã lỗi kỹ thuật lên luồng người dùng.
+Giữ Inter/graphite/cam; thay đổi hiển thị ngày này là tương phản chữ và landmark.

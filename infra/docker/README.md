@@ -126,3 +126,17 @@ docker run --rm -v "$PWD/infra/docker/smoke_worker.sh:/smoke.sh:ro" meeting-work
 - Trước sửa: Docker build lỗi ENOENT tại /contracts/openapi.json; sau khi bổ sung contract, nginx -t còn lỗi quyền ghi /run/nginx.pid.
 - Sau sửa: Docker build đạt; nginx -t đạt dưới user nginx; container QA trả HTTP 200 cho /settings và 404 cho /metrics.
 - Sửa phát sinh do tích hợp FE-19 với BE-16. PR cần B review Dockerfile và bộ lọc workflow; không đổi API hay contract.
+
+## Smoke Web trong CI — 09/11/2026
+
+Sau `build-web`, workflow chạy `sh infra/docker/smoke_web.sh meeting-web:latest`.
+Script giữ user mặc định non-root, kiểm `nginx -t`, khởi động container trên cổng
+host ngẫu nhiên, chờ HTTP 200 cho `/` và `/settings`, kiểm `/metrics` trả 404.
+Container kiểm tra được dọn cả khi đạt lẫn lỗi; API được resolve qua
+`--add-host api:127.0.0.1`, không yêu cầu API thật cho các route SPA.
+
+Chạy lại local sau khi build image bằng đúng lệnh trên (cần Docker, sh và curl).
+Negative control: nhánh tạm cố tình đưa PID về `/var/run/nginx.pid`; bước smoke
+phải fail vì nginx không có quyền ghi. Không đưa mutation vào nhánh nộp.
+Bằng chứng run đỏ/xanh được ghi ở FE-19 và file phân công, không coi build image
+đạt là bằng chứng container khởi động được.

@@ -20,6 +20,7 @@ on:
       - "contracts/openapi.json"
       - "pipeline/**"
       - ".dockerignore"
+      - ".github/workflows/docker-images.yml"
 
 jobs:
   lint:
@@ -69,6 +70,9 @@ jobs:
       - name: Kiểm tra kích thước image Web
         run: docker image ls meeting-web:latest
 
+      - name: Smoke Web container (non-root, nginx, HTTP)
+        run: sh infra/docker/smoke_web.sh meeting-web:latest
+
   compose-smoke:
     runs-on: ubuntu-latest
     steps:
@@ -81,5 +85,3 @@ jobs:
       - name: Dừng Docker Compose
         if: always()
         run: docker compose down
-
-
