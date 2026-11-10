@@ -46,6 +46,7 @@ Log worker native Windows vẫn có cảnh báo `os.killpg` khi hủy job đang 
 vẫn đạt; không dùng kết quả đó để khẳng định cleanup subprocess đã đúng trên
 native Windows. Stack Compose Linux được kiểm riêng ở task 5.
 
-Kết quả local không thay CI GitHub. Task 5 còn chờ run CI đỏ/xanh cho proxy
-trên nhánh thử sau khi được phép push. Không dùng fake pipeline để kết luận
+Kết quả local không thay CI GitHub. Bổ sung sau khi được phép chạy nhánh thử:
+task 5 có [CI đỏ](https://github.com/TAINGUYENVAN0507/SE2026_Codex/actions/runs/42786190434) với proxy sai và [CI xanh](https://github.com/TAINGUYENVAN0507/SE2026_Codex/actions/runs/42786612344) sau khôi phục;
+chi tiết tại FE-19. CI PR bàn giao được kiểm riêng trên head cuối. Không dùng fake pipeline để kết luận
 WER, chất lượng tóm tắt hoặc khả năng chịu tải thực tế.

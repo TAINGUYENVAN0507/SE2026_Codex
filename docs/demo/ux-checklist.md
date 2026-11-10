@@ -33,7 +33,7 @@ bằng `filechooser.setFiles`, chưa phải kiểm screen reader hay điện tho
 Kết quả local ngày 10/11: **284 Vitest / 46 file** và **27 E2E trên clone
 sạch** đạt; lint/format/typecheck/build đạt. Một flow qua container web đã
 đạt riêng, negative control proxy đỏ rồi khôi phục xanh ở local. CI workflow
-nginx mới và link run đỏ/xanh vẫn chờ push, nên task 5 chưa tick. Báo cáo
+nginx mới đã có [run đỏ](https://github.com/TAINGUYENVAN0507/SE2026_Codex/actions/runs/42786190434) và [run xanh](https://github.com/TAINGUYENVAN0507/SE2026_Codex/actions/runs/42786612344); task 5 đã tick. Báo cáo
 [clone sạch](../frontend/clean-clone-2026-11-10.md) ghi rõ cảnh báo `os.killpg`
 của worker native Windows; không coi test UI/API là xác nhận cleanup mọi nền tảng.
 

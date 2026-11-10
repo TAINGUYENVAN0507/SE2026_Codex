@@ -59,9 +59,9 @@ git checkout vantuong && git fetch origin && git merge origin/main
 - Test cho 3 trạng thái: đang chờ, đang chạy, đã xong. Thiếu trường thì không hiện `NaN` hay `Invalid Date`.
 - **Message:** `feat(frontend): show queue wait, start and finish time of a job (VT-018)`
 
-### 5. [ ] E2E qua container web trên Compose trong CI (BE-16, FE-19)
+### 5. [x] E2E qua container web trên Compose trong CI (BE-16, FE-19)
 
-**Kết quả 10/11:** Đã viết workflow/spec và chạy qua nginx thật ở local. Proxy sai làm flow đỏ, khôi phục xanh. **Chuyển sang 11-11:** chưa có link run CI đỏ/xanh và link trong thân commit; chờ được phép push nhánh thử. Không tick chỉ dựa vào kết quả local. Infra healthcheck web/worker cần owner B review.
+**Kết quả 10/11:** Đã chạy CI trên container web thật. [Run đỏ 42786190434](https://github.com/TAINGUYENVAN0507/SE2026_Codex/actions/runs/42786190434) fail đúng Playwright/nginx vì proxy `/api/` sang port 1; các bước cài đặt/Compose/seed/teardown đạt. [Run xanh 42786612344](https://github.com/TAINGUYENVAN0507/SE2026_Codex/actions/runs/42786612344) đạt 1 test sau khi khôi phục proxy; commit `189bb061ace8d46dd41d32a13f6a1463b5763db9` chứa link đỏ trong thân commit. Không đổi assertion hoặc skip test. Nhánh proof không merge. Infra healthcheck web/worker được nêu rõ để owner B xem; CI PR cuối kiểm riêng.
 
 **Commit:** `a15a9f1f76be8213fc1a9915b4e69c37694f1b4d`.
 
@@ -112,7 +112,7 @@ git checkout vantuong && git fetch origin && git merge origin/main
 ## Tổng kiểm tra local — 10/11/2026
 
 - Đã đồng bộ `origin/main` tại `40d2431` trước khi làm; PR #44/#45 đã merge.
-- **9/10 mục đủ nghiệm thu local; mục 5 còn thiếu bằng chứng CI** như ghi ở trên.
+- **10/10 mục đã hoàn thành; mục 5 có bằng chứng CI đỏ/xanh** như ghi ở trên.
   Có commit triển khai cho cả 9 mục kỹ thuật, không đồng nhất "đã code" với
   "đủ nghiệm thu CI". Review thành viên đã là tùy chọn từ hôm nay.
 - Lint, format, TypeScript, **284 Vitest / 46 file**, coverage có ngưỡng và
@@ -130,8 +130,9 @@ git checkout vantuong && git fetch origin && git merge origin/main
   hoặc khả năng chịu tải bằng pipeline fake. SH-01 là việc chung của nhóm.
 - Đã dừng/dọn đúng stack test `se-web-e2e`, volume tổng hợp và container DB
   clone sạch; các cổng 8080/55450/15173/14173/18000 không còn listener của QA.
-- Chưa push, chưa mở PR, chưa merge. Không đăng nhận xét mới lên PR người khác
-  trong đợt này. Bản review #45 đã đăng ngày 09/11 được lưu lại ở G0, là snapshot
+- Đã được người dùng cho làm nốt phần CI: push nhánh proof, giữ riêng mutation.
+  Bản bàn giao từ vantuong mở PR sau khi ghi bằng chứng; không tự merge.
+  Không đăng nhận xét mới lên PR người khác trong đợt này. Bản review #45 đã đăng ngày 09/11 được lưu lại ở G0, là snapshot
   `d9eba806`, không khẳng định các phát hiện đã được sửa sau merge.
 
 **Sửa lỗi QA phát sinh:** `8beb86e148a15371bb978b2b6ba54b61985b59cb`: LF trên Windows, notice bận dễ đọc, thông báo khi poll đã dừng, cập nhật coverage thật. Đây là sửa lỗi ngoài danh sách task, không gán thành một task mới.
