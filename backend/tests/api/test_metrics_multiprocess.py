@@ -13,6 +13,8 @@ import os
 import shutil
 import tempfile
 
+import pytest
+
 from app.core.metrics import clean_multiproc_dir
 
 
@@ -94,13 +96,15 @@ def test_clean_multiproc_dir():
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
 
-def test_metrics_multiprocess_aggregates_across_processes():
+def test_metrics_multiprocess_aggregates_across_processes(
+    monkeypatch: pytest.MonkeyPatch,
+):
     """2 process mỗi process gửi 5 request. Tổng http_requests_total phải là 10 ở mọi lần scrape."""
     prom_dir = tempfile.mkdtemp(prefix="prom_multiproc_test_")
     db_dir = tempfile.mkdtemp(prefix="db_multiproc_test_")
     try:
         db_file = os.path.join(db_dir, "test.db").replace("\\", "/")
-        os.environ["DATABASE_URL"] = f"sqlite:///{db_file}"
+        monkeypatch.setenv("DATABASE_URL", f"sqlite:///{db_file}")
         from sqlalchemy import create_engine
 
         import app.db.models  # noqa: F401
@@ -115,8 +119,7 @@ def test_metrics_multiprocess_aggregates_across_processes():
         ready1 = ctx.Event()
         ready2 = ctx.Event()
 
-        os.environ["PROMETHEUS_MULTIPROC_DIR"] = prom_dir
-        os.environ["DATABASE_URL"] = f"sqlite:///{db_file}"
+        monkeypatch.setenv("PROMETHEUS_MULTIPROC_DIR", prom_dir)
 
         p1 = ctx.Process(
             target=_worker_send_requests,
@@ -144,7 +147,8 @@ def test_metrics_multiprocess_aggregates_across_processes():
                 f"Lần đọc {attempt}: mong đợi 10.0 request nhưng nhận được {total}"
             )
     finally:
-        os.environ.pop("PROMETHEUS_MULTIPROC_DIR", None)
-        os.environ.pop("DATABASE_URL", None)
+        from app.core.config import get_settings
+
+        get_settings.cache_clear()
         shutil.rmtree(prom_dir, ignore_errors=True)
         shutil.rmtree(db_dir, ignore_errors=True)
