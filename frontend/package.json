@@ -15,7 +15,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "preview": "vite preview",
-    "gen:api": "openapi-typescript ../contracts/openapi.json -o src/api/schema.d.ts && prettier --write src/api/schema.d.ts"
+    "gen:api": "openapi-typescript ../contracts/openapi.json -o src/api/schema.d.ts && prettier --write src/api/schema.d.ts",
+    "e2e:compose": "playwright test --config playwright.compose.config.ts"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
