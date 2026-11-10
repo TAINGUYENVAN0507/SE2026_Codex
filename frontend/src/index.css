@@ -14,10 +14,11 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   --ink: #202226;
-  --muted: #727782;
+  --muted: #636b78;
   --line: #e3e5e9;
   --bg: #f6f7f9;
   --accent: #de461d;
+  --accent-text: #b63816;
   --soft: #fff4ef;
   --green: #238368;
 }
@@ -114,7 +115,7 @@ input[type='checkbox'] {
   color: var(--muted);
 }
 .accent-color {
-  color: var(--accent) !important;
+  color: var(--accent-text) !important;
 }
 .error-color {
   color: #ca3c3c !important;
@@ -182,7 +183,7 @@ input[type='checkbox'] {
   min-width: 32px;
   min-height: 32px;
   padding: 7px;
-  color: #727986;
+  color: var(--muted);
   border-radius: 6px;
 }
 .icon-button:hover {
@@ -270,7 +271,7 @@ input[type='checkbox'] {
   border-radius: 50%;
   background: #f0f1f4;
   border: 1px solid #e0e3e9;
-  color: #6e7581;
+  color: var(--muted);
   font-size: 10px;
   font-weight: 500;
   flex-shrink: 0;
@@ -358,7 +359,7 @@ input[type='checkbox'] {
 }
 .filter-tabs button span {
   font-size: 10px;
-  color: #7b838f;
+  color: var(--muted);
 }
 .search-input {
   display: flex;
@@ -412,7 +413,7 @@ input[type='checkbox'] {
   padding-top: 16px;
   padding-bottom: 16px;
   background: #fafbfc;
-  color: #8e96a4;
+  color: var(--muted);
   font-size: 10px;
   letter-spacing: 0.7px;
 }
@@ -437,7 +438,7 @@ input[type='checkbox'] {
   width: 20px;
   height: 20px;
   flex-shrink: 0;
-  color: #8c95a4;
+  color: var(--muted);
 }
 .meeting-name strong {
   font-weight: 500;
@@ -446,13 +447,13 @@ input[type='checkbox'] {
 }
 .meeting-date {
   font-size: 11px;
-  color: #747d8d;
+  color: var(--muted);
 }
 .meeting-date small {
   margin-top: 4px;
   display: block;
   font-size: 10px;
-  color: #959ba7;
+  color: var(--muted);
 }
 .meeting-duration {
   color: #68707d;
@@ -471,7 +472,7 @@ input[type='checkbox'] {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  color: #737a87;
+  color: var(--muted);
   font-size: 11px;
   line-height: 1.5;
 }
@@ -496,7 +497,7 @@ input[type='checkbox'] {
 }
 .list-footer {
   margin-top: 24px;
-  color: #8c93a0;
+  color: var(--muted);
   font-size: 11px;
 }
 .empty-state {
@@ -550,7 +551,7 @@ input[type='checkbox'] {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  color: #747e8e;
+  color: var(--muted);
   white-space: nowrap;
 }
 .breadcrumbs > a > svg {
@@ -731,7 +732,7 @@ input[type='checkbox'] {
   gap: 18px;
   margin-top: 5px;
   font-size: 10px;
-  color: #8b92a0;
+  color: var(--muted);
 }
 .meeting-meta span {
   display: flex;
@@ -766,7 +767,7 @@ input[type='checkbox'] {
 .audio-player {
   border: 1px solid #dfe3e9;
   border-radius: 10px;
-  background: linear-gradient(110deg, #fcfdff, #fff);
+  background: #fff;
 }
 .audio-caption {
   display: flex;
@@ -782,11 +783,11 @@ input[type='checkbox'] {
   font-weight: 600;
 }
 .audio-caption > span svg {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .audio-caption small {
   font-size: 10px;
-  color: #969daa;
+  color: var(--muted);
   margin-left: auto;
   text-overflow: ellipsis;
   overflow: hidden;
@@ -849,7 +850,7 @@ input[type='checkbox'] {
   display: flex;
   justify-content: space-between;
   padding: 0 15px 3px;
-  color: #929aa8;
+  color: var(--muted);
   font-size: 9px;
   font-family: Consolas, monospace;
 }
@@ -906,7 +907,7 @@ input[type='checkbox'] {
 }
 .play-time span {
   font-size: 11px;
-  color: #8c95a4;
+  color: var(--muted);
 }
 .current-speaker {
   display: flex;
@@ -915,7 +916,7 @@ input[type='checkbox'] {
   border-left: 1px solid var(--line);
   padding-left: 20px;
   font-size: 11px;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .playing-dot {
   height: 5px;
@@ -999,7 +1000,7 @@ input[type='checkbox'] {
   margin-left: auto;
   white-space: nowrap;
   font-size: 10px;
-  color: #7e8796;
+  color: var(--muted);
 }
 .follow-control input {
   width: 13px;
@@ -1118,19 +1119,19 @@ input[type='checkbox'] {
 .timestamp {
   font-size: 10px;
   font-family: Consolas, monospace;
-  color: #959eae;
+  color: var(--muted);
   padding: 4px;
 }
 .timestamp:hover {
   background: #ffebe0;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .active .timestamp {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .playing-label {
   font-size: 9px;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .edited-label {
   font-size: 9px;
@@ -1239,7 +1240,7 @@ mark {
   height: 52px;
   border-bottom: 2px solid transparent;
   border-radius: 0;
-  color: #858e9e;
+  color: var(--muted);
   font-size: 14px;
 }
 .notes-tabs > button.selected {
@@ -1344,7 +1345,7 @@ mark {
   gap: 10px;
   margin-bottom: 12px;
   font-size: 10px;
-  color: #969eac;
+  color: var(--muted);
 }
 .note-section {
   margin-bottom: 18px;
@@ -1380,7 +1381,7 @@ mark {
   padding: 2px 5px;
   margin-left: 3px;
   font-size: 11px;
-  color: var(--accent);
+  color: var(--accent-text);
   background: #ffede3;
   font-family: Consolas, monospace;
 }
@@ -1445,7 +1446,7 @@ mark {
 .due-label {
   position: relative;
   font-size: 13px;
-  color: var(--accent);
+  color: var(--accent-text);
   overflow: hidden;
   min-height: 24px;
   display: inline-flex;
@@ -1497,7 +1498,7 @@ mark {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  color: #8a93a2;
+  color: var(--muted);
   font-size: 11px;
   margin-bottom: 20px;
 }
@@ -1510,7 +1511,7 @@ mark {
 }
 .page-description {
   margin-top: 10px;
-  color: #8b94a2;
+  color: var(--muted);
   font-size: 12px;
 }
 .create-card {
@@ -1537,7 +1538,7 @@ mark {
   padding: 11px;
   font-size: 12px;
   font-weight: 500;
-  color: #7f8895;
+  color: var(--muted);
 }
 .source-tabs button.selected {
   background: var(--ink);
@@ -1565,7 +1566,7 @@ mark {
   height: 45px;
   border-radius: 10px;
   border: 1px solid var(--line);
-  color: var(--accent);
+  color: var(--accent-text);
   background: #fff;
   margin-bottom: 15px;
 }
@@ -1573,7 +1574,7 @@ mark {
   font-size: 18px;
 }
 .dropzone p {
-  color: #969eab;
+  color: var(--muted);
   font-size: 10px;
   margin: 7px 0 20px;
 }
@@ -1609,7 +1610,7 @@ mark {
   border: 1px solid var(--line);
   border-radius: 7px;
   padding: 10px;
-  color: var(--accent);
+  color: var(--accent-text);
   background: #fff;
 }
 .selected-audio audio {
@@ -1691,7 +1692,7 @@ mark {
 }
 .privacy-description {
   margin: 10px 0 0 25px;
-  color: #9aa1ad;
+  color: var(--muted);
   font-size: 10px;
 }
 .create-footer {
@@ -1726,7 +1727,7 @@ mark {
 }
 .recording .record-symbol {
   background: #ffebe2;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .recorder-time {
   font-size: 35px;
@@ -1857,7 +1858,7 @@ mark {
   font-size: 13px;
 }
 .eyebrow {
-  color: var(--accent);
+  color: var(--accent-text);
   font-size: 12px;
 }
 @media (min-width: 1750px) {
@@ -2359,7 +2360,7 @@ mark {
     font-size: 13px;
     border-radius: 0;
     border-bottom: 2px solid transparent;
-    color: #8a94a3;
+    color: var(--muted);
   }
   .mobile-detail-tabs button.selected {
     color: var(--ink);
@@ -2875,7 +2876,7 @@ mark {
   text-underline-offset: 4px;
 }
 .job-details-link:hover {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .job-status-inline [role='timer'],
 .job-inline-error {
@@ -2964,7 +2965,7 @@ mark {
 }
 .processing-page .job-stage[data-state='current'],
 .processing-page .job-stage[data-state='retry'] {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .processing-help {
   margin: 24px 0 20px;

@@ -2,7 +2,7 @@ import { EyeIcon } from '@phosphor-icons/react/dist/csr/Eye'
 import { EyeSlashIcon } from '@phosphor-icons/react/dist/csr/EyeSlash'
 import { ArrowRightIcon } from '@phosphor-icons/react/dist/csr/ArrowRight'
 import { useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { Brand } from '../components/Brand'
 import { safeNext } from '../app/safeNext'
@@ -12,6 +12,10 @@ import { ME_QUERY_KEY } from '../features/auth/useMe'
 
 export function LoginPage() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const sessionExpired =
+    (location.state as { sessionExpired?: boolean } | null)?.sessionExpired ===
+    true
   const [searchParams] = useSearchParams()
   const [visible, setVisible] = useState(false)
   const [email, setEmail] = useState('')
@@ -80,6 +84,11 @@ export function LoginPage() {
         >
           <h2>Chào mừng trở lại</h2>
           <p>Đăng nhập vào không gian cuộc họp của bạn.</p>
+          {sessionExpired && (
+            <p className="form-error" role="alert">
+              Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại để tiếp tục.
+            </p>
+          )}
           <label className="field">
             <span>Email</span>
             <input
