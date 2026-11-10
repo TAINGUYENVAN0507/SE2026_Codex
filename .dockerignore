@@ -26,3 +26,5 @@ artifacts/
 **/*.opus
 **/*.webm
 **/*.flac
+
+frontend/coverage/

@@ -135,3 +135,21 @@ hiện có. PowerShell đặt `$env:FAKE_SCENARIO='slow'` trước khi chạy l�
 Không tắt color-contrast trong browser. JSON/ảnh được ghi ở `test-results/`
 (ngoài Git); bản tổng hợp đã soát ở `docs/demo/accessibility-2026-11-09.json`.
 Kết quả tự động không thay kiểm screen reader hoặc chứng nhận toàn bộ WCAG.
+
+## Coverage — 10/11/2026
+
+Đo bằng Vitest 5.0.5 và `@vitest/coverage-v8` 5.0.5 (MIT), Node v24.13.0.
+Lệnh: `npm run test:coverage`. CI frontend chạy lệnh này để chặn giảm coverage.
+
+| Chỉ số   | Đo được | Ngưỡng tổng |
+| -------- | ------- | ----------- |
+| Lines    | 86.5%   | 84.5%       |
+| Branches | 80.75%  | 78.75%      |
+
+Ngưỡng lấy mức đã đo trừ 2 **điểm phần trăm**, không tự nâng/hạ và không
+viết thêm test chỉ để tăng số. Include toàn bộ source TS/TSX, kể cả file
+chưa được import trong test; loại file test, test helpers, mock và type API
+sinh tự động. Không loại component khó test để nâng coverage.
+Bản tổng hợp: [coverage-2026-11-10.json](../docs/frontend/coverage-2026-11-10.json).
+HTML/JSON đầy đủ ở `coverage/` ngoài Git và ngoài Docker build context.
+Cấu hình theo [tài liệu coverage của Vitest](https://vitest.dev/config/coverage).
