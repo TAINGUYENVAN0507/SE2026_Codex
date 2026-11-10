@@ -1,8 +1,11 @@
 import { defineConfig, devices } from '@playwright/test'
 
 export default defineConfig({
-  testDir: './e2e/compose',
-  testMatch: 'web.spec.ts',
+  testDir: './e2e',
+  testMatch:
+    process.env.COMPOSE_E2E_KEYBOARD === '1'
+      ? 'flows/keyboard.spec.ts'
+      : 'compose/web.spec.ts',
   workers: 1,
   retries: 0,
   forbidOnly: Boolean(process.env.CI),

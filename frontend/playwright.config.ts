@@ -4,6 +4,7 @@ const scenario = process.env.FAKE_SCENARIO || 'slow'
 const cases: Record<string, string[]> = {
   slow: [
     'flows/login.spec.ts',
+    'flows/keyboard.spec.ts',
     'flows/upload.spec.ts',
     'flows/edit.spec.ts',
     'flows/delete.spec.ts',

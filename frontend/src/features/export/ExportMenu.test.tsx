@@ -79,6 +79,11 @@ describe('FE-15 export menu', () => {
     await user.click(screen.getByRole('button', { name: 'Xuất biên bản' }))
     await user.click(screen.getByRole('button', { name: 'Dữ liệu (.json)' }))
     await waitFor(() => expect(save).toHaveBeenCalled())
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Xuất biên bản' }),
+      ).toHaveFocus(),
+    )
     const blob = save.mock.calls[0][0]
     expect(JSON.parse(await blob.text())).toMatchObject({
       schema_version: '1.1',
