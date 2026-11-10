@@ -1,0 +1,239 @@
+.......F.FFFFF.......FFFF....FF.....F.FF...F                             [100%]
+================================== FAILURES ===================================
+____________ test_stable_result_ordering_deterministic_tiebreaker _____________
+tests\api\test_meeting_search_pagination.py:274: in test_stable_result_ordering_deterministic_tiebreaker
+    assert ids_p1 + ids_p2 + ids_p3 == sorted(meeting_ids, reverse=True)
+E   AssertionError: assert ['00000000-00...0000006', ...] == ['00000000-00...000000a', ...]
+E     
+E     At index 0 diff: '00000000-0000-0000-0000-000000000001' != '00000000-0000-0000-0000-00000000000f'
+E     Use -v to get more diff
+---------------------------- Captured stderr call -----------------------------
+{"timestamp": "2026-11-10T14:30:23.403192+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "5a9505e4-ea69-461a-83aa-47fdf96d8190", "method": "GET", "path": "/api/v1/meetings", "status_code": 200, "duration_ms": 44.33}
+{"timestamp": "2026-11-10T14:30:23.404191+00:00", "level": "INFO", "logger": "httpx", "message": "HTTP Request: GET http://testserver/api/v1/meetings?page=1&page_size=5&sort_by=created_at&order=desc \"HTTP/1.1 200 OK\"", "request_id": null}
+{"timestamp": "2026-11-10T14:30:23.413768+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "c476e1f2-ed5a-4c81-a346-91f7c4069a17", "method": "GET", "path": "/api/v1/meetings", "status_code": 200, "duration_ms": 5.83}
+{"timestamp": "2026-11-10T14:30:23.451858+00:00", "level": "INFO", "logger": "httpx", "message": "HTTP Request: GET http://testserver/api/v1/meetings?page=2&page_size=5&sort_by=created_at&order=desc \"HTTP/1.1 200 OK\"", "request_id": null}
+{"timestamp": "2026-11-10T14:30:23.460861+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "662d6ae2-3b2b-4b5c-8063-74cd39cfbbc2", "method": "GET", "path": "/api/v1/meetings", "status_code": 200, "duration_ms": 5.59}
+{"timestamp": "2026-11-10T14:30:23.460861+00:00", "level": "INFO", "logger": "httpx", "message": "HTTP Request: GET http://testserver/api/v1/meetings?page=3&page_size=5&sort_by=created_at&order=desc \"HTTP/1.1 200 OK\"", "request_id": null}
+------------------------------ Captured log call ------------------------------
+INFO     app.access:middleware.py:49 HTTP request completed
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/v1/meetings?page=1&page_size=5&sort_by=created_at&order=desc "HTTP/1.1 200 OK"
+INFO     app.access:middleware.py:49 HTTP request completed
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/v1/meetings?page=2&page_size=5&sort_by=created_at&order=desc "HTTP/1.1 200 OK"
+INFO     app.access:middleware.py:49 HTTP request completed
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/v1/meetings?page=3&page_size=5&sort_by=created_at&order=desc "HTTP/1.1 200 OK"
+________________ test_search_keyword_sanitization_and_wildcard ________________
+tests\api\test_meeting_search_pagination.py:393: in test_search_keyword_sanitization_and_wildcard
+    assert res_wildcard.json()["total"] == 1
+E   assert 2 == 1
+---------------------------- Captured stderr call -----------------------------
+{"timestamp": "2026-11-10T14:30:23.856359+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "67dc2f9e-bf0f-4288-a955-ef7672012f19", "method": "GET", "path": "/api/v1/meetings", "status_code": 200, "duration_ms": 46.09}
+{"timestamp": "2026-11-10T14:30:23.857367+00:00", "level": "INFO", "logger": "httpx", "message": "HTTP Request: GET http://testserver/api/v1/meetings?q=%20%20pLaNnInG%20%20 \"HTTP/1.1 200 OK\"", "request_id": null}
+{"timestamp": "2026-11-10T14:30:23.868470+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "a4af0c5e-1729-482e-b707-432a63201d48", "method": "GET", "path": "/api/v1/meetings", "status_code": 200, "duration_ms": 6.02}
+{"timestamp": "2026-11-10T14:30:23.870001+00:00", "level": "INFO", "logger": "httpx", "message": "HTTP Request: GET http://testserver/api/v1/meetings?q=100% \"HTTP/1.1 200 OK\"", "request_id": null}
+------------------------------ Captured log call ------------------------------
+INFO     app.access:middleware.py:49 HTTP request completed
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/v1/meetings?q=%20%20pLaNnInG%20%20 "HTTP/1.1 200 OK"
+INFO     app.access:middleware.py:49 HTTP request completed
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/v1/meetings?q=100% "HTTP/1.1 200 OK"
+____________________________ test_filter_by_source ____________________________
+tests\api\test_meeting_search_pagination.py:421: in test_filter_by_source
+    assert res_rec.json()["total"] == 1
+E   assert 2 == 1
+---------------------------- Captured stderr call -----------------------------
+{"timestamp": "2026-11-10T14:30:23.958950+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "fc735036-0991-4e54-81dd-f04d7c83d0f9", "method": "GET", "path": "/api/v1/meetings", "status_code": 200, "duration_ms": 51.56}
+{"timestamp": "2026-11-10T14:30:23.959950+00:00", "level": "INFO", "logger": "httpx", "message": "HTTP Request: GET http://testserver/api/v1/meetings?source=recording \"HTTP/1.1 200 OK\"", "request_id": null}
+------------------------------ Captured log call ------------------------------
+INFO     app.access:middleware.py:49 HTTP request completed
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/v1/meetings?source=recording "HTTP/1.1 200 OK"
+_____________________ test_filter_by_date_range_boundary ______________________
+tests\api\test_meeting_search_pagination.py:468: in test_filter_by_date_range_boundary
+    assert res_range.json()["total"] == 2
+E   assert 3 == 2
+---------------------------- Captured stderr call -----------------------------
+{"timestamp": "2026-11-10T14:30:24.049252+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "1e0d6b63-ab9c-46f8-bbfc-000f22d387df", "method": "GET", "path": "/api/v1/meetings", "status_code": 200, "duration_ms": 50.77}
+{"timestamp": "2026-11-10T14:30:24.050248+00:00", "level": "INFO", "logger": "httpx", "message": "HTTP Request: GET http://testserver/api/v1/meetings?from_date=2026-11-01&to_date=2026-11-05 \"HTTP/1.1 200 OK\"", "request_id": null}
+------------------------------ Captured log call ------------------------------
+INFO     app.access:middleware.py:49 HTTP request completed
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/v1/meetings?from_date=2026-11-01&to_date=2026-11-05 "HTTP/1.1 200 OK"
+______________________ test_negative_invalid_date_format ______________________
+tests\api\test_meeting_search_pagination.py:489: in test_negative_invalid_date_format
+    assert res.status_code == 422
+E   assert 200 == 422
+E    +  where 200 = <Response [200 OK]>.status_code
+---------------------------- Captured stderr call -----------------------------
+{"timestamp": "2026-11-10T14:30:24.144456+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "e7b24bfe-b967-4d5c-a9dd-b5eac6b830c9", "method": "GET", "path": "/api/v1/meetings", "status_code": 200, "duration_ms": 48.22}
+{"timestamp": "2026-11-10T14:30:24.145793+00:00", "level": "INFO", "logger": "httpx", "message": "HTTP Request: GET http://testserver/api/v1/meetings?from_date=2026-99-99 \"HTTP/1.1 200 OK\"", "request_id": null}
+------------------------------ Captured log call ------------------------------
+INFO     app.access:middleware.py:49 HTTP request completed
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/v1/meetings?from_date=2026-99-99 "HTTP/1.1 200 OK"
+____________________ test_negative_invalid_sort_by_column _____________________
+tests\api\test_meeting_search_pagination.py:498: in test_negative_invalid_sort_by_column
+    assert res.status_code == 422
+E   assert 200 == 422
+E    +  where 200 = <Response [200 OK]>.status_code
+---------------------------- Captured stderr call -----------------------------
+{"timestamp": "2026-11-10T14:30:24.225483+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "a45fb200-e117-4f44-94e2-e5838775d0f6", "method": "GET", "path": "/api/v1/meetings", "status_code": 200, "duration_ms": 43.37}
+{"timestamp": "2026-11-10T14:30:24.226484+00:00", "level": "INFO", "logger": "httpx", "message": "HTTP Request: GET http://testserver/api/v1/meetings?sort_by=password_hash;DROP+TABLE+meetings; \"HTTP/1.1 200 OK\"", "request_id": null}
+------------------------------ Captured log call ------------------------------
+INFO     app.access:middleware.py:49 HTTP request completed
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/v1/meetings?sort_by=password_hash;DROP+TABLE+meetings; "HTTP/1.1 200 OK"
+_________________ test_exact_tiebreaker_order[asc-created_at] _________________
+tests\api\test_vt017_evidence.py:79: in test_exact_tiebreaker_order
+    assert ids == sorted((record.id for record in records), reverse=order == "desc")
+E   AssertionError: assert ['00000000-00...000000000001'] == ['00000000-00...000000000004']
+E     
+E     At index 0 diff: '00000000-0000-0000-0000-000000000004' != '00000000-0000-0000-0000-000000000001'
+E     Use -v to get more diff
+---------------------------- Captured stderr call -----------------------------
+{"timestamp": "2026-11-10T14:30:25.220177+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "3ae40ca0-b230-4ebf-95f0-497e95cd9002", "method": "GET", "path": "/api/v1/meetings", "status_code": 200, "duration_ms": 43.41}
+{"timestamp": "2026-11-10T14:30:25.221712+00:00", "level": "INFO", "logger": "httpx", "message": "HTTP Request: GET http://testserver/api/v1/meetings?page=1&page_size=2&sort_by=created_at&order=asc \"HTTP/1.1 200 OK\"", "request_id": null}
+{"timestamp": "2026-11-10T14:30:25.234131+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "3c22ca73-aa4f-4c6a-8553-e5e90603455e", "method": "GET", "path": "/api/v1/meetings", "status_code": 200, "duration_ms": 6.5}
+{"timestamp": "2026-11-10T14:30:25.234131+00:00", "level": "INFO", "logger": "httpx", "message": "HTTP Request: GET http://testserver/api/v1/meetings?page=2&page_size=2&sort_by=created_at&order=asc \"HTTP/1.1 200 OK\"", "request_id": null}
+------------------------------ Captured log call ------------------------------
+INFO     app.access:middleware.py:49 HTTP request completed
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/v1/meetings?page=1&page_size=2&sort_by=created_at&order=asc "HTTP/1.1 200 OK"
+INFO     app.access:middleware.py:49 HTTP request completed
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/v1/meetings?page=2&page_size=2&sort_by=created_at&order=asc "HTTP/1.1 200 OK"
+_________________ test_exact_tiebreaker_order[asc-updated_at] _________________
+tests\api\test_vt017_evidence.py:79: in test_exact_tiebreaker_order
+    assert ids == sorted((record.id for record in records), reverse=order == "desc")
+E   AssertionError: assert ['00000000-00...000000000001'] == ['00000000-00...000000000004']
+E     
+E     At index 0 diff: '00000000-0000-0000-0000-000000000004' != '00000000-0000-0000-0000-000000000001'
+E     Use -v to get more diff
+---------------------------- Captured stderr call -----------------------------
+{"timestamp": "2026-11-10T14:30:25.328088+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "1d2cf326-e958-4994-83e5-82329337e6ff", "method": "GET", "path": "/api/v1/meetings", "status_code": 200, "duration_ms": 47.32}
+{"timestamp": "2026-11-10T14:30:25.329112+00:00", "level": "INFO", "logger": "httpx", "message": "HTTP Request: GET http://testserver/api/v1/meetings?page=1&page_size=2&sort_by=updated_at&order=asc \"HTTP/1.1 200 OK\"", "request_id": null}
+{"timestamp": "2026-11-10T14:30:25.339701+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "5777ae59-caff-4a7e-8de7-20c785c7b9ed", "method": "GET", "path": "/api/v1/meetings", "status_code": 200, "duration_ms": 4.99}
+{"timestamp": "2026-11-10T14:30:25.339701+00:00", "level": "INFO", "logger": "httpx", "message": "HTTP Request: GET http://testserver/api/v1/meetings?page=2&page_size=2&sort_by=updated_at&order=asc \"HTTP/1.1 200 OK\"", "request_id": null}
+------------------------------ Captured log call ------------------------------
+INFO     app.access:middleware.py:49 HTTP request completed
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/v1/meetings?page=1&page_size=2&sort_by=updated_at&order=asc "HTTP/1.1 200 OK"
+INFO     app.access:middleware.py:49 HTTP request completed
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/v1/meetings?page=2&page_size=2&sort_by=updated_at&order=asc "HTTP/1.1 200 OK"
+___________________ test_exact_tiebreaker_order[asc-title] ____________________
+tests\api\test_vt017_evidence.py:79: in test_exact_tiebreaker_order
+    assert ids == sorted((record.id for record in records), reverse=order == "desc")
+E   AssertionError: assert ['00000000-00...000000000001'] == ['00000000-00...000000000004']
+E     
+E     At index 0 diff: '00000000-0000-0000-0000-000000000004' != '00000000-0000-0000-0000-000000000001'
+E     Use -v to get more diff
+---------------------------- Captured stderr call -----------------------------
+{"timestamp": "2026-11-10T14:30:25.426729+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "21e79eee-f7ec-4930-9e72-cd46a1400fd5", "method": "GET", "path": "/api/v1/meetings", "status_code": 200, "duration_ms": 48.29}
+{"timestamp": "2026-11-10T14:30:25.427728+00:00", "level": "INFO", "logger": "httpx", "message": "HTTP Request: GET http://testserver/api/v1/meetings?page=1&page_size=2&sort_by=title&order=asc \"HTTP/1.1 200 OK\"", "request_id": null}
+{"timestamp": "2026-11-10T14:30:25.438190+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "0d7adf6b-03e7-4566-ae65-a56ce4a04d84", "method": "GET", "path": "/api/v1/meetings", "status_code": 200, "duration_ms": 6.38}
+{"timestamp": "2026-11-10T14:30:25.439200+00:00", "level": "INFO", "logger": "httpx", "message": "HTTP Request: GET http://testserver/api/v1/meetings?page=2&page_size=2&sort_by=title&order=asc \"HTTP/1.1 200 OK\"", "request_id": null}
+------------------------------ Captured log call ------------------------------
+INFO     app.access:middleware.py:49 HTTP request completed
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/v1/meetings?page=1&page_size=2&sort_by=title&order=asc "HTTP/1.1 200 OK"
+INFO     app.access:middleware.py:49 HTTP request completed
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/v1/meetings?page=2&page_size=2&sort_by=title&order=asc "HTTP/1.1 200 OK"
+________________ test_exact_tiebreaker_order[asc-meeting_date] ________________
+tests\api\test_vt017_evidence.py:79: in test_exact_tiebreaker_order
+    assert ids == sorted((record.id for record in records), reverse=order == "desc")
+E   AssertionError: assert ['00000000-00...000000000001'] == ['00000000-00...000000000004']
+E     
+E     At index 0 diff: '00000000-0000-0000-0000-000000000004' != '00000000-0000-0000-0000-000000000001'
+E     Use -v to get more diff
+---------------------------- Captured stderr call -----------------------------
+{"timestamp": "2026-11-10T14:30:25.523491+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "52ec38e9-9488-4853-9e24-a211b5a5cb70", "method": "GET", "path": "/api/v1/meetings", "status_code": 200, "duration_ms": 50.57}
+{"timestamp": "2026-11-10T14:30:25.524480+00:00", "level": "INFO", "logger": "httpx", "message": "HTTP Request: GET http://testserver/api/v1/meetings?page=1&page_size=2&sort_by=meeting_date&order=asc \"HTTP/1.1 200 OK\"", "request_id": null}
+{"timestamp": "2026-11-10T14:30:25.534299+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "e3ba7411-9957-412b-a23b-fb5245383960", "method": "GET", "path": "/api/v1/meetings", "status_code": 200, "duration_ms": 5.58}
+{"timestamp": "2026-11-10T14:30:25.535314+00:00", "level": "INFO", "logger": "httpx", "message": "HTTP Request: GET http://testserver/api/v1/meetings?page=2&page_size=2&sort_by=meeting_date&order=asc \"HTTP/1.1 200 OK\"", "request_id": null}
+------------------------------ Captured log call ------------------------------
+INFO     app.access:middleware.py:49 HTTP request completed
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/v1/meetings?page=1&page_size=2&sort_by=meeting_date&order=asc "HTTP/1.1 200 OK"
+INFO     app.access:middleware.py:49 HTTP request completed
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/v1/meetings?page=2&page_size=2&sort_by=meeting_date&order=asc "HTTP/1.1 200 OK"
+_________________ test_literal_wildcards_and_whitespace[100%] _________________
+tests\api\test_vt017_evidence.py:99: in test_literal_wildcards_and_whitespace
+    assert [item["id"] for item in response.json()["items"]] == [records[0].id]
+E   AssertionError: assert ['00000000-00...000000000001'] == ['00000000-00...000000000001']
+E     
+E     At index 0 diff: '00000000-0000-0000-0000-0000000003e8' != '00000000-0000-0000-0000-000000000001'
+E     Left contains one more item: '00000000-0000-0000-0000-000000000001'
+E     Use -v to get more diff
+---------------------------- Captured stderr call -----------------------------
+{"timestamp": "2026-11-10T14:30:26.010723+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "3d88e734-82a9-4044-8769-236b4ecc44a7", "method": "GET", "path": "/api/v1/meetings", "status_code": 200, "duration_ms": 45.56}
+{"timestamp": "2026-11-10T14:30:26.011723+00:00", "level": "INFO", "logger": "httpx", "message": "HTTP Request: GET http://testserver/api/v1/meetings?q=100%25 \"HTTP/1.1 200 OK\"", "request_id": null}
+------------------------------ Captured log call ------------------------------
+INFO     app.access:middleware.py:49 HTTP request completed
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/v1/meetings?q=100%25 "HTTP/1.1 200 OK"
+__________________ test_literal_wildcards_and_whitespace[_Q] __________________
+tests\api\test_vt017_evidence.py:99: in test_literal_wildcards_and_whitespace
+    assert [item["id"] for item in response.json()["items"]] == [records[0].id]
+E   AssertionError: assert ['00000000-00...000000000001'] == ['00000000-00...000000000001']
+E     
+E     At index 0 diff: '00000000-0000-0000-0000-0000000003e8' != '00000000-0000-0000-0000-000000000001'
+E     Left contains one more item: '00000000-0000-0000-0000-000000000001'
+E     Use -v to get more diff
+---------------------------- Captured stderr call -----------------------------
+{"timestamp": "2026-11-10T14:30:26.252804+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "318fa582-a4e5-43eb-88e1-cab8c471c340", "method": "GET", "path": "/api/v1/meetings", "status_code": 200, "duration_ms": 200.04}
+{"timestamp": "2026-11-10T14:30:26.253813+00:00", "level": "INFO", "logger": "httpx", "message": "HTTP Request: GET http://testserver/api/v1/meetings?q=_Q \"HTTP/1.1 200 OK\"", "request_id": null}
+------------------------------ Captured log call ------------------------------
+INFO     app.access:middleware.py:49 HTTP request completed
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/v1/meetings?q=_Q "HTTP/1.1 200 OK"
+__________________ test_date_fallback_boundary[2026-11-04-0] __________________
+tests\api\test_vt017_evidence.py:145: in test_date_fallback_boundary
+    assert response.json()["total"] == count
+E   assert 1 == 0
+---------------------------- Captured stderr call -----------------------------
+{"timestamp": "2026-11-10T14:30:26.794861+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "9722f598-f783-4e8b-8d71-da374c6b021a", "method": "GET", "path": "/api/v1/meetings", "status_code": 200, "duration_ms": 49.5}
+{"timestamp": "2026-11-10T14:30:26.795869+00:00", "level": "INFO", "logger": "httpx", "message": "HTTP Request: GET http://testserver/api/v1/meetings?from_date=2026-11-04&to_date=2026-11-04 \"HTTP/1.1 200 OK\"", "request_id": null}
+------------------------------ Captured log call ------------------------------
+INFO     app.access:middleware.py:49 HTTP request completed
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/v1/meetings?from_date=2026-11-04&to_date=2026-11-04 "HTTP/1.1 200 OK"
+__________________ test_date_fallback_boundary[2026-11-06-0] __________________
+tests\api\test_vt017_evidence.py:145: in test_date_fallback_boundary
+    assert response.json()["total"] == count
+E   assert 1 == 0
+---------------------------- Captured stderr call -----------------------------
+{"timestamp": "2026-11-10T14:30:26.940084+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "7328e686-c4f7-46f2-9cad-f272f97c94b3", "method": "GET", "path": "/api/v1/meetings", "status_code": 200, "duration_ms": 45.24}
+{"timestamp": "2026-11-10T14:30:26.941591+00:00", "level": "INFO", "logger": "httpx", "message": "HTTP Request: GET http://testserver/api/v1/meetings?from_date=2026-11-06&to_date=2026-11-06 \"HTTP/1.1 200 OK\"", "request_id": null}
+------------------------------ Captured log call ------------------------------
+INFO     app.access:middleware.py:49 HTTP request completed
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/v1/meetings?from_date=2026-11-06&to_date=2026-11-06 "HTTP/1.1 200 OK"
+______________________ test_reversed_date_range_is_empty ______________________
+tests\api\test_vt017_evidence.py:155: in test_reversed_date_range_is_empty
+    assert response.json()["total"] == 0
+E   assert 4 == 0
+---------------------------- Captured stderr call -----------------------------
+{"timestamp": "2026-11-10T14:30:27.019323+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "07927963-a639-48a2-b0b5-aa49b4bd392f", "method": "GET", "path": "/api/v1/meetings", "status_code": 200, "duration_ms": 44.13}
+{"timestamp": "2026-11-10T14:30:27.019323+00:00", "level": "INFO", "logger": "httpx", "message": "HTTP Request: GET http://testserver/api/v1/meetings?from_date=2026-11-06&to_date=2026-11-04 \"HTTP/1.1 200 OK\"", "request_id": null}
+------------------------------ Captured log call ------------------------------
+INFO     app.access:middleware.py:49 HTTP request completed
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/v1/meetings?from_date=2026-11-06&to_date=2026-11-04 "HTTP/1.1 200 OK"
+__________________________ test_metadata_api_journey __________________________
+tests\api\test_vt017_evidence.py:180: in test_metadata_api_journey
+    assert response.json()["total"] == 2
+E   assert 4 == 2
+---------------------------- Captured stderr call -----------------------------
+{"timestamp": "2026-11-10T14:30:27.381824+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "a4184531-adc3-48a8-8232-2cc07241c994", "method": "GET", "path": "/api/v1/meetings", "status_code": 200, "duration_ms": 45.52}
+{"timestamp": "2026-11-10T14:30:27.383879+00:00", "level": "INFO", "logger": "httpx", "message": "HTTP Request: GET http://testserver/api/v1/meetings?source=recording&page_size=1 \"HTTP/1.1 200 OK\"", "request_id": null}
+------------------------------ Captured log call ------------------------------
+INFO     app.access:middleware.py:49 HTTP request completed
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/v1/meetings?source=recording&page_size=1 "HTTP/1.1 200 OK"
+============================== warnings summary ===============================
+..\..\..\..\backend\.venv\Lib\site-packages\fastapi\testclient.py:1
+  [VENV]\Lib\site-packages\fastapi\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/api/test_meeting_search_pagination.py::test_stable_result_ordering_deterministic_tiebreaker
+FAILED tests/api/test_meeting_search_pagination.py::test_search_keyword_sanitization_and_wildcard
+FAILED tests/api/test_meeting_search_pagination.py::test_filter_by_source - a...
+FAILED tests/api/test_meeting_search_pagination.py::test_filter_by_date_range_boundary
+FAILED tests/api/test_meeting_search_pagination.py::test_negative_invalid_date_format
+FAILED tests/api/test_meeting_search_pagination.py::test_negative_invalid_sort_by_column
+FAILED tests/api/test_vt017_evidence.py::test_exact_tiebreaker_order[asc-created_at]
+FAILED tests/api/test_vt017_evidence.py::test_exact_tiebreaker_order[asc-updated_at]
+FAILED tests/api/test_vt017_evidence.py::test_exact_tiebreaker_order[asc-title]
+FAILED tests/api/test_vt017_evidence.py::test_exact_tiebreaker_order[asc-meeting_date]
+FAILED tests/api/test_vt017_evidence.py::test_literal_wildcards_and_whitespace[100%]
+FAILED tests/api/test_vt017_evidence.py::test_literal_wildcards_and_whitespace[_Q]
+FAILED tests/api/test_vt017_evidence.py::test_date_fallback_boundary[2026-11-04-0]
+FAILED tests/api/test_vt017_evidence.py::test_date_fallback_boundary[2026-11-06-0]
+FAILED tests/api/test_vt017_evidence.py::test_reversed_date_range_is_empty - ...
+FAILED tests/api/test_vt017_evidence.py::test_metadata_api_journey - assert 4...
+16 failed, 28 passed, 1 warning in 6.18s
