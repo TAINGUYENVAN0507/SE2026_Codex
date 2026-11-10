@@ -13,7 +13,7 @@ Hệ thống phân loại dữ liệu thành 4 nhóm chính:
 | **Dữ liệu âm thanh (Audio)** | Tệp ghi âm cuộc họp gốc (`.wav`, `.mp3`, `.m4a`, `.webm`, `.flac`, `.ogg`, `.aac`) | Làm đầu vào cho quá trình nhận dạng giọng nói (ASR, VAD, Diarization) và phát lại trên giao diện người dùng | Rất cao |
 | **Dữ liệu trung gian (Artifacts)** | Các tệp JSON trung gian sinh ra bởi từng stage của pipeline: `preprocess.json`, `vad.json`, `asr.json`, `diarization.json`, `transcript.json`, `summary.json`, `audio.wav` | Phục vụ checkpoint/resume khi retry tiến trình xử lý mà không phải chạy lại từ đầu | Cao |
 | **Dữ liệu nghiệp vụ (Business Data)** | Siêu dữ liệu cuộc họp, danh sách người nói (`speakers`), văn bản phân đoạn (`segments`), tóm tắt (`summaries`), nhiệm vụ (`action_items`), lịch sử chỉnh sửa (`edit_events`) | Hiển thị, cho phép người dùng chỉnh sửa và xuất biên bản cuộc họp | Cao |
-| **Dữ liệu vận hành (Operational Data)** | Bản ghi chống gọi trùng (`idempotency_keys`), trạng thái tiến trình xử lý (`jobs`), nhật ký hệ thống (log files) | Đảm bảo tính nhất quán của hệ thống, chống replay request, kiểm soát lỗi và giám sát vận hành | Trung bình |
+| **Dữ liệu vận hành (Operational Data)** | Bản ghi chống gọi trùng (`idempotency_keys`), trạng thái tiến trình xử lý (`jobs`). Nhật ký hệ thống (container logs) xoay vòng độc lập theo dung lượng | Đảm bảo tính nhất quán của hệ thống, chống replay request, kiểm soát lỗi và giám sát vận hành | Trung bình |
 
 ---
 
@@ -42,6 +42,10 @@ Thời hạn lưu trữ được cấu hình qua biến môi trường để d�
 
 > [!NOTE]
 > Mốc thời gian hết hạn audio được tính toán ngay khi tạo cuộc họp: `retention_until = created_at + timedelta(days=AUDIO_RETENTION_DAYS)`. Tiến trình dọn dẹp chạy định kỳ sẽ chỉ xóa khi thời điểm hiện tại đã vượt qua mốc `retention_until`.
+
+> [!IMPORTANT]
+> Biến môi trường `OPERATIONAL_RETENTION_DAYS=28` **chỉ áp dụng duy nhất cho các bản ghi trong cơ sở dữ liệu (`idempotency_keys`)**.
+> Nhật ký container (Docker logs) **không tự động xóa theo ngày lịch** mà được xoay vòng theo dung lượng file (xem Mục 6.1). Tuyệt đối không được hiểu nhầm rằng log container sẽ tự xóa sau 28 ngày nếu cấu hình hạ tầng không thiết lập retention đó.
 
 ---
 
@@ -88,3 +92,20 @@ Hệ thống tuân thủ nghiêm ngặt các quy tắc an toàn nhật ký (PRIV
   - Tuyệt đối không ghi thông tin nhạy cảm: token JWT, API key, mật khẩu, header `Authorization`, cookie.
   - Tuyệt đối không ghi đường dẫn tuyệt đối của hệ điều hành vào thông báo lỗi trả về cho client.
 - Khi xảy ra lỗi hoặc exception ngoài dự kiến: hệ thống chỉ ghi lại loại lỗi (`error_type`) và vị trí mã nguồn, không in message chi tiết có thể chứa dữ liệu người dùng.
+
+### 6.1. Vòng đời và giới hạn dung lượng nhật ký container (AD-018)
+
+- **Cơ chế xoay vòng theo dung lượng:**
+  Trên Docker Compose (`docker-compose.yml`), các container `api` và `worker` được cấu hình driver ghi log `json-file` có giới hạn kích thước chặt chẽ:
+  ```yaml
+  logging:
+    driver: "json-file"
+    options:
+      max-size: "10m"
+      max-file: "3"
+  ```
+  Khi dung lượng file log đạt 10MB (`max-size`), Docker sẽ thực hiện xoay vòng (log rotate) sang file mới và giữ tối đa 3 file (`max-file`), đảm bảo tổng dung lượng log trên đĩa của mỗi container không bao giờ vượt quá 30MB.
+- **Không xoay vòng theo ngày:**
+  Nhật ký container xoay vòng hoàn toàn dựa trên kích thước (`max-size`), không tự động xóa theo ngày lịch. Biến cấu hình `OPERATIONAL_RETENTION_DAYS=28` thuộc phạm vi cơ sở dữ liệu (`idempotency_keys`) và không ảnh hưởng tới log container.
+- **Bảo đảm không rò rỉ nội dung (Canary Test):**
+  Log hệ thống tuyệt đối không chứa transcript, nội dung audio, tóm tắt cuộc họp hay thông tin nhạy cảm. Điều này được kiểm chứng liên tục qua bài test canary quyền riêng tư (`test_privacy_canary.py`), đảm bảo việc lưu trữ log không tiềm ẩn rủi ro lộ dữ liệu người dùng.
