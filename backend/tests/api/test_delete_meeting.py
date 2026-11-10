@@ -13,7 +13,6 @@ Bao gồm:
 import io
 import json
 import logging
-import shutil
 import uuid
 from collections.abc import Generator
 from pathlib import Path
@@ -590,18 +589,17 @@ def test_erasure_replay_idempotency_key_creates_new_meeting(
     owner = users["a"]
     idem_key_str = f"test-key-{uuid.uuid4()}"
 
-    # Mock ffprobe cho endpoint upload meeting
-    if shutil.which("ffprobe") is None:
+    # Luôn mock probe_audio để kết quả không phụ thuộc máy có ffprobe hay không
 
-        def _mock_probe(file_path, timeout_sec=10.0, ffprobe_bin=None):
-            return AudioProbeResult(
-                duration_sec=60.0,
-                format_name="wav",
-                sample_rate=16000,
-                channels=1,
-            )
+    def _mock_probe(file_path, timeout_sec=10.0, ffprobe_bin=None):
+        return AudioProbeResult(
+            duration_sec=60.0,
+            format_name="wav",
+            sample_rate=16000,
+            channels=1,
+        )
 
-        monkeypatch.setattr("app.api.v1.meetings.probe_audio", _mock_probe)
+    monkeypatch.setattr("app.api.v1.meetings.probe_audio", _mock_probe)
 
     app = create_app()
     client = create_auth_client(app, owner, test_storage, test_db)

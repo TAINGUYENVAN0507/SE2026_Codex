@@ -9,7 +9,6 @@ Luồng bao gồm:
 """
 
 import io
-import shutil
 import uuid
 from collections.abc import Generator
 from pathlib import Path
@@ -38,19 +37,18 @@ from app.worker.runner import run_worker_once
 
 
 @pytest.fixture(autouse=True)
-def mock_ffprobe_if_missing(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Tự động mock probe_audio nếu môi trường test không có sẵn ffprobe binary."""
-    if shutil.which("ffprobe") is None:
+def mock_probe_audio(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Luôn mock probe_audio, không phụ thuộc máy; ffprobe thật ở test_ffprobe_real.py."""
 
-        def _mock_probe(file_path, timeout_sec=10.0, ffprobe_bin=None):
-            return AudioProbeResult(
-                duration_sec=30.0,
-                format_name="wav",
-                sample_rate=16000,
-                channels=1,
-            )
+    def _mock_probe(file_path, timeout_sec=10.0, ffprobe_bin=None):
+        return AudioProbeResult(
+            duration_sec=30.0,
+            format_name="wav",
+            sample_rate=16000,
+            channels=1,
+        )
 
-        monkeypatch.setattr("app.api.v1.meetings.probe_audio", _mock_probe)
+    monkeypatch.setattr("app.api.v1.meetings.probe_audio", _mock_probe)
 
 
 def test_m1_full_flow_upload_to_transcript(

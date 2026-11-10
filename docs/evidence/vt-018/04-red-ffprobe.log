@@ -1,0 +1,16 @@
+# 2026-11-10, C, máy có ffprobe: ffprobe version 4.4 Copyright (c) 2007-2021 the FFmpeg developers
+# commit a7ddfee (main sau #44, #45). CI không có ffprobe nên chạy bản mock và xanh.
+$ .venv/bin/python -m pytest -m 'not model' -q -p no:cacheprovider   (lọc: FAILED, AUDIO_INVALID, dòng tổng)
+5 failed, 374 passed, 14 skipped, 21 warnings in 81.22s (0:01:21)
+E               AssertionError: {"error":{"code":"AUDIO_INVALID","message":"Tệp âm thanh bị lỗi hoặc không thể giải mã.","details":null,"request_id":"27f36485-5cca-45c1-8508-0200812ced8e"}}
+E       AssertionError: {"error":{"code":"AUDIO_INVALID","message":"Tệp âm thanh bị lỗi hoặc không thể giải mã.","details":null,"request_id":"b45c31f3-b641-416a-8808-e553c6faa13a"}}
+FAILED tests/api/test_upload_idempotency_rt07.py::test_rt07_concurrent_repeated_upload_with_same_key
+FAILED tests/api/test_upload_idempotency_rt07.py::test_rt07_sequential_repeated_upload_with_same_key
+FAILED tests/api/test_upload_meeting.py::test_upload_meeting_success - Assert...
+FAILED tests/contract/test_openapi_drift.py::test_create_meeting_success - as...
+FAILED tests/integration/test_m1_flow.py::test_m1_full_flow_sqlite - Assertio...
+
+# Nguyên nhân: 5 test gửi b"RIFF" + byte 0 và chỉ mock probe_audio khi shutil.which("ffprobe") is None.
+# Sau sửa (test API luôn mock; đường thật ở tests/integration/test_ffprobe_real.py):
+# - cùng máy, có ffprobe, toàn bộ suite: 383 passed, 14 skipped, 0 failed (4 test mới chạy ffprobe thật)
+# - PATH không có ffprobe, 6 file liên quan: 66 passed, 5 skipped (4 test ffprobe thật + 1 cần Postgres)
