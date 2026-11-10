@@ -1,0 +1,79 @@
+{
+  "date": "2026-11-10",
+  "stack": "Compose nginx/API/worker/PostgreSQL; fake pipeline; synthetic WAV; controlled 503 states marked per image",
+  "full_page": true,
+  "shots": [
+    {
+      "file": "2026-11-10-busy-upload-desktop.png",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "controlled_network": true,
+      "sha256": "de9f3aac40157151d481cfede5efaf46d2ee3ddabc4a10756f77cf9da04dbec6"
+    },
+    {
+      "file": "2026-11-10-busy-progress-desktop.png",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "controlled_network": true,
+      "sha256": "98bed70f08a58477d3ece85d6398809f889c6741589d016e0e154511c6e4c430"
+    },
+    {
+      "file": "2026-11-10-job-times-desktop.png",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "controlled_network": false,
+      "sha256": "9bc42b83fb8179428f8b809043ea6e5f425d70ec0f59b2a01a8c3eeeed0fce95"
+    },
+    {
+      "file": "2026-11-10-busy-edit-desktop.png",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "controlled_network": true,
+      "sha256": "2e3ee739001947735486db5a3ff36a0a407f6cbdb6d63ee01e54ce0dce49df5b"
+    },
+    {
+      "file": "2026-11-10-busy-upload-mobile.png",
+      "viewport": {
+        "width": 360,
+        "height": 900
+      },
+      "controlled_network": true,
+      "sha256": "dcf6fb547b73e8d958cdb65065e33cdfd5512d3808f16a4846d3ef71135b5439"
+    },
+    {
+      "file": "2026-11-10-busy-progress-mobile.png",
+      "viewport": {
+        "width": 360,
+        "height": 900
+      },
+      "controlled_network": true,
+      "sha256": "13b5d7eb4ce78e474d1dc9d3a0ae7ed38f183dd42c96962edf13e61ac1d02757"
+    },
+    {
+      "file": "2026-11-10-job-times-mobile.png",
+      "viewport": {
+        "width": 360,
+        "height": 900
+      },
+      "controlled_network": false,
+      "sha256": "46ccdc0ba61fa42feb8059587c73b6461a99c0b6a3cfafe899d3cd52c1313456"
+    },
+    {
+      "file": "2026-11-10-busy-edit-mobile.png",
+      "viewport": {
+        "width": 360,
+        "height": 900
+      },
+      "controlled_network": true,
+      "sha256": "9c6bedcaf7f7068935c4ae96df52731fdc7666d515e4b4786c3873381a76e978"
+    }
+  ]
+}
