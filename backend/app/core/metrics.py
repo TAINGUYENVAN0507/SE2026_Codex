@@ -11,17 +11,22 @@ Bao gồm:
 Tuyệt đối không đưa UUID hoặc thông tin cá nhân vào nhãn (labels).
 """
 
+import contextlib
+import os
 import time
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Annotated
 
 from fastapi import Depends, Request, Response
 from prometheus_client import (
     CONTENT_TYPE_LATEST,
+    CollectorRegistry,
     Counter,
     Gauge,
     Histogram,
     generate_latest,
+    multiprocess,
 )
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -69,17 +74,20 @@ JOBS_TOTAL = Gauge(
     "jobs_total",
     "Số lượng background jobs theo trạng thái",
     ["status"],
+    multiprocess_mode="livemostrecent",
 )
 
 JOB_OLDEST_QUEUED_SECONDS = Gauge(
     "job_oldest_queued_seconds",
     "Độ tuổi (tính bằng giây) của job ở trạng thái queued lâu nhất",
+    multiprocess_mode="livemostrecent",
 )
 
 JOBS_FAILED_TOTAL = Gauge(
     "jobs_failed_total",
     "Số lượng jobs thất bại theo stage và mã lỗi",
     ["stage", "error_code"],
+    multiprocess_mode="livemostrecent",
 )
 
 # 3. Pipeline Metrics
@@ -157,7 +165,8 @@ def collect_db_metrics(db: Session) -> None:
         JOB_OLDEST_QUEUED_SECONDS.set(0.0)
 
     # 3. Đếm số lượng job failed theo stage và error_code
-    JOBS_FAILED_TOTAL.clear()
+    if "PROMETHEUS_MULTIPROC_DIR" not in os.environ:
+        JOBS_FAILED_TOTAL.clear()
     failed_rows = db.execute(
         select(Job.stage, Job.error_code, func.count(Job.id))
         .where(Job.status == "failed")
@@ -170,10 +179,30 @@ def collect_db_metrics(db: Session) -> None:
         ).set(count)
 
 
+def clean_multiproc_dir(path: str | Path | None = None) -> None:
+    """Dọn dẹp các tệp .db trong thư mục multiprocess của Prometheus khi khởi động."""
+    target = path or os.environ.get("PROMETHEUS_MULTIPROC_DIR")
+    if not target:
+        return
+    dir_path = Path(target)
+    if not dir_path.exists():
+        dir_path.mkdir(parents=True, exist_ok=True)
+        return
+    for p in dir_path.glob("*.db"):
+        with contextlib.suppress(OSError):
+            p.unlink()
+
+
 def metrics_endpoint(db: Annotated[Session, Depends(get_db)]) -> Response:
     """Endpoint Prometheus /metrics trả về text định dạng standard metrics."""
     collect_db_metrics(db)
+    if "PROMETHEUS_MULTIPROC_DIR" in os.environ:
+        registry = CollectorRegistry()
+        multiprocess.MultiProcessCollector(registry)
+        content = generate_latest(registry)
+    else:
+        content = generate_latest()
     return Response(
-        content=generate_latest(),
+        content=content,
         media_type=CONTENT_TYPE_LATEST,
     )

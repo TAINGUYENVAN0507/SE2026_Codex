@@ -45,11 +45,14 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # Tạo user không phải root (UID 10001) và cấp quyền thư mục appdata
 RUN useradd --create-home --uid 10001 app \
     && mkdir -p /app/backend/appdata \
-    && chown -R app:app /app
+    && mkdir -p /tmp/prometheus_multiproc_dir \
+    && chown -R app:app /app \
+    && chown -R app:app /tmp/prometheus_multiproc_dir
 
 ENV PATH="/app/backend/.venv/bin:${PATH}" \
     PYTHONPATH=/app/backend \
-    STORAGE_DIR=/app/backend/appdata
+    STORAGE_DIR=/app/backend/appdata \
+    PROMETHEUS_MULTIPROC_DIR=/tmp/prometheus_multiproc_dir
 
 USER app
 WORKDIR /app/backend
@@ -59,5 +62,5 @@ VOLUME ["/app/backend/appdata"]
 EXPOSE 8000
 
 # Mặc định khởi chạy API server với số worker từ API_WORKERS (mặc định 1) (AD-018, BE-16)
-CMD ["sh", "-c", "exec uvicorn app.main:create_app --factory --host 0.0.0.0 --port 8000 --workers \"${API_WORKERS:-1}\""]
+CMD ["sh", "-c", "python -c 'from app.core.metrics import clean_multiproc_dir; clean_multiproc_dir()' && exec uvicorn app.main:create_app --factory --host 0.0.0.0 --port 8000 --workers \"${API_WORKERS:-1}\""]
 

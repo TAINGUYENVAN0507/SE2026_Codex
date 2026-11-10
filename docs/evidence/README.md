@@ -9,7 +9,7 @@ Cập nhật 2026-11-10 (PR #46 của C; các dòng ghi #46 chỉ đúng sau khi
 | Yêu cầu | Bằng chứng | Trạng thái |
 |---|---|---|
 | Log truy được theo `job_id` | `backend/tests/api/test_observability.py`, `pipeline/tests/unit/test_stage_events.py`, `docs/backend/BE-19.md` | Có, trên fake pipeline và DB test |
-| Metric có số đo, gồm quá tải và thời gian chờ | `backend/tests/api/test_metrics.py`, `backend/tests/unit/test_admission_control.py` (#46: `api_admission_wait_seconds`, bucket có mốc 1,5 và 2,0 s), `docs/backend/BE-19.md` | Có; metric API là theo từng process, chưa gộp khi chạy nhiều process (B, Đợt 5) |
+| Metric có số đo, gồm quá tải và thời gian chờ | `backend/tests/api/test_metrics.py`, `backend/tests/api/test_metrics_multiprocess.py`, `backend/tests/unit/test_admission_control.py`, `docs/backend/BE-19.md` | Có; hỗ trợ gộp số đo qua multiprocess mode (`PROMETHEUS_MULTIPROC_DIR`, `MultiProcessCollector`, `livesum`) khi chạy nhiều process API |
 | Phản hồi change request trong 20 giờ | `docs/evidence/pr-response-times.md`, `scripts/pr_response_times.py` | **Một phần**: từ 2026-11-06, 4/15 PR có phản hồi của người khác, 3/4 trong 20 giờ; 10 PR merge khi chưa có phản hồi (gồm #40, #43 của C) |
 | Lưu audio 14 ngày chạy thật | `backend/tests/api/test_retention.py`, `docs/privacy/data-policy.md`; test `backend/tests/unit/test_retention_docs_match_config.py` giữ tài liệu khớp cấu hình | Có |
 | 239 người dùng đồng thời | `docs/evidence/load-239/` (trước sửa: 1 upload thành công, 101 lỗi 500), `docs/evidence/load-239/analysis.md`, `docs/evidence/load-239/after-2026-11-10/README.md` | Chịu được: 239/239 upload, 0 lỗi ở 4 lượt ngày 2026-11-10; p95 upload 2,09 đến 2,37 s. RE-018 không nêu mục tiêu độ trễ |

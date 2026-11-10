@@ -27,9 +27,10 @@ services:
       DATABASE_URL: postgresql+psycopg://postgres:postgrespassword@db:5432/meeting_assistant
       ENVIRONMENT: development
       STORAGE_DIR: /app/backend/appdata
+      PROMETHEUS_MULTIPROC_DIR: /tmp/prometheus_multiproc_dir
       API_WORKERS: 1
     command: >
-      sh -c "alembic upgrade head && exec uvicorn app.main:create_app --factory --host 0.0.0.0 --port 8000 --workers $${API_WORKERS:-1}"
+      sh -c "python -c 'from app.core.metrics import clean_multiproc_dir; clean_multiproc_dir()' && alembic upgrade head && exec uvicorn app.main:create_app --factory --host 0.0.0.0 --port 8000 --workers $${API_WORKERS:-1}"
     ports:
       - "8000:8000"
     volumes:
