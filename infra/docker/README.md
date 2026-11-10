@@ -17,16 +17,18 @@ docker build -f infra/docker/api.Dockerfile -t meeting-api .
 - **Quản lý gói:** Dùng `uv` với cache layer độc lập, không cài dev dependencies hay GPU runtime nặng (Torch/CUDA).
 - **Đa dụng (kèm worker):**
   - Mặc định chạy API server: `uvicorn app.main:create_app --factory --host 0.0.0.0 --port 8000 --workers "${API_WORKERS:-1}"`.
-  - Hỗ trợ biến môi trường `API_WORKERS` (mặc định 1) để cấu hình số process uvicorn phục vụ API song song.
+  - Hỗ trợ biến môi trường `API_WORKERS` (hoặc `WEB_CONCURRENCY`, mặc định 1) để cấu hình số process uvicorn phục vụ API song song.
   - Có thể chạy worker loop bằng cách ghi đè lệnh: `python -m app.worker.runner`.
-- **Phép tính kết nối DB theo `API_MAX_INFLIGHT` (AD-018, BE-16):**
+- **Phép tính kết nối DB chừa chỗ cho worker và migration (AD-018, BE-16):**
   - Mỗi process API độc lập có một giới hạn inflight riêng: `API_MAX_INFLIGHT` (mặc định 40 cho 1 worker, 20 khi chạy 4 worker).
-  - Vì mỗi request đang xử lý giữ một kết nối DB, tổng số kết nối DB tối đa mà cụm API có thể mở đồng thời là:
-    $$\text{Tổng kết nối} = \text{API\_WORKERS} \times \text{API\_MAX\_INFLIGHT}$$
-  - Phép tính này **bắt buộc phải nhỏ hơn** `max_connections` của PostgreSQL trong Docker Compose (mặc định 100), để chừa chỗ cho worker background và migration:
-    - 4 workers, `API_MAX_INFLIGHT=20`: $4 \times 20 = 80 < 100$ (Đạt).
-    - 1 worker, `API_MAX_INFLIGHT=40`: $1 \times 40 = 40 < 100$ (Đạt).
-    - Ứng dụng sẽ ném lỗi và từ chối khởi động nếu tổng kết nối $\ge 100$ (ví dụ: $4 \times 40 = 160 \ge 100$) để bảo vệ DB khỏi cạn kiệt kết nối.
+  - Hệ thống dành riêng `DB_RESERVED_CONNECTIONS` (mặc định 20) kết nối cho worker background (khoảng 2-3 kết nối liên tục cho runner và heartbeat thread, spike tới 5), migration (`alembic upgrade head`), và quản trị PostgreSQL.
+  - Tổng số kết nối DB dự tính mà cụm API và worker có thể sử dụng đồng thời:
+    $$\text{Tổng kết nối} = \text{API\_WORKERS} \times \text{API\_MAX\_INFLIGHT} + \text{DB\_RESERVED\_CONNECTIONS} \le \text{POSTGRES\_MAX\_CONNECTIONS}$$
+  - Phép tính này **bắt buộc phải nhỏ hơn hoặc bằng** `POSTGRES_MAX_CONNECTIONS` (`max_connections` của PostgreSQL trong Docker Compose, mặc định 100):
+    - 4 workers, `API_MAX_INFLIGHT=20`, `DB_RESERVED_CONNECTIONS=20`: $4 \times 20 + 20 = 100 \le 100$ (Đạt - đúng chạm biên giới hạn).
+    - 1 worker, `API_MAX_INFLIGHT=40`, `DB_RESERVED_CONNECTIONS=20`: $1 \times 40 + 20 = 60 \le 100$ (Đạt).
+    - Ứng dụng sẽ ném lỗi và từ chối khởi động nếu tổng kết nối $> 100$ (ví dụ: $4 \times 21 + 20 = 104 > 100$, hoặc vượt biên 1 kết nối: $2 \times 40 + 21 = 101 > 100$) để bảo vệ DB khỏi cạn kiệt kết nối.
+  - **Lưu ý:** Chạy trực tiếp `uvicorn --workers N` từ shell CLI sẽ bỏ qua kiểm tra Pydantic Settings trừ khi thiết lập biến môi trường `API_WORKERS=N` hoặc `WEB_CONCURRENCY=N`.
 - **Bảo mật và Phân quyền:**
   - Chạy dưới user không phải root: `app` (UID `10001`).
   - Không nhúng secret, file `.env` hay thông tin xác thực vào image.
