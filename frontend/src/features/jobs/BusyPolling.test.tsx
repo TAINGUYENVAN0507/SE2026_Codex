@@ -129,3 +129,28 @@ it('VT-018: request chưa trả lời không bị chồng request khác', async 
   await advance(100)
   expect(screen.getByText('Hoàn tất xử lý')).toBeInTheDocument()
 })
+
+it('VT-018: lỗi 404 dừng poll và không hứa sẽ tự kiểm tra lại', async () => {
+  let requests = 0
+  server.use(
+    http.get('*/api/v1/jobs/:id', () =>
+      ++requests === 1
+        ? HttpResponse.json(running)
+        : HttpResponse.json(
+            { error: { code: 'NOT_FOUND', message: 'missing' } },
+            { status: 404 },
+          ),
+    ),
+  )
+  setup()
+  await advance(100)
+  await advance(2000)
+  expect(screen.getByRole('alert')).toHaveTextContent(
+    'Đã dừng tự động kiểm tra',
+  )
+  expect(screen.getByRole('alert')).not.toHaveTextContent(
+    'Tự động kiểm tra lại sau',
+  )
+  await advance(30_000)
+  expect(requests).toBe(2)
+})

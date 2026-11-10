@@ -36,7 +36,7 @@ export default defineConfig(({ mode }) => ({
         'src/mocks/**',
         'src/api/schema.d.ts',
       ],
-      thresholds: { lines: 84.5, branches: 78.75 },
+      thresholds: { lines: 84.53, branches: 79.11 },
     },
     maxWorkers: 4,
   },

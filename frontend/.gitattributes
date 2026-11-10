@@ -1,0 +1,5 @@
+# Checkout frontend giống nhau trên Windows/Linux; giữ font và ảnh là binary.
+* text=auto eol=lf
+*.woff2 -text
+*.png -text
+*.ico -text

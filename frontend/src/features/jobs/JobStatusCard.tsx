@@ -90,8 +90,11 @@ export function JobStatusCard({
 
   const pollingNotice = error ? (
     <p className="job-error" role="alert">
-      {error instanceof ApiError ? error.message : 'Không tải được tiến độ.'} Tự
-      động kiểm tra lại sau {Math.ceil(pollDelayMs / 1000)} giây.
+      {error instanceof ApiError ? error.message : 'Không tải được tiến độ.'}{' '}
+      {error instanceof ApiError &&
+      (error.status === 503 || error.code === 'NETWORK_ERROR')
+        ? `Tự động kiểm tra lại sau ${Math.ceil(pollDelayMs / 1000)} giây.`
+        : 'Đã dừng tự động kiểm tra. Hãy tải lại trang.'}
     </p>
   ) : null
 

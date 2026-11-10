@@ -3156,3 +3156,16 @@ mark {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
+
+/* Trạng thái bận là thông tin thao tác chính, không dùng style chú thích audio. */
+.upload-busy-notice {
+  margin: 12px 0;
+  padding: 10px 12px;
+  border: 1px solid #f1c9bc;
+  border-radius: 8px;
+  background: #fff2ec;
+  color: var(--accent-text);
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: left;
+}

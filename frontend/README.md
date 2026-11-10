@@ -143,8 +143,8 @@ Lệnh: `npm run test:coverage`. CI frontend chạy lệnh này để chặn gi�
 
 | Chỉ số   | Đo được | Ngưỡng tổng |
 | -------- | ------- | ----------- |
-| Lines    | 86.5%   | 84.5%       |
-| Branches | 80.75%  | 78.75%      |
+| Lines    | 86.53%  | 84.53%      |
+| Branches | 81.11%  | 79.11%      |
 
 Ngưỡng lấy mức đã đo trừ 2 **điểm phần trăm**, không tự nâng/hạ và không
 viết thêm test chỉ để tăng số. Include toàn bộ source TS/TSX, kể cả file
