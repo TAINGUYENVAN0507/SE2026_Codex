@@ -10,9 +10,14 @@ Kế hoạch: [`tasks/ROADMAP.md`](../ROADMAP.md), Đợt 4. Kiểm tra trong `f
 ## Việc đầu tiên (không tính commit): review PR của B
 B mở PR `haquang` hôm nay. Review trong 18 giờ kể từ lúc mở; ghi nhận xét thật vào PR. Kiểm riêng: route nào đổi hành vi, test nào yếu, có thử làm nó fail không.
 
-**Trạng thái review:** chưa có PR mới của B tại lần kiểm tra 09/11. Không
-đăng nhận xét giả, không dùng review PR #41 hôm trước thay cho đợt mới.
-Tiếp tục review trong 18 giờ kể từ khi B mở PR.
+**Trạng thái review: đã thực hiện.** Review PR #45 của B tại head
+`d9eba806fbf5a7b7e2f8a27ed9128d28687de84e`, đăng 22:22 ngày 09/11
+(Asia/Saigon), trong hạn 18 giờ. Review COMMENTED có 3 nhận xét inline:
+https://github.com/TAINGUYENVAN0507/SE2026_Codex/pull/45#pullrequestreview-5828060890 .
+Không dùng review #41 thay cho đợt mới; không approve hoặc merge.
+Báo cáo: [PR-45-2026-11-09](../../docs/frontend/reviews/PR-45-2026-11-09.md).
+Đã ghi nhận vấn đề Compose nhận API_WORKERS và hai điểm yếu của test bằng
+mutation; chờ B sửa/giải thích rồi kiểm lại head mới, không tự sửa nhánh B.
 
 ## Bước 0
 ```bash
@@ -123,3 +128,5 @@ git checkout vantuong && git fetch origin && git merge origin/main
 
 - Sau bản sửa race: lint, format, typecheck, 263 Vitest/39 file và build
   đều đạt trên Windows; 22 test auth chọn cũng đạt.
+
+**Cập nhật 10/11:** PR #45 đã merge vào main; bản nhận xét trên chỉ xác nhận snapshot đã review, không khẳng định mọi phát hiện được sửa. Review từ ngày 10/11 là tùy chọn theo phân công mới.
