@@ -20,6 +20,10 @@ Hai file migration cần Postgres (skip khi không có). Dựng Postgres không 
 | `pairwise.md` | 20 ca thay cho 120 tổ hợp; sinh bằng `python -m tests.unit.test_vt018_pairwise` |
 | `mutation.md` | Mutation `>` → `>=`: 1 mutant bị bắt ngay, 1 mutant sống sót rồi bị bắt sau khi thêm test |
 | `load-40-before/`, `load-40/` | Đo 40 client đồng thời trước và sau khi sửa engine DB |
+| `load-40-after/` | 40 client sau khi giới hạn request đang xử lý (2026-11-09) |
+| `load-40-2026-11-10/` | 40 client trên `main` sau #44, #45, 3 lượt (2026-11-10) |
+| `03-red-retention-docs.log` | Test đỏ khi tài liệu ghi hạn lưu trữ khác cấu hình (2026-11-09) |
+| `04-red-ffprobe.log` | 5 test upload đỏ trên máy có ffprobe, xanh trên CI vì CI không có ffprobe; nguyên nhân và kết quả sau sửa (2026-11-10) |
 
 ## Coverage (line + branch)
 

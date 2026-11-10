@@ -1,0 +1,91 @@
+{
+  "clients": 239,
+  "threshold_p95_s": 2.0,
+  "create": {
+    "n": 239,
+    "p50_s": 1.293,
+    "p95_s": 2.1346,
+    "max_s": 2.1619
+  },
+  "poll": {
+    "n": 1195,
+    "p50_s": 0.0263,
+    "p95_s": 0.1616,
+    "max_s": 0.2939
+  },
+  "all_requests": {
+    "n": 1434,
+    "p50_s": 0.0332,
+    "p95_s": 1.7531,
+    "max_s": 2.1619
+  },
+  "errors": 0,
+  "create_error_detail": [],
+  "idle_before_upload": {
+    "n": 239,
+    "p50_s": 5.3452,
+    "p95_s": 10.2498,
+    "max_s": 10.674,
+    "over_uvicorn_keepalive_5s": 127
+  },
+  "error_kinds": {},
+  "client_share_within": {
+    "create": {
+      "le_1.5": 0.5941,
+      "le_2.0": 0.8494
+    },
+    "poll": {
+      "le_1.5": 1.0,
+      "le_2.0": 1.0
+    }
+  },
+  "server": {
+    "create": {
+      "n": 239,
+      "mean_s": 1.1139,
+      "p50_in_s": [
+        1.0,
+        1.5
+      ],
+      "p95_in_s": [
+        1.5,
+        2.0
+      ],
+      "le_1.5": 0.6987,
+      "le_2.0": 1.0
+    },
+    "poll": {
+      "n": 1195,
+      "mean_s": 0.0421,
+      "p50_in_s": [
+        0.01,
+        0.025
+      ],
+      "p95_in_s": [
+        0.1,
+        0.25
+      ],
+      "le_1.5": 1.0,
+      "le_2.0": 1.0
+    },
+    "admission_wait": {
+      "n": 1434,
+      "mean_s": 0.1292,
+      "p50_in_s": [
+        0.0,
+        0.001
+      ],
+      "p95_in_s": [
+        1.0,
+        1.5
+      ],
+      "le_1.5": 1.0,
+      "le_2.0": 1.0
+    }
+  },
+  "burst_wall_clock_s": 12.57,
+  "meeting_status_at_end": {
+    "queued": 100
+  },
+  "verdict": "PASS"
+}
