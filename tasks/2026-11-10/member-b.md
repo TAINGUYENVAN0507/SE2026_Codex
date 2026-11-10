@@ -71,5 +71,5 @@ git checkout haquang && git fetch origin && git merge origin/main
 ### 10. [x] Tick, hash, bằng chứng profile (G0)
 - Commit file profile `POST /meetings` (đầu ra cProfile hoặc py-spy và cách chạy) vào `docs/evidence/load-247/profile/`. PR #45 nói đã profile nhưng chưa có file nào trong repo. Ghi số query trước khi sửa đúng như đo được (9 hay 10).
 - Ghi hash từng commit vào file này. Việc chưa xong thì ghi "chuyển sang 11-11", không tick.
-- **Commit:** `0d8a481`
+- **Commit:** `b622874`
 - **Message:** `docs(tasks): record 2026-11-10 member B results and upload profile (G0)`

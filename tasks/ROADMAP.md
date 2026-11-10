@@ -73,8 +73,8 @@ Hiện trạng đọc từ `main` tại `fc7d80f` (sau #44, #45) ngày 2026-11-1
 | Log truy được theo job | ✓ `setup_logging()` ở API và worker; `backend/tests/api/test_observability.py` | BE-19, AI-18 | B, C | 1 |
 | Metric có số đo | ✓ `/metrics`; quá tải và thời gian chờ admission; bucket có mốc 1,5 và 2,0 s (#46) | BE-19 | B, C | 1, 4, 5 |
 | Thời lượng từng stage trong metric | ✓ `pipeline_stage_duration_seconds` | BE-19 | B | 2 |
-| Metric đúng khi chạy nhiều process API | ✗ Mỗi lần scrape chỉ thấy một process | BE-19 | B | 5 |
-| Runbook truy nguyên nhân, có thời gian đo thật | ◐ Runbook ở `docs/backend/BE-19.md`; chưa diễn tập có đo thời gian | BE-19 | B | 5 |
+| Metric đúng khi chạy nhiều process API | ✓ `PROMETHEUS_MULTIPROC_DIR`, `MultiProcessCollector`, `livesum` gộp đủ mọi process API | BE-19 | B | 5 |
+| Runbook truy nguyên nhân, có thời gian đo thật | ✓ Diễn tập 2 sự cố trên Compose đo thời gian thật tại `docs/backend/runbook-drill-2026-11-10.md`, bổ sung runbook `docs/backend/BE-19.md` | BE-19 | B | 5 |
 | Lưu 14 ngày chạy thật | ✓ Worker gọi `run_retention_cleanup`; `backend/tests/api/test_retention.py`; test giữ tài liệu khớp cấu hình | BE-14 | B, C | 1, 4 |
 | 239 người dùng đồng thời | Xem bảng tải bên dưới | AI-19 | C | 3–5 |
 | Phản hồi change request trong 20 giờ | ◐ `docs/evidence/pr-response-times.md`: từ 11-06, 4/15 PR có phản hồi của người khác, 3/4 trong 20 giờ; 10 PR merge khi chưa có phản hồi | | A, B, C | |
@@ -88,8 +88,8 @@ Hiện trạng đọc từ `main` tại `fc7d80f` (sau #44, #45) ngày 2026-11-1
 | Log không giữ dữ liệu cá nhân | ✓ Canary ở API, worker (`backend/tests/privacy/`) và pipeline (tìm ra và sửa rò stderr) | BE-18, BE-19, AI-18 | B, C | 1, 3 |
 | Adapter cho bên thứ ba | ✓ `engines/`, `llm/` có interface và bản fake | | C | |
 | Có cơ chế cưỡng chế boundary | ✓ Test AST, `docs/pipeline/AI-17.md` | AI-17 | C | 1 |
-| Tách controller quá lớn | ◐ `meetings.py` 2412 → 946 dòng; `action_items.py` 558 dòng; upload vẫn nằm trong route; chưa có test giữ kích thước | BE-12 | B | 2–5 |
-| ADR | ✓ `docs/adr/0001-asr.md`, `0002-adapter-boundary-and-erasure.md` | | C | 3 |
+| Tách controller quá lớn | ✓ 100% controller trong `app/api/v1/` $\le 500$ dòng (`meetings.py` 455 dòng, `action_items.py` 452 dòng); upload tách sang service; test kiến trúc `test_controller_limits.py` giữ chốt | BE-12 | B | 2–5 |
+| ADR | ✓ `docs/adr/0001-asr.md`, `0002-adapter-boundary-and-erasure.md`, `0003-controller-size-limit-and-layer-boundary.md` | | C, B | 3, 5 |
 | 247 đồng thời, p95 ≤ 2,0 s | Xem bảng tải bên dưới | AI-19, BE-12 | B, C | 3–5 |
 | Lưu dữ liệu vận hành 28 ngày | ✓ `OPERATIONAL_RETENTION_DAYS=28`, `backend/tests/api/test_retention.py` | BE-14 | B | 1 |
 | Phản hồi trong 18 giờ | ◐ Như dòng 20 giờ ở RE-018: 3/4 PR có phản hồi là trong 18 giờ; #44 phản hồi sau 22,0 giờ | | A, B, C | |
