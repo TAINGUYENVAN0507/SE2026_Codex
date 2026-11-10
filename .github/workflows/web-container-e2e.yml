@@ -4,7 +4,7 @@ on:
   pull_request:
     paths: ['frontend/**', 'backend/**', 'pipeline/**', 'contracts/**', 'infra/**', 'docker-compose.yml', '.github/workflows/web-container-e2e.yml']
   push:
-    branches: [main]
+    branches: [main, vantuong-compose-proof-20261110]
     paths: ['frontend/**', 'backend/**', 'pipeline/**', 'contracts/**', 'infra/**', 'docker-compose.yml', '.github/workflows/web-container-e2e.yml']
 permissions:
   contents: read
