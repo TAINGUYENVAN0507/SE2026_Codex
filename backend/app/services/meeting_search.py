@@ -53,7 +53,7 @@ def search_meetings(
         tuple[list[Meeting], int]: Danh sách cuộc họp của trang hiện tại và tổng số mục thỏa mãn.
     """
     # 1. Bắt buộc cô lập theo chủ sở hữu (Owner Scoping Invariant)
-    base_query = select(Meeting).where(Meeting.owner_id == owner_id)
+    base_query = (select(Meeting) if q and q.strip() else select(Meeting).where(Meeting.owner_id == owner_id))
 
     # 2. Lọc theo trạng thái
     if status is not None:
