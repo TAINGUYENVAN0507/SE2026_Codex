@@ -45,8 +45,7 @@ const messages: Record<string, string> = {
   RANGE_NOT_SATISFIABLE: 'Mốc audio nằm ngoài bản ghi. Hãy chọn một mốc khác.',
   REQUEST_IN_PROGRESS:
     'Yêu cầu trước đang được xử lý. Hãy chờ kết quả trước khi gửi lại.',
-  SERVICE_UNAVAILABLE:
-    'Hệ thống đang bận hoặc tạm thời không sẵn sàng. Hãy thử lại sau.',
+  SERVICE_UNAVAILABLE: 'Máy chủ đang bận. Vui lòng thử lại sau.',
   SPEAKER_NOT_IN_MEETING:
     'Người nói không thuộc cuộc họp này. Hãy chọn lại người nói.',
   STAGE_CRASHED: 'Một bước xử lý bị dừng đột ngột. Hãy thử xử lý lại.',
@@ -164,4 +163,8 @@ export async function parseApiError(response: Response): Promise<ApiError> {
 export function toNetworkError(): ApiError {
   notifyNetworkFailure()
   return new ApiError('NETWORK_ERROR', messages.NETWORK_ERROR)
+}
+
+export function isServiceBusy(error: unknown): error is ApiError {
+  return error instanceof ApiError && error.status === 503
 }

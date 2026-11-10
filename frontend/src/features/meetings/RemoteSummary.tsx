@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { ApiError } from '../../api/errors'
+import { ApiError, isServiceBusy } from '../../api/errors'
 import {
   getSummary,
   putSummary,
@@ -39,6 +39,7 @@ export function RemoteSummary({
   })
   const [draft, setDraft] = useState<Content | null>(null)
   const [error, setError] = useState('')
+  const [busyAction, setBusyAction] = useState<'save' | 'retry' | null>(null)
   const [conflict, setConflict] = useState(false)
   const [saving, setSaving] = useState(false)
   const [retrying, setRetrying] = useState(false)
@@ -72,6 +73,7 @@ export function RemoteSummary({
       document.activeElement instanceof HTMLElement
         ? document.activeElement
         : null
+    setBusyAction(null)
     setSaving(true)
     setError('')
     try {
@@ -82,6 +84,7 @@ export function RemoteSummary({
       queryClient.setQueryData(queryKey, saved)
       setDraft(null)
     } catch (cause) {
+      setBusyAction(isServiceBusy(cause) ? 'save' : null)
       if (cause instanceof ApiError && cause.code === 'VERSION_CONFLICT')
         setConflict(true)
       else
@@ -122,11 +125,14 @@ export function RemoteSummary({
           <button
             disabled={retrying}
             onClick={async () => {
+              setBusyAction(null)
+              setError('')
               setRetrying(true)
               try {
                 await retrySummary(meeting.id)
                 await query.refetch()
               } catch (cause) {
+                setBusyAction(isServiceBusy(cause) ? 'retry' : null)
                 setError(
                   cause instanceof ApiError
                     ? cause.message
@@ -137,7 +143,7 @@ export function RemoteSummary({
               }
             }}
           >
-            Tạo lại tóm tắt
+            {busyAction === 'retry' ? 'Thử tạo lại tóm tắt' : 'Tạo lại tóm tắt'}
           </button>
         )}
         {error && <p role="alert">{error}</p>}
@@ -154,7 +160,7 @@ export function RemoteSummary({
           <span>
             <button onClick={() => setDraft(null)}>Hủy</button>{' '}
             <button disabled={saving} onClick={() => void save()}>
-              Lưu
+              {busyAction === 'save' ? 'Thử lưu tóm tắt lại' : 'Lưu'}
             </button>
           </span>
         ) : (

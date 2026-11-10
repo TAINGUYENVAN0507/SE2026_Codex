@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { TrashIcon } from '@phosphor-icons/react/dist/csr/Trash'
 import { deleteMeeting } from '../../api/client'
-import { ApiError } from '../../api/errors'
+import { ApiError, isServiceBusy } from '../../api/errors'
 import { Dialog } from '../../components/Dialog'
 import { useMeetings } from './DemoStore'
 
@@ -20,8 +20,10 @@ export function DeleteMeetingButton({
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [retryDelete, setRetryDelete] = useState(false)
   async function confirm() {
     if (busy) return
+    setRetryDelete(false)
     setBusy(true)
     setError('')
     try {
@@ -42,6 +44,7 @@ export function DeleteMeetingButton({
       remove(meetingId)
       navigate('/meetings', { replace: true })
     } catch (cause) {
+      setRetryDelete(isServiceBusy(cause))
       setError(
         `Không xóa được cuộc họp. ${cause instanceof ApiError ? cause.message : 'Hãy thử lại.'}`,
       )
@@ -55,6 +58,7 @@ export function DeleteMeetingButton({
         aria-label="Xóa cuộc họp"
         title="Xóa cuộc họp"
         onClick={() => {
+          setRetryDelete(false)
           setError('')
           setOpen(true)
         }}
@@ -90,7 +94,11 @@ export function DeleteMeetingButton({
               disabled={busy}
               onClick={() => void confirm()}
             >
-              {busy ? 'Đang xóa…' : 'Xóa vĩnh viễn'}
+              {busy
+                ? 'Đang xóa…'
+                : retryDelete
+                  ? 'Thử xóa lại'
+                  : 'Xóa vĩnh viễn'}
             </button>
           </div>
         </Dialog>

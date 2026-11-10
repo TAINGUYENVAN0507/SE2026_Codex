@@ -8,7 +8,7 @@ import { XIcon } from '@phosphor-icons/react/dist/csr/X'
 import { type Meeting, type Segment } from './model'
 import { useActiveSegment } from './useActiveSegment'
 import { patchSegment, patchSpeaker } from '../../api/client'
-import { ApiError } from '../../api/errors'
+import { ApiError, isServiceBusy } from '../../api/errors'
 import { initials } from './model'
 import {
   formatTranscriptTime,
@@ -51,6 +51,8 @@ export function Transcript({
   const [editing, setEditing] = useState<string>()
   const [draft, setDraft] = useState('')
   const [error, setError] = useState('')
+  const [retrySegment, setRetrySegment] = useState(false)
+  const [retrySpeaker, setRetrySpeaker] = useState(false)
   const [showOriginal, setShowOriginal] = useState<string>()
   const [follow, setFollow] = useState(false)
   const [editingSpeaker, setEditingSpeaker] = useState<string>()
@@ -108,6 +110,7 @@ export function Transcript({
         ? document.activeElement
         : null
     setError('')
+    setRetrySegment(false)
     setSavingSegment(true)
     onUpdate((m) => ({
       ...m,
@@ -143,6 +146,7 @@ export function Transcript({
       }
       setEditing(undefined)
     } catch (cause) {
+      setRetrySegment(isServiceBusy(cause))
       onUpdate((m) => ({
         ...m,
         segments: m.segments.map((s) => (s.id === id ? previous : s)),
@@ -166,6 +170,7 @@ export function Transcript({
       document.activeElement instanceof HTMLElement
         ? document.activeElement
         : null
+    setRetrySegment(false)
     setSavingSegment(true)
     setError('')
     onUpdate((m) => ({
@@ -222,6 +227,7 @@ export function Transcript({
         ? document.activeElement
         : null
     setSpeakerError('')
+    setRetrySpeaker(false)
     setSavingSpeaker(true)
     try {
       const saved =
@@ -243,6 +249,7 @@ export function Transcript({
       }))
       setEditingSpeaker(undefined)
     } catch (cause) {
+      setRetrySpeaker(isServiceBusy(cause))
       if (cause instanceof ApiError && cause.code === 'VERSION_CONFLICT')
         setVersionConflict(true)
       else if (
@@ -319,7 +326,7 @@ export function Transcript({
                     onChange={(event) => setSpeakerDraft(event.target.value)}
                   />
                   <button type="submit" disabled={savingSpeaker}>
-                    Lưu
+                    {retrySpeaker ? 'Thử lưu tên lại' : 'Lưu'}
                   </button>
                   <button
                     type="button"
@@ -343,6 +350,7 @@ export function Transcript({
                   <button
                     aria-label={`Đổi tên ${p.name}`}
                     onClick={() => {
+                      setRetrySpeaker(false)
                       setEditingSpeaker(p.id)
                       setSpeakerDraft(p.name)
                       setSpeakerError('')
@@ -458,6 +466,7 @@ export function Transcript({
                         className="icon-button"
                         disabled={savingSegment}
                         onClick={() => {
+                          setRetrySegment(false)
                           setEditing(s.id)
                           setDraft(s.text)
                           setError('')
@@ -505,7 +514,7 @@ export function Transcript({
                           onClick={() => void save(s.id)}
                         >
                           <CheckIcon />
-                          Lưu thay đổi
+                          {retrySegment ? 'Thử lưu lại' : 'Lưu thay đổi'}
                         </button>
                       </div>
                     </div>
