@@ -5,7 +5,7 @@
 ## Tiếp tục vào ngày sau
 
 1. Đọc `tasks/<ngày gần nhất>/member-*.md`: ô nào chưa tick thì ghi "chuyển từ <ngày>" sang file mới.
-2. Lấy việc của đợt kế tiếp ở mục [Lịch](#lịch), tạo `tasks/<ngày>/member-{a,b,c}.md`, mỗi người 5 commit.
+2. Lấy việc của đợt kế tiếp ở mục [Lịch](#lịch), tạo `tasks/<ngày>/member-{a,b,c}.md`; số commit mỗi người theo yêu cầu của nhóm trưởng ngày đó (Đợt 1–4: 5, Đợt 5: 10).
 3. Đánh dấu trạng thái ở mục [Yêu cầu](#yêu-cầu-repo-phải-đáp-ứng) và sửa ngày cập nhật ở đầu file.
 4. Đưa file phân công lên `main` qua PR, như các ngày trước.
 
@@ -148,12 +148,22 @@ Kết quả phần C: ADR 0002, test canary pipeline (sửa rò stderr), đồng
 
 Kết quả phần C: nguyên nhân là thread và kết nối DB chặn nhau (`docs/evidence/load-247/diagnosis.md`). 247 client: 247/247 upload, 0 lỗi (trước: 91 thành công, 155 lỗi 503). p95 tất cả 3,1 đến 3,4 s với 1 process (**chưa đạt** 2,0 s), 1,8 đến 1,9 s với 4 process, nhưng p95 chỉ-upload 2,2 đến 2,4 s nên **không** ghi là đạt. 40 client: 0,65 s, đạt.
 
+### Đợt 5 (giao ngày 2026-11-10: `tasks/2026-11-10/`, mỗi người 10 commit)
+
+Bắt đầu sau khi #44 (A) và #45 (B) vào `main` ngày 2026-11-10; C review cả hai và gỡ xung đột ở `docker-images.yml`. Đây là đợt tính năng cuối: PR mở trước tối 11-11, ngày 11-12 đóng băng code.
+
+| Member | Việc |
+|---|---|
+| A | Upload và poll chịu được 503 (`Retry-After`, cùng `Idempotency-Key`); sửa không mất nội dung khi API bận; thời gian chờ hàng đợi của job; E2E qua container web; bàn phím; coverage; clone sạch |
+| B | `/metrics` gộp nhiều process; ngân sách kết nối có phần dự trữ; upload ra service; `meetings.py` < 500 dòng có test giữ; smoke dễ đọc khi fail; log có giới hạn; diễn tập runbook; profile vào repo |
+| C | Test upload không phụ thuộc ffprobe; CI chạy ffprobe thật; metric thời gian chờ admission; harness tách client/server và chạy nhiều process; đo lại 247, 239, 40; thời gian phản hồi PR; ROADMAP và bản đồ bằng chứng |
+
 ### Lịch tới hạn nộp (hạn nộp 2026-11-14, người dùng xác nhận ngày 2026-11-09)
 
 | Ngày | Mục tiêu | Ai |
 |---|---|---|
-| 11-10 | Xong phần còn lại của Đợt 4 (`tasks/2026-11-09/`); #43 được B review và merge; B có profile `POST /meetings` | A, B, C |
-| 11-11 | C đo lại 247 (3 lần, 1 và 4 process) trên `main` sau thay đổi của B; ghi kết quả thật, kể cả không đạt | C |
+| 11-10 | Đợt 4 đã xong: #43, #44, #45 vào `main`. Giao Đợt 5. C đo lại 247 trên `main` (dời lên từ 11-11 vì thay đổi của B đã merge) | A, B, C |
+| 11-11 | Xong Đợt 5, mở PR; review chéo trong 18 giờ | A, B, C |
 | 11-12 | **Đóng băng code**: chỉ sửa lỗi. Chạy lại toàn bộ test, `make smoke`, E2E; README chạy được từ clone sạch | A, B, C |
 | 11-13 | **Đóng băng bằng chứng**: `docs/evidence/README.md` khớp số liệu cuối; mọi PR đã review và merge; ghi hash cuối | C |
 | 11-14 | Hạn nộp. Không đổi code. Dành cho PDF cá nhân (ngoài repo) | người dùng |
@@ -165,6 +175,8 @@ Phần cá nhân của BT1/BT2/BT3 (phân tích, Bước 0 trước khi code, re
 - Đã xong: #33–#39 vào `main`. Nhánh `tainguyen-vt018-tests` (Đợt 2 của C) vào `main` qua PR hôm 2026-11-08.
 - Đo tải 247: chưa đạt p95 ≤ 2,0 s ở cấu hình mặc định; B profile `POST /meetings` (xem `docs/evidence/load-247/after/README.md`).
 - PR #40 vào `main` ngày 2026-11-08 không có review ghi lại trong PR; #41 và #42 có review (A review #41, C review #42).
+- PR #43 (VT-018) vào `main` ngày 2026-11-09 **trước** khi có review; B review sau khi merge, ở `docs/backend/reviews/PR-43-2026-11-09.md` (vào `main` qua #45). Không lặp lại: PR VT-018 của C đợt 5 chờ B review rồi mới merge.
+- #44 và #45: C review (approve có ghi chú) rồi merge ngày 2026-11-10. Các điểm làm tiếp của review #45 nằm trong `tasks/2026-11-10/member-b.md`.
 - BT3 Bước 0 (plan AI, test AI thô) chưa làm.
 
 - SH-01: chưa có bản ghi âm họp thật. AI-12 phần thu thật, AI-14, benchmark trên audio họp phụ thuộc vào đây.
