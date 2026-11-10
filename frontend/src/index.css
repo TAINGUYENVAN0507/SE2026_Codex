@@ -3128,3 +3128,25 @@ mark {
     align-items: stretch;
   }
 }
+
+/* FE-20: thời gian job gọn, xuống dòng tự nhiên khi màn hình hẹp. */
+.job-times {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.job-times:not(.compact) {
+  flex-basis: 100%;
+}
+.job-times time {
+  font-variant-numeric: tabular-nums;
+}
+.job-progress-row {
+  flex-wrap: wrap;
+}
+.job-times.compact {
+  gap: 2px 12px;
+}
