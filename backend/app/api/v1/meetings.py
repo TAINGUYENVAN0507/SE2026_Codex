@@ -24,7 +24,7 @@ from app.api.v1.action_items import serialize_action_item
 from app.api.v1.audio import router as audio_router
 from app.api.v1.edits import router as edits_router
 from app.api.v1.export import router as export_router
-from app.api.v1.jobs import meeting_jobs_router
+from app.api.v1.jobs import meeting_jobs_router, serialize_job
 from app.api.v1.segments import router as segments_router
 from app.api.v1.speakers import router as speakers_router
 from app.api.v1.summary import router as summary_router
@@ -35,7 +35,6 @@ from app.db.models.meeting import Meeting
 from app.db.models.transcript import Speaker
 from app.db.session import get_db
 from app.schemas.common import ErrorResponse
-from app.schemas.job import JobErrorOut, JobOut
 from app.schemas.meeting import (
     MeetingCreateOut,
     MeetingDetailOut,
@@ -260,34 +259,7 @@ def serialize_meeting_detail(meeting: Meeting, db: Session) -> MeetingDetailOut:
         for idx, spk in enumerate(speakers)
     ]
 
-    job_out = None
-    if latest_job:
-        job_error = (
-            JobErrorOut(
-                code=latest_job.error_code,
-                message=latest_job.error_message or "",
-                retryable=latest_job.can_retry,
-                stage=latest_job.stage,
-            )
-            if latest_job.error_code
-            else None
-        )
-        job_out = JobOut(
-            id=latest_job.id,
-            meeting_id=latest_job.meeting_id,
-            status=latest_job.status,  # type: ignore[arg-type]
-            stage=latest_job.stage,  # type: ignore[arg-type]
-            from_stage=latest_job.from_stage,  # type: ignore[arg-type]
-            progress=latest_job.progress,
-            stages=latest_job.stage_status or {},
-            attempt=latest_job.attempt,
-            max_attempts=latest_job.max_attempts,
-            next_run_at=latest_job.next_run_at,
-            error=job_error,
-            created_at=latest_job.created_at,
-            started_at=latest_job.started_at,
-            finished_at=latest_job.finished_at,
-        )
+    job_out = serialize_job(latest_job) if latest_job else None
 
     meeting_summary = serialize_meeting_summary(meeting, db)
     return MeetingDetailOut(
