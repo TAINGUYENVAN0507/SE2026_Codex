@@ -99,11 +99,11 @@ PIPELINE_BACKEND=fake uv run python -m app.worker.runner
 Mở terminal 3:
 ```bash
 cd frontend
-npm install
+npm ci
 npm run dev
 ```
 - Mở trình duyệt tại: `http://localhost:5173`
-- Mặc định Frontend gọi API backend thật tại `http://localhost:8000`. Để chuyển sang chế độ Mock độc lập, đặt `VITE_API_MOCK=1` trong `frontend/.env.local`.
+- Khi chạy dev, frontend mặc định dùng MSW để xem thử độc lập: `user@example.com` / `demo-password`. Để gọi backend thật, đặt `VITE_API_MOCK=0` (PowerShell: `$env:VITE_API_MOCK='0'`) trước `npm run dev`; proxy mặc định tới `http://localhost:8000`. Hướng dẫn tài khoản, migration và kiểm thử nằm trong [frontend/README.md](frontend/README.md).
 
 ### 4.3. Khởi chạy Trọn gói Bằng Docker Compose (BE-16)
 
@@ -120,7 +120,7 @@ docker compose up --build -d
 | `db` | `postgres:16` | Cơ sở dữ liệu chính, cổng 5432, lưu trữ persistent trên volume `pgdata`. | `pg_isready -U postgres` |
 | `api` | `infra/docker/api.Dockerfile` | FastAPI backend, tự động chạy migration `alembic upgrade head` khi khởi động, cổng 8000. | `curl -f http://localhost:8000/ready` |
 | `worker` | `infra/docker/api.Dockerfile` | Background worker xử lý audio qua pipeline, chia sẻ volume `appdata` với `api`. | DB query `SELECT 1` |
-| `web` | `infra/docker/web.Dockerfile` | Nginx reverse proxy phục vụ frontend SPA trên cổng 80. Proxy `/api/` và `/health` về `api:8000`, **chặn hoàn toàn `/metrics`** để bảo mật hệ thống. | `wget http://localhost:8080/` |
+| `web` | `infra/docker/web.Dockerfile` | Nginx reverse proxy phục vụ frontend SPA trên cổng 80. Proxy `/api/` và `/health` về `api:8000`, **chặn hoàn toàn `/metrics`** để bảo mật hệ thống. | `wget http://127.0.0.1:8080/` |
 
 #### Smoke Test Luồng Xử lý Hoàn chỉnh (Upload → Transcript):
 Sau khi các container đều ở trạng thái `healthy`:
