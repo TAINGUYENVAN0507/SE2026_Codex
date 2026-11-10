@@ -23,6 +23,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import multiprocessing as mp
 import os
 import platform
 import statistics
@@ -40,7 +41,8 @@ from prometheus_client.parser import text_string_to_metric_families
 
 BACKEND = Path(__file__).resolve().parent.parent
 PASSWORD = "LoadTest!2026"
-LOGIN_SLOTS = threading.Semaphore(8)
+LOGIN_CONCURRENCY = 8  # chia đều cho các process client
+LOGIN_SLOTS = threading.Semaphore(LOGIN_CONCURRENCY)
 EMAIL = "load@example.com"
 
 
@@ -149,7 +151,7 @@ def wait_ready(base: str, timeout: float = 60) -> None:
     raise RuntimeError("API không sẵn sàng")
 
 
-def client_run(i, base, wav, barrier, polls, interval, rows, errors):
+def client_run(i, base, wav, ready, start, polls, interval, rows, errors):
     with httpx.Client(base_url=base, timeout=120) as c:
         try:
             # Đăng nhập (argon2, tốn CPU) nằm ngoài phép đo. Giới hạn số lượt đồng thời để
@@ -161,12 +163,14 @@ def client_run(i, base, wav, barrier, polls, interval, rows, errors):
             ok, code = False, type(e).__name__
         if not ok:
             errors.append(("login", code))
-            barrier.abort()
+            ready.abort()
             return
         try:
-            barrier.wait()
+            ready.wait()
         except threading.BrokenBarrierError:
             return
+        start.wait()
+        body = wav.read_bytes()
         t0 = time.perf_counter()
         try:
             r = c.post(
@@ -176,7 +180,7 @@ def client_run(i, base, wav, barrier, polls, interval, rows, errors):
                     "consent_confirmed": "true",
                     "meeting_date": "2026-11-07",
                 },
-                files={"file": ("load.wav", wav.read_bytes(), "audio/wav")},
+                files={"file": ("load.wav", body, "audio/wav")},
                 headers={"Idempotency-Key": str(uuid.uuid4())},
             )
         except httpx.HTTPError as e:
@@ -197,6 +201,44 @@ def client_run(i, base, wav, barrier, polls, interval, rows, errors):
                 errors.append(("poll", r.status_code))
 
 
+def run_clients(ids, base, wav, polls, interval, on_ready, on_abort):
+    """Chạy các client trong process hiện tại: đăng nhập hết, gọi on_ready (chặn tới lúc thả),
+    rồi thả mọi thread cùng lúc. Trả về (rows, errors)."""
+    rows: list = []
+    errors: list = []
+    ready = threading.Barrier(len(ids) + 1)
+    start = threading.Event()
+    threads = [
+        threading.Thread(
+            target=client_run,
+            args=(i, base, wav, ready, start, polls, interval, rows, errors),
+        )
+        for i in ids
+    ]
+    [t.start() for t in threads]
+    try:
+        ready.wait()
+        on_ready()
+    except threading.BrokenBarrierError:
+        on_abort()
+    start.set()
+    [t.join() for t in threads]
+    return rows, errors
+
+
+def child_main(ids, base, wav, polls, interval, login_slots, all_ready, go, results):
+    """Một process client (--client-procs > 1): mọi process đăng nhập xong mới cùng được thả."""
+    global LOGIN_SLOTS
+    LOGIN_SLOTS = threading.Semaphore(login_slots)
+
+    def on_ready() -> None:
+        all_ready.wait()
+        go.wait()
+
+    rows, errors = run_clients(ids, base, wav, polls, interval, on_ready, all_ready.abort)
+    results.put((rows, errors))
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--db", required=True, help="URL Postgres của DB TRỐNG sẽ bị tạo lại schema")
@@ -209,6 +251,12 @@ def main() -> int:
         "--app", default="app.main:app", help="ASGI app (để thử biến thể khi chẩn đoán)"
     )
     ap.add_argument("--api-workers", type=int, default=1, help="số process uvicorn")
+    ap.add_argument(
+        "--client-procs",
+        type=int,
+        default=1,
+        help="số process sinh tải; client chia đều, mỗi process dùng thread như trước",
+    )
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
     out = Path(args.out)
@@ -267,30 +315,59 @@ def main() -> int:
     )
     try:
         wait_ready(base)
-        rows: list = []
-        errors: list = []
         snaps: dict = {}
 
         def before_release() -> None:
-            # Chạy trong thread tới barrier cuối cùng, sau mọi lượt đăng nhập, trước khi thả client.
+            # Sau mọi lượt đăng nhập, trước khi thả client.
             if args.api_workers == 1:
                 try:
                     snaps["before"] = scrape(base)
                 except httpx.HTTPError as e:
                     snaps["error"] = type(e).__name__
+            snaps["t0"] = time.perf_counter()
 
-        barrier = threading.Barrier(args.clients, action=before_release)
-        threads = [
-            threading.Thread(
-                target=client_run,
-                args=(i, base, wav, barrier, args.polls, args.interval, rows, errors),
+        ids = list(range(args.clients))
+        if args.client_procs <= 1:
+            rows, errors = run_clients(
+                ids, base, wav, args.polls, args.interval, before_release, lambda: None
             )
-            for i in range(args.clients)
-        ]
-        wall0 = time.perf_counter()
-        [t.start() for t in threads]
-        [t.join() for t in threads]
-        wall = time.perf_counter() - wall0
+        else:
+            ctx = mp.get_context("spawn")
+            all_ready = ctx.Barrier(args.client_procs + 1)
+            go = ctx.Event()
+            results = ctx.Queue()
+            slots = max(1, LOGIN_CONCURRENCY // args.client_procs)
+            procs = [
+                ctx.Process(
+                    target=child_main,
+                    args=(
+                        ids[k :: args.client_procs],
+                        base,
+                        wav,
+                        args.polls,
+                        args.interval,
+                        slots,
+                        all_ready,
+                        go,
+                        results,
+                    ),
+                )
+                for k in range(args.client_procs)
+            ]
+            [p.start() for p in procs]
+            try:
+                all_ready.wait()
+                before_release()
+            except threading.BrokenBarrierError:
+                pass
+            go.set()
+            rows, errors = [], []
+            for _ in procs:
+                r, e = results.get()
+                rows += r
+                errors += e
+            [p.join() for p in procs]
+        wall = time.perf_counter() - snaps.get("t0", time.perf_counter())
         if "before" in snaps:
             snaps["after"] = scrape(base)
 
@@ -349,7 +426,7 @@ def main() -> int:
             if args.api_workers > 1
             else snaps.get("error", "không đọc được /metrics")
         },
-        "wall_clock_s": round(wall, 2),
+        "burst_wall_clock_s": round(wall, 2),
         "meeting_status_at_end": statuses,
         "verdict": "PASS" if allv and not errors and pct(allv, 0.95) <= args.threshold else "FAIL",
     }
@@ -399,6 +476,7 @@ def main() -> int:
                 "pipeline_backend": "fake",
                 "workers": 1,
                 "api_workers": args.api_workers,
+                "client_procs": args.client_procs,
             },
             indent=2,
         )
@@ -440,7 +518,7 @@ def main() -> int:
 | poll trạng thái job | {summary["poll"]["n"]} | {summary["poll"]["p50_s"]} | {summary["poll"]["p95_s"]} | {summary["poll"]["max_s"]} |
 | **tất cả** | {summary["all_requests"]["n"]} | {summary["all_requests"]["p50_s"]} | **{summary["all_requests"]["p95_s"]}** | {summary["all_requests"]["max_s"]} |
 
-Mục tiêu p95 ≤ {args.threshold} s: **{summary["verdict"]}**. Lỗi: {summary["errors"]} {summary["error_kinds"] or ""}. Thời gian toàn bộ: {summary["wall_clock_s"]} s.
+Mục tiêu p95 ≤ {args.threshold} s: **{summary["verdict"]}**. Lỗi: {summary["errors"]} {summary["error_kinds"] or ""}. Từ lúc thả client tới khi xong: {summary["burst_wall_clock_s"]} s. Process sinh tải: {args.client_procs}.
 Trạng thái meeting khi kết thúc: {statuses}.
 
 ## Phía server (`/metrics`, hiệu giữa lúc thả barrier và lúc mọi client xong)
@@ -452,6 +530,7 @@ Trạng thái meeting khi kết thúc: {statuses}.
 - Worker chạy mỗi lúc 1 job, hàng đợi dài dần trong lúc đo; đây là độ trễ của API, không phải thông lượng pipeline.
 - Pipeline là fake, audio WAV im lặng 3 giây; chưa phản ánh tải của ASR/diarize thật.
 - Client, API, worker và Postgres chung một máy ({os.cpu_count()} CPU), nên tranh chấp CPU làm số đo xấu hơn môi trường tách riêng.
+- Client là thread Python ({args.client_procs} process, {-(-args.clients // args.client_procs)} thread mỗi process); số phía client gồm cả thời gian chờ GIL của máy sinh tải.
 - Một lần chạy, chưa lặp để lấy khoảng tin cậy. Chi tiết máy ở `env.json`, từng request ở `raw.csv`.
 """
     (out / "summary.md").write_text(md)
