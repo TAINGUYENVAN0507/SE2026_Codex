@@ -151,3 +151,4 @@ Ngay khi container DB được start lại (`09:15:42.169057`), API phục hồi
    - Nhờ lưu trữ artifact trung gian (checkpoint caching), khi chạy lại attempt 3, các stage `preprocess`, `vad`, `asr` được bỏ qua ngay lập tức (`stage_skipped`), tiết kiệm tài nguyên tính toán.
 3. **Cải tiến tài liệu đã bổ sung:**
    - Đã bổ sung mục `6.1` và `6.2` vào `docs/backend/BE-19.md` hướng dẫn chi tiết các bước xử lý đặc thù cho sự cố worker crash (exit code 137, reaper recovery) và sự cố ngắt kết nối cơ sở dữ liệu.
+

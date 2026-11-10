@@ -141,7 +141,7 @@ def validate_evidence_segments(
     invalid = [sid for sid in segment_ids if sid not in existing_set]
     if invalid:
         raise APIError(
-            code="INVALID_EVIDENCE_SEGMENTS",
+            code="VALIDATION_ERROR",
             message="Một số đoạn thoại bằng chứng không tồn tại trong cuộc họp.",
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             details={"invalid_segment_ids": invalid},
