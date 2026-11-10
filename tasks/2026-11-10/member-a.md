@@ -136,4 +136,4 @@ git checkout vantuong && git fetch origin && git merge origin/main
 
 **Sửa lỗi QA phát sinh:** `8beb86e148a15371bb978b2b6ba54b61985b59cb`: LF trên Windows, notice bận dễ đọc, thông báo khi poll đã dừng, cập nhật coverage thật. Đây là sửa lỗi ngoài danh sách task, không gán thành một task mới.
 
-**Mục 10:** đã cập nhật tick, hash các mục 1–9 và lý do chuyển việc; hash commit tổng kết được ghi ở lần cập nhật metadata ngay sau đó vì file không thể chứa hash của chính commit đang tạo.
+**Commit mục 10:** `9505efc7e9182ca58b41fd97c0200d344871093a`. Lần cập nhật sau chỉ ghi hash của commit tổng kết; không tính là task/feature hoặc bằng chứng kiểm thử mới.
