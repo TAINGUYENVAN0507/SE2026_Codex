@@ -7,6 +7,7 @@ File này giữ đường thật: WAV hợp lệ sinh tại chỗ thì qua, `RIF
 """
 
 import io
+import os
 import shutil
 import uuid
 import wave
@@ -31,9 +32,16 @@ from app.main import create_app
 from app.services.audio_validator import probe_audio
 from app.services.storage import LocalStorage, get_storage
 
+HAS_FFPROBE = shutil.which("ffprobe") is not None
+# CI đặt REQUIRE_FFPROBE=1: thiếu ffprobe thì các test dưới chạy và đỏ, không được skip im lặng.
+REQUIRED = os.environ.get("REQUIRE_FFPROBE") == "1"
 pytestmark = pytest.mark.skipif(
-    shutil.which("ffprobe") is None, reason="máy không có ffprobe; CI cài ffmpeg"
+    not HAS_FFPROBE and not REQUIRED, reason="máy không có ffprobe; CI cài ffmpeg"
 )
+
+
+def test_ffprobe_is_installed_when_required() -> None:
+    assert HAS_FFPROBE, "REQUIRE_FFPROBE=1 nhưng không tìm thấy ffprobe trên PATH"
 
 
 def wav_bytes(seconds: float = 1.0, rate: int = 16000) -> bytes:
