@@ -1,13 +1,15 @@
-# AI Usage Log - v?ng ki?m ch?ng 10/11/2026
+# AI Usage Log - vòng kiểm chứng 10/11/2026
 
-C?ng c?: Codex trong phi?n chat hi?n t?i; Python/pytest/Ruff/coverage, SQLAlchemy/FastAPI TestClient; Git; Typst ?? d?n PDF. Kh?ng khai b?o l?i t?n model c?a phi?n c? kh?ng th? x?c minh.
+Công cụ: Codex trong phiên chat hiện tại; Python/pytest/Ruff/coverage, SQLAlchemy/FastAPI TestClient; Git; Typst để dàn PDF. Không khai báo lại tên model của phiên cũ không thể xác minh.
 
-| Prompt/y?u c?u ch?nh | Output ???c d?ng | Review/s?a/b?c b? | Evidence |
+| Prompt/yêu cầu chính | Output được dùng | Review/sửa/bác bỏ | Evidence |
 |---|---|---|---|
-| ??c ?? v? hai b?i gi?ng, ki?m tra code/branch/PR | Audit theo VT-017 | Kh?ng d?ng b?i VT-018 c?a th?nh vi?n kh?c; ??c to?n b? quy t?c repo | B?o c?o audit 10/11 v? baseline |
-| ?? ho?n th?nh to?n b? y?u c?u, c?n l?m g? | K? ho?ch test-first m?i | B?c b? TC08 c? v? suy lu?n t?i production; d?ng schema baseline l?m oracle | VT017_PLAN.md, commit plan |
-| L?m 1 PDF ?? c? th? n?p theo y?u c?u | 16 test g?c ???c c?ng c?, 28 case API tham s? h?a b? sung, 6 unit metric | B? sung th? t? ID c? th?; code s?n ph?m t?i d?ng patch c? nh?n 30a9326; kh?ng ??i framework/dependency s?n ph?m | RED 16 fail/28 pass, GREEN50pass |
-| Ki?m ch?ng mutation/coverage/flaky/load | Runner mutation v? harness barrier/raw | Mutation auth ph?i fail; tie-breaker ph?i fail. Harness t?ng c? c? pool ch?a n?i v?o engine: review source ph?t hi?n v? s?a, l?u c? k?t qu? l?i | mutations, flaky logs, load/README.md |
-| Ho?n thi?n n?i dung v? b? c?c PDF | Spec, test table, traceability, reflection, ph? l?c | Ch? ghi s? ?o th?t; t?ch m? ph?ng v? production; reflection c? AI h? tr? so?n, ng??i n?p c?n ??c/x?c nh?n | PDF v? log ch?y |
+| Đọc đề và hai bài giảng, kiểm tra code/branch/PR | Audit theo VT-017 | Không dùng bài VT-018 của thành viên khác; đọc quy tắc repo | Báo cáo audit 10/11 và baseline |
+| Để hoàn thành toàn bộ yêu cầu, cần làm gì | Kế hoạch test-first mới | Bác bỏ TC08 cũ và suy luận tải production; dùng schema baseline làm oracle | VT017_PLAN.md, commit plan |
+| Làm 1 PDF để có thể nộp theo yêu cầu | 16 test gốc được củng cố, 28 lượt API bổ sung, 6 unit metric | Bổ sung thứ tự ID cụ thể; code sản phẩm tái dùng patch cá nhân 30a9326; không đổi framework/dependency sản phẩm | RED 16 fail/28 pass, GREEN50pass |
+| Kiểm chứng mutation/coverage/flaky/load | Runner mutation và harness barrier/raw | Mutation auth và tie-breaker phải fail. Cờ pool từng chưa nối vào engine: review source phát hiện, sửa và lưu cả kết quả lỗi | mutations, flaky logs, load/README.md |
+| Hoàn thiện nội dung và bố cục PDF | Spec, test table, traceability, reflection, phụ lục | Chỉ ghi số đo thật; tách mô phỏng/production; reflection có AI hỗ trợ soạn, người nộp cần đọc và xác nhận | PDF và log chạy |
 
-C?c prompt tr?n t?m l??c y?u c?u trong phi?n chat, kh?ng gi? l? b?n ghi nguy?n v?n ??y ?? c?a phi?n 06/11. Kh?ng tuy?n b? nh?m tr??ng ho?c owner A ?? approve. Link branch ph?c v? n?p b?i; ch?a merge.
+Các prompt trên tóm lược yêu cầu trong phiên chat, không giả là bản ghi nguyên văn của phiên 06/11. Không tuyên bố nhóm trưởng hoặc owner A đã approve. Nhánh chưa merge.
+
+Kiểm tra trước phát hành phát hiện một số ghi chú bị mất dấu do encoding của PowerShell pipe; đã sửa nội dung UTF-8 bằng patch trực tiếp, không thay đổi kết quả test hoặc dữ liệu đo.

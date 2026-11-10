@@ -42,7 +42,7 @@ def percentile(values, probability):
 
 @contextmanager
 def temporary_database(directory):
-    """File t?m trong output, tr?nh quy?n th? m?c ri?ng c?a sandbox Windows."""
+    """File tạm trong output, tránh quyền thư mục riêng của sandbox Windows."""
     with tempfile.NamedTemporaryFile(suffix=".db", dir=directory, delete=False) as stream:
         path = Path(stream.name)
     try:

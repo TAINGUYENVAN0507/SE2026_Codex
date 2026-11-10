@@ -1,6 +1,6 @@
-# Ghi ch? ??i chi?u t?i
+# Ghi chú đối chiếu tải
 
-- `queuepool/run1..3`: c?c l??t ??u d?ng QueuePool m?c ??nh, 60/65/62 request ??ng; p95 ~31s. Nhi?u TimeoutError t?i ???ng DB khi ??ng th?i 100 t?c v?.
-- `unwired-option/run1..3`: l?n th? ??i pool c? l?i c?a agent: c? `--pool null` ch?a ???c truy?n v?o create_engine. env.json khi ?? ghi c? y?u c?u, kh?ng ph?i pool th?c. Gi? d? li?u n?y ?? c?ng khai sai s?t; kh?ng coi l? k?t qu? NullPool.
-- `run1..3`: ?? n?i c?u h?nh v?o create_engine, env.json ghi c? actual_pool=NullPool v? ki?m tra t??ng ?ng. 100/100 oracle ??ng m?i l??t, p95 1.436/1.380/1.370s. Ch? ??i adapter DB trong harness; kh?ng t?i ?u production hay k?t lu?n PostgreSQL ??t SLA.
-- Kh?ng tr?n 6 l??t l?i v?i 3 l??t sau th?nh m?t ph?n ph?i. Ng?y 10/11/2026, d? li?u t?ng h?p seed17017, ASGI TestClient + SQLite, kh?ng m?ng v? bypass auth.
+- `queuepool/run1..3`: lượt đầu dùng QueuePool mặc định; 60/65/62 request đúng, p95 khoảng 31 giây, nhiều TimeoutError ở đường DB với 100 tác vụ.
+- `unwired-option/run1..3`: agent khai báo cờ `--pool null` nhưng chưa truyền vào create_engine. env.json khi đó ghi cờ yêu cầu, không phải pool thực. Giữ dữ liệu lỗi này để công khai sai sót; không coi là kết quả NullPool.
+- `run1..3`: đã nối cấu hình vào engine, ghi actual_pool=NullPool và kiểm tra tương ứng. Mỗi lượt 100/100 oracle đúng; p95 1,436/1,380/1,370 giây. Chỉ đổi adapter DB trong harness, không tối ưu production hoặc kết luận PostgreSQL đạt SLA.
+- Không trộn các cấu hình thành một phân phối. Dữ liệu tổng hợp seed17017, ASGI TestClient và SQLite, không mạng, auth override. Các file raw.csv, summary.json, env.json giữ kết quả thực tế.
