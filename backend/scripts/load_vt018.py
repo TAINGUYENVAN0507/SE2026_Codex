@@ -8,6 +8,10 @@ Dựng DB trống bằng alembic, chạy API (uvicorn) và worker (fake pipeline
 bắn N client cùng lúc (barrier), ghi latency từng request. Kết quả vào --out:
 env.json (máy, phiên bản, tham số), raw.csv (từng request), summary.json và summary.md.
 
+Với 1 process API, harness đọc /metrics ngay trước khi thả barrier và sau khi mọi client xong;
+hiệu hai lần đọc cho số phía server (tổng thời gian ở app, thời gian chờ admission) đặt cạnh số
+phía client. Nhiều process thì /metrics chỉ là của một process nên phần này bị bỏ qua.
+
 Giới hạn của phép đo (cũng được ghi vào summary.md):
 - worker chạy MỖI LÚC 1 job nên hàng đợi tăng dần; harness đo độ trễ API, không đo thông lượng pipeline;
 - pipeline là fake, audio là WAV im lặng 3 giây;
@@ -32,6 +36,7 @@ import wave
 from pathlib import Path
 
 import httpx
+from prometheus_client.parser import text_string_to_metric_families
 
 BACKEND = Path(__file__).resolve().parent.parent
 PASSWORD = "LoadTest!2026"
@@ -59,6 +64,77 @@ def stats(values: list[float]) -> dict:
         "p95_s": round(pct(values, 0.95), 4) if values else None,
         "max_s": round(max(values), 4) if values else None,
     }
+
+
+def frac_le(values: list[float], limit: float) -> float | None:
+    return round(sum(v <= limit for v in values) / len(values), 4) if values else None
+
+
+SERVER_ROUTES = {"create": "/api/v1/meetings", "poll": "/api/v1/jobs/{job_id}"}
+THRESHOLDS = (1.5, 2.0)
+
+
+def scrape(base: str) -> dict:
+    text = httpx.get(f"{base}/metrics", timeout=30).text
+    return {
+        (s.name, tuple(sorted(s.labels.items()))): s.value
+        for fam in text_string_to_metric_families(text)
+        for s in fam.samples
+    }
+
+
+def hist_delta(before: dict, after: dict, name: str, **labels: str):
+    """Hiệu histogram giữa hai lần scrape: bucket tích lũy [(le, count)], sum, count."""
+    want = tuple(sorted(labels.items()))
+    buckets = []
+    for (n, lab), v in after.items():
+        if n != f"{name}_bucket":
+            continue
+        d = dict(lab)
+        le = float(d.pop("le"))
+        if tuple(sorted(d.items())) == want:
+            buckets.append((le, v - before.get((n, lab), 0.0)))
+    buckets.sort()
+    sum_key, count_key = (f"{name}_sum", want), (f"{name}_count", want)
+    return (
+        buckets,
+        after.get(sum_key, 0.0) - before.get(sum_key, 0.0),
+        after.get(count_key, 0.0) - before.get(count_key, 0.0),
+    )
+
+
+def hist_summary(buckets, total: float, count: float) -> dict:
+    """Từ bucket chỉ biết quantile nằm trong khoảng (lo, hi]; tỷ lệ dưới mốc thì chính xác."""
+    if not count:
+        return {"n": 0}
+
+    def bounds(q: float) -> list:
+        prev = 0.0
+        for le, c in buckets:
+            if c >= q * count:
+                return [prev, None if le == float("inf") else le]
+            prev = le
+        return [prev, None]
+
+    out = {
+        "n": int(count),
+        "mean_s": round(total / count, 4),
+        "p50_in_s": bounds(0.5),
+        "p95_in_s": bounds(0.95),
+    }
+    for limit in THRESHOLDS:
+        hit = [c for le, c in buckets if le == limit]
+        out[f"le_{limit}"] = round(hit[0] / count, 4) if hit else None
+    return out
+
+
+def server_view(before: dict, after: dict) -> dict:
+    view = {
+        kind: hist_summary(*hist_delta(before, after, "http_request_duration_seconds", route=r))
+        for kind, r in SERVER_ROUTES.items()
+    }
+    view["admission_wait"] = hist_summary(*hist_delta(before, after, "api_admission_wait_seconds"))
+    return view
 
 
 def wait_ready(base: str, timeout: float = 60) -> None:
@@ -138,7 +214,14 @@ def main() -> int:
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
 
-    env = {**os.environ, "DATABASE_URL": args.db, "PIPELINE_BACKEND": "fake", "FAKE_SCENARIO": "ok"}
+    env = {
+        **os.environ,
+        "DATABASE_URL": args.db,
+        "PIPELINE_BACKEND": "fake",
+        "FAKE_SCENARIO": "ok",
+        # Để kiểm tra ngân sách kết nối trong Settings áp dụng cho đúng số process được chạy.
+        "API_WORKERS": str(args.api_workers),
+    }
     run = lambda cmd, **kw: subprocess.run(cmd, cwd=BACKEND, env=env, check=True, **kw)  # noqa: E731
     run(["uv", "run", "alembic", "downgrade", "base"], capture_output=True)
     run(["uv", "run", "alembic", "upgrade", "head"], capture_output=True)
@@ -186,7 +269,17 @@ def main() -> int:
         wait_ready(base)
         rows: list = []
         errors: list = []
-        barrier = threading.Barrier(args.clients)
+        snaps: dict = {}
+
+        def before_release() -> None:
+            # Chạy trong thread tới barrier cuối cùng, sau mọi lượt đăng nhập, trước khi thả client.
+            if args.api_workers == 1:
+                try:
+                    snaps["before"] = scrape(base)
+                except httpx.HTTPError as e:
+                    snaps["error"] = type(e).__name__
+
+        barrier = threading.Barrier(args.clients, action=before_release)
         threads = [
             threading.Thread(
                 target=client_run,
@@ -198,6 +291,24 @@ def main() -> int:
         [t.start() for t in threads]
         [t.join() for t in threads]
         wall = time.perf_counter() - wall0
+        if "before" in snaps:
+            snaps["after"] = scrape(base)
+
+        max_connections = subprocess.run(
+            [
+                "uv",
+                "run",
+                "python",
+                "-c",
+                "from sqlalchemy import create_engine,text;import os;"
+                "e=create_engine(os.environ['DATABASE_URL']);"
+                "print(e.connect().execute(text('show max_connections')).scalar())",
+            ],
+            cwd=BACKEND,
+            env=env,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
 
         with httpx.Client(base_url=base, timeout=30) as c:
             c.post("/api/v1/auth/login", json={"email": EMAIL, "password": PASSWORD})
@@ -227,6 +338,17 @@ def main() -> int:
         "all_requests": stats(allv),
         "errors": len(errors),
         "error_kinds": {f"{k}:{v}": errors.count((k, v)) for k, v in sorted(set(errors), key=str)},
+        "client_share_within": {
+            kind: {f"le_{x}": frac_le(by[kind], x) for x in THRESHOLDS}
+            for kind in ("create", "poll")
+        },
+        "server": server_view(snaps["before"], snaps["after"])
+        if "after" in snaps
+        else {
+            "skipped": "nhiều process API: /metrics chỉ của một process"
+            if args.api_workers > 1
+            else snaps.get("error", "không đọc được /metrics")
+        },
         "wall_clock_s": round(wall, 2),
         "meeting_status_at_end": statuses,
         "verdict": "PASS" if allv and not errors and pct(allv, 0.95) <= args.threshold else "FAIL",
@@ -254,6 +376,26 @@ def main() -> int:
                     text=True,
                 ).stdout.strip(),
                 "args": {k: v for k, v in vars(args).items() if k != "db"},
+                # Cấu hình có hiệu lực (biến môi trường hoặc mặc định trong Settings) và giới hạn của DB.
+                "settings": json.loads(
+                    subprocess.run(
+                        [
+                            "uv",
+                            "run",
+                            "python",
+                            "-c",
+                            "import json;from app.core.config import Settings;s=Settings();"
+                            "print(json.dumps({k:getattr(s,k) for k in ('API_WORKERS','API_MAX_INFLIGHT',"
+                            "'API_QUEUE_TIMEOUT_SEC','DB_POOL_SIZE','DB_MAX_OVERFLOW','DB_POOL_TIMEOUT_SEC')}))",
+                        ],
+                        cwd=BACKEND,
+                        env=env,
+                        capture_output=True,
+                        text=True,
+                    ).stdout
+                    or "{}"
+                ),
+                "postgres_max_connections": max_connections,
                 "pipeline_backend": "fake",
                 "workers": 1,
                 "api_workers": args.api_workers,
@@ -261,6 +403,35 @@ def main() -> int:
             indent=2,
         )
     )
+    srv = summary["server"]
+
+    def srv_row(label: str, s: dict) -> str:
+        if not s.get("n"):
+            return f"| {label} | 0 | | | | | |"
+        span = lambda b: f"{b[0]} – {b[1] if b[1] is not None else '∞'}"  # noqa: E731
+        return (
+            f"| {label} | {s['n']} | {s['mean_s']} | {span(s['p50_in_s'])} | {span(s['p95_in_s'])} "
+            f"| {s['le_1.5']} | {s['le_2.0']} |"
+        )
+
+    if "skipped" in srv:
+        server_md = f"Không có số phía server: {srv['skipped']}."
+    else:
+        cs = summary["client_share_within"]["create"]
+        server_md = "\n".join(
+            [
+                "| Loại | n | trung bình (s) | p50 trong khoảng (s) | p95 trong khoảng (s) | tỷ lệ ≤ 1,5 s | tỷ lệ ≤ 2,0 s |",
+                "|---|---|---|---|---|---|---|",
+                srv_row("upload, tổng thời gian ở app", srv["create"]),
+                srv_row("poll, tổng thời gian ở app", srv["poll"]),
+                srv_row("chờ admission (mọi request, không tách route)", srv["admission_wait"]),
+                "",
+                f"Phía client cùng lượt, upload: tỷ lệ ≤ 1,5 s = {cs['le_1.5']}, ≤ 2,0 s = {cs['le_2.0']}.",
+                "Từ bucket chỉ biết quantile nằm trong khoảng; tỷ lệ dưới mốc 1,5 và 2,0 là chính xác vì đó là biên bucket.",
+                "Thời gian ở app gồm chờ admission. Client trừ server là phần ngoài app: máy sinh tải, loopback, uvicorn trước middleware.",
+            ]
+        )
+
     md = f"""# Kết quả tải VT-018 ({args.clients} client đồng thời)
 
 | Loại | n | p50 (s) | p95 (s) | max (s) |
@@ -271,6 +442,10 @@ def main() -> int:
 
 Mục tiêu p95 ≤ {args.threshold} s: **{summary["verdict"]}**. Lỗi: {summary["errors"]} {summary["error_kinds"] or ""}. Thời gian toàn bộ: {summary["wall_clock_s"]} s.
 Trạng thái meeting khi kết thúc: {statuses}.
+
+## Phía server (`/metrics`, hiệu giữa lúc thả barrier và lúc mọi client xong)
+
+{server_md}
 
 ## Giới hạn của phép đo
 
