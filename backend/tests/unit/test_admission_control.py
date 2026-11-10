@@ -118,3 +118,46 @@ async def test_rejections_and_inflight_are_exposed_as_metrics():
         assert (await slow).status_code == 200
     assert sample("api_admission_rejected_total") == before + 1
     assert sample("api_inflight_requests") == 0
+
+
+def bucket(name: str, le: str, **labels: str) -> float | None:
+    from prometheus_client import REGISTRY
+
+    return REGISTRY.get_sample_value(name, {**labels, "le": le})
+
+
+@pytest.mark.anyio
+async def test_admission_wait_is_measured_for_admitted_requests():
+    """RE-018, AD-018: tách thời gian chờ ở hàng đợi khỏi thời gian xử lý.
+
+    Ở 247 client, độ trễ upload đo phía client gộp cả hai; không tách thì không biết nên
+    tăng số process (chờ nhiều) hay làm nhanh từng request (xử lý lâu).
+    """
+    count0 = sample("api_admission_wait_seconds_count")
+    sum0 = sample("api_admission_wait_seconds_sum")
+    fast0 = bucket("api_admission_wait_seconds_bucket", "0.1") or 0.0
+    app, _ = make_app(max_inflight=1, queue_timeout_sec=5, sleep=0.2)
+    responses = await run_many(app, 3)
+    assert [r.status_code for r in responses] == [200] * 3
+    assert sample("api_admission_wait_seconds_count") == count0 + 3
+    # Một request vào ngay; hai request còn lại chờ khoảng 0,2 s và 0,4 s.
+    assert bucket("api_admission_wait_seconds_bucket", "0.1") == fast0 + 1
+    assert 0.5 <= sample("api_admission_wait_seconds_sum") - sum0 < 1.0
+
+
+def test_latency_targets_are_bucket_bounds():
+    """AD-018 (p95 ≤ 2,0 s) và VT-018 (p95 ≤ 1,5 s): tỷ lệ request dưới mốc đọc thẳng từ bucket.
+
+    Trước đây bucket là ..., 1.0, 2.5, ...: không trả lời được "bao nhiêu request ≤ 2,0 s".
+    """
+    from fastapi.testclient import TestClient
+
+    from app.core.metrics import LATENCY_BUCKETS
+    from app.main import create_app
+
+    assert {1.5, 2.0} <= set(LATENCY_BUCKETS)
+    with TestClient(create_app()) as c:
+        c.get("/api/v1/config")
+    for le in ("1.5", "2.0"):
+        assert bucket("http_request_duration_seconds_bucket", le, route="/api/v1/config")
+        assert bucket("api_admission_wait_seconds_bucket", le) is not None
