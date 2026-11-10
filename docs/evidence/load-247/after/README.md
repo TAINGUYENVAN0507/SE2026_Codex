@@ -1,5 +1,7 @@
 # 247 client sau khi giới hạn request đang xử lý (AD-018), 2026-11-09
 
+> Số đo mới hơn (2026-11-10, sau #45, gồm phần tách client/server và so sánh trước/sau #45): [`../after-2026-11-10/`](../after-2026-11-10/README.md). Số dưới đây giữ nguyên để đối chiếu.
+
 Commit đo: `a224812` (hash trong `env.json` là `a0906f0` vì `git rev-parse` chạy khi các thay đổi của commit này chưa được commit). Mỗi cấu hình đo ba lần, mỗi lần dựng lại DB trống. Lệnh:
 
 ```bash

@@ -1,0 +1,44 @@
+{
+  "clients": 247,
+  "threshold_p95_s": 2.0,
+  "create": {
+    "n": 246,
+    "p50_s": 0.8553,
+    "p95_s": 1.3406,
+    "max_s": 1.4375
+  },
+  "poll": {
+    "n": 1230,
+    "p50_s": 0.0098,
+    "p95_s": 0.069,
+    "max_s": 0.126
+  },
+  "all_requests": {
+    "n": 1476,
+    "p50_s": 0.0125,
+    "p95_s": 0.9553,
+    "max_s": 1.4375
+  },
+  "errors": 1,
+  "error_kinds": {
+    "create:RemoteProtocolError": 1
+  },
+  "client_share_within": {
+    "create": {
+      "le_1.5": 1.0,
+      "le_2.0": 1.0
+    },
+    "poll": {
+      "le_1.5": 1.0,
+      "le_2.0": 1.0
+    }
+  },
+  "server": {
+    "skipped": "nhiều process API: /metrics chỉ của một process"
+  },
+  "burst_wall_clock_s": 11.69,
+  "meeting_status_at_end": {
+    "queued": 100
+  },
+  "verdict": "FAIL"
+}

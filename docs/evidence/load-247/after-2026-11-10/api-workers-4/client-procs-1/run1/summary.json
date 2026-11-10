@@ -1,0 +1,42 @@
+{
+  "clients": 247,
+  "threshold_p95_s": 2.0,
+  "create": {
+    "n": 247,
+    "p50_s": 0.7967,
+    "p95_s": 1.3091,
+    "max_s": 1.4001
+  },
+  "poll": {
+    "n": 1235,
+    "p50_s": 0.0128,
+    "p95_s": 0.0937,
+    "max_s": 0.2205
+  },
+  "all_requests": {
+    "n": 1482,
+    "p50_s": 0.0175,
+    "p95_s": 0.9051,
+    "max_s": 1.4001
+  },
+  "errors": 0,
+  "error_kinds": {},
+  "client_share_within": {
+    "create": {
+      "le_1.5": 1.0,
+      "le_2.0": 1.0
+    },
+    "poll": {
+      "le_1.5": 1.0,
+      "le_2.0": 1.0
+    }
+  },
+  "server": {
+    "skipped": "nhiều process API: /metrics chỉ của một process"
+  },
+  "burst_wall_clock_s": 11.68,
+  "meeting_status_at_end": {
+    "queued": 100
+  },
+  "verdict": "PASS"
+}

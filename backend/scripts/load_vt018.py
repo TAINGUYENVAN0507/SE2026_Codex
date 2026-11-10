@@ -151,7 +151,7 @@ def wait_ready(base: str, timeout: float = 60) -> None:
     raise RuntimeError("API không sẵn sàng")
 
 
-def client_run(i, base, wav, ready, start, polls, interval, rows, errors):
+def client_run(i, base, wav, ready, start, polls, interval, rows, errors, idle, detail):
     with httpx.Client(base_url=base, timeout=120) as c:
         try:
             # Đăng nhập (argon2, tốn CPU) nằm ngoài phép đo. Giới hạn số lượt đồng thời để
@@ -165,6 +165,7 @@ def client_run(i, base, wav, ready, start, polls, interval, rows, errors):
             errors.append(("login", code))
             ready.abort()
             return
+        logged_in = time.perf_counter()
         try:
             ready.wait()
         except threading.BrokenBarrierError:
@@ -172,6 +173,8 @@ def client_run(i, base, wav, ready, start, polls, interval, rows, errors):
         start.wait()
         body = wav.read_bytes()
         t0 = time.perf_counter()
+        # Kết nối nằm rảnh từ lúc đăng nhập tới lúc upload (so với timeout keep-alive của uvicorn).
+        idle.append(t0 - logged_in)
         try:
             r = c.post(
                 "/api/v1/meetings",
@@ -186,6 +189,14 @@ def client_run(i, base, wav, ready, start, polls, interval, rows, errors):
         except httpx.HTTPError as e:
             # Trước đây lỗi ở đây làm thread chết im lặng: lượt đo biến mất khỏi kết quả (lệch 1/247).
             errors.append(("create", type(e).__name__))
+            detail.append(
+                {
+                    "kind": type(e).__name__,
+                    "message": str(e)[:200],
+                    "idle_before_s": round(t0 - logged_in, 3),
+                    "after_s": round(time.perf_counter() - t0, 3),
+                }
+            )
             return
         rows.append(("create", r.status_code, time.perf_counter() - t0))
         if r.status_code != 201:
@@ -206,12 +217,14 @@ def run_clients(ids, base, wav, polls, interval, on_ready, on_abort):
     rồi thả mọi thread cùng lúc. Trả về (rows, errors)."""
     rows: list = []
     errors: list = []
+    idle: list = []
+    detail: list = []
     ready = threading.Barrier(len(ids) + 1)
     start = threading.Event()
     threads = [
         threading.Thread(
             target=client_run,
-            args=(i, base, wav, ready, start, polls, interval, rows, errors),
+            args=(i, base, wav, ready, start, polls, interval, rows, errors, idle, detail),
         )
         for i in ids
     ]
@@ -223,7 +236,7 @@ def run_clients(ids, base, wav, polls, interval, on_ready, on_abort):
         on_abort()
     start.set()
     [t.join() for t in threads]
-    return rows, errors
+    return rows, errors, idle, detail
 
 
 def child_main(ids, base, wav, polls, interval, login_slots, all_ready, go, results):
@@ -235,8 +248,7 @@ def child_main(ids, base, wav, polls, interval, login_slots, all_ready, go, resu
         all_ready.wait()
         go.wait()
 
-    rows, errors = run_clients(ids, base, wav, polls, interval, on_ready, all_ready.abort)
-    results.put((rows, errors))
+    results.put(run_clients(ids, base, wav, polls, interval, on_ready, all_ready.abort))
 
 
 def main() -> int:
@@ -328,7 +340,7 @@ def main() -> int:
 
         ids = list(range(args.clients))
         if args.client_procs <= 1:
-            rows, errors = run_clients(
+            rows, errors, idle, detail = run_clients(
                 ids, base, wav, args.polls, args.interval, before_release, lambda: None
             )
         else:
@@ -361,11 +373,13 @@ def main() -> int:
             except threading.BrokenBarrierError:
                 pass
             go.set()
-            rows, errors = [], []
+            rows, errors, idle, detail = [], [], [], []
             for _ in procs:
-                r, e = results.get()
+                r, e, i, d = results.get()
                 rows += r
                 errors += e
+                idle += i
+                detail += d
             [p.join() for p in procs]
         wall = time.perf_counter() - snaps.get("t0", time.perf_counter())
         if "before" in snaps:
@@ -414,6 +428,11 @@ def main() -> int:
         "poll": stats(by["poll"]),
         "all_requests": stats(allv),
         "errors": len(errors),
+        "create_error_detail": detail,
+        "idle_before_upload": {
+            **stats(idle),
+            "over_uvicorn_keepalive_5s": sum(x > 5 for x in idle),
+        },
         "error_kinds": {f"{k}:{v}": errors.count((k, v)) for k, v in sorted(set(errors), key=str)},
         "client_share_within": {
             kind: {f"le_{x}": frac_le(by[kind], x) for x in THRESHOLDS}
@@ -520,6 +539,7 @@ def main() -> int:
 
 Mục tiêu p95 ≤ {args.threshold} s: **{summary["verdict"]}**. Lỗi: {summary["errors"]} {summary["error_kinds"] or ""}. Từ lúc thả client tới khi xong: {summary["burst_wall_clock_s"]} s. Process sinh tải: {args.client_procs}.
 Trạng thái meeting khi kết thúc: {statuses}.
+Kết nối nằm rảnh từ lúc đăng nhập tới lúc upload: p50 {summary["idle_before_upload"]["p50_s"]} s, max {summary["idle_before_upload"]["max_s"]} s; {summary["idle_before_upload"]["over_uvicorn_keepalive_5s"]}/{summary["idle_before_upload"]["n"]} quá 5 s (timeout keep-alive mặc định của uvicorn). Lỗi upload chi tiết: `summary.json`, khóa `create_error_detail`.
 
 ## Phía server (`/metrics`, hiệu giữa lúc thả barrier và lúc mọi client xong)
 

@@ -1,0 +1,100 @@
+{
+  "clients": 247,
+  "threshold_p95_s": 2.0,
+  "create": {
+    "n": 246,
+    "p50_s": 2.1559,
+    "p95_s": 3.5441,
+    "max_s": 3.896
+  },
+  "poll": {
+    "n": 1230,
+    "p50_s": 0.122,
+    "p95_s": 0.6692,
+    "max_s": 1.1736
+  },
+  "all_requests": {
+    "n": 1476,
+    "p50_s": 0.2008,
+    "p95_s": 2.8043,
+    "max_s": 3.896
+  },
+  "errors": 1,
+  "create_error_detail": [
+    {
+      "kind": "RemoteProtocolError",
+      "message": "Server disconnected without sending a response.",
+      "idle_before_s": 4.997,
+      "after_s": 0.046
+    }
+  ],
+  "idle_before_upload": {
+    "n": 247,
+    "p50_s": 8.9868,
+    "p95_s": 17.1145,
+    "max_s": 18.6719,
+    "over_uvicorn_keepalive_5s": 178
+  },
+  "error_kinds": {
+    "create:RemoteProtocolError": 1
+  },
+  "client_share_within": {
+    "create": {
+      "le_1.5": 0.3171,
+      "le_2.0": 0.4472
+    },
+    "poll": {
+      "le_1.5": 1.0,
+      "le_2.0": 1.0
+    }
+  },
+  "server": {
+    "create": {
+      "n": 246,
+      "mean_s": 1.9338,
+      "p50_in_s": [
+        2.0,
+        2.5
+      ],
+      "p95_in_s": [
+        2.5,
+        3.0
+      ],
+      "le_1.5": 0.3293,
+      "le_2.0": 0.4959
+    },
+    "poll": {
+      "n": 1230,
+      "mean_s": 0.1678,
+      "p50_in_s": [
+        0.1,
+        0.25
+      ],
+      "p95_in_s": [
+        0.5,
+        0.75
+      ],
+      "le_1.5": 1.0,
+      "le_2.0": 1.0
+    },
+    "admission_wait": {
+      "n": 1476,
+      "mean_s": 0.2833,
+      "p50_in_s": [
+        0.0,
+        0.001
+      ],
+      "p95_in_s": [
+        2.0,
+        2.5
+      ],
+      "le_1.5": 0.916,
+      "le_2.0": 0.9458
+    }
+  },
+  "burst_wall_clock_s": 14.49,
+  "meeting_status_at_end": {
+    "queued": 100
+  },
+  "verdict": "FAIL"
+}
