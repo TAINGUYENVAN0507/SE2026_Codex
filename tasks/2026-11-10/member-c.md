@@ -8,7 +8,7 @@
   2. Số đo 247 client hiện gộp chung thời gian chờ ở client, chờ ở hàng đợi admission và thời gian xử lý. Cần tách ba phần đó trước khi kết luận điều gì về p95 ≤ 2,0 s.
   3. Đo lại 247 trên `main` sau thay đổi của B (6 query/upload, `API_WORKERS`) và ghi kết quả thật.
 
-PR này thuộc VT-018: **không merge khi chưa có review của B.**
+Lúc giao việc ghi: PR thuộc VT-018 nên chờ B review rồi mới merge. Ngày 2026-11-10, nhóm trưởng bỏ yêu cầu này: C tự review diff, merge khi CI xanh.
 
 | # | Việc | Message | Hash |
 |---|---|---|---|

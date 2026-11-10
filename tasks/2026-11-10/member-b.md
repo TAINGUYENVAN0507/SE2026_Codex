@@ -8,8 +8,8 @@
 
 Kiểm tra trong `backend/`: `uv run ruff check . && uv run ruff format --check . && uv run pytest`. Sau commit 1 của C hôm nay, 5 test upload không còn đỏ khi máy có ffprobe.
 
-## Việc đầu tiên (không tính commit): review PR của C
-C mở PR `tainguyen` hôm nay (sửa test phụ thuộc ffprobe, metric thời gian chờ, harness tải, đo lại 247). PR này thuộc VT-018 nên **không được merge khi chưa có review của bạn**. Ghi nhận xét thật vào PR trong 18 giờ. Kiểm riêng: số trong `docs/evidence/load-247/` có khớp `raw.csv`, harness nhiều process có đo đúng không.
+## Review (không bắt buộc, không tính commit)
+Từ 2026-11-10, nhóm trưởng quyết định PR không cần chờ review của thành viên khác. Nhóm trưởng tự review diff, chờ CI xanh rồi merge. Nhận xét của bạn vẫn có ích nhưng không chặn merge. PR của C hôm nay là #46.
 
 ## Bước 0
 ```bash

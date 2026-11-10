@@ -8,9 +8,8 @@
 
 Kiểm tra trong `frontend/`: `npm run lint && npm test && npm run build`. E2E: `npm run e2e` như các đợt trước.
 
-## Việc đầu tiên (không tính commit): review
-- PR của C (`tainguyen`, mở hôm nay): đọc phần sửa test ffprobe và harness tải. Ghi nhận xét thật vào PR trong 18 giờ.
-- PR của B khi B mở. Không dùng review cũ thay cho đợt mới.
+## Review (không bắt buộc, không tính commit)
+Từ 2026-11-10, nhóm trưởng quyết định PR không cần chờ review của thành viên khác. Nhóm trưởng tự review diff, chờ CI xanh rồi merge. Nhận xét của bạn vẫn có ích nhưng không chặn merge.
 
 ## Bước 0
 ```bash

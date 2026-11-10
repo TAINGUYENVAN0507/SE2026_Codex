@@ -34,6 +34,8 @@ Không ghi hệ thống chịu được 239 hay 247 người dùng khi chưa đo
 
 **Phản hồi:** trong các đợt này, PR được review trong 18 giờ kể từ lúc mở (đáp ứng cả 18 và 20 giờ).
 
+**Review từ 2026-11-10:** nhóm trưởng quyết định PR không cần chờ review của thành viên khác. Nhóm trưởng tự review diff, chờ CI xanh rồi merge, theo `rules/git-workflow.md`. Đề BT3 ghi "Không merge nếu nhóm chưa review", BT1 ghi "mỗi Pull Request phải có review và test evidence". Vì vậy, từ #46, `docs/evidence/pr-response-times.md` sẽ ghi PR là merge khi chưa có phản hồi của người khác.
+
 ## Field log
 
 Dùng chung cho API, worker và pipeline, để lọc được theo một `job_id`:
@@ -181,9 +183,9 @@ Bắt đầu sau khi #44 (A) và #45 (B) vào `main` ngày 2026-11-10; C review 
 | Ngày | Mục tiêu | Ai |
 |---|---|---|
 | 11-10 | Đợt 4 đã xong: #43, #44, #45 vào `main`. Giao Đợt 5. C đo lại 247 trên `main` (dời lên từ 11-11 vì thay đổi của B đã merge) | A, B, C |
-| 11-11 | Xong Đợt 5, mở PR; review chéo trong 18 giờ | A, B, C |
+| 11-11 | Xong Đợt 5, mở PR; nhóm trưởng merge khi CI xanh | A, B, C |
 | 11-12 | **Đóng băng code**: chỉ sửa lỗi. Chạy lại toàn bộ test, `make smoke`, E2E; README chạy được từ clone sạch | A, B, C |
-| 11-13 | **Đóng băng bằng chứng**: `docs/evidence/README.md` khớp số liệu cuối; mọi PR đã review và merge; ghi hash cuối | C |
+| 11-13 | **Đóng băng bằng chứng**: `docs/evidence/README.md` khớp số liệu cuối; mọi PR đã merge; ghi hash cuối | C |
 | 11-14 | Hạn nộp. Không đổi code. Dành cho PDF cá nhân (ngoài repo) | người dùng |
 
 Phần cá nhân của BT1/BT2/BT3 (phân tích, Bước 0 trước khi code, reflection, PDF) do người dùng viết; repo chỉ cung cấp bằng chứng.
@@ -193,7 +195,7 @@ Phần cá nhân của BT1/BT2/BT3 (phân tích, Bước 0 trước khi code, re
 - Đã xong: #33–#39 vào `main`. Nhánh `tainguyen-vt018-tests` (Đợt 2 của C) vào `main` qua PR hôm 2026-11-08.
 - Đo tải 247 (2026-11-10): cấu hình mặc định 1 process **không đạt** p95 ≤ 2,0 s; 4 process đạt ở 10/12 lượt, sát mốc. Muốn chắc hơn thì phải giảm thời gian xử lý mỗi upload (B có profile, chưa có file trong repo) hoặc đo trên máy không chạy chung trình soạn thảo. Xem mục Tải.
 - PR #40 vào `main` ngày 2026-11-08 không có review ghi lại trong PR; #41 và #42 có review (A review #41, C review #42).
-- PR #43 (VT-018) vào `main` ngày 2026-11-09 **trước** khi có review; B review sau khi merge, ở `docs/backend/reviews/PR-43-2026-11-09.md` (vào `main` qua #45). Không lặp lại: PR VT-018 của C đợt 5 chờ B review rồi mới merge.
+- PR #43 (VT-018) vào `main` ngày 2026-11-09 **trước** khi có review; B review sau khi merge, ở `docs/backend/reviews/PR-43-2026-11-09.md` (vào `main` qua #45). Ngày 2026-11-10 nhóm trưởng bỏ yêu cầu review của thành viên khác (xem mục Tham số).
 - #44 và #45: C review (approve có ghi chú) rồi merge ngày 2026-11-10. Các điểm làm tiếp của review #45 nằm trong `tasks/2026-11-10/member-b.md`.
 - BT3 Bước 0 (plan AI, test AI thô) chưa làm.
 
