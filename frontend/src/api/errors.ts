@@ -1,3 +1,4 @@
+import { retryAfterMs } from './retryAfter'
 import { notifyNetworkFailure } from './networkEvents'
 
 export type ApiErrorCode =
@@ -44,8 +45,7 @@ const messages: Record<string, string> = {
   RANGE_NOT_SATISFIABLE: 'Mốc audio nằm ngoài bản ghi. Hãy chọn một mốc khác.',
   REQUEST_IN_PROGRESS:
     'Yêu cầu trước đang được xử lý. Hãy chờ kết quả trước khi gửi lại.',
-  SERVICE_UNAVAILABLE:
-    'Hệ thống đang bận hoặc tạm thời không sẵn sàng. Hãy thử lại sau.',
+  SERVICE_UNAVAILABLE: 'Máy chủ đang bận. Vui lòng thử lại sau.',
   SPEAKER_NOT_IN_MEETING:
     'Người nói không thuộc cuộc họp này. Hãy chọn lại người nói.',
   STAGE_CRASHED: 'Một bước xử lý bị dừng đột ngột. Hãy thử xử lý lại.',
@@ -92,6 +92,7 @@ export class ApiError extends Error {
   readonly details: ApiErrorDetails
   readonly request_id: string | null
   readonly status: number
+  readonly retryAfterMs: number | null
 
   constructor(
     code: ApiErrorCode,
@@ -99,6 +100,7 @@ export class ApiError extends Error {
     details: ApiErrorDetails = null,
     requestId: string | null = null,
     status = 0,
+    retryAfter: number | null = null,
   ) {
     super(message)
     this.name = 'ApiError'
@@ -106,6 +108,7 @@ export class ApiError extends Error {
     this.details = details
     this.request_id = requestId
     this.status = status
+    this.retryAfterMs = retryAfter
   }
 }
 
@@ -123,6 +126,7 @@ export async function parseApiError(response: Response): Promise<ApiError> {
         null,
         null,
         response.status,
+        retryAfterMs(response.headers.get('Retry-After')),
       )
 
     const { code, message, details, request_id: requestId } = body.error
@@ -133,6 +137,7 @@ export async function parseApiError(response: Response): Promise<ApiError> {
         null,
         null,
         response.status,
+        retryAfterMs(response.headers.get('Retry-After')),
       )
 
     return new ApiError(
@@ -141,6 +146,7 @@ export async function parseApiError(response: Response): Promise<ApiError> {
       isRecord(details) ? details : null,
       typeof requestId === 'string' ? requestId : null,
       response.status,
+      retryAfterMs(response.headers.get('Retry-After')),
     )
   } catch {
     return new ApiError(
@@ -149,6 +155,7 @@ export async function parseApiError(response: Response): Promise<ApiError> {
       null,
       null,
       response.status,
+      retryAfterMs(response.headers.get('Retry-After')),
     )
   }
 }
@@ -156,4 +163,8 @@ export async function parseApiError(response: Response): Promise<ApiError> {
 export function toNetworkError(): ApiError {
   notifyNetworkFailure()
   return new ApiError('NETWORK_ERROR', messages.NETWORK_ERROR)
+}
+
+export function isServiceBusy(error: unknown): error is ApiError {
+  return error instanceof ApiError && error.status === 503
 }

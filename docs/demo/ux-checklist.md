@@ -1,8 +1,56 @@
-# Checklist UX và demo — 09/11/2026
+# Checklist UX và demo — 10/11/2026
 
 Ảnh chụp Chromium từ ứng dụng đang chạy: API, worker và PostgreSQL thật;
 pipeline fake, WAV tổng hợp 30 giây. Không dùng cuộc họp hay ghi âm của người
 thật. Đây là kiểm thử luồng sản phẩm, không phải đánh giá độ chính xác/tốc độ AI.
+
+## Đợt 5 — bận và thời gian job, 10/11/2026
+
+Tám ảnh mới ở dưới chụp qua container web/nginx cổng 8080, với API, worker
+và PostgreSQL thật, pipeline fake và WAV tổng hợp. Ba trạng thái bận dùng
+Playwright chặn response để trả 503 có kiểm soát, không phải phép thử tải thật.
+Ảnh job hoàn thành lấy timestamp từ job thật của stack kiểm thử.
+Desktop 1280×900, mobile giả lập 360×900; không tràn ngang trong tám ảnh.
+Manifest ghi viewport, SHA256 và trạng thái có giả lập mạng:
+[2026-11-10-manifest.json](screenshots/2026-11-10-manifest.json).
+Bản sao cùng SHA256 ở `.preview-stitch/anh-duyet/2026-11-10/` ngoài Git.
+
+| Trạng thái | Desktop | Mobile |
+| --- | --- | --- |
+| Upload chờ máy chủ bận | [1280px](screenshots/2026-11-10-busy-upload-desktop.png) | [360px](screenshots/2026-11-10-busy-upload-mobile.png) |
+| Poll lùi lại, giữ tiến độ | [1280px](screenshots/2026-11-10-busy-progress-desktop.png) | [360px](screenshots/2026-11-10-busy-progress-mobile.png) |
+| Thời gian hàng đợi, bắt đầu, hoàn thành | [1280px](screenshots/2026-11-10-job-times-desktop.png) | [360px](screenshots/2026-11-10-job-times-mobile.png) |
+| Sửa gặp bận, giữ bản nháp | [1280px](screenshots/2026-11-10-busy-edit-desktop.png) | [360px](screenshots/2026-11-10-busy-edit-mobile.png) |
+
+Hành vi được kiểm riêng, ảnh không thay test: `BusyUpload.test.tsx` kiểm
+2 lần 503 rồi 201 cùng key/đúng một meeting và hết lượt/hủy; `BusyPolling.test.tsx`
+kiểm số request 30 giây, không chồng request, phục hồi và dừng với 404;
+`BusyEdits.test.tsx` kiểm bản nháp và retry thủ công; `JobTimes.test.tsx`
+kiểm queued/running/completed/thiếu thời gian. Flow `keyboard.spec.ts` đi bằng
+Tab/Enter/Space, kiểm focus nhìn thấy và export đúng ID; hộp file OS được thay
+bằng `filechooser.setFiles`, chưa phải kiểm screen reader hay điện thoại vật lý.
+
+Kết quả local ngày 10/11: **284 Vitest / 46 file** và **27 E2E trên clone
+sạch** đạt; lint/format/typecheck/build đạt. Một flow qua container web đã
+đạt riêng, negative control proxy đỏ rồi khôi phục xanh ở local. CI workflow
+nginx mới đã có [run đỏ](https://github.com/TAINGUYENVAN0507/SE2026_Codex/actions/runs/42786190434) và [run xanh](https://github.com/TAINGUYENVAN0507/SE2026_Codex/actions/runs/42786612344); task 5 đã tick. Báo cáo
+[clone sạch](../frontend/clean-clone-2026-11-10.md) ghi rõ cảnh báo `os.killpg`
+của worker native Windows; không coi test UI/API là xác nhận cleanup mọi nền tảng.
+
+### Kịch bản demo 5 phút cập nhật
+
+| Thời gian | Thao tác |
+| --- | --- |
+| 00:00–00:40 | Giới thiệu dữ liệu tổng hợp/pipeline fake. Dùng bàn phím đăng nhập và mở tạo cuộc họp. |
+| 00:40–01:40 | Chọn WAV, consent, upload. Chỉ ảnh upload bận: chờ Retry-After, tối đa 3 lần thử lại cùng key; hết lượt có nút thử lại, có thể hủy. Không làm API thật quá tải để demo. |
+| 01:40–02:30 | Mở tiến độ riêng: thời gian chờ, giờ bắt đầu/hoàn thành. Chỉ ảnh poll bận vẫn giữ phần trăm; lịch kiểm tra lùi tối đa 10 giây rồi về 2 giây khi API phục hồi. |
+| 02:30–03:30 | Mở meeting ready, nghe evidence. Sửa transcript; dùng ảnh bận để chỉ bản nháp và nút thử lưu lại. Các thao tác ghi khác chỉ retry khi người dùng bấm. |
+| 03:30–04:30 | Mở tóm tắt/công việc và lịch sử. Export JSON bằng bàn phím; chỉ đúng meeting ID và focus trở về menu sau khi tải. |
+| 04:30–05:00 | Giới thiệu mobile và các giới hạn: fake pipeline không chứng minh chất lượng AI, ảnh mạng giả lập không chứng minh chịu tải. |
+
+Khi chưa cài cơ chế tiêm lỗi trên máy demo, mở ảnh đã ghi rõ giả lập thay vì
+đổi proxy hoặc cấu hình production. Kịch bản này thay bảng demo cũ cho đợt 5;
+ảnh và kết quả ngày 08–09/11 phía dưới được giữ làm lịch sử.
 
 ## Checklist đã kiểm tra local
 
@@ -108,8 +156,7 @@ liệu E2E, kiểm đường dẫn rồi gọi CLI cleanup chính thức.
 
 - Xóa tài khoản đã vào main qua PR #42; E2E ngày 09/11 tiếp tục đạt. Bằng
   chứng UI/API không thay cho kiểm tra cleanup ở mọi nơi của backend/pipeline.
-- Review PR mới của B ngày 09/11: chưa có PR mới tại lúc kiểm tra. PR #41
-  thuộc ngày 08/11 đã review và merge, không tính thay cho review đợt mới.
+- PR #45 của B đã được nhận xét trên snapshot `d9eba806` ngày 09/11 và đã merge ngày 10/11; xem [bản review](../frontend/reviews/PR-45-2026-11-09.md). Từ ngày 10/11 review thành viên là tùy chọn, không chặn mở PR. Các kết quả ngày 09/11 phía trên là lịch sử.
 - Native Windows từng có log `os.killpg` khi hủy job đang chạy. Pipeline thuộc C;
   cần xử lý riêng nếu hỗ trợ worker native Windows. Không giấu lỗi để báo sạch.
 - Race worker Linux từng được ghi nhận ngày 06/11 cần B/C xác nhận lại trên main

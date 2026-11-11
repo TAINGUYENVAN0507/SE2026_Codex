@@ -58,6 +58,13 @@ async function unwrap<T>(
     return data
   } catch (error) {
     if (error instanceof ApiError) throw error
+    if (
+      typeof error === 'object' &&
+      error !== null &&
+      'name' in error &&
+      error.name === 'AbortError'
+    )
+      throw error
     throw toNetworkError()
   }
 }
@@ -122,9 +129,9 @@ export async function logout(): Promise<void> {
   }
 }
 
-export function getJob(id: Job['id']): Promise<Job> {
+export function getJob(id: Job['id'], signal?: AbortSignal): Promise<Job> {
   return unwrap(
-    client.GET('/jobs/{job_id}', { params: { path: { job_id: id } } }),
+    client.GET('/jobs/{job_id}', { params: { path: { job_id: id } }, signal }),
   )
 }
 

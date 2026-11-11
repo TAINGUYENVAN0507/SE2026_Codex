@@ -1,0 +1,61 @@
+{
+  "date": "2026-11-10",
+  "node": "v24.13.0",
+  "vitest": "5.0.5",
+  "provider": "v8",
+  "base_commit": "46d96937becf8c3246e6aa916e8b9a51bac0b018",
+  "working_tree_modified": true,
+  "included": "src/**/*.{ts,tsx}",
+  "excluded": [
+    "src/**/*.test.{ts,tsx}",
+    "src/test/**",
+    "src/mocks/**",
+    "src/api/schema.d.ts"
+  ],
+  "source_files": 58,
+  "totals": {
+    "lines": {
+      "total": 1389,
+      "covered": 1202,
+      "skipped": 0,
+      "pct": 86.53
+    },
+    "statements": {
+      "total": 1549,
+      "covered": 1302,
+      "skipped": 0,
+      "pct": 84.05
+    },
+    "functions": {
+      "total": 496,
+      "covered": 398,
+      "skipped": 0,
+      "pct": 80.24
+    },
+    "branches": {
+      "total": 1387,
+      "covered": 1125,
+      "skipped": 0,
+      "pct": 81.11
+    },
+    "branchesTrue": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 100
+    }
+  },
+  "thresholds": {
+    "lines": 84.53,
+    "branches": 79.11
+  },
+  "rule": "baseline minus 2 percentage points, rounded down to 2 decimals; aggregate thresholds",
+  "baseline_before_final_qa": {
+    "lines": 86.5,
+    "branches": 80.75,
+    "thresholds": {
+      "lines": 84.5,
+      "branches": 78.75
+    }
+  }
+}

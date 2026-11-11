@@ -37,10 +37,13 @@ export function NewMeetingPage() {
   const [date, setDate] = useState(() => new Date().toLocaleDateString('en-CA'))
   const [consent, setConsent] = useState(false)
   const [error, setError] = useState('')
+  const [retryUpload, setRetryUpload] = useState(false)
   const [dragging, setDragging] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
   const [uploadStatus, setUploadStatus] = useState('')
+  const waitingForServer =
+    uploading && uploadStatus.startsWith('Máy chủ đang bận.')
   const activeUpload = useRef<ReturnType<typeof uploadMeeting> | null>(null)
   const picker = useRef<HTMLInputElement>(null)
   const alive = useRef(true)
@@ -74,6 +77,7 @@ export function NewMeetingPage() {
       setError(invalid)
       return
     }
+    setRetryUpload(false)
     setFile(selected)
     setDuration(0)
     setError('')
@@ -97,6 +101,7 @@ export function NewMeetingPage() {
       return
     }
     setError('')
+    setRetryUpload(false)
     setProgress(0)
     setUploadStatus('Đang tải bản ghi lên máy chủ…')
     setUploading(true)
@@ -109,7 +114,14 @@ export function NewMeetingPage() {
         source: mode === 'record' ? 'recording' : 'upload',
       },
       idempotencyKey,
-      setProgress,
+      (percent) => {
+        setProgress(percent)
+        if (percent === 0) setUploadStatus('Đang tải bản ghi lên máy chủ…')
+      },
+      (retry, wait) =>
+        setUploadStatus(
+          `Máy chủ đang bận. Thử lại sau ${Math.ceil(wait / 1000)} giây (lượt ${retry}/3).`,
+        ),
     )
     activeUpload.current = upload
     try {
@@ -139,6 +151,12 @@ export function NewMeetingPage() {
       if (mode === 'record') record.finishUpload()
       navigate(`/meetings/${result.meeting.id}`)
     } catch (cause) {
+      if (!alive.current) return
+      setRetryUpload(
+        cause instanceof ApiError &&
+          cause.status === 503 &&
+          cause.code === 'SERVICE_UNAVAILABLE',
+      )
       setUploadStatus(
         cause instanceof ApiError && cause.code === 'UPLOAD_CANCELLED'
           ? 'Đã hủy tải lên. Bản ghi vẫn ở trên máy, bạn có thể thử lại.'
@@ -411,7 +429,9 @@ export function NewMeetingPage() {
             <p
               role="status"
               aria-label="Trạng thái tải lên"
-              className="local-audio-note"
+              className={
+                waitingForServer ? 'upload-busy-notice' : 'local-audio-note'
+              }
             >
               {uploadStatus}
             </p>
@@ -422,9 +442,13 @@ export function NewMeetingPage() {
                 aria-valuemin={0}
                 aria-valuemax={100}
                 aria-valuenow={progress}
-                aria-valuetext={`${progress}%`}
+                aria-valuetext={
+                  waitingForServer ? 'Đang chờ máy chủ' : `${progress}%`
+                }
               >
-                Đang tải lên: {progress}%
+                {waitingForServer
+                  ? 'Đang chờ máy chủ…'
+                  : `Đang tải lên: ${progress}%`}
               </div>
             )}
           </div>
@@ -445,7 +469,7 @@ export function NewMeetingPage() {
                 uploading
               }
             >
-              Tạo biên bản
+              {retryUpload ? 'Thử tải lại' : 'Tạo biên bản'}
               <ArrowRightIcon />
             </button>
             {uploading && (

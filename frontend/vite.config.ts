@@ -26,6 +26,18 @@ export default defineConfig(({ mode }) => ({
     include: ['src/**/*.test.{ts,tsx}'],
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
+    coverage: {
+      provider: 'v8',
+      reporter: ['text-summary', 'json-summary', 'html'],
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: [
+        'src/**/*.test.{ts,tsx}',
+        'src/test/**',
+        'src/mocks/**',
+        'src/api/schema.d.ts',
+      ],
+      thresholds: { lines: 84.53, branches: 79.11 },
+    },
     maxWorkers: 4,
   },
 }))

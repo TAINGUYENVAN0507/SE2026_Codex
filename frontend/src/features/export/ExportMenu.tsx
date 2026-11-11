@@ -22,6 +22,14 @@ export function ExportMenu({
   const [error, setError] = useState('')
   const root = useRef<HTMLDivElement>(null)
   const trigger = useRef<HTMLButtonElement>(null)
+  const restoreFocus = useRef(false)
+  useEffect(() => {
+    // Chờ React bật lại trigger sau download, rồi mới trả focus cho bàn phím.
+    if (!busy && restoreFocus.current) {
+      restoreFocus.current = false
+      trigger.current?.focus()
+    }
+  }, [busy, open])
   useEffect(() => {
     const outside = (event: PointerEvent) => {
       if (!root.current?.contains(event.target as Node)) setOpen(false)
@@ -29,7 +37,7 @@ export function ExportMenu({
     const escape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setOpen(false)
-        trigger.current?.focus()
+        restoreFocus.current = true
       }
     }
     document.addEventListener('pointerdown', outside)
@@ -48,8 +56,9 @@ export function ExportMenu({
       const result = await getMeetingExport(meetingId, format, variant)
       saveExport(result.blob, exportFilename(result.disposition, format))
       setOpen(false)
-      trigger.current?.focus()
+      restoreFocus.current = true
     } catch (cause) {
+      restoreFocus.current = true
       setError(
         cause instanceof ApiError &&
           (cause.status === 409 || cause.code === 'TRANSCRIPT_NOT_READY')

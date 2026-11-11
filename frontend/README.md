@@ -60,14 +60,16 @@ tóm tắt và công việc; cuộc họp `sprint-42` vẫn là bản demo cục
 
 ## Chạy local
 
-Yêu cầu Node.js 24 và npm.
+Yêu cầu Node.js 24 và npm. Đã kiểm tra trên clone sạch với Node v24.13.0, npm 11.6.2.
+Chạy các lệnh sau trong thư mục `frontend/`.
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
-Trên PowerShell chặn script `npm.ps1`, dùng `npm.cmd run dev`.
+Nếu PowerShell chặn `npm.ps1`/`npx.ps1`, dùng `npm.cmd`/`npx.cmd` thay
+`npm`/`npx` trong các lệnh dưới đây.
 Để dùng backend thật, chạy PostgreSQL và API theo `backend/README.md`, rồi chạy:
 
 ```powershell
@@ -103,10 +105,11 @@ npm run lint
 npm run format:check
 npm run typecheck
 npm test
+npm run test:coverage
 npm run build
 ```
 
-CI chạy đủ năm lệnh trên cho pull request thay đổi `frontend/`, push lên
+CI chạy lint, format, typecheck, test có coverage và build ở trên cho pull request thay đổi `frontend/`, push lên
 `main`/`vantuong` có thay đổi frontend/workflow, hoặc khi chạy thủ công.
 Node.js được thống nhất ở bản 24 qua `.nvmrc` và workflow.
 
@@ -135,3 +138,59 @@ hiện có. PowerShell đặt `$env:FAKE_SCENARIO='slow'` trước khi chạy l�
 Không tắt color-contrast trong browser. JSON/ảnh được ghi ở `test-results/`
 (ngoài Git); bản tổng hợp đã soát ở `docs/demo/accessibility-2026-11-09.json`.
 Kết quả tự động không thay kiểm screen reader hoặc chứng nhận toàn bộ WCAG.
+
+## Coverage — 10/11/2026
+
+Đo bằng Vitest 5.0.5 và `@vitest/coverage-v8` 5.0.5 (MIT), Node v24.13.0.
+Lệnh: `npm run test:coverage`. CI frontend chạy lệnh này để chặn giảm coverage.
+
+| Chỉ số   | Đo được | Ngưỡng tổng |
+| -------- | ------- | ----------- |
+| Lines    | 86.53%  | 84.53%      |
+| Branches | 81.11%  | 79.11%      |
+
+Ngưỡng lấy mức đã đo trừ 2 **điểm phần trăm**, không tự nâng/hạ và không
+viết thêm test chỉ để tăng số. Include toàn bộ source TS/TSX, kể cả file
+chưa được import trong test; loại file test, test helpers, mock và type API
+sinh tự động. Không loại component khó test để nâng coverage.
+Bản tổng hợp: [coverage-2026-11-10.json](../docs/frontend/coverage-2026-11-10.json).
+HTML/JSON đầy đủ ở `coverage/` ngoài Git và ngoài Docker build context.
+Cấu hình theo [tài liệu coverage của Vitest](https://vitest.dev/config/coverage).
+
+## E2E từ clone sạch — 10/11/2026
+
+Dev mặc định dùng MSW nên chỉ cần Node/npm; E2E sau đây cần thêm Python 3.12,
+uv, Docker với PostgreSQL 16 và ffprobe. Nếu chưa có trong PATH, đặt `UV` và
+`FFPROBE_BIN` tới executable tương ứng. Chromium được cài riêng bằng lệnh bên dưới.
+
+Từ `frontend/`, PowerShell:
+
+```powershell
+npm ci
+npx playwright install chromium
+# Tên container/cổng sau phải chưa được dùng; chỉ tạo database E2E tổng hợp.
+docker run --rm -d --name meeting-frontend-e2e-db -e POSTGRES_DB=meeting_e2e -e POSTGRES_PASSWORD=postgrespassword -p 127.0.0.1:55450:5432 postgres:16
+docker exec meeting-frontend-e2e-db pg_isready -U postgres -d meeting_e2e
+# Chờ pg_isready báo accepting connections rồi chạy tiếp.
+$env:E2E_DATABASE_URL='postgresql+psycopg://postgres:postgrespassword@127.0.0.1:55450/meeting_e2e'
+$env:SEED_DEMO_PASSWORD=[guid]::NewGuid().ToString()
+$env:DEBUG='false'
+$env:FAKE_SCENARIO='slow'
+npm run e2e
+# Chạy từng kịch bản, không chạy đồng thời vì dùng chung cổng 14173/18000.
+$env:FAKE_SCENARIO='permanent'
+npm run e2e
+$env:FAKE_SCENARIO='transient_once'
+npm run e2e
+$env:FAKE_SCENARIO='summary_fail'
+npm run e2e
+# Dừng đúng container do các lệnh trên tạo, không dùng database thật.
+docker stop meeting-frontend-e2e-db
+Remove-Item Env:SEED_DEMO_PASSWORD
+```
+
+Stack tự sync backend, migrate, seed tài khoản tổng hợp, build frontend, bật
+API/worker/preview rồi dừng các tiến trình của nó. Lệnh `docker stop` cuối cùng
+xóa container/database E2E do dùng `--rm`. Cần giữ cổng 14173/18000 trống.
+Chi tiết phạm vi và kết quả: [clean-clone-2026-11-10.md](../docs/frontend/clean-clone-2026-11-10.md).
+E2E qua nginx dùng stack riêng và `npm run e2e:compose`; xem [FE-19](../docs/frontend/FE-19.md).

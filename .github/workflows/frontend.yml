@@ -43,7 +43,7 @@ jobs:
         run: npm run lint && npm run format:check
       - name: Typecheck
         run: npm run typecheck
-      - name: Test
-        run: npm test
+      - name: Test with coverage thresholds
+        run: npm run test:coverage
       - name: Build
         run: npm run build

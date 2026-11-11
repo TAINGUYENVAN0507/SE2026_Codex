@@ -1,0 +1,26 @@
+# Stack test riêng: không mở cổng DB/API, không dùng container/volume phát triển.
+services:
+  db:
+    container_name: !reset null
+    ports: !reset []
+    environment:
+      POSTGRES_DB: meeting_e2e_compose
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U postgres -d meeting_e2e_compose']
+  api:
+    container_name: !reset null
+    ports: !reset []
+    environment:
+      DATABASE_URL: postgresql+psycopg://postgres:postgrespassword@db:5432/meeting_e2e_compose
+      API_WORKERS: '1'
+      API_MAX_INFLIGHT: '40'
+  worker:
+    container_name: !reset null
+    environment:
+      DATABASE_URL: postgresql+psycopg://postgres:postgrespassword@db:5432/meeting_e2e_compose
+      PIPELINE_BACKEND: fake
+      FAKE_SCENARIO: slow
+      FAKE_STAGE_SLEEP_SEC: '0.3'
+  web:
+    container_name: !reset null
+    ports: !override ['8080:8080']
