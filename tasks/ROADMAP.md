@@ -72,7 +72,7 @@ Hiện trạng đọc từ `main` tại `fc7d80f` (sau #44, #45) ngày 2026-11-1
 | File export kiểm chứng được | ✓ TXT, MD, JSON in evidence (`backend/app/services/export/serializers.py`); E2E `frontend/e2e/flows/export-evidence.spec.ts` | FE-18, BE-05 | A, B | 1 |
 | Log truy được theo job | ✓ `setup_logging()` ở API và worker; `backend/tests/api/test_observability.py` | BE-19, AI-18 | B, C | 1 |
 | Metric có số đo | ✓ `/metrics`; quá tải và thời gian chờ admission; bucket có mốc 1,5 và 2,0 s (#46) | BE-19 | B, C | 1, 4, 5 |
-| Thời lượng từng stage trong metric | ✓ `pipeline_stage_duration_seconds` | BE-19 | B | 2 |
+| Thời lượng từng stage trong metric | ◐ Worker ghi `pipeline_stage_duration_seconds` trong process riêng; `/metrics` của API chưa đọc được (C phát hiện khi review #48, 2026-11-11) | BE-19 | B | 2, 6 |
 | Metric đúng khi chạy nhiều process API | ✓ `PROMETHEUS_MULTIPROC_DIR`, `MultiProcessCollector`, `livesum` gộp đủ mọi process API | BE-19 | B | 5 |
 | Runbook truy nguyên nhân, có thời gian đo thật | ✓ Diễn tập 2 sự cố trên Compose đo thời gian thật tại `docs/backend/runbook-drill-2026-11-10.md`, bổ sung runbook `docs/backend/BE-19.md` | BE-19 | B | 5 |
 | Lưu 14 ngày chạy thật | ✓ Worker gọi `run_retention_cleanup`; `backend/tests/api/test_retention.py`; test giữ tài liệu khớp cấu hình | BE-14 | B, C | 1, 4 |
@@ -178,12 +178,22 @@ Bắt đầu sau khi #44 (A) và #45 (B) vào `main` ngày 2026-11-10; C review 
 | B | `/metrics` gộp nhiều process; ngân sách kết nối có phần dự trữ; upload ra service; `meetings.py` < 500 dòng có test giữ; smoke dễ đọc khi fail; log có giới hạn; diễn tập runbook; profile vào repo |
 | C | Test upload không phụ thuộc ffprobe; CI chạy ffprobe thật; metric thời gian chờ admission; harness tách client/server và chạy nhiều process; đo lại 247, 239, 40; thời gian phản hồi PR; ROADMAP và bản đồ bằng chứng |
 
+### Đợt 6 (giao ngày 2026-11-11: `tasks/2026-11-11/`, mỗi người 5 commit)
+
+Bắt đầu sau khi #47 (A) và #48 (B) vào `main` (`1f9d1ca`). Trước khi merge, C gộp thử cả hai và chạy test: backend 393 passed / 14 skipped, frontend 284/284. Đợt 5 không còn việc chuyển sang. Đây là ngày cuối trước đóng băng code.
+
+| Member | Việc |
+|---|---|
+| A | Query đọc dữ liệu thử lại theo `Retry-After`, chỉ khi 503 hoặc mất mạng; trang danh sách và chi tiết có trạng thái bận; thông báo bận đọc được bằng trình đọc màn hình; chạy lặp test mới để kiểm flaky |
+| B | Metric stage của worker hiện trên `/metrics` của API; gauge theo DB không giữ số cũ; process chết không còn bị cộng; query budget cho đường poll; README backend khớp cấu hình |
+| C | Harness hết race keep-alive; harness có số phía server khi chạy nhiều process; đo lại 247, 239, 40 sau #48; bản đồ bằng chứng |
+
 ### Lịch tới hạn nộp (hạn nộp 2026-11-14, người dùng xác nhận ngày 2026-11-09)
 
 | Ngày | Mục tiêu | Ai |
 |---|---|---|
 | 11-10 | Đợt 4 đã xong: #43, #44, #45 vào `main`. Giao Đợt 5. C đo lại 247 trên `main` (dời lên từ 11-11 vì thay đổi của B đã merge) | A, B, C |
-| 11-11 | Xong Đợt 5, mở PR; nhóm trưởng merge khi CI xanh | A, B, C |
+| 11-11 | #47, #48 vào `main` (Đợt 5 xong). Đợt 6: mỗi người 5 commit, mở PR trong ngày; nhóm trưởng merge khi CI xanh | A, B, C |
 | 11-12 | **Đóng băng code**: chỉ sửa lỗi. Chạy lại toàn bộ test, `make smoke`, E2E; README chạy được từ clone sạch | A, B, C |
 | 11-13 | **Đóng băng bằng chứng**: `docs/evidence/README.md` khớp số liệu cuối; mọi PR đã merge; ghi hash cuối | C |
 | 11-14 | Hạn nộp. Không đổi code. Dành cho PDF cá nhân (ngoài repo) | người dùng |
