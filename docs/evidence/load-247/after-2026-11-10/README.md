@@ -10,6 +10,8 @@ uv run python scripts/load_vt018.py --db postgresql+psycopg://... --clients 247 
 # 4 process: API_MAX_INFLIGHT=20 (4 × 20 = 80 < 100); 4 × 40 bị kiểm tra ngân sách kết nối từ chối khởi động
 ```
 
+> Đo lại ngày 2026-11-11 sau #47, #48, có số phía server cho 4 process: [`../after-2026-11-11/README.md`](../after-2026-11-11/README.md). Kết quả 4 process của ngày này không lặp lại được hôm sau.
+
 ## Kết luận
 
 - **1 process API (cấu hình mặc định): không đạt.** p95 upload 2,25 đến 3,75 s, cả 14 lượt hôm nay đều trên 2,0 s (6 lượt ở loạt đầu, 6 lượt sau, và 2 lượt ở `../client-procs/`).
