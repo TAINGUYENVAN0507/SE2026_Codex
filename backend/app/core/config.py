@@ -3,7 +3,7 @@
 from functools import lru_cache
 from typing import Self
 
-from pydantic import model_validator
+from pydantic import AliasChoices, Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 DEFAULT_DEV_JWT_SECRET = "dev-insecure-jwt-secret-key-change-in-prod"
@@ -25,7 +25,13 @@ class Settings(BaseSettings):
     API_MAX_INFLIGHT: int = 40
     API_QUEUE_TIMEOUT_SEC: float = 10.0
     # Số process uvicorn chạy song song trong API image (AD-018, BE-16).
-    API_WORKERS: int = 1
+    # Đọc thêm WEB_CONCURRENCY nếu có.
+    API_WORKERS: int = Field(
+        default=1,
+        validation_alias=AliasChoices("API_WORKERS", "WEB_CONCURRENCY"),
+    )
+    # Số kết nối DB dành riêng cho worker, migration và quản trị DB (AD-018, BE-16).
+    DB_RESERVED_CONNECTIONS: int = 20
     # Giới hạn max_connections của PostgreSQL trong docker-compose (chừa chỗ cho worker & admin).
     POSTGRES_MAX_CONNECTIONS: int = 100
     ENVIRONMENT: str = "development"
@@ -55,12 +61,14 @@ class Settings(BaseSettings):
         """Đảm bảo JWT_SECRET an toàn và phép tính kết nối DB hợp lệ (AD-018, BE-16)."""
         if self.API_WORKERS < 1:
             raise ValueError("API_WORKERS phải lớn hơn hoặc bằng 1.")
-        total_inflight = self.API_WORKERS * self.API_MAX_INFLIGHT
-        if self.API_MAX_INFLIGHT > 0 and total_inflight >= self.POSTGRES_MAX_CONNECTIONS:
+        total_connections = self.API_WORKERS * self.API_MAX_INFLIGHT + self.DB_RESERVED_CONNECTIONS
+        if self.API_MAX_INFLIGHT > 0 and total_connections > self.POSTGRES_MAX_CONNECTIONS:
+            res = self.DB_RESERVED_CONNECTIONS
+            max_c = self.POSTGRES_MAX_CONNECTIONS
             raise ValueError(
                 f"Tổng kết nối đồng thời ({self.API_WORKERS} workers × "
-                f"{self.API_MAX_INFLIGHT} inflight = {total_inflight}) "
-                f"phải nhỏ hơn max_connections của Postgres ({self.POSTGRES_MAX_CONNECTIONS}) "
+                f"{self.API_MAX_INFLIGHT} inflight + {res} reserved = {total_connections}) "
+                f"vượt quá max_connections của Postgres ({max_c}) "
                 "để tránh cạn kiệt pool kết nối cơ sở dữ liệu."
             )
         if self.API_MAX_INFLIGHT > self.DB_POOL_SIZE + self.DB_MAX_OVERFLOW:

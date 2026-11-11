@@ -42,7 +42,7 @@ def _check_postgres_connection(db_url: str) -> bool:
 def check_postgres_or_skip(db_url: str | None = None) -> str:
     """Kiểm tra PostgreSQL; skip nếu ở máy local hoặc fail nếu trên CI."""
     settings = get_settings()
-    url = db_url or settings.DATABASE_URL
+    url = db_url or os.environ.get("DATABASE_URL") or settings.DATABASE_URL
     if not _check_postgres_connection(url):
         is_ci = os.environ.get("CI", "").strip().lower() in ("true", "1")
         if is_ci:

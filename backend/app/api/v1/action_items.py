@@ -22,61 +22,23 @@ from app.api.deps import CurrentUser
 from app.core.errors import APIError
 from app.db.models.action_item import ActionItem
 from app.db.models.meeting import Meeting
-from app.db.models.transcript import Speaker
 from app.db.session import get_db
 from app.schemas.action_item import (
-    ActionItemAiOriginal,
     ActionItemCreate,
     ActionItemListOut,
     ActionItemOut,
     ActionItemPatch,
 )
 from app.schemas.common import ErrorResponse
+from app.services.action_items import (
+    serialize_action_item,
+    validate_assignee_speaker,
+    validate_description,
+    validate_status,
+)
 from app.services.audit import record_edit
 
 router = APIRouter()
-
-
-def serialize_action_item(item: ActionItem) -> ActionItemOut:
-    """Chuyển đổi ActionItem model sang ActionItemOut schema."""
-    ai_orig = None
-    if item.ai_original and isinstance(item.ai_original, dict):
-        # Snapshot worker có thêm metadata; chỉ chiếu field thuộc contract phản hồi.
-        ai_orig = ActionItemAiOriginal.model_validate(
-            {
-                key: value
-                for key, value in item.ai_original.items()
-                if key in ActionItemAiOriginal.model_fields
-            }
-        )
-
-    if item.source == "ai" and item.ai_original:
-        is_edited = (
-            item.description != item.ai_original.get("description")
-            or item.assignee_name != item.ai_original.get("assignee_name")
-            or item.due_date != item.ai_original.get("due_date")
-        )
-    else:
-        is_edited = item.version > 1
-
-    return ActionItemOut(
-        id=item.id,
-        meeting_id=item.meeting_id,
-        description=item.description,
-        assignee_name=item.assignee_name,
-        assignee_speaker_id=item.assignee_speaker_id,
-        due_date=item.due_date,
-        due_date_text=item.due_date_text,
-        status=item.status,
-        source=item.source,  # type: ignore[arg-type]
-        is_edited=is_edited,
-        needs_review=item.needs_review,
-        evidence_segment_ids=item.evidence_segment_ids or [],
-        ai_original=ai_orig,
-        version=item.version,
-        created_at=item.created_at,
-        updated_at=item.updated_at,
-    )
 
 
 @router.get(
@@ -144,46 +106,14 @@ def create_meeting_action_item(
             status_code=status.HTTP_404_NOT_FOUND,
         )
 
-    cleaned_desc = payload.description.strip()
-    if not cleaned_desc:
-        raise APIError(
-            code="VALIDATION_ERROR",
-            message="Mô tả công việc không được để trống.",
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        )
-    if len(cleaned_desc) > 1000:
-        raise APIError(
-            code="VALIDATION_ERROR",
-            message="Mô tả công việc không được vượt quá 1000 ký tự.",
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        )
-
-    item_status = payload.status or "open"
-    if item_status not in ("open", "done"):
-        raise APIError(
-            code="VALIDATION_ERROR",
-            message="Trạng thái công việc chỉ có thể là 'open' hoặc 'done'.",
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        )
-
-    speaker_id = None
-    assignee_name = payload.assignee_name
-    if payload.assignee_speaker_id is not None:
-        spk = db.execute(
-            select(Speaker).where(
-                Speaker.id == payload.assignee_speaker_id,
-                Speaker.meeting_id == meeting.id,
-            )
-        ).scalar_one_or_none()
-        if spk is None:
-            raise APIError(
-                code="SPEAKER_NOT_IN_MEETING",
-                message="Người nói không thuộc cuộc họp này.",
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            )
-        speaker_id = spk.id
-        if not assignee_name:
-            assignee_name = spk.display_name
+    cleaned_desc = validate_description(payload.description)
+    item_status = validate_status(payload.status)
+    speaker_id, assignee_name = validate_assignee_speaker(
+        db,
+        meeting.id,
+        payload.assignee_speaker_id,
+        payload.assignee_name,
+    )
 
     now = datetime.now(UTC)
     new_item = ActionItem(
@@ -294,36 +224,11 @@ def patch_meeting_action_item(
     fields_set = payload.model_fields_set
     new_desc = item.description
     if "description" in fields_set:
-        if payload.description is None:
-            raise APIError(
-                code="VALIDATION_ERROR",
-                message="Mô tả công việc không được để trống.",
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            )
-        cleaned = payload.description.strip()
-        if not cleaned:
-            raise APIError(
-                code="VALIDATION_ERROR",
-                message="Mô tả công việc không được để trống.",
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            )
-        if len(cleaned) > 1000:
-            raise APIError(
-                code="VALIDATION_ERROR",
-                message="Mô tả công việc không được vượt quá 1000 ký tự.",
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            )
-        new_desc = cleaned
+        new_desc = validate_description(payload.description)
 
     new_status = item.status
     if "status" in fields_set:
-        if payload.status not in ("open", "done"):
-            raise APIError(
-                code="VALIDATION_ERROR",
-                message="Trạng thái chỉ có thể là 'open' hoặc 'done'.",
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            )
-        new_status = payload.status
+        new_status = validate_status(payload.status)
 
     new_assignee_name = item.assignee_name
     if "assignee_name" in fields_set:
@@ -331,24 +236,13 @@ def patch_meeting_action_item(
 
     new_speaker_id = item.assignee_speaker_id
     if "assignee_speaker_id" in fields_set:
-        if payload.assignee_speaker_id is not None:
-            spk = db.execute(
-                select(Speaker).where(
-                    Speaker.id == payload.assignee_speaker_id,
-                    Speaker.meeting_id == meeting.id,
-                )
-            ).scalar_one_or_none()
-            if spk is None:
-                raise APIError(
-                    code="SPEAKER_NOT_IN_MEETING",
-                    message="Người nói không thuộc cuộc họp này.",
-                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                )
-            new_speaker_id = spk.id
-            if "assignee_name" not in fields_set and not new_assignee_name:
-                new_assignee_name = spk.display_name
-        else:
-            new_speaker_id = None
+        new_speaker_id, speaker_name = validate_assignee_speaker(
+            db,
+            meeting.id,
+            payload.assignee_speaker_id,
+        )
+        if "assignee_name" not in fields_set and not new_assignee_name:
+            new_assignee_name = speaker_name
 
     new_due_date = item.due_date
     if "due_date" in fields_set:

@@ -15,6 +15,8 @@ def _engine_for(url: str):
     # engine mới và không đóng, nên 40 request đồng thời cạn max_connections của Postgres.
     # pool_pre_ping để tự reconnect khi connection bị ngắt.
     settings = get_settings()
+    if url.startswith("sqlite"):
+        return create_engine(url, pool_pre_ping=True)
     return create_engine(
         url,
         pool_pre_ping=True,

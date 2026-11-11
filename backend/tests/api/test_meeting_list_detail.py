@@ -349,3 +349,54 @@ def test_get_meeting_detail_not_found_and_scoping_404(
     assert res_forbidden_as_404.status_code == 404
     assert res_forbidden_as_404.status_code != 403
     assert res_forbidden_as_404.json()["error"]["code"] == "MEETING_NOT_FOUND"
+
+
+def test_job_serialization_consistent_between_meeting_and_job_routes(
+    client_a: TestClient,
+    test_db: Session,
+    user_a: User,
+) -> None:
+    """Đối chiếu job trong GET /meetings/{id} và GET /jobs/{id} trên cùng job (BE-12)."""
+    meeting_id = str(uuid.uuid4())
+    job_id = str(uuid.uuid4())
+
+    meeting = Meeting(
+        id=meeting_id,
+        owner_id=user_a.id,
+        title="Cuộc họp kiểm tra tính nhất quán serializer",
+        source="upload",
+        status="processing",
+        version=1,
+    )
+    job = Job(
+        id=job_id,
+        meeting_id=meeting_id,
+        status="running",
+        stage="asr",
+        from_stage="preprocess",
+        progress=0.45,
+        stage_status={
+            "preprocess": "succeeded",
+            "vad": "succeeded",
+            "asr": "running",
+            "diarize": "queued",
+            "merge": "queued",
+            "summarize": "queued",
+        },
+        attempt=1,
+        max_attempts=3,
+        error_code=None,
+    )
+    test_db.add_all([meeting, job])
+    test_db.commit()
+
+    meeting_res = client_a.get(f"/api/v1/meetings/{meeting_id}")
+    assert meeting_res.status_code == 200
+    meeting_job_data = meeting_res.json()["latest_job"]
+
+    job_res = client_a.get(f"/api/v1/jobs/{job_id}")
+    assert job_res.status_code == 200
+    standalone_job_data = job_res.json()
+
+    assert meeting_job_data is not None
+    assert meeting_job_data == standalone_job_data

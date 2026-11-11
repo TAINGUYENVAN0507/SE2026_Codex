@@ -24,7 +24,11 @@ from app.core.errors import build_error_envelope, get_request_id
 from app.core.metrics import LATENCY_BUCKETS
 
 # Không có nhãn nào chứa id hay dữ liệu người dùng (PRIV-10).
-INFLIGHT = Gauge("api_inflight_requests", "Số request đang xử lý trong process API")
+INFLIGHT = Gauge(
+    "api_inflight_requests",
+    "Số request đang xử lý trong process API",
+    multiprocess_mode="livesum",
+)
 REJECTED = Counter(
     "api_admission_rejected_total",
     "Số request bị từ chối 503 vì chờ quá API_QUEUE_TIMEOUT_SEC",

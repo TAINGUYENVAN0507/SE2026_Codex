@@ -102,7 +102,8 @@ def run_smoke(base_url: str, timeout_sec: int = 60) -> None:
             "/api/v1/auth/login",
             json={"email": email, "password": password},
         )
-        assert login_res.status_code == 200, f"Đăng nhập thất bại: {login_res.text}"
+        if login_res.status_code != 200:
+            raise RuntimeError(f"Đăng nhập thất bại ({login_res.status_code}): {login_res.text}")
         print("   -> Đăng nhập thành công, nhận session cookie.")
 
         # 4. Upload file WAV tổng hợp
@@ -122,7 +123,8 @@ def run_smoke(base_url: str, timeout_sec: int = 60) -> None:
             files=files,
             headers=headers,
         )
-        assert upload_res.status_code == 201, f"Upload thất bại: {upload_res.text}"
+        if upload_res.status_code != 201:
+            raise RuntimeError(f"Upload thất bại ({upload_res.status_code}): {upload_res.text}")
         payload = upload_res.json()
         meeting_id = payload["meeting"]["id"]
         job_id = payload["job"]["id"]
@@ -134,7 +136,8 @@ def run_smoke(base_url: str, timeout_sec: int = 60) -> None:
         job_success = False
         while time.time() < deadline:
             poll_res = client.get(f"/api/v1/jobs/{job_id}")
-            assert poll_res.status_code == 200, f"Lỗi truy vấn job: {poll_res.text}"
+            if poll_res.status_code != 200:
+                raise RuntimeError(f"Lỗi truy vấn job ({poll_res.status_code}): {poll_res.text}")
             res_json = poll_res.json()
             job_data = res_json.get("job", res_json)
             job_status = job_data["status"]
@@ -149,29 +152,36 @@ def run_smoke(base_url: str, timeout_sec: int = 60) -> None:
 
             time.sleep(1.0)
 
-        assert job_success, f"Job không hoàn thành trong {timeout_sec}s."
+        if not job_success:
+            raise RuntimeError(f"Job không hoàn thành trong {timeout_sec}s.")
         print("   -> Job đã hoàn thành thành công (succeeded).")
 
         # 6. Tải export biên bản cuộc họp
         print("6. Tải bản xuất cuộc họp qua GET /api/v1/meetings/{id}/export...")
         export_txt = client.get(f"/api/v1/meetings/{meeting_id}/export?format=txt")
-        assert export_txt.status_code == 200, f"Export txt lỗi: {export_txt.text}"
-        assert len(export_txt.text) > 0, "Bản export txt rỗng."
+        if export_txt.status_code != 200:
+            raise RuntimeError(f"Export txt lỗi ({export_txt.status_code}): {export_txt.text}")
+        if len(export_txt.text) == 0:
+            raise RuntimeError("Bản export txt rỗng.")
 
         export_json = client.get(f"/api/v1/meetings/{meeting_id}/export?format=json")
-        assert export_json.status_code == 200, f"Export json lỗi: {export_json.text}"
+        if export_json.status_code != 200:
+            raise RuntimeError(f"Export json lỗi ({export_json.status_code}): {export_json.text}")
 
         export_md = client.get(f"/api/v1/meetings/{meeting_id}/export?format=md")
-        assert export_md.status_code == 200, f"Export md lỗi: {export_md.text}"
+        if export_md.status_code != 200:
+            raise RuntimeError(f"Export md lỗi ({export_md.status_code}): {export_md.text}")
         print("   -> Tải xuất biên bản (TXT, JSON, MD) thành công.")
 
         # 7. Xóa cuộc họp và xóa tài khoản người dùng
         print("7. Dọn dẹp dữ liệu kiểm thử (DELETE meeting & user)...")
         del_meet = client.delete(f"/api/v1/meetings/{meeting_id}")
-        assert del_meet.status_code == 204, f"Xóa meeting lỗi: {del_meet.text}"
+        if del_meet.status_code != 204:
+            raise RuntimeError(f"Xóa meeting lỗi ({del_meet.status_code}): {del_meet.text}")
 
         del_user = client.delete("/api/v1/auth/me")
-        assert del_user.status_code == 204, f"Xóa user lỗi: {del_user.text}"
+        if del_user.status_code != 204:
+            raise RuntimeError(f"Xóa user lỗi ({del_user.status_code}): {del_user.text}")
         print("   -> Đã xóa meeting và user tổng hợp sạch sẽ.")
 
     print("\n=== SMOKE TEST THÀNH CÔNG: Toàn bộ quy trình End-to-End đã đạt ===")
