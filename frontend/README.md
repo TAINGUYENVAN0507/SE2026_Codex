@@ -194,3 +194,19 @@ API/worker/preview rồi dừng các tiến trình của nó. Lệnh `docker sto
 xóa container/database E2E do dùng `--rm`. Cần giữ cổng 14173/18000 trống.
 Chi tiết phạm vi và kết quả: [clean-clone-2026-11-10.md](../docs/frontend/clean-clone-2026-11-10.md).
 E2E qua nginx dùng stack riêng và `npm run e2e:compose`; xem [FE-19](../docs/frontend/FE-19.md).
+
+## Query đọc dữ liệu khi API bận — 11/11/2026
+
+Query chung chỉ retry ApiError HTTP 503 hoặc NETWORK_ERROR, tối đa hai lần
+sau request đầu; chờ Retry-After (thiếu thì 2 giây). 4xx/500 không tự gửi lại.
+Mutation giữ retry false. Poll job có lịch riêng, không cộng retry của provider.
+Danh sách/chi tiết hết lượt có thông báo và nút Thử lại. Thông báo poll với dữ
+liệu cũ dùng status/polite; lỗi chặn thao tác dùng alert và không tự chuyển focus.
+
+[Chi tiết hành vi và test](../docs/frontend/query-busy-2026-11-11.md),
+[browser axe với response tổng hợp](../docs/frontend/accessibility-busy-2026-11-11.json).
+Đợt này có 296 Vitest/48 file đạt; coverage lines 86.65%, branches 81.34%, giữ
+floors 84.53/79.11 từ baseline ngày 10/11; xem [số đo](../docs/frontend/coverage-2026-11-11.json).
+Nhóm test được giao chạy 20 lượt và E2E mặc định slow chạy 3 lượt; kết quả từng
+lượt, commit nguồn và giới hạn ở [báo cáo flaky](../docs/evidence/vt-018/flaky-frontend-2026-11-11.md).
+Kết quả local chưa thay CI của PR ngày 11/11; chưa push/mở PR trong bước triển khai này.
