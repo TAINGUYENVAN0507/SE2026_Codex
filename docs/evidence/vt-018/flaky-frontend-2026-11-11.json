@@ -1,0 +1,302 @@
+{
+  "date": "2026-11-11",
+  "source_commit": "986e2b8d9e6eb74d14b06646c5f85b73167995d3",
+  "node": "v24.13.0",
+  "unit_command": "npx vitest run src/pages/BusyUpload.test.tsx src/features/jobs/BusyPolling.test.tsx src/features/meetings/BusyEdits.test.tsx src/features/audio/uploadBusyTimer.test.ts src/features/jobs/JobTimes.test.tsx",
+  "e2e_command": "npm run e2e",
+  "scenario": "slow",
+  "environment": {
+    "database": "meeting_e2e_day6",
+    "database_port": 55451,
+    "pipeline": "fake",
+    "synthetic_only": true,
+    "playwright_retries": 0
+  },
+  "attempts": [
+    {
+      "date": "2026-11-11",
+      "attempt": 1,
+      "source_commit": "986e2b8d9e6eb74d14b06646c5f85b73167995d3",
+      "node": "v24.13.0",
+      "unit_command": "npx vitest run src/pages/BusyUpload.test.tsx src/features/jobs/BusyPolling.test.tsx src/features/meetings/BusyEdits.test.tsx src/features/audio/uploadBusyTimer.test.ts src/features/jobs/JobTimes.test.tsx",
+      "e2e_command": "npm run e2e",
+      "scenario": "slow",
+      "environment": {
+        "database": "meeting_e2e_day6",
+        "database_port": 55451,
+        "pipeline": "fake",
+        "synthetic_only": true,
+        "playwright_retries": 0
+      },
+      "unit_runs": [
+        {
+          "run": 1,
+          "started_at_utc": "2026-11-11T03:41:58.862816+00:00",
+          "duration_sec": 5.48,
+          "exit_code": 0,
+          "passed": 18,
+          "log": "attempt1-unit-01.log",
+          "log_sha256": "b96cb52627f79ed0a8231e01253f51e7e4acb74e84bd179afbf8336923534745",
+          "worker_killpg_warning_count": 0,
+          "skipped": 0
+        },
+        {
+          "run": 2,
+          "started_at_utc": "2026-11-11T03:42:04.355076+00:00",
+          "duration_sec": 3.75,
+          "exit_code": 0,
+          "passed": 18,
+          "log": "attempt1-unit-02.log",
+          "log_sha256": "0fc0a7230613205ef20da499a91ce68363b26f151b2144f675426fcd97e8fe4f",
+          "worker_killpg_warning_count": 0,
+          "skipped": 0
+        },
+        {
+          "run": 3,
+          "started_at_utc": "2026-11-11T03:42:08.095889+00:00",
+          "duration_sec": 3.84,
+          "exit_code": 0,
+          "passed": 18,
+          "log": "attempt1-unit-03.log",
+          "log_sha256": "b0655d01ba4d9100400bd17385281e07b6ac365c84814b711ac7703f95f0ff6a",
+          "worker_killpg_warning_count": 0,
+          "skipped": 0
+        },
+        {
+          "run": 4,
+          "started_at_utc": "2026-11-11T03:42:11.948184+00:00",
+          "duration_sec": 3.8,
+          "exit_code": 0,
+          "passed": 18,
+          "log": "attempt1-unit-04.log",
+          "log_sha256": "2e2d78f7cd1a300d0b9dfb934a7572a27e2788578075cdfa4b040365864a1f1a",
+          "worker_killpg_warning_count": 0,
+          "skipped": 0
+        },
+        {
+          "run": 5,
+          "started_at_utc": "2026-11-11T03:42:15.737486+00:00",
+          "duration_sec": 3.72,
+          "exit_code": 0,
+          "passed": 18,
+          "log": "attempt1-unit-05.log",
+          "log_sha256": "1359965ec51e5184d9cd7a495f5a9e29b23a6b6d89a41af4ecef179de7c62ca8",
+          "worker_killpg_warning_count": 0,
+          "skipped": 0
+        },
+        {
+          "run": 6,
+          "started_at_utc": "2026-11-11T03:42:19.459473+00:00",
+          "duration_sec": 3.7,
+          "exit_code": 0,
+          "passed": 18,
+          "log": "attempt1-unit-06.log",
+          "log_sha256": "ff355134d8d695dfac57b87a03a4823989e34a9be5aa35af9a0487b4d437d7c1",
+          "worker_killpg_warning_count": 0,
+          "skipped": 0
+        },
+        {
+          "run": 7,
+          "started_at_utc": "2026-11-11T03:42:23.159689+00:00",
+          "duration_sec": 3.67,
+          "exit_code": 0,
+          "passed": 18,
+          "log": "attempt1-unit-07.log",
+          "log_sha256": "03537d0e343f97f810de4efe6c16fe93b42dd5773e56bb9e6e991842abae8490",
+          "worker_killpg_warning_count": 0,
+          "skipped": 0
+        },
+        {
+          "run": 8,
+          "started_at_utc": "2026-11-11T03:42:26.833208+00:00",
+          "duration_sec": 3.78,
+          "exit_code": 0,
+          "passed": 18,
+          "log": "attempt1-unit-08.log",
+          "log_sha256": "20269f56216178e19effe6bb40d4981c453c3131765d0c94f426802f0c52b25d",
+          "worker_killpg_warning_count": 0,
+          "skipped": 0
+        },
+        {
+          "run": 9,
+          "started_at_utc": "2026-11-11T03:42:30.612734+00:00",
+          "duration_sec": 3.7,
+          "exit_code": 0,
+          "passed": 18,
+          "log": "attempt1-unit-09.log",
+          "log_sha256": "b2986b605fc754935cb36a403e98ed5632d98b0cbb6f40183e391959ae568432",
+          "worker_killpg_warning_count": 0,
+          "skipped": 0
+        },
+        {
+          "run": 10,
+          "started_at_utc": "2026-11-11T03:42:34.325656+00:00",
+          "duration_sec": 3.8,
+          "exit_code": 0,
+          "passed": 18,
+          "log": "attempt1-unit-10.log",
+          "log_sha256": "083bd22fa83401b0c048dbd0abc053078209064f9ec7d97c68efb108ab43e270",
+          "worker_killpg_warning_count": 0,
+          "skipped": 0
+        },
+        {
+          "run": 11,
+          "started_at_utc": "2026-11-11T03:42:38.118662+00:00",
+          "duration_sec": 3.86,
+          "exit_code": 0,
+          "passed": 18,
+          "log": "attempt1-unit-11.log",
+          "log_sha256": "859d70592f7fc2f3de3979bec40ec12811e7e7f0df72336441fba482202bd24e",
+          "worker_killpg_warning_count": 0,
+          "skipped": 0
+        },
+        {
+          "run": 12,
+          "started_at_utc": "2026-11-11T03:42:41.970268+00:00",
+          "duration_sec": 3.75,
+          "exit_code": 0,
+          "passed": 18,
+          "log": "attempt1-unit-12.log",
+          "log_sha256": "7309d8a346d1f7ca666f36ca439fe01dee20de313eda4fef1a00529165c42744",
+          "worker_killpg_warning_count": 0,
+          "skipped": 0
+        },
+        {
+          "run": 13,
+          "started_at_utc": "2026-11-11T03:42:45.729133+00:00",
+          "duration_sec": 4.22,
+          "exit_code": 0,
+          "passed": 18,
+          "log": "attempt1-unit-13.log",
+          "log_sha256": "46f72cedc31f08fbfc5d895523eba261de0eeaf57fe0c1634969880efaaef3eb",
+          "worker_killpg_warning_count": 0,
+          "skipped": 0
+        },
+        {
+          "run": 14,
+          "started_at_utc": "2026-11-11T03:42:49.951778+00:00",
+          "duration_sec": 3.8,
+          "exit_code": 0,
+          "passed": 18,
+          "log": "attempt1-unit-14.log",
+          "log_sha256": "0deb22e0351e6f7afd1e97b8cd81bc41e19f53834560156e60bd9840b6cad982",
+          "worker_killpg_warning_count": 0,
+          "skipped": 0
+        },
+        {
+          "run": 15,
+          "started_at_utc": "2026-11-11T03:42:53.746002+00:00",
+          "duration_sec": 3.84,
+          "exit_code": 0,
+          "passed": 18,
+          "log": "attempt1-unit-15.log",
+          "log_sha256": "3d06ff1bb52548efd6fbec264f4b99d1d70823e8c7cec839723845263c31bd17",
+          "worker_killpg_warning_count": 0,
+          "skipped": 0
+        },
+        {
+          "run": 16,
+          "started_at_utc": "2026-11-11T03:42:57.579990+00:00",
+          "duration_sec": 3.88,
+          "exit_code": 0,
+          "passed": 18,
+          "log": "attempt1-unit-16.log",
+          "log_sha256": "7cf3f01faf89dc73d0605aa7c35854d8b38648efb5f944c2f5a34d48351d2199",
+          "worker_killpg_warning_count": 0,
+          "skipped": 0
+        },
+        {
+          "run": 17,
+          "started_at_utc": "2026-11-11T03:43:01.462462+00:00",
+          "duration_sec": 3.73,
+          "exit_code": 0,
+          "passed": 18,
+          "log": "attempt1-unit-17.log",
+          "log_sha256": "f5e3fd5543fab03792751e0b0d550b3e10319ab6d1ef1493f43d38b2110f02ab",
+          "worker_killpg_warning_count": 0,
+          "skipped": 0
+        },
+        {
+          "run": 18,
+          "started_at_utc": "2026-11-11T03:43:05.201801+00:00",
+          "duration_sec": 3.89,
+          "exit_code": 0,
+          "passed": 18,
+          "log": "attempt1-unit-18.log",
+          "log_sha256": "ae3d0769e9fa8468d65d1c30f30791d00c9271e9b26c9cf8ec4cc5afd3cdc1c1",
+          "worker_killpg_warning_count": 0,
+          "skipped": 0
+        },
+        {
+          "run": 19,
+          "started_at_utc": "2026-11-11T03:43:09.087596+00:00",
+          "duration_sec": 3.64,
+          "exit_code": 0,
+          "passed": 18,
+          "log": "attempt1-unit-19.log",
+          "log_sha256": "587ee6337c652248608cc31a6707acdd139f97ef95fcae8511c77354250815f6",
+          "worker_killpg_warning_count": 0,
+          "skipped": 0
+        },
+        {
+          "run": 20,
+          "started_at_utc": "2026-11-11T03:43:12.722672+00:00",
+          "duration_sec": 3.67,
+          "exit_code": 0,
+          "passed": 18,
+          "log": "attempt1-unit-20.log",
+          "log_sha256": "b922dd331a1270d43e60976af60f6bf14e00b045da38e6e6bf71a2819d8356fd",
+          "worker_killpg_warning_count": 0,
+          "skipped": 0
+        }
+      ],
+      "e2e_runs": [
+        {
+          "run": 1,
+          "started_at_utc": "2026-11-11T03:43:28.286949+00:00",
+          "duration_sec": 308.73,
+          "exit_code": 0,
+          "passed": 24,
+          "log": "attempt1-e2e-01.log",
+          "log_sha256": "9904c9516077b7a636fff58bae0a7b4cddc82f13ee943c8aa7930e4b0749bd24",
+          "worker_killpg_warning_count": 1,
+          "skipped": 0
+        },
+        {
+          "run": 2,
+          "started_at_utc": "2026-11-11T03:48:37.045078+00:00",
+          "duration_sec": 314.75,
+          "exit_code": 0,
+          "passed": 24,
+          "log": "attempt1-e2e-02.log",
+          "log_sha256": "84aa9727cbe20e80b861a8434773432973f1183809eb4f0a0aa4d468c39bd1b6",
+          "worker_killpg_warning_count": 1,
+          "skipped": 0
+        },
+        {
+          "run": 3,
+          "started_at_utc": "2026-11-11T03:53:51.792342+00:00",
+          "duration_sec": 309.14,
+          "exit_code": 0,
+          "passed": 24,
+          "log": "attempt1-e2e-03.log",
+          "log_sha256": "627dca33c234918f5693ab3db252c6d8c7bedd35f070c11fdf3292640dfd089e",
+          "worker_killpg_warning_count": 1,
+          "skipped": 0
+        }
+      ],
+      "completed": true,
+      "runner_note": "Harness initially expected 19 unit tests; Vitest reports 18 in these five files. The twenty recorded runs all remain evidence; command exit codes are unchanged.",
+      "success": true
+    }
+  ],
+  "all_recorded_unit_runs": 20,
+  "all_recorded_unit_failures": 0,
+  "all_recorded_e2e_runs": 3,
+  "all_recorded_e2e_failures": 0,
+  "limits": [
+    "Local on one Windows machine; not proof of zero flakiness everywhere",
+    "Pipeline fake; does not measure AI quality",
+    "Raw logs and failure traces stay outside Git"
+  ]
+}
