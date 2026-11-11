@@ -1,0 +1,5 @@
+        assert expiry is not None
+>       assert expiry <= uvicorn_keep_alive() - 1
+E       assert 5.0 <= (5 - 1)
+tests/unit/test_load_harness.py:36: AssertionError
+1 failed, 1 passed in 0.25s

@@ -1,0 +1,13 @@
+09:17:17 start w=1 r=1 load=1.66
+09:17:51 end   w=1 r=1
+09:17:51 start w=4 r=1 load=5.46
+09:18:22 end   w=4 r=1
+09:18:22 start w=1 r=2 load=6.70
+09:18:53 end   w=1 r=2
+09:18:53 start w=4 r=2 load=7.64
+09:19:23 end   w=4 r=2
+09:19:23 start w=1 r=3 load=10.90
+09:19:55 end   w=1 r=3
+09:19:55 start w=4 r=3 load=10.39
+09:20:25 end   w=4 r=3
+DONE

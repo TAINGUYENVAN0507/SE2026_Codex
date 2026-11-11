@@ -1,0 +1,7 @@
+09:36:08 start 40 r=1 load=3.38
+09:36:47 start 239 r=1 load=2.20
+09:37:38 start 40 r=2 load=4.81
+09:38:17 start 239 r=2 load=3.23
+09:39:07 start 40 r=3 load=4.23
+09:39:46 start 239 r=3 load=2.64
+DONE

@@ -62,7 +62,7 @@ Commit của C trong các đợt này ghi thêm mã bài, ví dụ `(BE-17, VT-0
 
 ## Yêu cầu repo phải đáp ứng
 
-Hiện trạng đọc từ `main` tại `fc7d80f` (sau #44, #45) ngày 2026-11-10, cộng PR #46 của C khi ghi rõ. ✓ đã có · ◐ một phần · ✗ chưa có. Số đo tải: một máy, pipeline fake; chi tiết và giới hạn ở [`docs/evidence/README.md`](../docs/evidence/README.md). Bảng theo code ngày 11-06 (`53f753b`) đã thay bằng bảng này; lịch sử xem git.
+Hiện trạng đọc từ `main` tại `1f9d1ca` (sau #47, #48) ngày 2026-11-11. ✓ đã có · ◐ một phần · ✗ chưa có. Số đo tải: một máy, pipeline fake; chi tiết và giới hạn ở [`docs/evidence/README.md`](../docs/evidence/README.md). Bảng theo code ngày 11-06 (`53f753b`) đã thay bằng bảng này; lịch sử xem git.
 
 ### RE-018
 
@@ -72,12 +72,12 @@ Hiện trạng đọc từ `main` tại `fc7d80f` (sau #44, #45) ngày 2026-11-1
 | File export kiểm chứng được | ✓ TXT, MD, JSON in evidence (`backend/app/services/export/serializers.py`); E2E `frontend/e2e/flows/export-evidence.spec.ts` | FE-18, BE-05 | A, B | 1 |
 | Log truy được theo job | ✓ `setup_logging()` ở API và worker; `backend/tests/api/test_observability.py` | BE-19, AI-18 | B, C | 1 |
 | Metric có số đo | ✓ `/metrics`; quá tải và thời gian chờ admission; bucket có mốc 1,5 và 2,0 s (#46) | BE-19 | B, C | 1, 4, 5 |
-| Thời lượng từng stage trong metric | ✓ `pipeline_stage_duration_seconds` | BE-19 | B | 2 |
+| Thời lượng từng stage trong metric | ◐ Worker ghi `pipeline_stage_duration_seconds` trong process riêng; `/metrics` của API chưa đọc được (C phát hiện khi review #48, 2026-11-11) | BE-19 | B | 2, 6 |
 | Metric đúng khi chạy nhiều process API | ✓ `PROMETHEUS_MULTIPROC_DIR`, `MultiProcessCollector`, `livesum` gộp đủ mọi process API | BE-19 | B | 5 |
 | Runbook truy nguyên nhân, có thời gian đo thật | ✓ Diễn tập 2 sự cố trên Compose đo thời gian thật tại `docs/backend/runbook-drill-2026-11-10.md`, bổ sung runbook `docs/backend/BE-19.md` | BE-19 | B | 5 |
 | Lưu 14 ngày chạy thật | ✓ Worker gọi `run_retention_cleanup`; `backend/tests/api/test_retention.py`; test giữ tài liệu khớp cấu hình | BE-14 | B, C | 1, 4 |
 | 239 người dùng đồng thời | Xem bảng tải bên dưới | AI-19 | C | 3–5 |
-| Phản hồi change request trong 20 giờ | ◐ `docs/evidence/pr-response-times.md`: từ 11-06, 4/15 PR có phản hồi của người khác, 3/4 trong 20 giờ; 10 PR merge khi chưa có phản hồi | | A, B, C | |
+| Phản hồi change request trong 20 giờ | ◐ `docs/evidence/pr-response-times.md` (sinh lại 11-11): từ 11-06, 5/17 PR có phản hồi của người khác, 4/5 trong 20 giờ; 12 PR merge khi chưa có phản hồi | | A, B, C | |
 
 ### AD-018
 
@@ -92,7 +92,7 @@ Hiện trạng đọc từ `main` tại `fc7d80f` (sau #44, #45) ngày 2026-11-1
 | ADR | ✓ `docs/adr/0001-asr.md`, `0002-adapter-boundary-and-erasure.md`, `0003-controller-size-limit-and-layer-boundary.md` | | C, B | 3, 5 |
 | 247 đồng thời, p95 ≤ 2,0 s | Xem bảng tải bên dưới | AI-19, BE-12 | B, C | 3–5 |
 | Lưu dữ liệu vận hành 28 ngày | ✓ `OPERATIONAL_RETENTION_DAYS=28`, `backend/tests/api/test_retention.py` | BE-14 | B | 1 |
-| Phản hồi trong 18 giờ | ◐ Như dòng 20 giờ ở RE-018: 3/4 PR có phản hồi là trong 18 giờ; #44 phản hồi sau 22,0 giờ | | A, B, C | |
+| Phản hồi trong 18 giờ | ◐ Như dòng 20 giờ ở RE-018: 4/5 PR có phản hồi là trong 18 giờ; #44 phản hồi sau 22,0 giờ | | A, B, C | |
 
 ### VT-018
 
@@ -111,16 +111,16 @@ Hiện trạng đọc từ `main` tại `fc7d80f` (sau #44, #45) ngày 2026-11-1
 
 ### Tải (cập nhật sau mỗi lần đo)
 
-Đo ngày 2026-11-10 trên `main` sau #44, #45 (cộng metric của #46), một máy 12 CPU, pipeline fake, tải dạng barrier. Chi tiết: `docs/evidence/load-247/after-2026-11-10/README.md`, `docs/evidence/load-239/after-2026-11-10/README.md`, `docs/evidence/vt-018/load-40-2026-11-10/README.md`.
+Đo ngày 2026-11-11 trên `main` `1f9d1ca` (sau #47, #48), một máy 12 CPU, pipeline fake, tải dạng barrier, 4 process sinh tải (40 client: 1). Harness mới: client đóng kết nối rảnh sau 1 s; có số phía server khi chạy nhiều process. A/B xen kẽ cho thấy thay đổi harness không làm số khác đi. Chi tiết: `docs/evidence/load-247/after-2026-11-11/README.md`, `docs/evidence/load-239/after-2026-11-11/README.md`, `docs/evidence/vt-018/load-40-2026-11-11/README.md`.
 
 | Mốc | Cấu hình | Kết quả | Trạng thái |
 |---|---|---|---|
-| VT-018: 40 đồng thời, p95 ≤ 1,5 s | 1 process API | p95 upload 0,36 đến 0,41 s, 3/3 lượt, 0 lỗi | ✓ |
-| RE-018: 239 đồng thời (không có mục tiêu độ trễ) | 1 process API | 239/239 upload, 0 lỗi, 4 lượt; p95 upload 2,09 đến 2,37 s | ✓ chịu được |
-| AD-018: 247 đồng thời, p95 ≤ 2,0 s | 1 process API (mặc định) | p95 upload 2,25 đến 3,75 s, 14/14 lượt trên mốc | ✗ |
-| AD-018: 247 đồng thời, p95 ≤ 2,0 s | 4 process API, `API_MAX_INFLIGHT=20` | p95 upload ≤ 2,0 s ở 10/12 lượt (1,08 đến 2,18 s); sát mốc khi máy bận | ◐ không ghi là đạt chắc chắn |
+| VT-018: 40 đồng thời, p95 ≤ 1,5 s | 1 process API | p95 upload 0,56 đến 0,84 s, 6/6 lượt `main`, 0 lỗi (11-10: 0,36 đến 0,41 s) | ✓ (một lượt bản trước #48 lên 1,80 s khi máy bận) |
+| RE-018: 239 đồng thời (không có mục tiêu độ trễ) | 1 process API | 239/239 upload, 0 lỗi, 3 lượt; p95 upload 3,03 đến 3,25 s | ✓ chịu được |
+| AD-018: 247 đồng thời, p95 ≤ 2,0 s | 1 process API (mặc định) | p95 upload 3,16 đến 3,79 s, 3/3 lượt trên mốc (11-10: 14/14) | ✗ |
+| AD-018: 247 đồng thời, p95 ≤ 2,0 s | 4 process API, `API_MAX_INFLIGHT=20` | p95 upload 2,30 đến 2,60 s, 15/15 lượt trên mốc; server chỉ 71 đến 82 % upload ≤ 2,0 s (11-10: 10/12 lượt đạt, không lặp lại được) | ✗ |
 
-Ở 247 client có 6 lỗi `RemoteProtocolError` trên 6.669 upload. Nguyên nhân là harness: kết nối rảnh đúng 5 s, bằng timeout keep-alive của uvicorn; đường thật qua nginx không dùng lại kết nối. Thay đổi của B ở #45 giảm p95 khoảng 0,15 s (chạy xen kẽ trước và sau trong cùng điều kiện).
+0 lỗi ở 21 lượt 247 client ngày 11-11 (5.187 upload). Phía server 4 process: thời gian nằm trong xử lý upload, không ở hàng đợi admission (95 đến 97 % request vào trong ≤ 1,5 s). Phía server 1 process: 2/3 lượt có ≥ 99,6 % upload ≤ 2,0 s, trong khi client chỉ thấy 49 đến 58 %, nên phần chậm nằm trước middleware (một event loop) và ở máy sinh tải.
 
 ## Lịch
 
@@ -178,12 +178,22 @@ Bắt đầu sau khi #44 (A) và #45 (B) vào `main` ngày 2026-11-10; C review 
 | B | `/metrics` gộp nhiều process; ngân sách kết nối có phần dự trữ; upload ra service; `meetings.py` < 500 dòng có test giữ; smoke dễ đọc khi fail; log có giới hạn; diễn tập runbook; profile vào repo |
 | C | Test upload không phụ thuộc ffprobe; CI chạy ffprobe thật; metric thời gian chờ admission; harness tách client/server và chạy nhiều process; đo lại 247, 239, 40; thời gian phản hồi PR; ROADMAP và bản đồ bằng chứng |
 
+### Đợt 6 (giao ngày 2026-11-11: `tasks/2026-11-11/`, mỗi người 5 commit)
+
+Bắt đầu sau khi #47 (A) và #48 (B) vào `main` (`1f9d1ca`). Trước khi merge, C gộp thử cả hai và chạy test: backend 393 passed / 14 skipped, frontend 284/284. Đợt 5 không còn việc chuyển sang. Đây là ngày cuối trước đóng băng code.
+
+| Member | Việc |
+|---|---|
+| A | Query đọc dữ liệu thử lại theo `Retry-After`, chỉ khi 503 hoặc mất mạng; trang danh sách và chi tiết có trạng thái bận; thông báo bận đọc được bằng trình đọc màn hình; chạy lặp test mới để kiểm flaky |
+| B | Metric stage của worker hiện trên `/metrics` của API; gauge theo DB không giữ số cũ; process chết không còn bị cộng; query budget cho đường poll; README backend khớp cấu hình |
+| C | Harness hết race keep-alive; harness có số phía server khi chạy nhiều process; đo lại 247, 239, 40 sau #48; bản đồ bằng chứng |
+
 ### Lịch tới hạn nộp (hạn nộp 2026-11-14, người dùng xác nhận ngày 2026-11-09)
 
 | Ngày | Mục tiêu | Ai |
 |---|---|---|
 | 11-10 | Đợt 4 đã xong: #43, #44, #45 vào `main`. Giao Đợt 5. C đo lại 247 trên `main` (dời lên từ 11-11 vì thay đổi của B đã merge) | A, B, C |
-| 11-11 | Xong Đợt 5, mở PR; nhóm trưởng merge khi CI xanh | A, B, C |
+| 11-11 | #47, #48 vào `main` (Đợt 5 xong). Đợt 6: mỗi người 5 commit, mở PR trong ngày; nhóm trưởng merge khi CI xanh | A, B, C |
 | 11-12 | **Đóng băng code**: chỉ sửa lỗi. Chạy lại toàn bộ test, `make smoke`, E2E; README chạy được từ clone sạch | A, B, C |
 | 11-13 | **Đóng băng bằng chứng**: `docs/evidence/README.md` khớp số liệu cuối; mọi PR đã merge; ghi hash cuối | C |
 | 11-14 | Hạn nộp. Không đổi code. Dành cho PDF cá nhân (ngoài repo) | người dùng |
@@ -193,7 +203,7 @@ Phần cá nhân của BT1/BT2/BT3 (phân tích, Bước 0 trước khi code, re
 ## Việc treo
 
 - Đã xong: #33–#39 vào `main`. Nhánh `tainguyen-vt018-tests` (Đợt 2 của C) vào `main` qua PR hôm 2026-11-08.
-- Đo tải 247 (2026-11-10): cấu hình mặc định 1 process **không đạt** p95 ≤ 2,0 s; 4 process đạt ở 10/12 lượt, sát mốc. Muốn chắc hơn thì phải giảm thời gian xử lý mỗi upload (B có profile, chưa có file trong repo) hoặc đo trên máy không chạy chung trình soạn thảo. Xem mục Tải.
+- Đo tải 247 (2026-11-11): **không đạt** ở cả 1 và 4 process. Số phía server 4 process cho thấy thời gian nằm trong xử lý upload khi CPU bị tranh. Muốn đạt thì phải giảm thời gian xử lý mỗi upload (profile của B: `docs/evidence/load-247/profile/`) hoặc đo trên máy riêng cho API. Sau 11-12 chỉ còn sửa lỗi, nên dòng này nhiều khả năng giữ ✗ khi nộp. Xem mục Tải.
 - PR #40 vào `main` ngày 2026-11-08 không có review ghi lại trong PR; #41 và #42 có review (A review #41, C review #42).
 - PR #43 (VT-018) vào `main` ngày 2026-11-09 **trước** khi có review; B review sau khi merge, ở `docs/backend/reviews/PR-43-2026-11-09.md` (vào `main` qua #45). Ngày 2026-11-10 nhóm trưởng bỏ yêu cầu review của thành viên khác (xem mục Tham số).
 - #44 và #45: C review (approve có ghi chú) rồi merge ngày 2026-11-10. Các điểm làm tiếp của review #45 nằm trong `tasks/2026-11-10/member-b.md`.
