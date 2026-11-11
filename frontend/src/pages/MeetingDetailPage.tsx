@@ -65,11 +65,15 @@ function RemoteMeetingDetail({ meetingId }: { meetingId: string }) {
     )
       return <NotFoundPage meeting />
     return (
-      <main className="missing-meeting" role="alert">
-        <h1>Không tải được cuộc họp</h1>
-        <p>
-          {error instanceof ApiError ? error.message : 'Hãy thử tải lại trang.'}
-        </p>
+      <main className="missing-meeting">
+        <div role="alert">
+          <h1>Không tải được cuộc họp</h1>
+          <p>
+            {error instanceof ApiError
+              ? error.message
+              : 'Hãy thử tải lại trang.'}
+          </p>
+        </div>
         <button
           className="button secondary"
           disabled={meetingQuery.isFetching || transcriptQuery.isFetching}

@@ -95,6 +95,7 @@ it('AD-018: transcript gặp 503 giữ draft/version và thử lưu lại thành
   await user.click(screen.getByRole('button', { name: 'Lưu thay đổi' }))
   expect(await screen.findByRole('alert')).toHaveTextContent('Máy chủ đang bận')
   expect(field).toHaveValue('Nội dung cần giữ khi máy chủ bận')
+  expect(screen.getByRole('button', { name: 'Thử lưu lại' })).toHaveFocus()
   expect(versions).toHaveLength(1)
   await user.click(screen.getByRole('button', { name: 'Thử lưu lại' }))
   expect(
@@ -136,6 +137,7 @@ it('AD-018: đổi tên speaker gặp 503 giữ tên đã gõ và cho thử lạ
   await user.click(screen.getByRole('button', { name: 'Lưu' }))
   expect(await screen.findByRole('alert')).toHaveTextContent('Máy chủ đang bận')
   expect(field).toHaveValue('Tên mới cần giữ')
+  expect(screen.getByRole('button', { name: 'Thử lưu tên lại' })).toHaveFocus()
   expect(requests).toBe(1)
   await user.click(screen.getByRole('button', { name: 'Thử lưu tên lại' }))
   expect(
@@ -166,6 +168,9 @@ it('AD-018: summary gặp 503 giữ bản nháp và cho thử lưu lại', async
   await user.click(screen.getByRole('button', { name: 'Lưu' }))
   expect(await screen.findByRole('alert')).toHaveTextContent('Máy chủ đang bận')
   expect(field).toHaveValue('Tổng quan cần giữ')
+  expect(
+    screen.getByRole('button', { name: 'Thử lưu tóm tắt lại' }),
+  ).toHaveFocus()
   expect(requests).toBe(1)
   await user.click(screen.getByRole('button', { name: 'Thử lưu tóm tắt lại' }))
   expect(await screen.findByText('Tổng quan cần giữ')).toBeInTheDocument()
@@ -189,6 +194,9 @@ it('AD-018: chạy lại job gặp 503 chỉ gửi lại khi người dùng bấ
   )
   expect(await screen.findByRole('alert')).toHaveTextContent('Máy chủ đang bận')
   expect(requests).toBe(1)
+  expect(
+    screen.getByRole('button', { name: 'Thử tạo lại tóm tắt' }),
+  ).toHaveFocus()
   await user.click(screen.getByRole('button', { name: 'Thử tạo lại tóm tắt' }))
   expect(requests).toBe(2)
 })
@@ -208,6 +216,7 @@ it('AD-018: xóa gặp 503 giữ hộp xác nhận, không tự gửi lại', as
   expect(await screen.findByRole('alert')).toHaveTextContent('Máy chủ đang bận')
   expect(requests).toBe(1)
   expect(screen.getByRole('alertdialog')).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Thử xóa lại' })).toHaveFocus()
   await user.click(screen.getByRole('button', { name: 'Thử xóa lại' }))
   expect(requests).toBe(2)
 })

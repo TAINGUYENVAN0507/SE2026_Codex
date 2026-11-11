@@ -74,6 +74,7 @@ function setup(path: string) {
   view.rerender(
     <AppProviders>
       <Capture />
+      <button>Điều khiển ngoài nội dung</button>
       <App />
     </AppProviders>,
   )
@@ -95,7 +96,10 @@ it('AD-018: danh sách hết hai retry hiện bận, bấm thử lại lấy đ�
     }),
   )
   setup('/meetings')
+  const search = screen.getByRole('textbox', { name: 'Tìm cuộc họp' })
+  search.focus()
   await advance()
+  expect(search).toHaveFocus()
   expect(requests).toBe(3)
   expect(screen.getByRole('alert')).toHaveTextContent('Máy chủ đang bận')
   expect(screen.queryByText('CANARY_RAW')).not.toBeInTheDocument()
@@ -126,7 +130,13 @@ it.each(['meeting', 'transcript'] as const)(
       }),
     )
     setup(`/meetings/${meeting.id}`)
+    const control = screen.getByRole('button', {
+      name: 'Điều khiển ngoài nội dung',
+    })
+    control.focus()
     await advance()
+    expect(control).toHaveFocus()
+    expect(screen.getByRole('main')).toBeInTheDocument()
     expect(requests).toBe(3)
     expect(screen.getByRole('alert')).toHaveTextContent('Máy chủ đang bận')
     expect(
