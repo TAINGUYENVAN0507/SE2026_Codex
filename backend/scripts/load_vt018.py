@@ -151,8 +151,23 @@ def wait_ready(base: str, timeout: float = 60) -> None:
     raise RuntimeError("API không sẵn sàng")
 
 
+# httpx mặc định giữ kết nối rảnh 5,0 s, bằng timeout keep-alive của uvicorn: dưới tải, server đóng
+# đúng lúc client gửi upload thì ra RemoteProtocolError (6/6.669 upload ở 247 client, 2026-11-10).
+# 1 s thì kết nối rảnh qua barrier hay qua khoảng poll 2 s đều được mở lại, giống đường thật:
+# nginx dùng proxy_pass không có upstream keepalive nên không dùng lại kết nối tới uvicorn.
+CLIENT_KEEPALIVE_EXPIRY_S = 1.0
+
+
+def make_client(base: str) -> httpx.Client:
+    return httpx.Client(
+        base_url=base,
+        timeout=120,
+        limits=httpx.Limits(keepalive_expiry=CLIENT_KEEPALIVE_EXPIRY_S),
+    )
+
+
 def client_run(i, base, wav, ready, start, polls, interval, rows, errors, idle, detail):
-    with httpx.Client(base_url=base, timeout=120) as c:
+    with make_client(base) as c:
         try:
             # Đăng nhập (argon2, tốn CPU) nằm ngoài phép đo. Giới hạn số lượt đồng thời để
             # N lượt không timeout trước barrier và làm treo cả harness (đã gặp ở N = 239).
@@ -456,6 +471,7 @@ def main() -> int:
                 "date": time.strftime("%Y-%m-%d %H:%M:%S %z"),
                 "python": sys.version.split()[0],
                 "httpx": httpx.__version__,
+                "client_keepalive_expiry_s": CLIENT_KEEPALIVE_EXPIRY_S,
                 "platform": platform.platform(),
                 "cpu_count": os.cpu_count(),
                 "git_commit": subprocess.run(
