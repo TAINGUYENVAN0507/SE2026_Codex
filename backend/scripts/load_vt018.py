@@ -8,9 +8,10 @@ Dựng DB trống bằng alembic, chạy API (uvicorn) và worker (fake pipeline
 bắn N client cùng lúc (barrier), ghi latency từng request. Kết quả vào --out:
 env.json (máy, phiên bản, tham số), raw.csv (từng request), summary.json và summary.md.
 
-Với 1 process API, harness đọc /metrics ngay trước khi thả barrier và sau khi mọi client xong;
-hiệu hai lần đọc cho số phía server (tổng thời gian ở app, thời gian chờ admission) đặt cạnh số
-phía client. Nhiều process thì /metrics chỉ là của một process nên phần này bị bỏ qua.
+Harness đọc /metrics ngay trước khi thả barrier và sau khi mọi client xong; hiệu hai lần đọc cho
+số phía server (tổng thời gian ở app, thời gian chờ admission) đặt cạnh số phía client. Mỗi lượt
+đo có một PROMETHEUS_MULTIPROC_DIR trống riêng (như Compose từ #48), nên /metrics gộp đủ mọi
+process API; summary.json đối chiếu số request server đếm được với số client đã gửi.
 
 Giới hạn của phép đo (cũng được ghi vào summary.md):
 - worker chạy MỖI LÚC 1 job nên hàng đợi tăng dần; harness đo độ trễ API, không đo thông lượng pipeline;
@@ -288,6 +289,9 @@ def main() -> int:
     args = ap.parse_args()
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
+    tmp = Path(tempfile.mkdtemp())
+    prom_dir = tmp / "prometheus"
+    prom_dir.mkdir()
 
     env = {
         **os.environ,
@@ -296,6 +300,8 @@ def main() -> int:
         "FAKE_SCENARIO": "ok",
         # Để kiểm tra ngân sách kết nối trong Settings áp dụng cho đúng số process được chạy.
         "API_WORKERS": str(args.api_workers),
+        # Thư mục trống mỗi lượt: /metrics gộp mọi process API, không lẫn số của lượt trước.
+        "PROMETHEUS_MULTIPROC_DIR": str(prom_dir),
     }
     run = lambda cmd, **kw: subprocess.run(cmd, cwd=BACKEND, env=env, check=True, **kw)  # noqa: E731
     run(["uv", "run", "alembic", "downgrade", "base"], capture_output=True)
@@ -313,7 +319,6 @@ def main() -> int:
         capture_output=True,
     )
 
-    tmp = Path(tempfile.mkdtemp())
     wav = tmp / "load.wav"
     make_wav(wav)
     base = f"http://127.0.0.1:{args.port}"
@@ -346,11 +351,10 @@ def main() -> int:
 
         def before_release() -> None:
             # Sau mọi lượt đăng nhập, trước khi thả client.
-            if args.api_workers == 1:
-                try:
-                    snaps["before"] = scrape(base)
-                except httpx.HTTPError as e:
-                    snaps["error"] = type(e).__name__
+            try:
+                snaps["before"] = scrape(base)
+            except httpx.HTTPError as e:
+                snaps["error"] = type(e).__name__
             snaps["t0"] = time.perf_counter()
 
         ids = list(range(args.clients))
@@ -455,15 +459,17 @@ def main() -> int:
         },
         "server": server_view(snaps["before"], snaps["after"])
         if "after" in snaps
-        else {
-            "skipped": "nhiều process API: /metrics chỉ của một process"
-            if args.api_workers > 1
-            else snaps.get("error", "không đọc được /metrics")
-        },
+        else {"skipped": snaps.get("error", "không đọc được /metrics")},
         "burst_wall_clock_s": round(wall, 2),
         "meeting_status_at_end": statuses,
         "verdict": "PASS" if allv and not errors and pct(allv, 0.95) <= args.threshold else "FAIL",
     }
+    if "skipped" not in summary["server"]:
+        # Server đếm đủ request của mọi process thì hai số này bằng nhau (BE-19, #48).
+        sent = {k: sum(1 for kk, _, _ in rows if kk == k) for k in ("create", "poll")}
+        summary["server_count_vs_client"] = {
+            k: {"server": summary["server"][k].get("n", 0), "client": sent[k]} for k in sent
+        }
     (out / "summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2))
     (out / "env.json").write_text(
         json.dumps(
@@ -472,6 +478,7 @@ def main() -> int:
                 "python": sys.version.split()[0],
                 "httpx": httpx.__version__,
                 "client_keepalive_expiry_s": CLIENT_KEEPALIVE_EXPIRY_S,
+                "prometheus_multiproc": True,
                 "platform": platform.platform(),
                 "cpu_count": os.cpu_count(),
                 "git_commit": subprocess.run(
@@ -542,6 +549,12 @@ def main() -> int:
                 f"Phía client cùng lượt, upload: tỷ lệ ≤ 1,5 s = {cs['le_1.5']}, ≤ 2,0 s = {cs['le_2.0']}.",
                 "Từ bucket chỉ biết quantile nằm trong khoảng; tỷ lệ dưới mốc 1,5 và 2,0 là chính xác vì đó là biên bucket.",
                 "Thời gian ở app gồm chờ admission. Client trừ server là phần ngoài app: máy sinh tải, loopback, uvicorn trước middleware.",
+                "Số request server đếm / client gửi: "
+                + ", ".join(
+                    f"{k} {v['server']}/{v['client']}"
+                    for k, v in summary["server_count_vs_client"].items()
+                )
+                + f" ({args.api_workers} process API).",
             ]
         )
 
