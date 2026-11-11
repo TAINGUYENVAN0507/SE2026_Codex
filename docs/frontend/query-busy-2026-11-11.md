@@ -17,3 +17,14 @@ Kết quả gate toàn bộ module được ghi trong thân commit và báo cáo
 
 Không thay UI library, dependency, OpenAPI hoặc pipeline. Các lần tự retry là
 request đọc dữ liệu, không tự gửi lại thao tác ghi/xóa.
+
+## Danh sách và chi tiết (AD-018, FE-16)
+
+Danh sách đã có thông báo an toàn và nút refetch trước đợt này: không sửa lại
+component đó, chỉ bổ sung test. Trang chi tiết thêm nút Thử lại, refetch cả
+meeting và transcript, giữ đường về danh sách; 404 vẫn dùng trang không tìm thấy.
+
+`BusyReads.test.tsx` dùng provider thật + MSW: 503 liên tục phải có đúng ba
+request, hết skeleton và thấy thông báo/nút. Sau khi API phục hồi, bấm nút
+hiện dữ liệu. Kiểm riêng danh sách, GET meeting và GET transcript. Trước sửa:
+danh sách đạt, hai ca chi tiết đỏ vì thiếu nút; sau sửa kiểm lại cùng test.

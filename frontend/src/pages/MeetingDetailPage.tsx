@@ -70,6 +70,16 @@ function RemoteMeetingDetail({ meetingId }: { meetingId: string }) {
         <p>
           {error instanceof ApiError ? error.message : 'Hãy thử tải lại trang.'}
         </p>
+        <button
+          className="button secondary"
+          disabled={meetingQuery.isFetching || transcriptQuery.isFetching}
+          onClick={() => {
+            void meetingQuery.refetch()
+            void transcriptQuery.refetch()
+          }}
+        >
+          Thử lại
+        </button>
         <Link to="/meetings">Về danh sách cuộc họp</Link>
       </main>
     )
