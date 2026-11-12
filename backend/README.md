@@ -53,6 +53,11 @@ Dự án sử dụng PostgreSQL 16. Để khởi chạy cơ sở dữ liệu cho
    docker compose down
    ```
 
+5. Chạy migration để khởi tạo hoặc cập nhật schema cơ sở dữ liệu:
+   ```bash
+   uv run alembic upgrade head
+   ```
+
 Trên CI GitHub Actions (`.github/workflows/backend.yml`), PostgreSQL 16 được tích hợp tự động dưới dạng container service.
 
 ## 5. Chạy ứng dụng nội bộ (development)
@@ -82,4 +87,19 @@ Worker chịu trách nhiệm claim các job ở trạng thái `queued` và thự
   ```bash
   PIPELINE_BACKEND=real uv run python -m app.worker.runner
   ```
+
+## 6. Cấu hình Môi trường và Biến Mở rộng
+
+Hệ thống hỗ trợ các biến môi trường cấu hình kết nối và giám sát sau (tham khảo `.env.example` ở thư mục gốc):
+
+- `WEB_CONCURRENCY` (hoặc `API_WORKERS`): Số tiến trình uvicorn worker xử lý request API (mặc định: `1`).
+- `DB_RESERVED_CONNECTIONS`: Số kết nối cơ sở dữ liệu dự phòng dành riêng cho worker (claim job, heartbeat), migration và quản trị admin (mặc định: `20`). Tổng kết nối: `API_WORKERS * API_MAX_INFLIGHT + DB_RESERVED_CONNECTIONS <= POSTGRES_MAX_CONNECTIONS`.
+- `PROMETHEUS_MULTIPROC_DIR`: Đường dẫn thư mục lưu trữ số liệu thống kê đa tiến trình của Prometheus client (mặc định: không đặt, chạy chế độ single-process registry).
+  - Khi chạy qua Docker Compose, thư mục này được mount qua volume `promdata` vào `/tmp/prometheus_multiproc_dir` cho cả `api` và `worker` để thời lượng từng stage (`pipeline_stage_duration_seconds`) do worker xử lý được gom vào endpoint `/metrics` của API.
+  - Khi chạy dev cục bộ không dùng Docker Compose mà muốn kiểm tra gom số liệu đa tiến trình, đặt cùng biến này trước khi khởi chạy cả API và worker:
+    ```bash
+    export PROMETHEUS_MULTIPROC_DIR=/tmp/prometheus_multiproc_dir
+    mkdir -p /tmp/prometheus_multiproc_dir
+    ```
+
 

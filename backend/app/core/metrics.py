@@ -12,6 +12,8 @@ Tuyệt đối không đưa UUID hoặc thông tin cá nhân vào nhãn (labels)
 """
 
 import contextlib
+import glob
+import json
 import os
 import time
 from datetime import UTC, datetime
@@ -28,6 +30,7 @@ from prometheus_client import (
     generate_latest,
     multiprocess,
 )
+from prometheus_client.mmap_dict import MmapedDict
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
@@ -140,13 +143,11 @@ class PrometheusMetricsMiddleware(BaseHTTPMiddleware):
 def collect_db_metrics(db: Session) -> None:
     """Truy vấn cơ sở dữ liệu và cập nhật các số đo Gauge tại thời điểm scrape."""
     # 1. Đếm số lượng job theo trạng thái
-    status_counts = {st: 0 for st in JOB_STATUSES}
+    known_statuses = set(JOB_STATUSES) | {k[0] for k in JOBS_TOTAL._metrics}
+    status_counts = {st: 0 for st in known_statuses}
     rows = db.execute(select(Job.status, func.count(Job.id)).group_by(Job.status)).all()
     for st, count in rows:
-        if st in status_counts:
-            status_counts[st] = count
-        else:
-            status_counts[st] = count
+        status_counts[st] = count
 
     for st, count in status_counts.items():
         JOBS_TOTAL.labels(status=st).set(count)
@@ -165,18 +166,40 @@ def collect_db_metrics(db: Session) -> None:
         JOB_OLDEST_QUEUED_SECONDS.set(0.0)
 
     # 3. Đếm số lượng job failed theo stage và error_code
+    known_failed_groups: set[tuple[str, str]] = set()
+    if "PROMETHEUS_MULTIPROC_DIR" in os.environ:
+        target_dir = os.environ["PROMETHEUS_MULTIPROC_DIR"]
+        for f in glob.glob(os.path.join(target_dir, "gauge_livemostrecent_*.db")):
+            try:
+                for raw_key, _, _, _ in MmapedDict.read_all_values_from_file(f):
+                    metric_name, _, labels, _ = json.loads(raw_key)
+                    if metric_name == "jobs_failed_total":
+                        known_failed_groups.add(
+                            (labels.get("stage", "unknown"), labels.get("error_code", "UNKNOWN"))
+                        )
+            except Exception:
+                pass
+    for key in list(JOBS_FAILED_TOTAL._metrics.keys()):
+        known_failed_groups.add((key[0], key[1]))
+
     if "PROMETHEUS_MULTIPROC_DIR" not in os.environ:
         JOBS_FAILED_TOTAL.clear()
+
     failed_rows = db.execute(
         select(Job.stage, Job.error_code, func.count(Job.id))
         .where(Job.status == "failed")
         .group_by(Job.stage, Job.error_code)
     ).all()
+    active_failed_groups: set[tuple[str, str]] = set()
     for stage, error_code, count in failed_rows:
-        JOBS_FAILED_TOTAL.labels(
-            stage=stage or "unknown",
-            error_code=error_code or "UNKNOWN",
-        ).set(count)
+        stg = stage or "unknown"
+        err = error_code or "UNKNOWN"
+        active_failed_groups.add((stg, err))
+        JOBS_FAILED_TOTAL.labels(stage=stg, error_code=err).set(count)
+
+    # Đưa các nhóm đã về 0 về 0 để cập nhật mmap file ở chế độ multiprocess
+    for stg, err in known_failed_groups - active_failed_groups:
+        JOBS_FAILED_TOTAL.labels(stage=stg, error_code=err).set(0)
 
 
 def clean_multiproc_dir(path: str | Path | None = None) -> None:
@@ -191,6 +214,15 @@ def clean_multiproc_dir(path: str | Path | None = None) -> None:
     for p in dir_path.glob("*.db"):
         with contextlib.suppress(OSError):
             p.unlink()
+
+
+def mark_process_dead(pid: int | None = None, path: str | Path | None = None) -> None:
+    """Đánh dấu process API đã kết thúc và xóa các file live gauge (BE-19)."""
+    target_pid = pid if pid is not None else os.getpid()
+    target_path = str(path or os.environ.get("PROMETHEUS_MULTIPROC_DIR") or "")
+    if not target_path:
+        return
+    multiprocess.mark_process_dead(target_pid, path=target_path)
 
 
 def metrics_endpoint(db: Annotated[Session, Depends(get_db)]) -> Response:

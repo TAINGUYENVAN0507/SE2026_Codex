@@ -12,6 +12,7 @@ import multiprocessing as mp
 import os
 import shutil
 import tempfile
+import uuid
 
 import pytest
 
@@ -43,6 +44,14 @@ def _worker_send_requests(
         assert resp.status_code == 200
 
     ready_event.set()
+
+
+def _worker_record_stage_duration(multiproc_dir: str, stage: str, duration: float) -> None:
+    """Subprocess giả lập worker ghi nhận số đo thời lượng stage."""
+    os.environ["PROMETHEUS_MULTIPROC_DIR"] = multiproc_dir
+    from app.core.metrics import PIPELINE_STAGE_DURATION_SECONDS
+
+    PIPELINE_STAGE_DURATION_SECONDS.labels(stage=stage).observe(duration)
 
 
 def _worker_scrape(multiproc_dir: str, db_file: str, q) -> None:
@@ -152,3 +161,223 @@ def test_metrics_multiprocess_aggregates_across_processes(
         get_settings.cache_clear()
         shutil.rmtree(prom_dir, ignore_errors=True)
         shutil.rmtree(db_dir, ignore_errors=True)
+
+
+def test_worker_stage_durations_reach_api_metrics(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Subprocess đóng vai worker ghi pipeline_stage_duration_seconds vào thư mục chung;
+
+    GET /metrics của API (cùng thư mục) phải có _count > 0 cho stage đó (RE-018, BE-19).
+    """
+    prom_dir = tempfile.mkdtemp(prefix="prom_worker_test_")
+    db_dir = tempfile.mkdtemp(prefix="db_worker_test_")
+    try:
+        db_file = os.path.join(db_dir, "test.db").replace("\\", "/")
+        monkeypatch.setenv("DATABASE_URL", f"sqlite:///{db_file}")
+        monkeypatch.setenv("PROMETHEUS_MULTIPROC_DIR", prom_dir)
+
+        from sqlalchemy import create_engine
+
+        import app.db.models  # noqa: F401
+        from app.db.base import Base
+
+        eng = create_engine(f"sqlite:///{db_file}")
+        Base.metadata.create_all(bind=eng)
+        eng.dispose()
+
+        ctx = mp.get_context("spawn")
+        p = ctx.Process(
+            target=_worker_record_stage_duration,
+            args=(prom_dir, "transcribe", 1.85),
+        )
+        p.start()
+        p.join(timeout=10)
+        assert p.exitcode == 0
+
+        # Scrape /metrics từ API (được chạy với cùng thư mục multiprocess)
+        metrics_out = _scrape_metrics(prom_dir, db_file, ctx)
+        assert "pipeline_stage_duration_seconds_count" in metrics_out
+
+        found_count = False
+        for line in metrics_out.splitlines():
+            if (
+                line.startswith("pipeline_stage_duration_seconds_count")
+                and 'stage="transcribe"' in line
+            ):
+                parts = line.rsplit(" ", 1)
+                if len(parts) == 2:
+                    with contextlib.suppress(ValueError):
+                        if float(parts[1]) > 0.0:
+                            found_count = True
+                            break
+        assert found_count, (
+            f"Không tìm thấy stage transcribe với count > 0 trong metrics:\n{metrics_out}"
+        )
+    finally:
+        from app.core.config import get_settings
+
+        get_settings.cache_clear()
+        shutil.rmtree(prom_dir, ignore_errors=True)
+        shutil.rmtree(db_dir, ignore_errors=True)
+
+
+def test_db_backed_job_gauges_drop_groups_reaching_zero(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Tạo 1 job failed, scrape thấy 1; xóa job, scrape lại phải thấy 0
+
+    hoặc không còn dòng đó (BE-19).
+    """
+    prom_dir = tempfile.mkdtemp(prefix="prom_drop_zero_")
+    db_dir = tempfile.mkdtemp(prefix="db_drop_zero_")
+    try:
+        db_file = os.path.join(db_dir, "test.db").replace("\\", "/")
+        monkeypatch.setenv("DATABASE_URL", f"sqlite:///{db_file}")
+        monkeypatch.setenv("PROMETHEUS_MULTIPROC_DIR", prom_dir)
+
+        from sqlalchemy import create_engine
+        from sqlalchemy.orm import Session
+
+        import app.db.models  # noqa: F401
+        from app.db.base import Base
+        from app.db.models.job import Job
+        from app.db.models.meeting import Meeting
+        from app.db.models.user import User
+
+        eng = create_engine(f"sqlite:///{db_file}")
+        Base.metadata.create_all(bind=eng)
+
+        uid = str(uuid.uuid4())
+        mid = str(uuid.uuid4())
+        jid = str(uuid.uuid4())
+
+        with Session(eng) as s:
+            u = User(
+                id=uid,
+                email="zero@example.local",
+                display_name="Zero User",
+                password_hash="h",
+            )
+            m = Meeting(
+                id=mid,
+                owner_id=u.id,
+                title="Zero Meeting",
+                source="upload",
+                status="queued",
+            )
+            j = Job(
+                id=jid,
+                meeting_id=m.id,
+                status="failed",
+                stage="preprocess",
+                error_code="AUDIO_INVALID",
+            )
+            s.add_all([u, m, j])
+            s.commit()
+
+        ctx = mp.get_context("spawn")
+        metrics_1 = _scrape_metrics(prom_dir, db_file, ctx)
+        assert 'jobs_failed_total{error_code="AUDIO_INVALID",stage="preprocess"} 1.0' in metrics_1
+
+        # Xóa job failed khỏi database
+        with Session(eng) as s:
+            job_to_del = s.get(Job, jid)
+            if job_to_del:
+                s.delete(job_to_del)
+                s.commit()
+
+        # Scrape lại lần 2: nhóm ("preprocess", "AUDIO_INVALID") không được giữ số cũ 1.0
+        metrics_2 = _scrape_metrics(prom_dir, db_file, ctx)
+        assert (
+            'jobs_failed_total{error_code="AUDIO_INVALID",stage="preprocess"} 1.0' not in metrics_2
+        )
+        # Phải thấy 0.0 hoặc không còn dòng đó
+        for line in metrics_2.splitlines():
+            if line.startswith("jobs_failed_total") and 'error_code="AUDIO_INVALID"' in line:
+                assert line.endswith(" 0.0"), f"Mong đợi nhóm đã hết về 0.0 nhưng nhận: {line}"
+    finally:
+        from app.core.config import get_settings
+
+        get_settings.cache_clear()
+        shutil.rmtree(prom_dir, ignore_errors=True)
+        shutil.rmtree(db_dir, ignore_errors=True)
+
+
+def test_stopped_api_process_no_longer_counts_toward_inflight(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Tạo file gauge của một pid giả đã chết, gọi hàm dọn, rồi scrape không còn cộng số đó
+
+    (BE-19).
+    """
+    prom_dir = tempfile.mkdtemp(prefix="prom_dead_proc_")
+    db_dir = tempfile.mkdtemp(prefix="db_dead_proc_")
+    try:
+        db_file = os.path.join(db_dir, "test.db").replace("\\", "/")
+        monkeypatch.setenv("DATABASE_URL", f"sqlite:///{db_file}")
+        monkeypatch.setenv("PROMETHEUS_MULTIPROC_DIR", prom_dir)
+
+        import json
+        import time
+
+        from prometheus_client.mmap_dict import MmapedDict
+        from sqlalchemy import create_engine
+
+        import app.db.models  # noqa: F401
+        from app.core.metrics import mark_process_dead
+        from app.db.base import Base
+
+        eng = create_engine(f"sqlite:///{db_file}")
+        Base.metadata.create_all(bind=eng)
+
+        ctx = mp.get_context("spawn")
+
+        # 1. Giả lập một process đã chết (PID 88888) để lại file gauge_livesum_88888.db
+        fake_pid = 88888
+        fake_gauge_file = os.path.join(prom_dir, f"gauge_livesum_{fake_pid}.db")
+        m = MmapedDict(fake_gauge_file)
+        key = json.dumps(["api_inflight_requests", "api_inflight_requests", {}, "help"])
+        m.write_value(key, 7.0, time.time())
+        m.close()
+
+        # 2. Scrape trước khi dọn: thấy 7.0 từ fake_pid
+        metrics_1 = _scrape_metrics(prom_dir, db_file, ctx)
+        found_7 = any(
+            line.strip() == "api_inflight_requests 7.0" for line in metrics_1.splitlines()
+        )
+        assert found_7, f"Mong đợi api_inflight_requests 7.0 nhưng nhận:\n{metrics_1}"
+
+        # 3. Gọi hàm dọn mark_process_dead cho fake_pid
+        mark_process_dead(fake_pid, path=prom_dir)
+
+        # 4. Scrape lại sau khi dọn: fake_pid không còn được cộng vào
+        metrics_2 = _scrape_metrics(prom_dir, db_file, ctx)
+        found_7_after = any(
+            line.strip() == "api_inflight_requests 7.0" for line in metrics_2.splitlines()
+        )
+        assert not found_7_after, f"api_inflight_requests vẫn chứa 7.0 sau khi dọn:\n{metrics_2}"
+    finally:
+        from app.core.config import get_settings
+
+        get_settings.cache_clear()
+        shutil.rmtree(prom_dir, ignore_errors=True)
+        shutil.rmtree(db_dir, ignore_errors=True)
+
+
+@pytest.mark.anyio
+async def test_fastapi_lifespan_calls_mark_process_dead(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """FastAPI shutdown trong lifespan gọi mark_process_dead cho PID hiện tại (BE-19)."""
+    from fastapi import FastAPI
+
+    from app.main import lifespan
+
+    called_with: list[int] = []
+    monkeypatch.setenv("PROMETHEUS_MULTIPROC_DIR", "/tmp/fake_multiproc")
+    monkeypatch.setattr("app.main.mark_process_dead", lambda pid: called_with.append(pid))
+
+    app = FastAPI()
+    async with lifespan(app):
+        assert len(called_with) == 0
+
+    assert called_with == [os.getpid()]

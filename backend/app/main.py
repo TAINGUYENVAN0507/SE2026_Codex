@@ -1,5 +1,9 @@
 """App factory và khởi tạo ứng dụng FastAPI."""
 
+import contextlib
+import os
+from collections.abc import AsyncGenerator
+
 from fastapi import FastAPI
 
 from app.api.v1.auth import router as auth_router
@@ -11,8 +15,17 @@ from app.core.admission import AdmissionControlMiddleware
 from app.core.config import get_settings
 from app.core.errors import setup_exception_handlers
 from app.core.logging import setup_logging
-from app.core.metrics import PrometheusMetricsMiddleware, metrics_endpoint
+from app.core.metrics import PrometheusMetricsMiddleware, mark_process_dead, metrics_endpoint
 from app.core.middleware import RequestIDAndLoggingMiddleware
+
+
+@contextlib.asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    """Quản lý vòng đời khởi động và dừng ứng dụng (BE-19)."""
+    yield
+    if "PROMETHEUS_MULTIPROC_DIR" in os.environ:
+        with contextlib.suppress(Exception):
+            mark_process_dead(os.getpid())
 
 
 def create_app() -> FastAPI:
@@ -26,6 +39,7 @@ def create_app() -> FastAPI:
         docs_url="/docs",
         redoc_url="/redoc",
         openapi_url="/openapi.json",
+        lifespan=lifespan,
     )
 
     # Thêm đầu tiên nên nằm trong cùng: request chờ ở đây đã có request_id và được đo bởi metrics

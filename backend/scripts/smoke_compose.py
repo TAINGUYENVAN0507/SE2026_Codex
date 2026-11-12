@@ -14,6 +14,7 @@ Quy trình kiểm thử:
 from __future__ import annotations
 
 import argparse
+import contextlib
 import io
 import subprocess
 import sys
@@ -155,6 +156,29 @@ def run_smoke(base_url: str, timeout_sec: int = 60) -> None:
         if not job_success:
             raise RuntimeError(f"Job không hoàn thành trong {timeout_sec}s.")
         print("   -> Job đã hoàn thành thành công (succeeded).")
+
+        # 5.1 Kiểm tra thời lượng stage của worker xuất hiện trên /metrics (RE-018, BE-19)
+        print("   -> Kiểm tra metric pipeline_stage_duration_seconds trên /metrics...")
+        metrics_res = client.get("/metrics")
+        if metrics_res.status_code != 200:
+            raise RuntimeError(
+                f"Truy vấn /metrics thất bại ({metrics_res.status_code}): {metrics_res.text}"
+            )
+        found_stage_duration = False
+        for line in metrics_res.text.splitlines():
+            if line.startswith("pipeline_stage_duration_seconds_count"):
+                parts = line.rsplit(" ", 1)
+                if len(parts) == 2:
+                    with contextlib.suppress(ValueError):
+                        if float(parts[1]) > 0.0:
+                            found_stage_duration = True
+                            break
+        if not found_stage_duration:
+            raise RuntimeError(
+                "Không tìm thấy pipeline_stage_duration_seconds_count > 0 "
+                "trên /metrics sau khi job hoàn thành."
+            )
+        print("   -> Đã xác nhận pipeline_stage_duration_seconds_count > 0 trên /metrics.")
 
         # 6. Tải export biên bản cuộc họp
         print("6. Tải bản xuất cuộc họp qua GET /api/v1/meetings/{id}/export...")
