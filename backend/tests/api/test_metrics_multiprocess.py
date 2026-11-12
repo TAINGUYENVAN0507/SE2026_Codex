@@ -12,6 +12,7 @@ import multiprocessing as mp
 import os
 import shutil
 import tempfile
+import uuid
 
 import pytest
 
@@ -211,6 +212,88 @@ def test_worker_stage_durations_reach_api_metrics(monkeypatch: pytest.MonkeyPatc
         assert found_count, (
             f"Không tìm thấy stage transcribe với count > 0 trong metrics:\n{metrics_out}"
         )
+    finally:
+        from app.core.config import get_settings
+
+        get_settings.cache_clear()
+        shutil.rmtree(prom_dir, ignore_errors=True)
+        shutil.rmtree(db_dir, ignore_errors=True)
+
+
+def test_db_backed_job_gauges_drop_groups_reaching_zero(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Tạo 1 job failed, scrape thấy 1; xóa job, scrape lại phải thấy 0
+
+    hoặc không còn dòng đó (BE-19).
+    """
+    prom_dir = tempfile.mkdtemp(prefix="prom_drop_zero_")
+    db_dir = tempfile.mkdtemp(prefix="db_drop_zero_")
+    try:
+        db_file = os.path.join(db_dir, "test.db").replace("\\", "/")
+        monkeypatch.setenv("DATABASE_URL", f"sqlite:///{db_file}")
+        monkeypatch.setenv("PROMETHEUS_MULTIPROC_DIR", prom_dir)
+
+        from sqlalchemy import create_engine
+        from sqlalchemy.orm import Session
+
+        import app.db.models  # noqa: F401
+        from app.db.base import Base
+        from app.db.models.job import Job
+        from app.db.models.meeting import Meeting
+        from app.db.models.user import User
+
+        eng = create_engine(f"sqlite:///{db_file}")
+        Base.metadata.create_all(bind=eng)
+
+        uid = str(uuid.uuid4())
+        mid = str(uuid.uuid4())
+        jid = str(uuid.uuid4())
+
+        with Session(eng) as s:
+            u = User(
+                id=uid,
+                email="zero@example.local",
+                display_name="Zero User",
+                password_hash="h",
+            )
+            m = Meeting(
+                id=mid,
+                owner_id=u.id,
+                title="Zero Meeting",
+                source="upload",
+                status="queued",
+            )
+            j = Job(
+                id=jid,
+                meeting_id=m.id,
+                status="failed",
+                stage="preprocess",
+                error_code="AUDIO_INVALID",
+            )
+            s.add_all([u, m, j])
+            s.commit()
+
+        ctx = mp.get_context("spawn")
+        metrics_1 = _scrape_metrics(prom_dir, db_file, ctx)
+        assert 'jobs_failed_total{error_code="AUDIO_INVALID",stage="preprocess"} 1.0' in metrics_1
+
+        # Xóa job failed khỏi database
+        with Session(eng) as s:
+            job_to_del = s.get(Job, jid)
+            if job_to_del:
+                s.delete(job_to_del)
+                s.commit()
+
+        # Scrape lại lần 2: nhóm ("preprocess", "AUDIO_INVALID") không được giữ số cũ 1.0
+        metrics_2 = _scrape_metrics(prom_dir, db_file, ctx)
+        assert (
+            'jobs_failed_total{error_code="AUDIO_INVALID",stage="preprocess"} 1.0' not in metrics_2
+        )
+        # Phải thấy 0.0 hoặc không còn dòng đó
+        for line in metrics_2.splitlines():
+            if line.startswith("jobs_failed_total") and 'error_code="AUDIO_INVALID"' in line:
+                assert line.endswith(" 0.0"), f"Mong đợi nhóm đã hết về 0.0 nhưng nhận: {line}"
     finally:
         from app.core.config import get_settings
 
