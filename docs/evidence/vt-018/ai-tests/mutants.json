@@ -1,0 +1,29 @@
+{
+  "_note": "Mutant cho ma trận ở 03-mutation-matrix.md. Quy tắc chọn: trong các hàm plan (01-plan-raw.md) nói sẽ test, mỗi phép so sánh đổi sang biên kế bên, mỗi `+= 1` bỏ đi, mỗi phép gán trạng thái/thời gian/lỗi bỏ đi, mỗi tập chuyển trạng thái thêm hoặc bớt một ô, hằng số jitter và mốc backoff lệch một bước. Đặt trước khi chạy ma trận. `old` phải xuất hiện đúng 1 lần trong file.",
+  "mutants": [
+    {"id": "M01", "file": "app/worker/retry.py", "old": "max(0, attempt - 1)", "new": "max(0, attempt)", "what": "backoff lệch một mốc"},
+    {"id": "M02", "file": "app/worker/retry.py", "old": "random.uniform(0.8, 1.2)", "new": "random.uniform(0.8, 1.3)", "what": "jitter vượt +20 %"},
+    {"id": "M03", "file": "app/worker/retry.py", "old": "return round(base * factor, 2)", "new": "return base", "what": "bỏ jitter"},
+    {"id": "M04", "file": "app/worker/queue.py", "old": "JobStatus.QUEUED: {JobStatus.RUNNING, JobStatus.CANCELLED}", "new": "JobStatus.QUEUED: {JobStatus.RUNNING, JobStatus.CANCELLED, JobStatus.SUCCEEDED}", "what": "cho phép queued -> succeeded"},
+    {"id": "M05", "file": "app/worker/queue.py", "old": "JobStatus.QUEUED,  # Khi người dùng chủ động yêu cầu retry", "new": "JobStatus.QUEUED, JobStatus.RUNNING,", "what": "cho phép failed -> running"},
+    {"id": "M06", "file": "app/worker/queue.py", "old": "    if tgt not in allowed:", "new": "    if False:", "what": "tắt kiểm tra chuyển trạng thái"},
+    {"id": "M07", "file": "app/worker/queue.py", "old": "        job.next_run_at = None\n", "new": "        pass\n", "what": "về queued vẫn giữ lịch cũ"},
+    {"id": "M08", "file": "app/worker/queue.py", "old": "        job.finished_at = current_time", "new": "        pass", "what": "không ghi finished_at"},
+    {"id": "M09", "file": "app/worker/queue.py", "old": "or_(Job.next_run_at.is_(None), Job.next_run_at <= current_time)", "new": "Job.next_run_at.is_(None)", "what": "queued có lịch không bao giờ được claim"},
+    {"id": "M10", "file": "app/worker/queue.py", "old": "                    Job.next_run_at <= current_time,\n", "new": "                    Job.next_run_at < current_time,\n", "what": "retry đúng giờ chưa được claim (<= thành <)"},
+    {"id": "M11", "file": "app/worker/queue.py", "old": ".order_by(Job.created_at.asc())", "new": ".order_by(Job.created_at.desc())", "what": "claim job mới nhất trước"},
+    {"id": "M12", "file": "app/worker/queue.py", "old": "            Job.status == candidate.status,\n", "new": "", "what": "bỏ điều kiện chống race khi claim"},
+    {"id": "M13", "file": "app/worker/queue.py", "old": "locked_until=current_time + timedelta(seconds=lease_duration_sec)", "new": "locked_until=current_time + timedelta(seconds=lease_duration_sec + 1)", "what": "lease dài hơn 1 s"},
+    {"id": "M14", "file": "app/worker/queue.py", "old": "started_at=func.coalesce(Job.started_at, current_time)", "new": "started_at=current_time", "what": "claim lại ghi đè started_at"},
+    {"id": "M15", "file": "app/worker/queue.py", "old": "    job.progress = 1.0\n", "new": "", "what": "hoàn thành không đặt progress 1.0"},
+    {"id": "M16", "file": "app/worker/queue.py", "old": "    job.error_code = error_code\n    job.error_message = error_message\n    job.locked_by = None\n    job.locked_until = None\n    db.commit()\n\n\ndef schedule_retry", "new": "    job.error_message = error_message\n    job.locked_by = None\n    job.locked_until = None\n    db.commit()\n\n\ndef schedule_retry", "what": "fail_job không ghi error_code"},
+    {"id": "M17", "file": "app/worker/queue.py", "old": "    job.next_run_at = next_run_at\n    job.attempt += 1\n", "new": "    job.next_run_at = next_run_at\n", "what": "schedule_retry không tăng attempt"},
+    {"id": "M18", "file": "app/worker/queue.py", "old": "    job.next_run_at = next_run_at\n", "new": "", "what": "schedule_retry không đặt next_run_at"},
+    {"id": "M19", "file": "app/worker/reaper.py", "old": "        Job.locked_until < current_time,", "new": "        Job.locked_until <= current_time,", "what": "reaper thu hồi job đúng lúc hết lease (< thành <=)"},
+    {"id": "M20", "file": "app/worker/reaper.py", "old": "            job.attempt += 1\n", "new": "", "what": "reaper không tăng attempt"},
+    {"id": "M21", "file": "app/worker/reaper.py", "old": "        if job.can_retry:", "new": "        if True:", "what": "reaper không bao giờ đánh failed"},
+    {"id": "M22", "file": "app/worker/reaper.py", "old": "error_code=\"LEASE_TIMEOUT\"", "new": "error_code=\"TIMEOUT\"", "what": "sai mã lỗi"},
+    {"id": "M23", "file": "app/worker/reaper.py", "old": "    transition_job_status(job, JobStatus.QUEUED, now=current_time)\n    db.commit()", "new": "    job.attempt += 1\n    transition_job_status(job, JobStatus.QUEUED, now=current_time)\n    db.commit()", "what": "SIGTERM tăng attempt"},
+    {"id": "M24", "file": "app/db/models/job.py", "old": "return self.max_attempts > self.attempt", "new": "return self.max_attempts >= self.attempt", "what": "mutation của đề: > thành >="}
+  ]
+}

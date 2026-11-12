@@ -2,7 +2,7 @@
 
 Mỗi dòng: yêu cầu của đề, bằng chứng trong repo, trạng thái trung thực. "Không đạt" và "chưa" được ghi nguyên văn. Bằng chứng chỉ là một lần chạy trên một máy trừ khi ghi khác.
 
-Cập nhật 2026-11-11 (sau #47, #48; số đo tải hôm nay ở các thư mục `*-2026-11-11`).
+Cập nhật 2026-11-12 (`main` đóng băng tại `d9c2d50`, sau #50, #51). Số đo tải 247 và 239 là của 2026-11-11 (thư mục `*-2026-11-11`), 40 client là của 2026-11-12.
 
 ## RE-018 (quan sát được, 239 người dùng, lưu 14 ngày)
 
@@ -33,7 +33,8 @@ Cập nhật 2026-11-11 (sau #47, #48; số đo tải hôm nay ở các thư m�
 | Retry không tạo bản ghi trùng | `backend/tests/reliability/`, `docs/evidence/reliability.md`, `docs/evidence/vt-018/01-red.log` | Có |
 | Pairwise | `docs/evidence/vt-018/pairwise.md` | Có |
 | Mutation `>` thành `>=` | `docs/evidence/vt-018/mutation.md` | Có |
-| 40 người dùng p95 ≤ 1,5 s | `docs/evidence/vt-018/load-40/`, `docs/evidence/vt-018/load-40-before/`, `docs/evidence/vt-018/load-40-after/`, `docs/evidence/vt-018/load-40-2026-11-10/README.md`, `docs/evidence/vt-018/load-40-2026-11-11/README.md` | Đạt: p95 upload 0,36 đến 0,41 s (11-10, 3/3 lượt); 0,56 đến 0,84 s (11-11, `main` 6/6 lượt). Một lượt của bản trước #48 lên 1,80 s khi máy bận (load 8): mốc này đạt nhưng không có nhiều biên trên máy dùng chung; fake pipeline, một máy |
+| AI sinh test, xóa hoặc sửa ≥ 2 test yếu | `docs/evidence/vt-018/ai-tests/README.md`, `backend/tests/ai_raw/vt018_ai_raw.py` (bản thô), `backend/tests/unit/test_vt018_ai_reviewed.py` | Có: sửa 4, xóa 5, thêm 1; mutant bị giết 18/24 ở bản thô, 24/24 sau review. 24/24 không phải phép đo độc lập, vì khi sửa test đã biết trước mutant nào sống |
+| 40 người dùng p95 ≤ 1,5 s | `docs/evidence/vt-018/load-40/`, `docs/evidence/vt-018/load-40-before/`, `docs/evidence/vt-018/load-40-after/`, `docs/evidence/vt-018/load-40-2026-11-10/README.md`, `docs/evidence/vt-018/load-40-2026-11-11/README.md`, `docs/evidence/vt-018/load-40-2026-11-12/README.md` | Đạt ở phần lớn lượt, không ổn định: trên `main` đã đóng băng (11-12) 5/6 lượt đạt, 1 lượt p95 upload 1,56 s. Kết quả chia hai mức: quanh 0,5 s và quanh 1,4 đến 1,6 s; thời gian nằm trong app, nguyên nhân chưa rõ. Trước đó: 0,36 đến 0,41 s (11-10, 3/3), 0,56 đến 0,84 s (11-11, 6/6). Fake pipeline, một máy |
 | Coverage, flaky | `docs/evidence/vt-018/README.md`; #46: `docs/evidence/vt-018/04-red-ffprobe.log` (5 test upload đỏ trên máy có ffprobe, xanh trên CI) và `backend/tests/integration/test_ffprobe_real.py` | Có; sau #46 kết quả như nhau dù máy có hay không có ffprobe, CI chạy ffprobe thật |
 
 ## Chưa làm, không có bằng chứng

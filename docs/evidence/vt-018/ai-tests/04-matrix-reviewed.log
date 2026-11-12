@@ -1,0 +1,25 @@
+baseline: 42 test, 0 fail sẵn: []
+M01 KILLED (3 test) backoff lệch một mốc
+M02 KILLED (1 test) jitter vượt +20 %
+M03 KILLED (1 test) bỏ jitter
+M04 KILLED (1 test) cho phép queued -> succeeded
+M05 KILLED (1 test) cho phép failed -> running
+M06 KILLED (7 test) tắt kiểm tra chuyển trạng thái
+M07 KILLED (1 test) về queued vẫn giữ lịch cũ
+M08 KILLED (3 test) không ghi finished_at
+M09 KILLED (1 test) queued có lịch không bao giờ được claim
+M10 KILLED (1 test) retry đúng giờ chưa được claim (<= thành <)
+M11 KILLED (1 test) claim job mới nhất trước
+M12 KILLED (1 test) bỏ điều kiện chống race khi claim
+M13 KILLED (3 test) lease dài hơn 1 s
+M14 KILLED (1 test) claim lại ghi đè started_at
+M15 KILLED (1 test) hoàn thành không đặt progress 1.0
+M16 KILLED (2 test) fail_job không ghi error_code
+M17 KILLED (1 test) schedule_retry không tăng attempt
+M18 KILLED (1 test) schedule_retry không đặt next_run_at
+M19 KILLED (1 test) reaper thu hồi job đúng lúc hết lease (< thành <=)
+M20 KILLED (1 test) reaper không tăng attempt
+M21 KILLED (1 test) reaper không bao giờ đánh failed
+M22 KILLED (1 test) sai mã lỗi
+M23 KILLED (1 test) SIGTERM tăng attempt
+M24 KILLED (2 test) mutation của đề: > thành >=

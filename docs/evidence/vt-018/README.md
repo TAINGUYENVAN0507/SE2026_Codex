@@ -23,6 +23,8 @@ Hai file migration cần Postgres (skip khi không có). Dựng Postgres không 
 | `load-40-after/` | 40 client sau khi giới hạn request đang xử lý (2026-11-09) |
 | `load-40-2026-11-10/` | 40 client trên `main` sau #44, #45, 3 lượt (2026-11-10) |
 | `load-40-2026-11-11/` | 40 client trên `main` sau #47, #48: 3 lượt, cộng A/B xen kẽ với bản trước #48 (2026-11-11) |
+| `load-40-2026-11-12/` | 40 client trên `main` đã đóng băng (`d9c2d50`): 6 lượt, 5 đạt, 1 không đạt (p95 1,56 s) (2026-11-12) |
+| `ai-tests/` | Test do AI sinh cho retry và hàng đợi job: prompt, plan thô, test thô, ma trận mutation trước và sau khi xóa hoặc sửa test yếu (2026-11-12) |
 | `03-red-retention-docs.log` | Test đỏ khi tài liệu ghi hạn lưu trữ khác cấu hình (2026-11-09) |
 | `04-red-ffprobe.log` | 5 test upload đỏ trên máy có ffprobe, xanh trên CI vì CI không có ffprobe; nguyên nhân và kết quả sau sửa (2026-11-10) |
 
@@ -48,6 +50,29 @@ Kết quả của bộ test trên, cho các module liên quan tới bài:
 | `api/v1/jobs.py` | 85 % | 2 nhánh một phần | dòng 42, 49 |
 
 Tổng `app/` của bộ này là 57 % (2603 dòng): bộ test chỉ nhắm vào luồng retry, nên con số tổng không nói gì về phần còn lại. Coverage không chứng minh test đủ mạnh; mutation ở `mutation.md` mới là phép thử đó, và nó tìm ra 1 lỗ hổng mà coverage không thấy.
+
+### Đo lại trên `main` đã đóng băng (2026-11-12)
+
+Cùng lệnh ở trên, trên `d9c2d50` cộng các test AI đã review: 113 passed. Cột Cover là số pytest-cov in ra khi bật `--cov-branch`, tính chung dòng và nhánh.
+
+| Module | Cover | Dòng chưa phủ |
+|---|---|---|
+| `db/models/job.py` | 100 % | – |
+| `worker/queue.py` | 100 % | – |
+| `worker/reaper.py` | 100 % | – |
+| `worker/retry.py` | 100 % | – |
+| `worker/persister.py` | 85 % | đường lỗi schema, summary `disabled` |
+| `worker/runner.py` | 78 % | hủy job, SIGTERM, hết lease |
+| `api/v1/jobs.py` | 88 % | 95, 134, 273-284 |
+
+Coverage so với mutation ở bộ test AI sinh (`ai-tests/`), khi chạy riêng từng file:
+
+| File test | `retry.py` | `queue.py` | `reaper.py` | Mutant bị giết |
+|---|---|---|---|---|
+| Bản thô | 100 % | 92 % | 73 % | 18/24 |
+| Bản đã review | 100 % | 95 % | 73 % | 24/24 |
+
+Ở bản thô, `retry.py` đã đạt 100 % nhưng mutant bỏ jitter (M03) vẫn sống. Từ bản thô sang bản review, coverage của `queue.py` chỉ tăng 3 điểm, còn số mutant bị giết tăng từ 18 lên 24.
 
 ## Kiểm tra flaky
 
