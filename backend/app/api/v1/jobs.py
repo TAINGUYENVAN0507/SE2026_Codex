@@ -86,15 +86,12 @@ def get_job(
     db: Annotated[Session, Depends(get_db)],
 ) -> JobOut:
     """Trả về trạng thái tiến trình job từ cơ sở dữ liệu."""
-    job = db.execute(select(Job).where(Job.id == job_id)).scalar_one_or_none()
+    job = db.execute(
+        select(Job)
+        .join(Meeting, Meeting.id == Job.meeting_id)
+        .where(Job.id == job_id, Meeting.owner_id == current_user.id)
+    ).scalar_one_or_none()
     if not job:
-        raise APIError(
-            code="NOT_FOUND",
-            message="Không tìm thấy tiến trình xử lý.",
-            status_code=status.HTTP_404_NOT_FOUND,
-        )
-    meeting = db.execute(select(Meeting).where(Meeting.id == job.meeting_id)).scalar_one_or_none()
-    if not meeting or meeting.owner_id != current_user.id:
         raise APIError(
             code="NOT_FOUND",
             message="Không tìm thấy tiến trình xử lý.",

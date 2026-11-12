@@ -61,13 +61,18 @@ logger = logging.getLogger("backend.api.meetings")
 __all__ = ["probe_audio", "router", "serialize_action_item"]
 
 
-def serialize_meeting_summary(meeting: Meeting, db: Session) -> MeetingOut:
+def serialize_meeting_summary(
+    meeting: Meeting, db: Session, latest_job: Job | None = None
+) -> MeetingOut:
     """Chuyển đổi một thực thể Meeting trong DB sang schema MeetingOut."""
-    latest_job = (
-        db.execute(select(Job).where(Job.meeting_id == meeting.id).order_by(Job.created_at.desc()))
-        .scalars()
-        .first()
-    )
+    if latest_job is None:
+        latest_job = (
+            db.execute(
+                select(Job).where(Job.meeting_id == meeting.id).order_by(Job.created_at.desc())
+            )
+            .scalars()
+            .first()
+        )
 
     clean_ext = (
         meeting.audio_path.rsplit(".", 1)[-1].lower()
@@ -261,7 +266,7 @@ def serialize_meeting_detail(meeting: Meeting, db: Session) -> MeetingDetailOut:
 
     job_out = serialize_job(latest_job) if latest_job else None
 
-    meeting_summary = serialize_meeting_summary(meeting, db)
+    meeting_summary = serialize_meeting_summary(meeting, db, latest_job=latest_job)
     return MeetingDetailOut(
         **meeting_summary.model_dump(),
         latest_job=job_out,
