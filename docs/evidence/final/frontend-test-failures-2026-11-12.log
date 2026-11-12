@@ -19,9 +19,8 @@ AssertionError: expected [ …(2) ] to have a length of +0 but got 2
       Tests  2 failed | 294 passed (296)
 
 === login-cache-red.log; SHA256=5b7afb315213a47759fe44ef6a7fd24bab359ddc8cfde8edf13e199e854c00f8 ===
- FAIL  src/features/auth/Session.test.tsx > FE-03 session guard and logout > clears residual private queries when the 
+ FAIL  src/features/auth/Session.test.tsx > FE-03 session guard and logout > clears residual private queries when the
 AssertionError: expected { text: 'PRIVATE_CANARY' } to be undefined
  Test Files  1 failed (1)
       Tests  1 failed | 5 skipped (6)
   "text": "PRIVATE_CANARY",
-

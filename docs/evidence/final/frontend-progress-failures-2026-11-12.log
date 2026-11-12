@@ -1,5 +1,5 @@
 === partial-retry-red.log; SHA256=a1b79238dd50c6956adc872d2a8e8b34bf3439a84c8a6579978709bb1d44078a ===
- FAIL  src/features/meetings/PartialSummaryRetry.test.tsx > shows retry for a partial meeting whose summary still says 
+ FAIL  src/features/meetings/PartialSummaryRetry.test.tsx > shows retry for a partial meeting whose summary still says
 TestingLibraryElementError: Unable to find role="button" and name "Tạo lại tóm tắt"
  Test Files  1 failed (1)
       Tests  1 failed (1)
@@ -9,4 +9,3 @@ TestingLibraryElementError: Unable to find role="button" and name "Tạo lại t
  FAIL  src/features/jobs/JobStatusCard.test.tsx > JobStatusCard > does not label a queued summarize stage as running
  Test Files  1 failed (1)
       Tests  2 failed | 24 skipped (26)
-

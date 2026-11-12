@@ -1,0 +1,152 @@
+{
+  "date": "2026-11-12",
+  "verified_code_and_test_commit": "434b9f0fef4797e386438e9475ec258e25cbb6f4",
+  "original_test_run_base_commit": "e2a0d712dc4900490f69d2672adc4eb0510ddfc2",
+  "note": "Các sửa lỗi và test còn trong working tree lúc chạy; đã đối chiếu các file được kiểm với commit trên bằng SHA256. Commit tiếp theo chỉ là tài liệu/phân công.",
+  "gates": [
+    {
+      "name": "lint",
+      "command": "npm run lint",
+      "exit_code": 0,
+      "duration_sec": 4.16,
+      "started_at_utc": "2026-11-12T07:13:02.184651+00:00",
+      "log_sha256": "4e78d8ab8a8c9f8a56314acedd7493901f7bec338f59ee6152a7f26ca116b8fe"
+    },
+    {
+      "name": "format",
+      "command": "npm run format:check",
+      "exit_code": 0,
+      "duration_sec": 1.72,
+      "started_at_utc": "2026-11-12T07:13:06.351209+00:00",
+      "log_sha256": "69f73fb915a3fa94b518f2a30c499051278038792c92d54d98a4d2bd69b969a0"
+    },
+    {
+      "name": "typecheck",
+      "command": "npm run typecheck",
+      "exit_code": 0,
+      "duration_sec": 3.84,
+      "started_at_utc": "2026-11-12T07:13:08.063427+00:00",
+      "log_sha256": "5cb53ebbd7501c980a2e93c60120654d7b7056e3a4cf55d491d8145c3c84ee87"
+    },
+    {
+      "name": "coverage",
+      "command": "npm run test:coverage",
+      "exit_code": 0,
+      "duration_sec": 32.05,
+      "started_at_utc": "2026-11-12T07:13:11.913024+00:00",
+      "log_sha256": "61e9df5845080ebb3d9773da25bbbf2e374e1317fe826838dada715771b2258b"
+    },
+    {
+      "name": "build",
+      "command": "npm run build",
+      "exit_code": 0,
+      "duration_sec": 4.23,
+      "started_at_utc": "2026-11-12T07:13:43.965667+00:00",
+      "log_sha256": "edaa8ae1cefb4d8a288d9b2b12d2596e58156f75778aed653652469c5ff5f54b"
+    }
+  ],
+  "coverage": {
+    "lines": {
+      "total": 1400,
+      "covered": 1215,
+      "skipped": 0,
+      "pct": 86.78
+    },
+    "statements": {
+      "total": 1561,
+      "covered": 1317,
+      "skipped": 0,
+      "pct": 84.36
+    },
+    "functions": {
+      "total": 500,
+      "covered": 403,
+      "skipped": 0,
+      "pct": 80.6
+    },
+    "branches": {
+      "total": 1410,
+      "covered": 1151,
+      "skipped": 0,
+      "pct": 81.63
+    },
+    "branchesTrue": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 100
+    }
+  },
+  "vitest_passed": 301,
+  "vitest_files": 50,
+  "vitest_skipped": 0,
+  "source_sha256": {
+    "frontend/e2e/evidence/progress.spec.ts": "bad66a4adf5f57d8641221720e42b92af22c9cd0552aeaaa17729532489bb00c",
+    "frontend/e2e/stack.mjs": "51a48a3755d4a3ac4afe073b8a207ef6b50471c07950f9fac22e89c6644d1306",
+    "frontend/playwright.evidence.config.ts": "c047b9f6d8e6944c3590a64f6172099b34940ddd3bf4fab377eefc4515bd3ecf",
+    "frontend/src/App.test.tsx": "f6289046e2a13e333a35e3aaf53fa0807ea434fd59575c20b40e833a7bc2dc3f",
+    "frontend/src/features/auth/Session.test.tsx": "219e91e419fcf548e54799b32b81e16f7cb3f67c51aabbfa201a05d3e10bb96f",
+    "frontend/src/features/auth/SessionEvents.tsx": "59e81e115ce7051ec801cfaad83fef1147622fadcf778408685eb17629d18d69",
+    "frontend/src/features/auth/SessionExpiry.test.tsx": "f88358dc597dc841b55c9ea0fa9cdcfa4897477eafc15fea67f07e5bd8da70d4",
+    "frontend/src/features/jobs/JobStatusCard.test.tsx": "ecf546c420fddbf26db7b4a37b70cb665c03792df8dbb3c5f2797fb0de1ee004",
+    "frontend/src/features/jobs/JobStatusCard.tsx": "1b0dc4b181e4cff55896d2970b4b68d70daf4f66bd6769ba17ce62d4e893c660",
+    "frontend/src/features/meetings/PartialSummaryRetry.test.tsx": "ed67ac11e734a8c51698b68ed3a03ed64d7c833d9d9f2f9bec38eb94d46f2c2d",
+    "frontend/src/features/meetings/RemoteSummary.tsx": "5a627c075a1f53028de261ffdc409c7a2947df6a272d43295b51e89eb6d0f2ad",
+    "frontend/src/features/meetings/RetryDoubleClick.test.tsx": "1d6ee5a22c4c2be0ef07ed9b54bb7e24958ef8a0e525d30441ffe599102104a8",
+    "frontend/src/features/meetings/apiModel.ts": "62700321172d0d17da7d728f532af7fd6df7a095cfbc3adb8439b053a1583ac5",
+    "frontend/src/features/meetings/model.ts": "e51b6000d544bc97fbcb204a16f07f5a08ebaf7ad1b9c073ca3ea54fcdfa1438",
+    "frontend/src/pages/Accessibility.test.tsx": "f2e7af1b32fce4c4d5ed0dd911980435eefc6a77213683d1b409c8646687d139",
+    "frontend/src/pages/BusyUpload.test.tsx": "d05b96765ef594aed44e40754982a7981a8274ba9d05867ff1ff553bb6f6a5a7",
+    "frontend/tsconfig.node.json": "a60703680bfd0f5ef6670d210e9ee41ca7b7ea985ad2375c0a99276fcd356a50"
+  },
+  "clean_clone_e2e": {
+    "command": [
+      "cmd.exe",
+      "/d",
+      "/c",
+      "npm.cmd",
+      "run",
+      "e2e"
+    ],
+    "source_commit": "add08c2b9b0abbfc5e1faffeeb1df008df2a9957",
+    "working_tree_modified": false,
+    "started_at_utc": "2026-11-12T06:52:11.092959+00:00",
+    "exit_code": 0,
+    "duration_sec": 321.25,
+    "log_sha256": "d2ab23c052595cf6f29435281baed4871ba97a4d1413d971705ab32df7158d4e",
+    "pipeline": "fake",
+    "scenario": "slow",
+    "postgres_version": 16,
+    "synthetic_only": true
+  },
+  "progress_e2e": {
+    "command": [
+      "cmd.exe",
+      "/d",
+      "/c",
+      "npx.cmd",
+      "playwright",
+      "test",
+      "--config",
+      "playwright.evidence.config.ts"
+    ],
+    "source_commit": "e2a0d712dc4900490f69d2672adc4eb0510ddfc2",
+    "working_tree_modified": true,
+    "started_at_utc": "2026-11-12T07:12:17.704724+00:00",
+    "exit_code": 0,
+    "duration_sec": 44.36,
+    "log_sha256": "52a25da67034db70b417eb19ad9c93ac264961cb102e86b564e1238628bd6f57",
+    "pipeline": "fake",
+    "scenario": "slow",
+    "postgres_version": 16,
+    "synthetic_only": true
+  },
+  "cleanup": {
+    "database_container_stopped": true,
+    "synthetic_password_removed": true,
+    "listeners": []
+  },
+  "pushed": false,
+  "pr_opened": false,
+  "ci_verified": false
+}
