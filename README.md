@@ -74,15 +74,17 @@ cp .env.example .env
 docker compose up -d db
 ```
 
-#### Bước 2: Khởi động Backend API Server
+#### Bước 2: Chạy migration và Khởi động Backend API Server
 Mở terminal 1:
 ```bash
 cd backend
 uv sync
+uv run alembic upgrade head
 uv run uvicorn app.main:app --reload --port 8000
 ```
 - API Server: `http://localhost:8000`
 - Tài liệu API tương tác: `http://localhost:8000/docs` hoặc `http://localhost:8000/redoc`
+- Cấu hình mở rộng (`.env`): `WEB_CONCURRENCY` (số uvicorn worker, mặc định `1`), `DB_RESERVED_CONNECTIONS` (kết nối dự phòng cho worker/migration, mặc định `20`), `PROMETHEUS_MULTIPROC_DIR` (thư mục chia sẻ gom metric đa tiến trình cho Prometheus).
 
 #### Bước 3: Khởi động Background Worker
 Mở terminal 2:
