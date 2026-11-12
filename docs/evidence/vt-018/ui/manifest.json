@@ -1,0 +1,148 @@
+{
+  "date": "2026-11-12",
+  "product_commit_verified_after_capture": "b3c177537d2ad4d5351901c8e9066486e22e4a47",
+  "captured_base_commit": "e2a0d712dc4900490f69d2672adc4eb0510ddfc2",
+  "working_tree_modified_during_capture": true,
+  "source_sha256": {
+    "frontend/src/features/auth/SessionEvents.tsx": "59e81e115ce7051ec801cfaad83fef1147622fadcf778408685eb17629d18d69",
+    "frontend/src/features/jobs/JobStatusCard.tsx": "1b0dc4b181e4cff55896d2970b4b68d70daf4f66bd6769ba17ce62d4e893c660",
+    "frontend/src/features/meetings/RemoteSummary.tsx": "5a627c075a1f53028de261ffdc409c7a2947df6a272d43295b51e89eb6d0f2ad",
+    "frontend/src/features/meetings/apiModel.ts": "62700321172d0d17da7d728f532af7fd6df7a095cfbc3adb8439b053a1583ac5",
+    "frontend/src/features/meetings/model.ts": "e51b6000d544bc97fbcb204a16f07f5a08ebaf7ad1b9c073ca3ea54fcdfa1438",
+    "frontend/e2e/evidence/progress.spec.ts": "bad66a4adf5f57d8641221720e42b92af22c9cd0552aeaaa17729532489bb00c",
+    "frontend/playwright.evidence.config.ts": "c047b9f6d8e6944c3590a64f6172099b34940ddd3bf4fab377eefc4515bd3ecf",
+    "frontend/e2e/stack.mjs": "51a48a3755d4a3ac4afe073b8a207ef6b50471c07950f9fac22e89c6644d1306",
+    "frontend/tsconfig.node.json": "a60703680bfd0f5ef6670d210e9ee41ca7b7ea985ad2375c0a99276fcd356a50",
+    "frontend/src/features/meetings/RetryDoubleClick.test.tsx": "1d6ee5a22c4c2be0ef07ed9b54bb7e24958ef8a0e525d30441ffe599102104a8"
+  },
+  "screenshots_sha256": {
+    "01-queued.png": "4e368ec4b885aee6158f7570deff33eb999f4ba913589f08a41103b1eafb5ca1",
+    "02-running.png": "34dc0b5d4ba8e54d7e1f18f8b8b245077aeeb4b8a375e47ddf4ce3a875245321",
+    "03-succeeded.png": "b0df7a7490e417ebf494e3d1203deb1950267c4f9d4a2c5e3c0d81bedff982ff",
+    "04-retry-reset.png": "e110601351748c47233b30eb2b4501b16b246374f359b75828d01681b540f0e7"
+  },
+  "viewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "attempts": [
+    {
+      "command": [
+        "cmd.exe",
+        "/d",
+        "/c",
+        "npx.cmd",
+        "playwright",
+        "test",
+        "--config",
+        "playwright.evidence.config.ts"
+      ],
+      "source_commit": "e2a0d712dc4900490f69d2672adc4eb0510ddfc2",
+      "working_tree_modified": true,
+      "started_at_utc": "2026-11-12T06:58:10.230320+00:00",
+      "exit_code": 1,
+      "duration_sec": 198.2,
+      "log_sha256": "0e8330f8cdbbf8a33b5d9597a5b561418221f047a28e99827443a1d4f428f508",
+      "pipeline": "fake",
+      "scenario": "slow",
+      "postgres_version": 16,
+      "synthetic_only": true,
+      "reason": "Lỗi sản phẩm: partial/pending không hiện nút retry"
+    },
+    {
+      "command": [
+        "cmd.exe",
+        "/d",
+        "/c",
+        "npx.cmd",
+        "playwright",
+        "test",
+        "--config",
+        "playwright.evidence.config.ts"
+      ],
+      "source_commit": "e2a0d712dc4900490f69d2672adc4eb0510ddfc2",
+      "working_tree_modified": true,
+      "started_at_utc": "2026-11-12T07:04:25.804904+00:00",
+      "exit_code": 1,
+      "duration_sec": 41.25,
+      "log_sha256": "d941583eed292537ec85887c0f53f84e5e8b4a92b7c852eb9016a1d15d79a49f",
+      "pipeline": "fake",
+      "scenario": "slow",
+      "postgres_version": 16,
+      "synthetic_only": true,
+      "reason": "Sai kỳ vọng harness: POST jobs trả 202, không phải 201"
+    },
+    {
+      "command": [
+        "cmd.exe",
+        "/d",
+        "/c",
+        "npx.cmd",
+        "playwright",
+        "test",
+        "--config",
+        "playwright.evidence.config.ts"
+      ],
+      "source_commit": "e2a0d712dc4900490f69d2672adc4eb0510ddfc2",
+      "working_tree_modified": true,
+      "started_at_utc": "2026-11-12T07:06:12.046281+00:00",
+      "exit_code": 1,
+      "duration_sec": 63.31,
+      "log_sha256": "a9e380038ab958d750f72e2e326a1d4e0df37db1eafafa8d70d02e4ba56cf5a3",
+      "pipeline": "fake",
+      "scenario": "slow",
+      "postgres_version": 16,
+      "synthetic_only": true,
+      "reason": "Sai kỳ vọng harness: retry summarize giữ progress 5/6, không phải 0"
+    },
+    {
+      "command": [
+        "cmd.exe",
+        "/d",
+        "/c",
+        "npx.cmd",
+        "playwright",
+        "test",
+        "--config",
+        "playwright.evidence.config.ts"
+      ],
+      "source_commit": "e2a0d712dc4900490f69d2672adc4eb0510ddfc2",
+      "working_tree_modified": true,
+      "started_at_utc": "2026-11-12T07:08:06.326533+00:00",
+      "exit_code": 0,
+      "duration_sec": 50.91,
+      "log_sha256": "7ace77c3afa95739ef0cffa17cee3220e23c3c04f8199ce650f05964753bca80",
+      "pipeline": "fake",
+      "scenario": "slow",
+      "postgres_version": 16,
+      "synthetic_only": true,
+      "reason": "Đạt, nhưng ảnh running còn quá sớm; chụp lại ở giữa tiến độ"
+    },
+    {
+      "command": [
+        "cmd.exe",
+        "/d",
+        "/c",
+        "npx.cmd",
+        "playwright",
+        "test",
+        "--config",
+        "playwright.evidence.config.ts"
+      ],
+      "source_commit": "e2a0d712dc4900490f69d2672adc4eb0510ddfc2",
+      "working_tree_modified": true,
+      "started_at_utc": "2026-11-12T07:12:17.704724+00:00",
+      "exit_code": 0,
+      "duration_sec": 44.36,
+      "log_sha256": "52a25da67034db70b417eb19ad9c93ac264961cb102e86b564e1238628bd6f57",
+      "pipeline": "fake",
+      "scenario": "slow",
+      "postgres_version": 16,
+      "synthetic_only": true,
+      "reason": "Bản cuối: queued đúng nhãn, running giữa tiến độ, retry hoàn tất và không trùng segment"
+    }
+  ],
+  "pipeline": "fake",
+  "synthetic_only": true,
+  "playwright_retries": 0
+}
