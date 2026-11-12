@@ -45,6 +45,14 @@ def _worker_send_requests(
     ready_event.set()
 
 
+def _worker_record_stage_duration(multiproc_dir: str, stage: str, duration: float) -> None:
+    """Subprocess giả lập worker ghi nhận số đo thời lượng stage."""
+    os.environ["PROMETHEUS_MULTIPROC_DIR"] = multiproc_dir
+    from app.core.metrics import PIPELINE_STAGE_DURATION_SECONDS
+
+    PIPELINE_STAGE_DURATION_SECONDS.labels(stage=stage).observe(duration)
+
+
 def _worker_scrape(multiproc_dir: str, db_file: str, q) -> None:
     """Scrape /metrics từ process độc lập và gửi kết quả qua Queue."""
     os.environ["PROMETHEUS_MULTIPROC_DIR"] = multiproc_dir
@@ -146,6 +154,63 @@ def test_metrics_multiprocess_aggregates_across_processes(
             assert total == 10.0, (
                 f"Lần đọc {attempt}: mong đợi 10.0 request nhưng nhận được {total}"
             )
+    finally:
+        from app.core.config import get_settings
+
+        get_settings.cache_clear()
+        shutil.rmtree(prom_dir, ignore_errors=True)
+        shutil.rmtree(db_dir, ignore_errors=True)
+
+
+def test_worker_stage_durations_reach_api_metrics(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Subprocess đóng vai worker ghi pipeline_stage_duration_seconds vào thư mục chung;
+
+    GET /metrics của API (cùng thư mục) phải có _count > 0 cho stage đó (RE-018, BE-19).
+    """
+    prom_dir = tempfile.mkdtemp(prefix="prom_worker_test_")
+    db_dir = tempfile.mkdtemp(prefix="db_worker_test_")
+    try:
+        db_file = os.path.join(db_dir, "test.db").replace("\\", "/")
+        monkeypatch.setenv("DATABASE_URL", f"sqlite:///{db_file}")
+        monkeypatch.setenv("PROMETHEUS_MULTIPROC_DIR", prom_dir)
+
+        from sqlalchemy import create_engine
+
+        import app.db.models  # noqa: F401
+        from app.db.base import Base
+
+        eng = create_engine(f"sqlite:///{db_file}")
+        Base.metadata.create_all(bind=eng)
+        eng.dispose()
+
+        ctx = mp.get_context("spawn")
+        p = ctx.Process(
+            target=_worker_record_stage_duration,
+            args=(prom_dir, "transcribe", 1.85),
+        )
+        p.start()
+        p.join(timeout=10)
+        assert p.exitcode == 0
+
+        # Scrape /metrics từ API (được chạy với cùng thư mục multiprocess)
+        metrics_out = _scrape_metrics(prom_dir, db_file, ctx)
+        assert "pipeline_stage_duration_seconds_count" in metrics_out
+
+        found_count = False
+        for line in metrics_out.splitlines():
+            if (
+                line.startswith("pipeline_stage_duration_seconds_count")
+                and 'stage="transcribe"' in line
+            ):
+                parts = line.rsplit(" ", 1)
+                if len(parts) == 2:
+                    with contextlib.suppress(ValueError):
+                        if float(parts[1]) > 0.0:
+                            found_count = True
+                            break
+        assert found_count, (
+            f"Không tìm thấy stage transcribe với count > 0 trong metrics:\n{metrics_out}"
+        )
     finally:
         from app.core.config import get_settings
 
