@@ -209,4 +209,12 @@ liệu cũ dùng status/polite; lỗi chặn thao tác dùng alert và không t�
 floors 84.53/79.11 từ baseline ngày 10/11; xem [số đo](../docs/frontend/coverage-2026-11-11.json).
 Nhóm test được giao chạy 20 lượt và E2E mặc định slow chạy 3 lượt; kết quả từng
 lượt, commit nguồn và giới hạn ở [báo cáo flaky](../docs/evidence/vt-018/flaky-frontend-2026-11-11.md).
-Kết quả local chưa thay CI của PR ngày 11/11; chưa push/mở PR trong bước triển khai này.
+Phần này đã vào main qua [PR #50](https://github.com/TAINGUYENVAN0507/SE2026_Codex/pull/50) ngày 12/11; kết quả trên mô tả lượt local trước khi push.
+
+## Kiểm clone sạch — 12/11/2026
+
+[Báo cáo clone sạch](../docs/evidence/final/frontend-2026-11-12.md) ghi cả
+lượt lỗi trên main và lượt đạt sau sửa, kèm commit/lệnh/coverage/E2E.
+Khi route đăng nhập commit, cache được dọn lần cuối để không giữ query của
+trang bảo vệ đã rời. Hai API cùng trả 401 vẫn chỉ bắt đầu kết thúc phiên một lần.
+Chi tiết lỗi, test đỏ và sửa trong [báo cáo](../docs/evidence/final/frontend-fixes-2026-11-12.md).
