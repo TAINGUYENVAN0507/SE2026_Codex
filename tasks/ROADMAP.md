@@ -62,7 +62,7 @@ Commit của C trong các đợt này ghi thêm mã bài, ví dụ `(BE-17, VT-0
 
 ## Yêu cầu repo phải đáp ứng
 
-Hiện trạng đọc từ `main` tại `1f9d1ca` (sau #47, #48) ngày 2026-11-11. ✓ đã có · ◐ một phần · ✗ chưa có. Số đo tải: một máy, pipeline fake; chi tiết và giới hạn ở [`docs/evidence/README.md`](../docs/evidence/README.md). Bảng theo code ngày 11-06 (`53f753b`) đã thay bằng bảng này; lịch sử xem git.
+Hiện trạng đọc từ `main` tại `d9c2d50` (sau #50, #51, đóng băng code) ngày 2026-11-12. ✓ đã có · ◐ một phần · ✗ chưa có. Số đo tải: một máy, pipeline fake; chi tiết và giới hạn ở [`docs/evidence/README.md`](../docs/evidence/README.md). Bảng theo code ngày 11-06 (`53f753b`) đã thay bằng bảng này; lịch sử xem git.
 
 ### RE-018
 
@@ -72,7 +72,7 @@ Hiện trạng đọc từ `main` tại `1f9d1ca` (sau #47, #48) ngày 2026-11-1
 | File export kiểm chứng được | ✓ TXT, MD, JSON in evidence (`backend/app/services/export/serializers.py`); E2E `frontend/e2e/flows/export-evidence.spec.ts` | FE-18, BE-05 | A, B | 1 |
 | Log truy được theo job | ✓ `setup_logging()` ở API và worker; `backend/tests/api/test_observability.py` | BE-19, AI-18 | B, C | 1 |
 | Metric có số đo | ✓ `/metrics`; quá tải và thời gian chờ admission; bucket có mốc 1,5 và 2,0 s (#46) | BE-19 | B, C | 1, 4, 5 |
-| Thời lượng từng stage trong metric | ◐ Worker ghi `pipeline_stage_duration_seconds` trong process riêng; `/metrics` của API chưa đọc được (C phát hiện khi review #48, 2026-11-11) | BE-19 | B | 2, 6 |
+| Thời lượng từng stage trong metric | ✓ #51 (2026-11-12): `api` và `worker` dùng chung `PROMETHEUS_MULTIPROC_DIR`; test subprocess và `smoke_compose.py` kiểm `pipeline_stage_duration_seconds_count` > 0, compose-smoke xanh trên CI | BE-19 | B | 2, 6 |
 | Metric đúng khi chạy nhiều process API | ✓ `PROMETHEUS_MULTIPROC_DIR`, `MultiProcessCollector`, `livesum` gộp đủ mọi process API | BE-19 | B | 5 |
 | Runbook truy nguyên nhân, có thời gian đo thật | ✓ Diễn tập 2 sự cố trên Compose đo thời gian thật tại `docs/backend/runbook-drill-2026-11-10.md`, bổ sung runbook `docs/backend/BE-19.md` | BE-19 | B | 5 |
 | Lưu 14 ngày chạy thật | ✓ Worker gọi `run_retention_cleanup`; `backend/tests/api/test_retention.py`; test giữ tài liệu khớp cấu hình | BE-14 | B, C | 1, 4 |
@@ -105,6 +105,7 @@ Hiện trạng đọc từ `main` tại `1f9d1ca` (sau #47, #48) ngày 2026-11-1
 | Giao diện hiện tiến độ | ✓ PR #34 | FE-20 | A | 1 |
 | Test pairwise | ✓ `docs/evidence/vt-018/pairwise.md` | | C | 2 |
 | Mutation `>` thành `>=` có test bắt được | ✓ `docs/evidence/vt-018/mutation.md` | | C | 2 |
+| AI sinh test, xóa hoặc sửa ≥ 2 test yếu | ✓ `docs/evidence/vt-018/ai-tests/`: sửa 4, xóa 5, thêm 1; mutant bị giết 18/24 → 24/24 (sau review, không độc lập) | | C | 7 |
 | Coverage, flaky | ✓ `docs/evidence/vt-018/README.md`; #46: 5 test upload từng đỏ trên máy có ffprobe, xanh trên CI, nay ra cùng kết quả ở mọi máy | | C | 2, 5 |
 | Tải 40 đồng thời, p95 ≤ 1.5 s | Xem bảng tải bên dưới | AI-19 | C | 2–5 |
 | README chạy test của bài | ✓ `docs/evidence/vt-018/README.md` | | C | 2 |
@@ -115,7 +116,7 @@ Hiện trạng đọc từ `main` tại `1f9d1ca` (sau #47, #48) ngày 2026-11-1
 
 | Mốc | Cấu hình | Kết quả | Trạng thái |
 |---|---|---|---|
-| VT-018: 40 đồng thời, p95 ≤ 1,5 s | 1 process API | p95 upload 0,56 đến 0,84 s, 6/6 lượt `main`, 0 lỗi (11-10: 0,36 đến 0,41 s) | ✓ (một lượt bản trước #48 lên 1,80 s khi máy bận) |
+| VT-018: 40 đồng thời, p95 ≤ 1,5 s | 1 process API | 11-12 trên `main` đã đóng băng `d9c2d50`: 5/6 lượt đạt, 1 lượt p95 upload 1,56 s; hai mức quanh 0,5 s và 1,4 đến 1,6 s, thời gian nằm trong app, chưa rõ nguyên nhân (`docs/evidence/vt-018/load-40-2026-11-12/README.md`). 11-11: 0,56 đến 0,84 s, 6/6 | ◐ đạt phần lớn lượt, không ổn định |
 | RE-018: 239 đồng thời (không có mục tiêu độ trễ) | 1 process API | 239/239 upload, 0 lỗi, 3 lượt; p95 upload 3,03 đến 3,25 s | ✓ chịu được |
 | AD-018: 247 đồng thời, p95 ≤ 2,0 s | 1 process API (mặc định) | p95 upload 3,16 đến 3,79 s, 3/3 lượt trên mốc (11-10: 14/14) | ✗ |
 | AD-018: 247 đồng thời, p95 ≤ 2,0 s | 4 process API, `API_MAX_INFLIGHT=20` | p95 upload 2,30 đến 2,60 s, 15/15 lượt trên mốc; server chỉ 71 đến 82 % upload ≤ 2,0 s (11-10: 10/12 lượt đạt, không lặp lại được) | ✗ |
@@ -217,7 +218,8 @@ Phần cá nhân của BT1/BT2/BT3 (phân tích, Bước 0 trước khi code, re
 - PR #40 vào `main` ngày 2026-11-08 không có review ghi lại trong PR; #41 và #42 có review (A review #41, C review #42).
 - PR #43 (VT-018) vào `main` ngày 2026-11-09 **trước** khi có review; B review sau khi merge, ở `docs/backend/reviews/PR-43-2026-11-09.md` (vào `main` qua #45). Ngày 2026-11-10 nhóm trưởng bỏ yêu cầu review của thành viên khác (xem mục Tham số).
 - #44 và #45: C review (approve có ghi chú) rồi merge ngày 2026-11-10. Các điểm làm tiếp của review #45 nằm trong `tasks/2026-11-10/member-b.md`.
-- BT3 Bước 0 (plan AI, test AI thô) chưa làm.
+- BT3: test AI thô và việc xóa hoặc sửa test yếu đã có (`docs/evidence/vt-018/ai-tests/`, 2026-11-12). Bước 0 (plan AI trước khi code, bác bỏ ≥ 2 điểm) là phần của người dùng. Plan thô của AI cho bộ test này ở `docs/evidence/vt-018/ai-tests/01-plan-raw.md`, commit trước khi có test.
+- 40 client 11-12: 1/6 lượt không đạt, hai mức độ trễ, nguyên nhân chưa rõ (nghi fsync, ffprobe song song, ghi file). Đóng băng code nên chỉ ghi lại.
 
 - SH-01: chưa có bản ghi âm họp thật. AI-12 phần thu thật, AI-14, benchmark trên audio họp phụ thuộc vào đây.
 - Quyết định về Claude API với audio họp thật và ngân sách API.
