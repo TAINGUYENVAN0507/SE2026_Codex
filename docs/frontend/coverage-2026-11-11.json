@@ -1,0 +1,47 @@
+{
+  "date": "2026-11-11",
+  "source_commit": "986e2b8d9e6eb74d14b06646c5f85b73167995d3",
+  "node": "v24.13.0",
+  "provider": "@vitest/coverage-v8 5.0.5",
+  "command": "npm run test:coverage",
+  "tests": 296,
+  "test_files": 48,
+  "source_files": 58,
+  "total": {
+    "lines": {
+      "total": 1394,
+      "covered": 1208,
+      "skipped": 0,
+      "pct": 86.65
+    },
+    "statements": {
+      "total": 1554,
+      "covered": 1308,
+      "skipped": 0,
+      "pct": 84.16
+    },
+    "functions": {
+      "total": 499,
+      "covered": 402,
+      "skipped": 0,
+      "pct": 80.56
+    },
+    "branches": {
+      "total": 1399,
+      "covered": 1138,
+      "skipped": 0,
+      "pct": 81.34
+    },
+    "branchesTrue": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 100
+    }
+  },
+  "thresholds": {
+    "lines": 84.53,
+    "branches": 79.11
+  },
+  "threshold_source": "Giữ ngưỡng baseline 10/11, không hạ ngưỡng theo lần chạy mới"
+}

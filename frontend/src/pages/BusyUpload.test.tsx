@@ -143,10 +143,15 @@ it('AD-018: hủy trong lúc chờ Retry-After không gửi tiếp và không ch
     }),
   )
   setup()
-  expect(
-    await screen.findByText(/Máy chủ đang bận.*60 giây/),
-  ).toBeInTheDocument()
-  fireEvent.click(screen.getByRole('button', { name: 'Hủy tải lên' }))
+  const cancel = screen.getByRole('button', { name: 'Hủy tải lên' })
+  cancel.focus()
+  await waitFor(() =>
+    expect(
+      screen.getByRole('status', { name: 'Trạng thái tải lên' }),
+    ).toHaveTextContent(/Máy chủ đang bận.*60 giây/),
+  )
+  expect(cancel).toHaveFocus()
+  fireEvent.click(cancel)
   expect(
     await screen.findByRole('button', { name: 'Tạo biên bản' }),
   ).toBeEnabled()

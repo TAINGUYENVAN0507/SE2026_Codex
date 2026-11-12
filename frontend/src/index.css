@@ -1852,6 +1852,15 @@ mark {
   padding: 30px;
   text-align: center;
 }
+.missing-meeting > [role='alert'] {
+  display: grid;
+  gap: 20px;
+}
+.empty-state[role='alert'] > p,
+.missing-meeting > [role='alert'] p {
+  color: var(--muted);
+  font-size: 16px;
+}
 .not-found p,
 .missing-meeting p {
   color: var(--muted);

@@ -1,0 +1,133 @@
+{
+  "date": "2026-11-11",
+  "base_commit": "1fbc2f34c537bf111107c8e8d56edaf531699b76",
+  "working_tree_modified": true,
+  "source_sha256": {
+    "frontend/src/features/jobs/JobStatusCard.tsx": "f923e3393d24f7bf1cf557e6dfc6328325c356d43677d4526f60bf444a02a2a5",
+    "frontend/src/pages/MeetingDetailPage.tsx": "4e25e2805f962f0df201e233f20e638266a6f28b07b09c46fc6db5821b696710",
+    "frontend/src/index.css": "8d1b498bbb18d1914249195de982a1f73d2698cd2a00bbe9f36013869cd19e0e",
+    "frontend/src/features/jobs/BusyPolling.test.tsx": "6d9bfee064de8a083c025be2064b5729db4bdbd62b7188071fdf9ead834f6308",
+    "frontend/src/pages/BusyUpload.test.tsx": "3099272ff4b979f54a352c18acb11d22b3d208acd6dab0253c823439c116fdc1",
+    "frontend/src/features/meetings/BusyEdits.test.tsx": "ef4cbfc3eaed0d6ee80c4e0ce0fcfc0e9687bcbe3384413a15df10985b140da1",
+    "frontend/src/pages/BusyReads.test.tsx": "9fb2cd16151861f0483d4ec749eaa772db1ab096ddd7e8627a4ee808e0934972"
+  },
+  "browser": "Chromium",
+  "controlled_http_responses": true,
+  "synthetic_data_only": true,
+  "violations_before_fix": {
+    "rule": "color-contrast",
+    "selector": ".empty-state > p",
+    "ratio": 3.82,
+    "viewports": [
+      1280,
+      360
+    ]
+  },
+  "checks": [
+    {
+      "file": "2026-11-11-busy-list-desktop.png",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "mode": "list",
+      "controlled_responses": true,
+      "overflow": false,
+      "axe": {
+        "violations": [],
+        "incomplete": []
+      },
+      "requests_until_error": 3,
+      "requests_after_recovery": 4
+    },
+    {
+      "file": "2026-11-11-busy-detail-desktop.png",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "mode": "detail",
+      "controlled_responses": true,
+      "overflow": false,
+      "axe": {
+        "violations": [],
+        "incomplete": []
+      },
+      "requests_until_error": 3,
+      "requests_after_recovery": 4
+    },
+    {
+      "file": "2026-11-11-busy-poll-desktop.png",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "mode": "poll",
+      "controlled_responses": true,
+      "overflow": false,
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          "aria-prohibited-attr"
+        ]
+      },
+      "progress_preserved": 65,
+      "focus_preserved": true
+    },
+    {
+      "file": "2026-11-11-busy-list-mobile.png",
+      "viewport": {
+        "width": 360,
+        "height": 900
+      },
+      "mode": "list",
+      "controlled_responses": true,
+      "overflow": false,
+      "axe": {
+        "violations": [],
+        "incomplete": []
+      },
+      "requests_until_error": 3,
+      "requests_after_recovery": 4
+    },
+    {
+      "file": "2026-11-11-busy-detail-mobile.png",
+      "viewport": {
+        "width": 360,
+        "height": 900
+      },
+      "mode": "detail",
+      "controlled_responses": true,
+      "overflow": false,
+      "axe": {
+        "violations": [],
+        "incomplete": []
+      },
+      "requests_until_error": 3,
+      "requests_after_recovery": 4
+    },
+    {
+      "file": "2026-11-11-busy-poll-mobile.png",
+      "viewport": {
+        "width": 360,
+        "height": 900
+      },
+      "mode": "poll",
+      "controlled_responses": true,
+      "overflow": false,
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          "aria-prohibited-attr"
+        ]
+      },
+      "progress_preserved": 65,
+      "focus_preserved": true
+    }
+  ],
+  "limits": [
+    "Không kiểm screen reader thật hoặc điện thoại vật lý",
+    "Không đánh giá chất lượng AI",
+    "Ảnh/log riêng ở .preview-stitch và thư mục QA ngoài Git"
+  ]
+}

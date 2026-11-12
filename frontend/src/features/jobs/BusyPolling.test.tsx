@@ -30,6 +30,7 @@ function setup() {
     <QueryClientProvider client={client}>
       <MemoryRouter>
         <JobStatusCard jobId={job.id} />
+        <button>Điều khiển đang dùng</button>
       </MemoryRouter>
     </QueryClientProvider>,
   )
@@ -62,10 +63,15 @@ it('VT-018: 30 giây bận liên tục chỉ 5 request, giữ tiến độ đã 
   setup()
   await advance(100)
   expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '65')
+  const control = screen.getByRole('button', { name: 'Điều khiển đang dùng' })
+  control.focus()
   for (let i = 0; i < 30; i++) await advance(1000)
   expect(requests).toBe(5)
   expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '65')
-  expect(screen.getByRole('alert')).toHaveTextContent(/kiểm tra lại sau 8 giây/)
+  expect(
+    screen.getByRole('status', { name: 'Trạng thái kết nối tiến độ' }),
+  ).toHaveTextContent(/kiểm tra lại sau 8 giây/)
+  expect(control).toHaveFocus()
 })
 
 it('VT-018: lỗi mạng lùi dần tối đa 10 giây, không dừng poll ở lỗi đầu', async () => {
@@ -80,7 +86,9 @@ it('VT-018: lỗi mạng lùi dần tối đa 10 giây, không dừng poll ở l
   for (let i = 0; i < 30; i++) await advance(1000)
   expect(requests).toBe(5)
   expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '65')
-  expect(screen.getByRole('alert')).toHaveTextContent(/10 giây/)
+  expect(
+    screen.getByRole('status', { name: 'Trạng thái kết nối tiến độ' }),
+  ).toHaveTextContent(/10 giây/)
 })
 
 it('VT-018: response 200 phục hồi nhịp 2 giây; job xong dừng poll', async () => {
