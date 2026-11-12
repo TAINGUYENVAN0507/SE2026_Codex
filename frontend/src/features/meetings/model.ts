@@ -37,6 +37,7 @@ export interface Meeting {
   time: string
   duration: number
   status: MeetingStatus
+  summaryFailed?: boolean
   speakers: Speaker[]
   segments: Segment[]
   overview: string

@@ -218,3 +218,7 @@ lượt lỗi trên main và lượt đạt sau sửa, kèm commit/lệnh/covera
 Khi route đăng nhập commit, cache được dọn lần cuối để không giữ query của
 trang bảo vệ đã rời. Hai API cùng trả 401 vẫn chỉ bắt đầu kết thúc phiên một lần.
 Chi tiết lỗi, test đỏ và sửa trong [báo cáo](../docs/evidence/final/frontend-fixes-2026-11-12.md).
+
+Khi API tóm tắt còn trả pending nhưng cuộc họp partial, frontend hiện lại lỗi và
+nút tạo lại tóm tắt; sau retry đọc lại latest_job_id. Job queued ghi Chờ bắt đầu,
+không ghi Đang chạy. [Bằng chứng và giới hạn](../docs/evidence/final/frontend-progress-fixes-2026-11-12.md).

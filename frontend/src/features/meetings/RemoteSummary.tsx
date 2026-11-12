@@ -109,7 +109,11 @@ export function RemoteSummary({
     )
 
   const summary = query.data
-  if (summary.status === 'pending')
+  // API hiện có thể trả pending khi meeting partial; partial xác nhận tóm tắt lỗi.
+  const failedSummary =
+    summary.status === 'failed' ||
+    (summary.status === 'pending' && meeting.summaryFailed)
+  if (summary.status === 'pending' && !failedSummary)
     return <LoadingSkeleton kind="summary" label="Đang tạo tóm tắt…" />
   if (summary.status !== 'ready' || !summary.content) {
     const descriptions: Record<string, string> = {
@@ -120,8 +124,11 @@ export function RemoteSummary({
     }
     return (
       <div className="empty-state compact" role="status">
-        <p>{descriptions[summary.status] ?? 'Chưa có bản tóm tắt.'}</p>
-        {summary.status === 'failed' && (
+        <p>
+          {descriptions[failedSummary ? 'failed' : summary.status] ??
+            'Chưa có bản tóm tắt.'}
+        </p>
+        {failedSummary && (
           <button
             disabled={retrying}
             onClick={async () => {
@@ -130,6 +137,11 @@ export function RemoteSummary({
               setRetrying(true)
               try {
                 await retrySummary(meeting.id)
+                // Đọc latest_job_id mới để thanh tiến độ không giữ job failed cũ.
+                await queryClient.invalidateQueries({
+                  queryKey: ['meeting', meeting.id],
+                })
+                await queryClient.invalidateQueries({ queryKey: ['meetings'] })
                 await query.refetch()
               } catch (cause) {
                 setBusyAction(isServiceBusy(cause) ? 'retry' : null)

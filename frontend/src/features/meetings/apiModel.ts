@@ -14,6 +14,7 @@ export function apiMeetingToView(
       minute: '2-digit',
     }),
     duration: meeting.duration_sec || 0,
+    summaryFailed: meeting.status === 'partial',
     status:
       meeting.status === 'queued'
         ? 'pending'
