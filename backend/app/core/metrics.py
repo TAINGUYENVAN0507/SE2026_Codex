@@ -216,6 +216,15 @@ def clean_multiproc_dir(path: str | Path | None = None) -> None:
             p.unlink()
 
 
+def mark_process_dead(pid: int | None = None, path: str | Path | None = None) -> None:
+    """Đánh dấu process API đã kết thúc và xóa các file live gauge (BE-19)."""
+    target_pid = pid if pid is not None else os.getpid()
+    target_path = str(path or os.environ.get("PROMETHEUS_MULTIPROC_DIR") or "")
+    if not target_path:
+        return
+    multiprocess.mark_process_dead(target_pid, path=target_path)
+
+
 def metrics_endpoint(db: Annotated[Session, Depends(get_db)]) -> Response:
     """Endpoint Prometheus /metrics trả về text định dạng standard metrics."""
     collect_db_metrics(db)
