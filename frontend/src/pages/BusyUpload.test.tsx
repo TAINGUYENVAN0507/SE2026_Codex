@@ -122,7 +122,11 @@ it('AD-018: bốn lần 503 hiện thử lại thủ công, giữ file và cùng
     }),
   )
   setup()
-  const retry = await screen.findByRole('button', { name: 'Thử tải lại' })
+  const retry = await screen.findByRole(
+    'button',
+    { name: 'Thử tải lại' },
+    { timeout: 5000 },
+  )
   expect(keys).toHaveLength(4)
   expect(screen.getByRole('alert')).not.toHaveTextContent('CANARY_RAW')
   expect(screen.getByText('busy.wav')).toBeInTheDocument()

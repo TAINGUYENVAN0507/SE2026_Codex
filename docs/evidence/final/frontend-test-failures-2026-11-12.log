@@ -1,0 +1,27 @@
+=== coverage.log; SHA256=03d997a3214bc2e12446dea2f2b3f04aa95e5440746bdf91afa6713a98784f10 ===
+ FAIL  src/App.test.tsx > meeting workspace > edits transcript safely and exports the updated content
+Error: Test timed out in 5000ms.
+ FAIL  src/pages/Accessibility.test.tsx > FE-16 axe: chi tiết không có vi phạm serious/critical
+Error: Test timed out in 5000ms.
+ FAIL  src/pages/BusyUpload.test.tsx > AD-018: bốn lần 503 hiện thử lại thủ công, giữ file và cùng key
+TestingLibraryElementError: Unable to find role="button" and name "Thử tải lại"
+ FAIL  src/features/auth/Session.test.tsx > FE-03 session guard and logout > clears every query on logout and returns to login
+AssertionError: expected [ …(2) ] to have a length of +0 but got 2
+ Test Files  4 failed | 44 passed (48)
+      Tests  4 failed | 292 passed (296)
+
+=== coverage-default-recheck.log; SHA256=a55a131576e0195e1db57731b72e569068dac31102bab179b3add6083ea6b4c1 ===
+ FAIL  src/App.test.tsx > meeting workspace > edits transcript safely and exports the updated content
+Error: Test timed out in 5000ms.
+ FAIL  src/features/auth/Session.test.tsx > FE-03 session guard and logout > clears every query on logout and returns to login
+AssertionError: expected [ …(2) ] to have a length of +0 but got 2
+ Test Files  2 failed | 46 passed (48)
+      Tests  2 failed | 294 passed (296)
+
+=== login-cache-red.log; SHA256=5b7afb315213a47759fe44ef6a7fd24bab359ddc8cfde8edf13e199e854c00f8 ===
+ FAIL  src/features/auth/Session.test.tsx > FE-03 session guard and logout > clears residual private queries when the 
+AssertionError: expected { text: 'PRIVATE_CANARY' } to be undefined
+ Test Files  1 failed (1)
+      Tests  1 failed | 5 skipped (6)
+  "text": "PRIVATE_CANARY",
+
