@@ -188,6 +188,16 @@ Bắt đầu sau khi #47 (A) và #48 (B) vào `main` (`1f9d1ca`). Trước khi m
 | B | Metric stage của worker hiện trên `/metrics` của API; gauge theo DB không giữ số cũ; process chết không còn bị cộng; query budget cho đường poll; README backend khớp cấu hình |
 | C | Harness hết race keep-alive; harness có số phía server khi chạy nhiều process; đo lại 247, 239, 40 sau #48; bản đồ bằng chứng |
 
+### Đợt 7 (giao ngày 2026-11-12: `tasks/2026-11-12/`, đóng băng code)
+
+Bắt đầu sau khi #50 (A) và #51 (B) vào `main` (`d9c2d50`, CI xanh). Chỉ sửa lỗi, thêm test và bằng chứng; không thêm tính năng.
+
+| Member | Việc |
+|---|---|
+| A | Frontend từ clone sạch; ảnh giao diện tiến độ cho VT-018; bấm chạy lại hai lần không tạo hai job |
+| B | Backend từ clone sạch, có và không có Postgres; bằng chứng xóa dữ liệu qua mọi module và log; biên lưu trữ 14 và 28 ngày |
+| C | Test do AI sinh cho retry và hàng đợi job, đo bằng mutation, xóa hoặc sửa test yếu (VT-018); số đo cuối của VT-018 |
+
 ### Lịch tới hạn nộp (hạn nộp 2026-11-14, người dùng xác nhận ngày 2026-11-09)
 
 | Ngày | Mục tiêu | Ai |
