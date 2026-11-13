@@ -1,44 +1,53 @@
-# Bằng chứng Xóa Dữ liệu Cá nhân và Ranh giới Lưu trữ (AD-018)
+# Bằng chứng xóa dữ liệu cá nhân (AD-018)
 
-Tài liệu này ghi nhận bằng chứng kiểm chứng việc xóa dữ liệu cá nhân trên toàn bộ các thành phần hệ thống (cơ sở dữ liệu PostgreSQL, hệ thống tệp lưu trữ, dữ liệu vận hành và nhật ký log) theo yêu cầu của **AD-018** (Đợt 7, 2026-11-12).
+B lập ngày 2026-11-12 (#54). C sửa ngày 2026-11-13 sau khi review: bản đầu ghi log là "trên PostgreSQL 16" và ghi mọi nơi lưu đều có test, nhưng hai điều đó không đúng.
 
----
+## Test chạy trên DB nào
 
-## 1. Bản đồ Nơi lưu trữ và Kiểm thử Xóa Dữ liệu (Deletion Verification Matrix)
+| Test | DB | Ghi chú |
+|---|---|---|
+| `backend/tests/api/test_delete_meeting.py` | SQLite in-memory, cứng trong fixture | Trigger `edit_events` được **viết lại bằng SQL của SQLite** trong fixture, không lấy từ migration |
+| `backend/tests/api/test_delete_user.py` | SQLite in-memory | Không có dòng `jobs`, `ai_outputs`, `edit_events` |
+| `backend/tests/privacy/test_privacy_canary.py` | SQLite in-memory | Chạy worker với fake pipeline nên có `jobs`, `ai_outputs`; sửa transcript qua API nên có `edit_events`. Chỉ quét chuỗi canary, không đếm dòng |
+| `backend/tests/integration/test_erasure_postgres.py` (C, 11-13) | **Postgres đã migrate bằng Alembic** | Mọi bảng con của meeting đều có 1 dòng; đếm dòng trước và sau; trigger và FK cascade là của migration |
 
-Bảng dưới đây thống kê mọi vị trí lưu trữ dữ liệu trong hệ thống, chính sách bảo vệ/xóa, và test case tương ứng khẳng định dữ liệu bị xóa sạch:
+`DATABASE_URL` không đổi được DB của ba test đầu. Log [`deletion-2026-11-12.log`](deletion-2026-11-12.log) của B (15 passed, Windows) vì vậy là log chạy trên SQLite dù máy có Postgres. Bản gốc là UTF-16 nên GitHub hiện là file nhị phân; C đổi sang UTF-8, nội dung giữ nguyên. Log của test Postgres: [`erasure-postgres-2026-11-13.log`](erasure-postgres-2026-11-13.log).
 
-| Nơi lưu trữ | Loại dữ liệu | Khi xóa cuộc họp (`DELETE /meetings/{id}`) | Khi xóa tài khoản (`DELETE /auth/me`) | Khi quá hạn retention (14d/28d) | Test kiểm chứng |
-|---|---|---|---|---|---|
-| **PostgreSQL: `meetings`** | Bản ghi thông tin cuộc họp (title, metadata) | Bị xóa hoàn toàn khỏi DB | Bị xóa hoàn toàn khỏi DB (cascade) | Giữ nguyên (chỉ set `audio_path=None`) | `tests/api/test_delete_meeting.py`<br>`tests/api/test_delete_user.py`<br>`tests/privacy/test_privacy_canary.py` |
-| **PostgreSQL: `jobs`** | Tiến trình xử lý (status, timing, metrics) | Hủy job active (`cancelled`), xóa bản ghi khỏi DB | Hủy job active, xóa bản ghi khỏi DB | Giữ nguyên | `tests/api/test_delete_meeting.py`<br>`tests/api/test_delete_user.py` |
-| **PostgreSQL: `speakers`, `segments`** | Phân đoạn người nói và văn bản transcript | Bị xóa hoàn toàn khỏi DB (cascade) | Bị xóa hoàn toàn khỏi DB (cascade) | **Giữ nguyên vẹn** (PRIV-14: transcript giữ tới khi người dùng chủ động xóa) | `tests/api/test_delete_meeting.py`<br>`tests/api/test_delete_user.py`<br>`tests/api/test_retention.py` |
-| **PostgreSQL: `summaries`, `action_items`** | Tóm tắt cuộc họp và danh sách công việc | Bị xóa hoàn toàn khỏi DB (cascade) | Bị xóa hoàn toàn khỏi DB (cascade) | **Giữ nguyên vẹn** (PRIV-14) | `tests/api/test_delete_meeting.py`<br>`tests/api/test_delete_user.py`<br>`tests/api/test_retention.py` |
-| **PostgreSQL: `edit_events`** | Lịch sử chỉnh sửa transcript/summary | Bị xóa (trigger DB cho phép xóa khi meeting cha bị xóa) | Bị xóa hoàn toàn khỏi DB (cascade) | Giữ nguyên | `tests/api/test_delete_meeting.py`<br>`tests/api/test_delete_user.py` |
-| **PostgreSQL: `ai_outputs`** | Dữ liệu đầu ra thô của các stage pipeline | Bị xóa hoàn toàn khỏi DB (cascade) | Bị xóa hoàn toàn khỏi DB (cascade) | Giữ nguyên | `tests/api/test_delete_meeting.py`<br>`tests/api/test_delete_user.py` |
-| **PostgreSQL: `idempotency_keys`** | Khóa giao dịch idempotency của client | Bị xóa các dòng liên quan tới `meeting_id` (tránh rò rỉ response cache) | Bị xóa toàn bộ các dòng thuộc về user | Quá hạn 28 ngày (`OPERATIONAL_RETENTION_DAYS`) bị xóa sạch | `tests/api/test_delete_meeting.py`<br>`tests/api/test_delete_user.py`<br>`tests/privacy/test_privacy_canary.py`<br>`tests/api/test_retention.py` |
-| **Tệp âm thanh trên đĩa (`audio/{id}/*`)** | Tệp âm thanh gốc cuộc họp | Bị xóa hoàn toàn khỏi ổ đĩa (`LocalStorage.delete_meeting_files`) | Bị xóa toàn bộ tệp audio của mọi meeting thuộc user | Quá hạn 14 ngày (`AUDIO_RETENTION_DAYS`) bị xóa sạch | `tests/api/test_delete_meeting.py`<br>`tests/api/test_delete_user.py`<br>`tests/privacy/test_privacy_canary.py`<br>`tests/api/test_retention.py` |
-| **Tệp Artifacts trên đĩa (`artifacts/{id}/*`)** | Bản kết quả trung gian / transcript JSON của job | Bị xóa hoàn toàn khỏi ổ đĩa | Bị xóa toàn bộ artifacts thuộc user | Quá hạn 14 ngày bị xóa sạch cùng audio | `tests/api/test_delete_meeting.py`<br>`tests/api/test_delete_user.py`<br>`tests/privacy/test_privacy_canary.py`<br>`tests/api/test_retention.py` |
-| **Log hệ thống (Console / Container JSON log)** | Nhật ký ghi nhận sự kiện hệ thống | **Ngăn chặn từ đầu:** Log chỉ ghi các ID kỹ thuật (`job_id`, `meeting_id`, `request_id`, `stage`, `error_code`, `status`), tuyệt đối không ghi tiêu đề, tên file, nội dung transcript hay dữ liệu cá nhân (được kiểm chứng qua chuỗi Canary bí mật). Log container xoay vòng theo kích thước (10MB x 3 file). | Như bên | Như bên | `tests/privacy/test_privacy_canary.py` (`test_canary_logs_never_contain_sensitive_content`) |
+## Nơi lưu → test kiểm nó bị xóa
 
----
+"SQLite" và "Postgres" là DB của test có assert. "Chưa có test" là không tìm thấy assert nào.
 
-## 2. Kiểm thử Chuỗi Canary Bí mật (Privacy Canary)
+| Nơi lưu | Xóa cuộc họp | Xóa tài khoản | Hết hạn lưu trữ |
+|---|---|---|---|
+| `meetings` | SQLite: `test_delete_meeting_success`; Postgres: `test_delete_meeting_on_migrated_postgres` | SQLite: `test_delete_me_canary_erased_from_all_stores_and_other_user_intact`; Postgres: `test_delete_account_on_migrated_postgres` | Không xóa, chỉ `audio_path = NULL`: `test_retention_boundary_condition` (SQLite), `scripts/verify_retention_postgres.py` (Postgres, chạy tay) |
+| `jobs` | SQLite: `test_delete_meeting_success`, `test_rt15_delete_meeting_cancels_running_job`; Postgres | Chỉ Postgres | Không áp dụng |
+| `speakers`, `segments` | SQLite: `test_delete_meeting_success`, canary; Postgres | SQLite: canary; Postgres | Không xóa (PRIV-14): `test_priv14_expired_audio_returns_410_transcript_kept` |
+| `summaries`, `action_items` | SQLite: `test_delete_meeting_success`, canary; Postgres | SQLite: canary; Postgres | Không xóa (PRIV-14) |
+| `ai_outputs` | **Chỉ Postgres** (test SQLite không có dòng nào hoặc không đếm dòng) | **Chỉ Postgres** | Không áp dụng |
+| `edit_events` | SQLite (trigger viết lại): `test_delete_meeting_success`; Postgres (trigger của migration) | **Chỉ Postgres** (luồng xóa tài khoản trên SQLite không tạo `edit_events`) | Không áp dụng |
+| `idempotency_keys` | SQLite: `test_erasure_removes_canary_from_all_stores_and_logs`, `test_erasure_replay_idempotency_key_creates_new_meeting`; Postgres | SQLite: canary; Postgres | 28 ngày: `test_retention_cleans_expired_idempotency_keys` |
+| `users` | Không áp dụng | SQLite: `test_delete_me_canary_erased_from_all_stores_and_other_user_intact`; Postgres | Không áp dụng |
+| File audio `audio/<meeting_id>/` | SQLite: `test_delete_meeting_success`, canary; Postgres | SQLite: canary; Postgres | 14 ngày: `test_retention_boundary_condition` |
+| Artifact `artifacts/<meeting_id>/` | Như audio | Như audio | 14 ngày: `test_retention_boundary_condition` |
+| Log Python của process API (`caplog`) | Canary không có trong log: `test_erasure_removes_canary_from_all_stores_and_logs`, Postgres | `test_delete_me_canary_erased_from_all_stores_and_other_user_intact`, Postgres | Không áp dụng |
+| Log của worker và pipeline | `test_privacy_canary_worker_internal_failure_does_not_log_error_data`; `pipeline/tests/unit/test_privacy_canary.py` | Như bên trái | Không áp dụng |
+| Log đã ghi ra file hoặc của Docker (`json-file`, `max-size: 10m`) | **Chưa có test.** Thiết kế là không ghi dữ liệu cá nhân vào log, nên không có gì cần xóa; điều này chỉ được kiểm qua `caplog` ở trên, chưa kiểm trên log thật của container | Như bên trái | Docker xoay vòng theo kích thước, không theo 28 ngày. **Chưa có test** |
+| Log access của uvicorn | **Chưa có test.** Ghi đường dẫn có `meeting_id` (UUID, không phải dữ liệu cá nhân) | Như bên trái | Như trên |
 
-Nhằm đảm bảo không có bất kỳ dữ liệu nhạy cảm nào lọt vào nhật ký hệ thống hay còn sót lại sau khi xóa, bộ test canary sử dụng các chuỗi nhận diện độc nhất:
-- `CANARY_TITLE = "CANARY_TITLE_TOP_SECRET_CODENAME_X99"`
-- `CANARY_IDEMPOTENCY = "IDEM_CANARY_TRANSACTION_KEY_A88"`
-- `CANARY_TRANSCRIPT_EDIT = "CANARY_TRANSCRIPT_CONFIDENTIAL_CONVERSATION_B77"`
-- `CANARY_SUMMARY_EDIT = "CANARY_SUMMARY_HIGHLY_SENSITIVE_DECISION_C66"`
-- `CANARY_SPEAKER_NAME = "CANARY_SPEAKER_AGENT_UNDERCOVER_D55"`
+## Đo test Postgres có bắt được lỗi
 
-Kiểm thử `tests/privacy/test_privacy_canary.py` thực hiện:
-1. Đưa các chuỗi canary qua toàn bộ luồng hoạt động: upload, xử lý pipeline, chỉnh sửa transcript, speaker, tóm tắt.
-2. Kiểm tra log của API và Worker: khẳng định 100% không chứa bất kỳ chuỗi canary nào.
-3. Thực thi xóa cuộc họp / xóa tài khoản:
-   - Quét qua toàn bộ các bảng trong `Base.metadata` của cơ sở dữ liệu: 0 bản ghi chứa canary.
-   - Quét qua toàn bộ cây thư mục lưu trữ (`appdata/`): 0 tệp chứa canary.
-   - Quét qua bảng `idempotency_keys`: 0 bản ghi chứa canary.
+C làm hỏng tạm `backend/app/services/erasure/service.py`, chạy hai test Postgres, rồi trả lại (không commit):
 
-Log thực thi kiểm thử trên môi trường PostgreSQL 16 được ghi lại chi tiết tại [`deletion-2026-11-12.log`](./deletion-2026-11-12.log).
+| Mutant | Kết quả | Ý nghĩa |
+|---|---|---|
+| Bỏ lệnh xóa `idempotency_keys` của meeting | **Đỏ** ở `test_delete_meeting_on_migrated_postgres` (canary còn trong `idempotency_keys.response_body`); `test_delete_account_on_migrated_postgres` vẫn xanh vì `erase_user` xóa mọi key của người dùng ở bước sau | Test bắt được |
+| Bỏ lệnh `delete(EditEvent)` sau `db.delete(meeting)` | Xanh | Tương đương: trên Postgres FK `ON DELETE CASCADE` đã xóa `edit_events`, và trigger cho phép vì meeting cha đã mất. Lệnh xóa tường minh là thừa trên Postgres, không phải lỗi |
 
+## Privacy canary
+
+`backend/tests/privacy/test_privacy_canary.py` đưa 5 chuỗi canary (tiêu đề, idempotency key, sửa transcript, sửa tóm tắt, tên người nói) qua upload, worker fake, sửa transcript, sửa tóm tắt, đổi tên người nói; rồi xóa cuộc họp hoặc tài khoản, quét mọi bảng trong `Base.metadata` và cây storage. Test chạy trên SQLite.
+
+## Giới hạn
+
+- Dữ liệu tổng hợp. Không có backup DB, nên "xóa khỏi mọi nơi lưu" không tính backup.
+- Test Postgres chạy ở CI (CI có Postgres 16) và ở máy C (Postgres 16 cục bộ).
