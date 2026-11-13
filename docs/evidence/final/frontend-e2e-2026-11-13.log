@@ -1,0 +1,33 @@
+Source: 7b99a7a83e068155887160fd7ec3fabf8f069ee8
+Command: npm run e2e; FAKE_SCENARIO=slow; retries=0
+Started UTC: 2026-11-13T06:42:55.420237+00:00
+Wall time including stack preparation: 304.22 sec
+Full local log SHA256: 54b8d90755fcd407522865bb4b74fa14c5ddb4a2db7493eb13a7bcea702094f7
+
+ok  1 [chromium] › e2e\flows\accessibility.spec.ts:7:3 › FE-16 axe Chromium: list, desktop và mobile (3.0s)
+ok  2 [chromium] › e2e\flows\accessibility.spec.ts:7:3 › FE-16 axe Chromium: upload, desktop và mobile (1.2s)
+ok  3 [chromium] › e2e\flows\accessibility.spec.ts:7:3 › FE-16 axe Chromium: detail, desktop và mobile (28.6s)
+ok  4 [chromium] › e2e\flows\accessibility.spec.ts:7:3 › FE-16 axe Chromium: settings, desktop và mobile (980ms)
+ok  5 [chromium] › e2e\flows\delete-account.spec.ts:7:1 › FE-19: xóa tài khoản thật, mất phiên, không đăng nhập lại và không ảnh hưởng user khác (1.0m)
+ok  6 [chromium] › e2e\flows\delete.spec.ts:4:1 › RT-15/PRIV-13: xóa cuộc họp lúc job đang chạy và không truy cập lại được (3.4s)
+ok  7 [chromium] › e2e\flows\edit.spec.ts:4:1 › FE-17: chỉnh sửa tồn tại sau reload và có đúng event trong lịch sử (22.7s)
+ok  8 [chromium] › e2e\flows\export-evidence.spec.ts:11:1 › FE-18: từng ý/công việc có cùng evidence hoặc nhãn thiếu trong UI và TXT/MD (27.8s)
+ok  9 [chromium] › e2e\flows\export.spec.ts:8:1 › FE-18: tóm tắt thật, evidence tua đúng audio và tải đủ TXT/MD/JSON (27.1s)
+ok 10 [chromium] › e2e\flows\keyboard.spec.ts:28:1 › FE-16: chỉ bàn phím đăng nhập, upload, mở lại meeting và export (17.3s)
+ok 11 [chromium] › e2e\flows\login.spec.ts:3:1 › Đăng nhập demo qua API thật và thấy danh sách cuộc họp (493ms)
+ok 12 [chromium] › e2e\flows\retention.spec.ts:6:1 › FE-19: cleanup xóa audio/artifacts hết hạn thật, transcript vẫn đọc được (23.7s)
+ok 13 [chromium] › e2e\flows\settings.spec.ts:4:1 › FE-19: cài đặt mở từ điều hướng, reload được và chỉ bật xóa khi có contract (540ms)
+ok 14 [chromium] › e2e\flows\upload.spec.ts:4:1 › Upload có consent qua đủ sáu stage tới ready (17.5s)
+ok 15 [chromium] › e2e\flows\upload.spec.ts:29:1 › RT-11: reload khi đang xử lý, tiếp tục job cũ và không tạo thêm job (18.7s)
+ok 16 [chromium] › e2e\privacy\recorder.spec.ts:68:1 › PRIV-01: mở app và chuyển trang không tự xin micro (602ms)
+ok 17 [chromium] › e2e\privacy\recorder.spec.ts:79:1 › PRIV-02: chưa consent thì nút bắt đầu bị khóa và không gọi micro (540ms)
+ok 18 [chromium] › e2e\privacy\recorder.spec.ts:89:1 › PRIV-03: click bắt đầu chỉ gọi micro một lần, hiện indicator và timer (2.2s)
+ok 19 [chromium] › e2e\privacy\recorder.spec.ts:103:1 › PRIV-04: dừng ghi âm kết thúc mọi track và tắt indicator (2.0s)
+ok 20 [chromium] › e2e\privacy\recorder.spec.ts:114:1 › PRIV-05: hủy bỏ bản ghi, dừng track, không gửi meeting (2.2s)
+ok 21 [chromium] › e2e\privacy\recorder.spec.ts:132:1 › PRIV-06: chỉ upload sau click tạo biên bản và đúng một request (20.8s)
+ok 22 [chromium] › e2e\privacy\recorder.spec.ts:158:1 › PRIV-07: reload lúc ghi có cảnh báo, không tự ghi lại hay upload (1.1s)
+ok 23 [chromium] › e2e\privacy\recorder.spec.ts:179:1 › PRIV-08: từ chối micro hiện hướng dẫn và không tự xin lại (738ms)
+ok 24 [chromium] › e2e\privacy\recorder.spec.ts:202:1 › PRIV-09: điều hướng khỏi recorder dừng mọi track (779ms)
+
+24 passed / 0 failed / 0 skipped
+Known native Windows os.killpg warnings in full log: 1
