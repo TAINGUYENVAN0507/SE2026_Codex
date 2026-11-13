@@ -1,6 +1,6 @@
 # Kế hoạch còn lại
 
-> Cập nhật 2026-11-10. Trạng thái yêu cầu đọc từ `main` tại `fc7d80f`. Nhóm trưởng cập nhật file này mỗi khi phân công.
+> Cập nhật 2026-11-13. Trạng thái yêu cầu đọc từ `main` tại `f255e01` (sau #53, #54). Nhóm trưởng cập nhật file này mỗi khi phân công.
 
 ## Tiếp tục vào ngày sau
 
@@ -62,7 +62,7 @@ Commit của C trong các đợt này ghi thêm mã bài, ví dụ `(BE-17, VT-0
 
 ## Yêu cầu repo phải đáp ứng
 
-Hiện trạng đọc từ `main` tại `d9c2d50` (sau #50, #51, đóng băng code) ngày 2026-11-12. ✓ đã có · ◐ một phần · ✗ chưa có. Số đo tải: một máy, pipeline fake; chi tiết và giới hạn ở [`docs/evidence/README.md`](../docs/evidence/README.md). Bảng theo code ngày 11-06 (`53f753b`) đã thay bằng bảng này; lịch sử xem git.
+Hiện trạng đọc từ `main` tại `f255e01` (sau #53, #54; đóng băng code từ 11-12) ngày 2026-11-13. ✓ đã có · ◐ một phần · ✗ chưa có. Số đo tải: một máy, pipeline fake; chi tiết và giới hạn ở [`docs/evidence/README.md`](../docs/evidence/README.md). Bảng theo code ngày 11-06 (`53f753b`) đã thay bằng bảng này; lịch sử xem git.
 
 ### RE-018
 
@@ -77,13 +77,13 @@ Hiện trạng đọc từ `main` tại `d9c2d50` (sau #50, #51, đóng băng co
 | Runbook truy nguyên nhân, có thời gian đo thật | ✓ Diễn tập 2 sự cố trên Compose đo thời gian thật tại `docs/backend/runbook-drill-2026-11-10.md`, bổ sung runbook `docs/backend/BE-19.md` | BE-19 | B | 5 |
 | Lưu 14 ngày chạy thật | ✓ Worker gọi `run_retention_cleanup`; `backend/tests/api/test_retention.py`; test giữ tài liệu khớp cấu hình | BE-14 | B, C | 1, 4 |
 | 239 người dùng đồng thời | Xem bảng tải bên dưới | AI-19 | C | 3–5 |
-| Phản hồi change request trong 20 giờ | ◐ `docs/evidence/pr-response-times.md` (sinh lại 11-11): từ 11-06, 5/17 PR có phản hồi của người khác, 4/5 trong 20 giờ; 12 PR merge khi chưa có phản hồi | | A, B, C | |
+| Phản hồi change request trong 20 giờ | ◐ `docs/evidence/pr-response-times.md` (sinh lại 11-13): từ 11-06, 5/23 PR có phản hồi của người khác, 4/5 trong 20 giờ; 18 PR merge khi chưa có phản hồi | | A, B, C | |
 
 ### AD-018
 
 | Yêu cầu | Hiện trạng | Việc | Owner | Đợt |
 |---|---|---|---|---|
-| Xóa khỏi mọi nơi lưu | ✓ `backend/app/services/erasure/`; `test_delete_meeting.py`; canary: `idempotency_keys` không còn tiêu đề | BE-18 | B | 1 |
+| Xóa khỏi mọi nơi lưu | ✓ `backend/app/services/erasure/`; `test_delete_meeting.py` (SQLite); canary: `idempotency_keys` không còn tiêu đề; 11-13: `tests/integration/test_erasure_postgres.py` trên Postgres đã migrate, bảng nơi lưu → test ở `docs/evidence/ad-018/README.md`. Log Docker chưa có test | BE-18 | B | 1 |
 | Xóa được cả tài khoản | ✓ `DELETE /auth/me` và giao diện xóa tài khoản (#42) | BE-18 | B, A | 2 |
 | Log không giữ dữ liệu cá nhân | ✓ Canary ở API, worker (`backend/tests/privacy/`) và pipeline (tìm ra và sửa rò stderr) | BE-18, BE-19, AI-18 | B, C | 1, 3 |
 | Adapter cho bên thứ ba | ✓ `engines/`, `llm/` có interface và bản fake | | C | |
@@ -116,7 +116,7 @@ Hiện trạng đọc từ `main` tại `d9c2d50` (sau #50, #51, đóng băng co
 
 | Mốc | Cấu hình | Kết quả | Trạng thái |
 |---|---|---|---|
-| VT-018: 40 đồng thời, p95 ≤ 1,5 s | 1 process API | 11-12 trên `main` đã đóng băng `d9c2d50`: 5/6 lượt đạt, 1 lượt p95 upload 1,56 s; hai mức quanh 0,5 s và 1,4 đến 1,6 s, thời gian nằm trong app, chưa rõ nguyên nhân (`docs/evidence/vt-018/load-40-2026-11-12/README.md`). 11-11: 0,56 đến 0,84 s, 6/6 | ◐ đạt phần lớn lượt, không ổn định |
+| VT-018: 40 đồng thời, p95 ≤ 1,5 s | 1 process API | 11-13 trên `a75853d`: 12/12 đạt, p95 upload 0,36 đến 0,87 s; xen kẽ ffprobe thật và giả, ffprobe không giải thích được mức chậm (`docs/evidence/vt-018/load-40-2026-11-13/README.md`). 11-12 trên `d9c2d50`: 5/6, 1 lượt 1,56 s; hai mức quanh 0,5 s và 1,4 đến 1,6 s. 11-11: 6/6. Gộp 23/24 | ◐ đạt 23/24 lượt, 1 lượt không đạt chưa rõ nguyên nhân |
 | RE-018: 239 đồng thời (không có mục tiêu độ trễ) | 1 process API | 239/239 upload, 0 lỗi, 3 lượt; p95 upload 3,03 đến 3,25 s | ✓ chịu được |
 | AD-018: 247 đồng thời, p95 ≤ 2,0 s | 1 process API (mặc định) | p95 upload 3,16 đến 3,79 s, 3/3 lượt trên mốc (11-10: 14/14) | ✗ |
 | AD-018: 247 đồng thời, p95 ≤ 2,0 s | 4 process API, `API_MAX_INFLIGHT=20` | p95 upload 2,30 đến 2,60 s, 15/15 lượt trên mốc; server chỉ 71 đến 82 % upload ≤ 2,0 s (11-10: 10/12 lượt đạt, không lặp lại được) | ✗ |
@@ -224,3 +224,13 @@ Phần cá nhân của BT1/BT2/BT3 (phân tích, Bước 0 trước khi code, re
 - SH-01: chưa có bản ghi âm họp thật. AI-12 phần thu thật, AI-14, benchmark trên audio họp phụ thuộc vào đây.
 - Quyết định về Claude API với audio họp thật và ngân sách API.
 - Đã xong (Đợt 3): `README.md` mục Trạng thái và `structure/architecture.md` không còn ghi backend chưa bắt đầu (kiểm lại 2026-11-10).
+
+### Đợt 8 (giao ngày 2026-11-13: `tasks/2026-11-13/`, đóng băng bằng chứng)
+
+Bắt đầu sau khi #53 (A) vào `main` (`a75853d`, CI xanh 12/12). B push việc 11-12 lên `haquang` nhưng chưa mở PR; C mở #54 thay, review, merge khi CI xanh 15/15 (`f255e01`). Ngày 11-14 nộp bài.
+
+| Member | Việc |
+|---|---|
+| A | E2E trên `main` có cả #53 và #54; kịch bản demo gắn với ảnh và test của VT-018 |
+| B | `GET summary` trả `failed` khi meeting `partial` (lỗi A báo ở #53), test đỏ trước; đọc lại bảng xóa dữ liệu sau khi C sửa |
+| C | Test xóa dữ liệu trên Postgres đã migrate (test cũ chạy SQLite); sửa bảng bằng chứng AD-018; chẩn đoán 40 client (ffprobe thật/giả); thời gian phản hồi PR; bản đồ bằng chứng |
