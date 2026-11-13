@@ -1,0 +1,25 @@
+# backend/tests/integration/test_erasure_postgres.py trên Postgres 16 đã migrate bằng Alembic
+# 2026-11-13 12:53:20 +0700, commit 5639f45, PostgreSQL 16.15
+
+## 1. Service xóa nguyên bản
+tests/integration/test_erasure_postgres.py::test_delete_meeting_on_migrated_postgres PASSED [ 50%]
+tests/integration/test_erasure_postgres.py::test_delete_account_on_migrated_postgres PASSED [100%]
+========================= 2 passed, 1 warning in 4.78s =========================
+
+## 2. Mutant: bỏ lệnh xóa idempotency_keys của meeting (if keys_to_delete -> if False and keys_to_delete)
+-    if keys_to_delete:
++    if False and keys_to_delete:
+tests/integration/test_erasure_postgres.py::test_delete_meeting_on_migrated_postgres FAILED [ 50%]
+tests/integration/test_erasure_postgres.py::test_delete_account_on_migrated_postgres PASSED [100%]
+E       AssertionError: assert ['idempotency...esponse_body'] == []
+FAILED tests/integration/test_erasure_postgres.py::test_delete_meeting_on_migrated_postgres
+==================== 1 failed, 1 passed, 1 warning in 4.75s ====================
+
+## 3. Mutant: bỏ delete(EditEvent) sau db.delete(meeting)
+-    db.execute(delete(EditEvent).where(EditEvent.meeting_id == meeting_id))
++    pass
+tests/integration/test_erasure_postgres.py::test_delete_meeting_on_migrated_postgres PASSED [ 50%]
+tests/integration/test_erasure_postgres.py::test_delete_account_on_migrated_postgres PASSED [100%]
+========================= 2 passed, 1 warning in 3.37s =========================
+
+## 4. Sau khi trả lại service: git diff app/ rỗng = có
