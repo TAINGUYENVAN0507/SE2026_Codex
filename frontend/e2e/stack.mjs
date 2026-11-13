@@ -106,7 +106,10 @@ try {
       '--port',
       '18000',
     ],
-    ['run', '--no-sync', 'python', '-m', 'app.worker.runner'],
+    // Ảnh bằng chứng cần giữ job queued trước khi bật worker do test quản lý.
+    ...(process.env.E2E_MANUAL_WORKER === '1'
+      ? []
+      : [['run', '--no-sync', 'python', '-m', 'app.worker.runner']]),
   ]) {
     start(uv, args, backend).on('exit', (code) => {
       if (!stopping) cleanup(code || 1)

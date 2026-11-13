@@ -1,0 +1,82 @@
+{
+  "source_commit": "e2a0d712dc4900490f69d2672adc4eb0510ddfc2",
+  "synthetic_only": true,
+  "pipeline": "fake",
+  "captured_at_utc": "2026-11-12T07:12:29.367Z",
+  "queued": {
+    "id": "47af3485-9b98-44ba-b0a0-c80a6d6d120a",
+    "status": "queued",
+    "stage": "preprocess",
+    "progress": 0,
+    "attempt": 1,
+    "max_attempts": 3,
+    "created_at": "2026-11-12T07:12:29.741667Z",
+    "started_at": null,
+    "finished_at": null
+  },
+  "running": {
+    "id": "47af3485-9b98-44ba-b0a0-c80a6d6d120a",
+    "status": "running",
+    "stage": "asr",
+    "progress": 0.6,
+    "attempt": 1,
+    "max_attempts": 3,
+    "created_at": "2026-11-12T07:12:29.741667Z",
+    "started_at": "2026-11-12T07:12:31.074338Z",
+    "finished_at": null
+  },
+  "succeeded": {
+    "id": "47af3485-9b98-44ba-b0a0-c80a6d6d120a",
+    "status": "succeeded",
+    "stage": "summarize",
+    "progress": 1,
+    "attempt": 1,
+    "max_attempts": 3,
+    "created_at": "2026-11-12T07:12:29.741667Z",
+    "started_at": "2026-11-12T07:12:31.074338Z",
+    "finished_at": "2026-11-12T07:12:45.429330Z"
+  },
+  "retry": {
+    "previous": {
+      "id": "aa46d96d-a5e7-4cbc-a7a5-fb53d45c6b88",
+      "status": "failed",
+      "stage": "merge",
+      "progress": 0.85,
+      "attempt": 1,
+      "max_attempts": 3,
+      "created_at": "2026-11-12T07:12:47.134520Z",
+      "started_at": "2026-11-12T07:12:48.001460Z",
+      "finished_at": "2026-11-12T07:12:50.417009Z"
+    },
+    "current": {
+      "id": "22aff3f5-9588-45e2-9b3c-ca1c42a17b8d",
+      "status": "queued",
+      "stage": "summarize",
+      "progress": 0.8333333333333334,
+      "attempt": 1,
+      "max_attempts": 3,
+      "created_at": "2026-11-12T07:12:54.901334Z",
+      "started_at": null,
+      "finished_at": null
+    }
+  },
+  "segment_check": {
+    "before_ids": [
+      "69993dd6-23f3-4c9d-91d5-299eb6eae89e",
+      "e6ec821f-4397-4802-b51b-557edbd6ecea",
+      "1466d3f8-4e97-4710-9f53-e1a57ff29ceb",
+      "70b1d61e-c9d9-40dc-a992-607cb8b03340",
+      "a1fbc6a2-fddd-4712-b77c-bc78d12ca783",
+      "a3402300-7e8a-4674-8bbc-32a527285c97"
+    ],
+    "after_ids": [
+      "69993dd6-23f3-4c9d-91d5-299eb6eae89e",
+      "e6ec821f-4397-4802-b51b-557edbd6ecea",
+      "1466d3f8-4e97-4710-9f53-e1a57ff29ceb",
+      "70b1d61e-c9d9-40dc-a992-607cb8b03340",
+      "a1fbc6a2-fddd-4712-b77c-bc78d12ca783",
+      "a3402300-7e8a-4674-8bbc-32a527285c97"
+    ],
+    "rendered_count": 6
+  }
+}

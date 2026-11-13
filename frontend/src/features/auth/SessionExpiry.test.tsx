@@ -105,7 +105,7 @@ it('FE-16: hai API cùng trả 401 chỉ kết thúc phiên một lần', async 
   client.setQueryData(['transcript', 'private'], {
     text: 'CANARY_PRIVATE_CACHE',
   })
-  const clear = vi.spyOn(client, 'clear')
+  const cancel = vi.spyOn(client, 'cancelQueries')
   const path = `/meetings/${meeting.id}?source=concurrent`
   render(
     <QueryClientProvider client={client}>
@@ -126,7 +126,8 @@ it('FE-16: hai API cùng trả 401 chỉ kết thúc phiên một lần', async 
   expect(screen.getByLabelText('URL')).toHaveTextContent(
     `/login?next=${encodeURIComponent(path)}`,
   )
-  expect(clear).toHaveBeenCalledTimes(1)
+  // Hai 401 chỉ bắt đầu một lần kết thúc phiên; route login còn dọn cache lần cuối.
+  expect(cancel).toHaveBeenCalledTimes(1)
   expect(requests).toBe(2)
   // useMe có thể ghi null từ 401 sau khi cache được dọn; cả hai đều không còn danh tính.
   expect([undefined, null]).toContain(client.getQueryData(['me']))

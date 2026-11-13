@@ -158,6 +158,30 @@ describe('JobStatusCard', () => {
     expect(screen.getByText('Chờ thử lại')).toBeInTheDocument()
   })
 
+  it.each([null, 'summarize'] as const)(
+    'does not label a queued %s stage as running',
+    async (stage) => {
+      server.use(
+        http.get('*/api/v1/jobs/:jobId', () =>
+          HttpResponse.json({
+            ...jobWithStatus('queued'),
+            stage,
+            stages: Object.fromEntries(
+              PIPELINE_STAGES.map((name, index) => [
+                name,
+                stage === 'summarize' && index < 5 ? 'succeeded' : 'pending',
+              ]),
+            ),
+          }),
+        ),
+      )
+      renderCard()
+      await screen.findByText('Đang chờ xử lý')
+      expect(screen.queryByText('Đang chạy')).not.toBeInTheDocument()
+      expect(screen.getByText('Chờ bắt đầu')).toBeInTheDocument()
+    },
+  )
+
   it.each([
     ['queued', 'Đang chờ xử lý'],
     ['running', 'Đang xử lý'],

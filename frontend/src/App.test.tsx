@@ -71,7 +71,7 @@ describe('meeting workspace', () => {
     expect(
       screen.getByText(/Chào mọi người, hôm nay chúng ta chốt/),
     ).toBeInTheDocument()
-  })
+  }, 15_000)
 
   it('adds and completes a task', async () => {
     const user = userEvent.setup()

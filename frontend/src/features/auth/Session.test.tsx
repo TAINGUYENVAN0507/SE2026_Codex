@@ -36,11 +36,16 @@ function Location() {
   )
 }
 
-function renderSession(path = '/meetings/new', signedIn = false) {
+function renderSession(
+  path = '/meetings/new',
+  signedIn = false,
+  seed?: (client: QueryClient) => void,
+) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   })
   if (signedIn) client.setQueryData(['me'], userMe)
+  seed?.(client)
   render(
     <QueryClientProvider client={client}>
       <MemoryRouter initialEntries={[path]}>
@@ -89,6 +94,17 @@ describe('FE-03 session guard and logout', () => {
     expect(screen.getByText(userMe.user.display_name)).toBeInTheDocument()
   })
 
+  it('clears residual private queries when the login route is committed', async () => {
+    const client = renderSession('/login', false, (cache) => {
+      cache.setQueryData(['transcript', 'private'], { text: 'PRIVATE_CANARY' })
+    })
+    await screen.findByRole('heading', { name: 'Chào mừng trở lại' })
+    await waitFor(() => {
+      expect(client.getQueryData(['transcript', 'private'])).toBeUndefined()
+      expect(client.getQueryCache().getAll()).toHaveLength(0)
+    })
+  })
+
   it('clears every query on logout and returns to login', async () => {
     const user = userEvent.setup()
     const client = renderSession('/meetings/new', true)
@@ -98,7 +114,8 @@ describe('FE-03 session guard and logout', () => {
       await screen.findByRole('heading', { name: 'Chào mừng trở lại' }),
     ).toBeInTheDocument()
     expect(screen.getByLabelText('URL')).toHaveTextContent('/login')
-    expect(client.getQueryCache().getAll()).toHaveLength(0)
+    // Chuyển route và dọn query là các cập nhật bất đồng bộ.
+    await waitFor(() => expect(client.getQueryCache().getAll()).toHaveLength(0))
   })
 
   it('ends the session for a 401 from another API, even without an error envelope', async () => {

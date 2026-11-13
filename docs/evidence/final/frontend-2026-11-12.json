@@ -1,0 +1,217 @@
+{
+  "date": "2026-11-12",
+  "initial_clean_clone": {
+    "date": "2026-11-12",
+    "runs": [
+      {
+        "name": "clone",
+        "command": [
+          "git",
+          "clone",
+          "--branch",
+          "main",
+          "--single-branch",
+          "https://github.com/TAINGUYENVAN0507/SE2026_Codex.git",
+          "D:\\KLTN\\data\\se-day7\\clean-clone"
+        ],
+        "started_at_utc": "2026-11-12T06:15:26.879250+00:00",
+        "exit_code": 0,
+        "duration_sec": 14.26,
+        "log_sha256": "f1ae73819e0ed7ce052c72ed8683356c52194fad78b0e1992e983122aca6c4af"
+      },
+      {
+        "name": "npm-ci",
+        "command": [
+          "cmd.exe",
+          "/d",
+          "/c",
+          "npm.cmd",
+          "ci"
+        ],
+        "started_at_utc": "2026-11-12T06:15:41.328712+00:00",
+        "exit_code": 0,
+        "duration_sec": 579.8,
+        "log_sha256": "276fa33061ecb6e74b62beefc99992d951debba122254b5bfe08e7b346dac1a7"
+      },
+      {
+        "name": "lint",
+        "command": [
+          "cmd.exe",
+          "/d",
+          "/c",
+          "npm.cmd",
+          "run",
+          "lint"
+        ],
+        "started_at_utc": "2026-11-12T06:25:21.162673+00:00",
+        "exit_code": 0,
+        "duration_sec": 63.98,
+        "log_sha256": "4e78d8ab8a8c9f8a56314acedd7493901f7bec338f59ee6152a7f26ca116b8fe"
+      },
+      {
+        "name": "format",
+        "command": [
+          "cmd.exe",
+          "/d",
+          "/c",
+          "npm.cmd",
+          "run",
+          "format:check"
+        ],
+        "started_at_utc": "2026-11-12T06:26:25.167104+00:00",
+        "exit_code": 0,
+        "duration_sec": 11.45,
+        "log_sha256": "69f73fb915a3fa94b518f2a30c499051278038792c92d54d98a4d2bd69b969a0"
+      },
+      {
+        "name": "typecheck",
+        "command": [
+          "cmd.exe",
+          "/d",
+          "/c",
+          "npm.cmd",
+          "run",
+          "typecheck"
+        ],
+        "started_at_utc": "2026-11-12T06:26:36.637183+00:00",
+        "exit_code": 0,
+        "duration_sec": 22.01,
+        "log_sha256": "5cb53ebbd7501c980a2e93c60120654d7b7056e3a4cf55d491d8145c3c84ee87"
+      },
+      {
+        "name": "coverage",
+        "command": [
+          "cmd.exe",
+          "/d",
+          "/c",
+          "npm.cmd",
+          "run",
+          "test:coverage"
+        ],
+        "started_at_utc": "2026-11-12T06:26:58.677330+00:00",
+        "exit_code": 1,
+        "duration_sec": 125.09,
+        "log_sha256": "03d997a3214bc2e12446dea2f2b3f04aa95e5440746bdf91afa6713a98784f10"
+      },
+      {
+        "name": "coverage-default-recheck",
+        "command": [
+          "npm.cmd",
+          "run",
+          "test:coverage"
+        ],
+        "exit_code": 1,
+        "duration_sec": 97.67,
+        "started_at_utc": "2026-11-12T06:34:06.159325+00:00",
+        "log_sha256": "a55a131576e0195e1db57731b72e569068dac31102bab179b3add6083ea6b4c1"
+      }
+    ],
+    "source_commit": "101f17e5d4cf28fbe3f8303bdee590ff15010820",
+    "initial_clean": true
+  },
+  "fixed_clean_checkout": {
+    "source_commit": "add08c2b9b0abbfc5e1faffeeb1df008df2a9957",
+    "runs": [
+      {
+        "name": "lint",
+        "command": "npm run lint",
+        "exit_code": 0,
+        "duration_sec": 45.88,
+        "started_at_utc": "2026-11-12T06:49:30.575296+00:00",
+        "log_sha256": "4e78d8ab8a8c9f8a56314acedd7493901f7bec338f59ee6152a7f26ca116b8fe"
+      },
+      {
+        "name": "format",
+        "command": "npm run format:check",
+        "exit_code": 0,
+        "duration_sec": 4.83,
+        "started_at_utc": "2026-11-12T06:50:16.457289+00:00",
+        "log_sha256": "69f73fb915a3fa94b518f2a30c499051278038792c92d54d98a4d2bd69b969a0"
+      },
+      {
+        "name": "typecheck",
+        "command": "npm run typecheck",
+        "exit_code": 0,
+        "duration_sec": 14.23,
+        "started_at_utc": "2026-11-12T06:50:21.297367+00:00",
+        "log_sha256": "5cb53ebbd7501c980a2e93c60120654d7b7056e3a4cf55d491d8145c3c84ee87"
+      },
+      {
+        "name": "coverage",
+        "command": "npm run test:coverage",
+        "exit_code": 0,
+        "duration_sec": 57.77,
+        "started_at_utc": "2026-11-12T06:50:35.546359+00:00",
+        "log_sha256": "f32a424e90a1dd8698e6928e271039f1b104c4e02ea7405034ab65e4e225298a"
+      },
+      {
+        "name": "build",
+        "command": "npm run build",
+        "exit_code": 0,
+        "duration_sec": 6.34,
+        "started_at_utc": "2026-11-12T06:51:33.304089+00:00",
+        "log_sha256": "9a92052f086ce1022beb6b3a5e876218c4c8cf6e05a4740ff4efaece235f6ad2"
+      }
+    ]
+  },
+  "e2e": {
+    "command": [
+      "cmd.exe",
+      "/d",
+      "/c",
+      "npm.cmd",
+      "run",
+      "e2e"
+    ],
+    "source_commit": "add08c2b9b0abbfc5e1faffeeb1df008df2a9957",
+    "working_tree_modified": false,
+    "started_at_utc": "2026-11-12T06:52:11.092959+00:00",
+    "exit_code": 0,
+    "duration_sec": 321.25,
+    "log_sha256": "d2ab23c052595cf6f29435281baed4871ba97a4d1413d971705ab32df7158d4e",
+    "pipeline": "fake",
+    "scenario": "slow",
+    "postgres_version": 16,
+    "synthetic_only": true
+  },
+  "coverage": {
+    "lines": {
+      "total": 1397,
+      "covered": 1211,
+      "skipped": 0,
+      "pct": 86.68
+    },
+    "statements": {
+      "total": 1558,
+      "covered": 1312,
+      "skipped": 0,
+      "pct": 84.21
+    },
+    "functions": {
+      "total": 500,
+      "covered": 403,
+      "skipped": 0,
+      "pct": 80.6
+    },
+    "branches": {
+      "total": 1401,
+      "covered": 1140,
+      "skipped": 0,
+      "pct": 81.37
+    },
+    "branchesTrue": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 100
+    }
+  },
+  "unit_passed": 297,
+  "unit_files": 48,
+  "e2e_passed": 24,
+  "pipeline": "fake",
+  "native_windows_killpg_warnings": 1,
+  "package_lock_unchanged": true,
+  "package_lock_sha256": "26f0c144bafd9b39d808122de0dab7f6acd7bfe274f8408e6e118503838510e5",
+  "npm_ci_moderate_advisories": 9
+}
