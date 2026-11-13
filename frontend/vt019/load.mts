@@ -1,6 +1,12 @@
 import { performance } from 'node:perf_hooks'
 import { writeFileSync, mkdirSync } from 'node:fs'
 import { platform, cpus } from 'node:os'
+import { resolve } from 'node:path'
+
+const runId = process.env.VT019_RUN_ID
+if (runId && !/^[a-z0-9-]+$/.test(runId))
+  throw new Error('Run ID evidence không hợp lệ')
+const evidenceDir = resolve('vt019/evidence', runId ?? '.')
 import { createAutosave } from '../src/features/meetings/autosave.ts'
 
 // Harness controller + adapter giả lập; KHÔNG đại diện HTTP/DB production.
@@ -57,13 +63,13 @@ const result = {
   excludes:
     '500ms debounce, HTTP, TLS, auth, database, multi-process contention',
 }
-mkdirSync('vt019/evidence', { recursive: true })
+mkdirSync(evidenceDir, { recursive: true })
 writeFileSync(
-  'vt019/evidence/load.json',
+  resolve(evidenceDir, 'load.json'),
   JSON.stringify(result, null, 2) + '\n',
 )
 writeFileSync(
-  'vt019/evidence/load-samples.json',
+  resolve(evidenceDir, 'load-samples.json'),
   JSON.stringify(samples) + '\n',
 )
 process.stdout.write(JSON.stringify(result, null, 2) + '\n')

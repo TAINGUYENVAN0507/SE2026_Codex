@@ -1,0 +1,17 @@
+{
+  "kind": "controller with synthetic 20ms adapter; no HTTP/DB/browser",
+  "node": "v24.13.0",
+  "platform": "win32",
+  "cpu": "12th Gen Intel(R) Core(TM) i7-12700H",
+  "concurrency": 120,
+  "maximum_in_flight": 120,
+  "waves": 10,
+  "samples": 1200,
+  "errors": 0,
+  "p50_ms": 26.326899999999995,
+  "p95_ms": 33.697599999999994,
+  "max_ms": 33.84760000000003,
+  "target_p95_ms": 3500,
+  "passes_harness_target": true,
+  "excludes": "500ms debounce, HTTP, TLS, auth, database, multi-process contention"
+}

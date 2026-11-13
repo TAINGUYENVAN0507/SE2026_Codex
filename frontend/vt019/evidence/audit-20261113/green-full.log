@@ -1,0 +1,32 @@
+$ D:\Nodejs\node.exe node_modules/vitest/vitest.mjs run --coverage.enabled --coverage.provider=v8 --coverage.include=src/features/meetings/autosave.ts --coverage.include=src/features/meetings/AutosaveEditor.tsx --coverage.reporter=json-summary --coverage.reporter=text --coverage.reportsDirectory=vt019\evidence\audit-20261113\coverage
+
+ RUN  v5.0.5 D:/Project/SE2026/Lab03/SE2026_Codex/frontend
+      Coverage enabled with v8
+
+
+ Test Files  33 passed (33)
+      Tests  174 passed (174)
+   Start at  14:32:54
+   Duration  20.19s (environment 50%, tests 25%, import 11%, setup 10%, worker 2%, transform 2%)
+
+Environment  jsdom was created 33 times · 35.80s total, 50% of tracked time
+             create it once per worker with pool: 'vmThreads' (keeps per-file isolation) or isolate: false (shares it across files)
+             learn more: https://vitest.dev/guide/improving-performance#test-environments
+
+ % Coverage report from v8
+-------------------|---------|----------|---------|---------|-------------------
+File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+-------------------|---------|----------|---------|---------|-------------------
+All files          |   93.67 |    91.93 |      96 |   97.01 |                   
+ ...saveEditor.tsx |    93.1 |    86.66 |    92.3 |   95.83 | 88                
+ autosave.ts       |      94 |    93.61 |     100 |   97.67 | 77                
+-------------------|---------|----------|---------|---------|-------------------
+
+=============================== Coverage summary ===============================
+Statements   : 93.67% ( 74/79 )
+Branches     : 91.93% ( 57/62 )
+Functions    : 96% ( 24/25 )
+Lines        : 97.01% ( 65/67 )
+================================================================================
+
+EXIT=0

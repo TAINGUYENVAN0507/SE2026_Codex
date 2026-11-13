@@ -53,3 +53,28 @@ test cạnh feature và hai E2E trong `vt019/autosave.spec.ts`. Điểm nối n�
 
 Không tạo timestamp hoặc log giả. Các log đính kèm là stdout/stderr từ lệnh
 thực thi, gồm cả lần fail có chủ đích; không coi lời giải thích của AI là evidence.
+
+## Lần rà soát bản cũ - 13/11/2026
+
+Prompt thực nhận: “oke bắt đầu làm đi”. Sau khi phát hiện bản có sẵn, người dùng
+chọn “Rà soát, kiểm thử lại và hoàn thiện bản có sẵn (khuyến nghị)”. Phạm vi
+được phép là `D:/Project/SE2026/Lab03`, không đụng repo task hằng ngày.
+
+Codex đọc đề, source, test và PDF cũ; dùng cùng bộ công cụ kể trên để kiểm tra lại.
+Output được dùng: runner `verify.mjs`, run ID cho log/E2E/load, docs kiểm tra lại
+và PDF cập nhật. Không đổi logic autosave hay expected của 17 test-case IDs để
+đạt kết quả xanh. Không thêm dependency frontend.
+
+Các điểm review trong lần này:
+
+- Chạy lệnh cũ có thể ghi đè evidence. Dùng thư mục run ID mới và runner từ chối
+  thư mục có sẵn; 17 file evidence gốc được so byte với Git và ghi SHA-256.
+- Log từ replay không chứng minh thứ tự lịch sử. Đánh dấu baseline/mutation là
+  replay; không tạo timestamp trước patch hoặc giả prompt mới cho phần cũ.
+- p95 thấp của adapter 20 ms không chứng minh backend nhanh. Giữ mô tả giới hạn
+  HTTP/auth/DB và nhãn dữ liệu giả lập trong báo cáo.
+
+Codex cũng là bên rà soát, không phải review độc lập của sinh viên hay nhóm.
+Reflection cũ không bị sửa thành trải nghiệm cá nhân mới; sinh viên cần xác nhận
+nội dung trước khi nộp. Chưa push, tạo PR hoặc merge. Chỉ thêm remote upstream
+để đọc repository chính thức; origin vẫn là bundle offline của Lab03.

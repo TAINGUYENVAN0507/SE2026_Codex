@@ -1,0 +1,189 @@
+{
+  "config": {
+    "argv": [
+      "D:\\Nodejs\\node.exe",
+      "D:\\Project\\SE2026\\Lab03\\SE2026_Codex\\frontend\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "--config",
+      "vt019/playwright.config.ts"
+    ],
+    "configFile": "D:\\Project\\SE2026\\Lab03\\SE2026_Codex\\frontend\\vt019\\playwright.config.ts",
+    "rootDir": "D:/Project/SE2026/Lab03/SE2026_Codex/frontend/vt019",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "D:/Project/SE2026/Lab03/SE2026_Codex/frontend/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "D:/Project/SE2026/Lab03/SE2026_Codex/frontend/vt019",
+        "testIgnore": [],
+        "testMatch": [
+          "autosave.spec.ts"
+        ],
+        "timeout": 20000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "D:\\Project\\SE2026\\Lab03\\SE2026_Codex\\frontend\\test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "",
+        "testDir": "D:\\Project\\SE2026\\Lab03\\SE2026_Codex\\frontend\\vt019",
+        "snapshotDir": "D:\\Project\\SE2026\\Lab03\\SE2026_Codex\\frontend\\vt019",
+        "testIgnore": [],
+        "testMatch": "autosave.spec.ts",
+        "timeout": 20000,
+        "use": {
+          "baseURL": "http://127.0.0.1:14174",
+          "browserName": "chromium",
+          "serviceWorkers": "block"
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": ""
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "D:\\Project\\SE2026\\Lab03\\SE2026_Codex\\frontend\\vt019\\evidence\\audit-20261113\\e2e.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.64.1",
+    "workers": 1,
+    "webServer": {
+      "cwd": "D:\\Project\\SE2026\\Lab03\\SE2026_Codex\\frontend\\",
+      "command": "node node_modules/vite/bin/vite.js --host 127.0.0.1 --port 14174 --strictPort",
+      "url": "http://127.0.0.1:14174",
+      "reuseExistingServer": false,
+      "env": {
+        "VITE_API_MOCK": "0"
+      }
+    }
+  },
+  "suites": [
+    {
+      "title": "autosave.spec.ts",
+      "file": "autosave.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "TC16 browser: A response chậm không ghi đè C; reload đọc C",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 20000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2673,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T07:33:29.258Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ef2e57cca4928d3dc33e-ee1e909fb95460526fe8",
+          "file": "autosave.spec.ts",
+          "line": 67,
+          "column": 1
+        },
+        {
+          "title": "TC17 browser: hai tab, tab cũ 409 và giữ draft",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 20000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2574,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-13T07:33:32.549Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ef2e57cca4928d3dc33e-eac7ad3cde23cdd0ee73",
+          "file": "autosave.spec.ts",
+          "line": 87,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-13T07:33:28.144Z",
+    "duration": 7501.07,
+    "expected": 2,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

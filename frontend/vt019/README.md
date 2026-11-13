@@ -86,3 +86,41 @@ Plan trước code và các quyết định bác bỏ ở `docs/frontend/VT-019-
 Đã review diff: chỉ nối editor, không thay API hay server version checks.
 Test oracle bám yêu cầu: user-visible draft và PATCH body/version, không bám
 private field của controller. Cần kết hợp mutation và race schedule với coverage.
+
+## Kiểm tra lại bản có sẵn - 13/11/2026
+
+Không đổi baseline và không đưa main mới vào bài đang chấm theo baseline cũ.
+Clone này độc lập với repo làm task hằng ngày. Chỉ thao tác tại
+`D:/Project/SE2026/Lab03` và chưa push/PR/merge.
+
+Sau `npm ci` và cài Chromium nếu cần, chạy trong `frontend/`:
+
+```powershell
+node vt019/verify.mjs audit-moi
+```
+
+Dùng run ID mới mỗi lần. Runner từ chối ghi đè thư mục đã có; lưu kết quả vào
+`vt019/evidence/<run-id>/`. Runner hiện ràng buộc đường dẫn Lab03 trên Windows
+để giữ đúng phạm vi người dùng cho phép. Lint, format, typecheck, full tests với
+coverage, ba shuffle seeds, build, browser E2E và load harness được chạy trước.
+Sau đó runner tạo hai detached worktree trong `Lab03/tmp/verification-worktrees/`:
+
+- Baseline + TC01: phải fail vì chưa có request tự lưu.
+- Commit mutation riêng: phải có 3 fail / 12 pass vì bỏ validation.
+
+Worktree dùng chung dependency qua junction, được tháo junction trước khi dọn.
+Nhánh bài không bị đổi source. Runner kiểm mutation không là ancestor và guard
+validation còn nguyên. `verification.json` ghi exit code, thời gian và commit.
+Replay hôm nay không được coi là bằng chứng độc lập cho thứ tự viết test trước
+code trong lịch sử. Log gốc ngày 30/10 giữ nguyên; hash ở
+`audit-20261113/original-evidence-sha256.json`.
+
+Kết quả lần `audit-20261113`: 174 test frontend, 2 browser tests, ba lượt 21 test
+shuffle đều pass; 14 kiểm tra đạt. Coverage hai file mới: line 97.01%, branch
+91.93%. Tải giả lập: 120 in-flight, 1.200 mẫu, 0 lỗi, p95 33.70 ms. Chỉ chứng
+minh controller + adapter 20 ms, không phải SLA backend thật ở 120 người dùng.
+
+Plan/test/patch gốc cùng commit; lần rà soát không xác minh độc lập được trình tự
+plan trước code. Reflection là bản soạn có AI, sinh viên cần đọc, hiểu và xác
+nhận. Còn thiếu link GitHub branch để nộp; chưa công bố khi chưa được phép push.
+Chi tiết: `docs/frontend/VT-019-audit-2026-11-13.md`.

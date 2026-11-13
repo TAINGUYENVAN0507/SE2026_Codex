@@ -1,6 +1,10 @@
 import { defineConfig } from '@playwright/test'
 import { fileURLToPath } from 'node:url'
 
+const runId = process.env.VT019_RUN_ID
+if (runId && !/^[a-z0-9-]+$/.test(runId))
+  throw new Error('Run ID evidence không hợp lệ')
+
 export default defineConfig({
   testDir: '.',
   testMatch: 'autosave.spec.ts',
@@ -13,7 +17,10 @@ export default defineConfig({
       'json',
       {
         outputFile: fileURLToPath(
-          new URL('./evidence/e2e.json', import.meta.url),
+          new URL(
+            `./evidence/${runId ? runId + '/' : ''}e2e.json`,
+            import.meta.url,
+          ),
         ),
       },
     ],

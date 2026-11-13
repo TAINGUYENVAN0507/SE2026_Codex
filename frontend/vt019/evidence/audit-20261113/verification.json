@@ -1,0 +1,97 @@
+{
+  "run_id": "audit-20261113",
+  "started_utc": "2026-11-13T07:32:32.482Z",
+  "finished_utc": "2026-11-13T07:33:41.489Z",
+  "node": "v24.13.0",
+  "platform": "win32",
+  "head": "efe28e363749c7c6cd9a972ccccba64b58e620b2",
+  "baseline": "53f753b3afe6c1a2d54ff1e38a72dee30c6074d2",
+  "mutant": "8062f6011d606bd063464533dbecefbf57ee3c71",
+  "note": "Replay hiện tại; không thay thế bằng chứng test-first lịch sử. API/browser/tải dùng fixture, chưa chứng minh backend thật.",
+  "checks": [
+    {
+      "label": "lint",
+      "exit": 0,
+      "expected_exit": 0,
+      "passed": true
+    },
+    {
+      "label": "oxlint",
+      "exit": 0,
+      "expected_exit": 0,
+      "passed": true
+    },
+    {
+      "label": "format",
+      "exit": 0,
+      "expected_exit": 0,
+      "passed": true
+    },
+    {
+      "label": "typecheck",
+      "exit": 0,
+      "expected_exit": 0,
+      "passed": true
+    },
+    {
+      "label": "green-full",
+      "exit": 0,
+      "expected_exit": 0,
+      "passed": true
+    },
+    {
+      "label": "flaky-19",
+      "exit": 0,
+      "expected_exit": 0,
+      "passed": true
+    },
+    {
+      "label": "flaky-23",
+      "exit": 0,
+      "expected_exit": 0,
+      "passed": true
+    },
+    {
+      "label": "flaky-29",
+      "exit": 0,
+      "expected_exit": 0,
+      "passed": true
+    },
+    {
+      "label": "build",
+      "exit": 0,
+      "expected_exit": 0,
+      "passed": true
+    },
+    {
+      "label": "e2e",
+      "exit": 0,
+      "expected_exit": 0,
+      "passed": true
+    },
+    {
+      "label": "load",
+      "exit": 0,
+      "expected_exit": 0,
+      "passed": true
+    },
+    {
+      "label": "baseline-replay",
+      "exit": 1,
+      "expected_exit": 1,
+      "passed": true
+    },
+    {
+      "label": "mutation-replay",
+      "exit": 1,
+      "expected_exit": 1,
+      "passed": true
+    },
+    {
+      "label": "mutation-not-ancestor",
+      "exit": 1,
+      "expected_exit": 1,
+      "passed": true
+    }
+  ]
+}

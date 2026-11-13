@@ -4,6 +4,10 @@ import { resolve } from 'node:path'
 
 // Chỉ lưu output kiểm thử với fixture tổng hợp; không thu thập biến môi trường.
 const [label, tool, ...args] = process.argv.slice(2)
+const runId = process.env.VT019_RUN_ID
+if (runId && !/^[a-z0-9-]+$/.test(runId))
+  throw new Error('Run ID evidence không hợp lệ')
+const evidenceDir = resolve('vt019/evidence', runId ?? '.')
 if (!/^[a-z0-9-]+$/.test(label ?? ''))
   throw new Error('Nhãn evidence không hợp lệ')
 const tools = {
@@ -21,9 +25,9 @@ const run = spawnSync(process.execPath, [tools[tool], ...args], {
   env: { ...process.env, NO_COLOR: '1', FORCE_COLOR: '0' },
 })
 if (run.error) throw run.error
-mkdirSync('vt019/evidence', { recursive: true })
+mkdirSync(evidenceDir, { recursive: true })
 writeFileSync(
-  resolve('vt019/evidence', `${label}.log`),
+  resolve(evidenceDir, `${label}.log`),
   `$ node ${tools[tool]} ${args.join(' ')}\n${run.stdout ?? ''}${run.stderr ?? ''}\nEXIT=${run.status}\n`,
 )
 process.stdout.write(run.stdout ?? '')
