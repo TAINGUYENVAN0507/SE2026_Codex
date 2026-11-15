@@ -17,6 +17,10 @@ Giới hạn của phép đo (cũng được ghi vào summary.md):
 - worker chạy MỖI LÚC 1 job nên hàng đợi tăng dần; harness đo độ trễ API, không đo thông lượng pipeline;
 - pipeline là fake, audio là WAV im lặng 3 giây;
 - client, API, worker và Postgres cùng một máy.
+
+--server-cpus và --client-cpus (Linux) ghim API, worker và các process sinh tải vào hai tập CPU
+riêng, để tách phần chậm do máy sinh tải tranh CPU với server. Postgres chạy ngoài harness nên
+phải ghim riêng (taskset). summary.json ghi số CPU mà máy sinh tải thật sự dùng trong lúc đo.
 """
 
 from __future__ import annotations
@@ -45,6 +49,35 @@ PASSWORD = "LoadTest!2026"
 LOGIN_CONCURRENCY = 8  # chia đều cho các process client
 LOGIN_SLOTS = threading.Semaphore(LOGIN_CONCURRENCY)
 EMAIL = "load@example.com"
+
+
+def parse_cpus(spec: str | None) -> set[int] | None:
+    """`"0-3,6-9"` thành {0, 1, 2, 3, 6, 7, 8, 9}. Rỗng thì None: không ghim."""
+    if not spec:
+        return None
+    cpus: set[int] = set()
+    for part in spec.split(","):
+        lo, _, hi = part.strip().partition("-")
+        a, b = int(lo), int(hi or lo)
+        if a > b:
+            raise ValueError(f"khoảng CPU ngược: {part}")
+        cpus.update(range(a, b + 1))
+    n = os.cpu_count() or 1
+    if missing := sorted(c for c in cpus if c >= n):
+        raise ValueError(f"CPU {missing} không có trên máy {n} CPU")
+    return cpus
+
+
+def check_disjoint(server: set[int] | None, client: set[int] | None) -> None:
+    if server and client and server & client:
+        raise ValueError(f"--server-cpus và --client-cpus trùng CPU {sorted(server & client)}")
+
+
+def pin_to(cpus: set[int] | None):
+    """preexec_fn cho Popen: process con, và mọi process nó sinh ra, chỉ chạy trên `cpus`."""
+    if not cpus:
+        return None
+    return lambda: os.sched_setaffinity(0, cpus)
 
 
 def make_wav(path: Path, seconds: int = 3) -> None:
@@ -167,7 +200,9 @@ def make_client(base: str) -> httpx.Client:
     )
 
 
-def client_run(i, base, wav, ready, start, polls, interval, rows, errors, idle, detail):
+def client_run(
+    i, base, wav, ready, start, polls, interval, rows, errors, idle, detail, on_uploaded=None
+):
     with make_client(base) as c:
         try:
             # Đăng nhập (argon2, tốn CPU) nằm ngoài phép đo. Giới hạn số lượt đồng thời để
@@ -214,6 +249,9 @@ def client_run(i, base, wav, ready, start, polls, interval, rows, errors, idle, 
                 }
             )
             return
+        finally:
+            if on_uploaded:
+                on_uploaded()
         rows.append(("create", r.status_code, time.perf_counter() - t0))
         if r.status_code != 201:
             errors.append(("create", r.status_code))
@@ -237,10 +275,21 @@ def run_clients(ids, base, wav, polls, interval, on_ready, on_abort):
     detail: list = []
     ready = threading.Barrier(len(ids) + 1)
     start = threading.Event()
+    pending = [len(ids)]
+    lock = threading.Lock()
+    uploads_done = threading.Event()
+
+    def on_uploaded() -> None:
+        with lock:
+            pending[0] -= 1
+            if pending[0] == 0:
+                uploads_done.set()
+
     threads = [
         threading.Thread(
             target=client_run,
             args=(i, base, wav, ready, start, polls, interval, rows, errors, idle, detail),
+            kwargs={"on_uploaded": on_uploaded},
         )
         for i in ids
     ]
@@ -250,14 +299,24 @@ def run_clients(ids, base, wav, polls, interval, on_ready, on_abort):
         on_ready()
     except threading.BrokenBarrierError:
         on_abort()
+        uploads_done.set()
+    if not ids:
+        uploads_done.set()
     start.set()
+    # CPU time của cả process (mọi thread) chia cho wall = số CPU máy sinh tải dùng. Chỉ tính pha
+    # upload (tới lúc upload cuối của process xong), vì pha poll phần lớn là ngủ.
+    cpu0, wall0 = time.process_time(), time.perf_counter()
+    uploads_done.wait(timeout=600)
+    cpu = {"cpu_s": time.process_time() - cpu0, "wall_s": time.perf_counter() - wall0}
     [t.join() for t in threads]
-    return rows, errors, idle, detail
+    return rows, errors, idle, detail, cpu
 
 
-def child_main(ids, base, wav, polls, interval, login_slots, all_ready, go, results):
+def child_main(ids, base, wav, polls, interval, login_slots, all_ready, go, results, cpus=None):
     """Một process client (--client-procs > 1): mọi process đăng nhập xong mới cùng được thả."""
     global LOGIN_SLOTS
+    if cpus:
+        os.sched_setaffinity(0, cpus)
     LOGIN_SLOTS = threading.Semaphore(login_slots)
 
     def on_ready() -> None:
@@ -285,8 +344,13 @@ def main() -> int:
         default=1,
         help="số process sinh tải; client chia đều, mỗi process dùng thread như trước",
     )
+    ap.add_argument("--server-cpus", help="ghim API và worker, ví dụ 0-3,6-9 (Linux)")
+    ap.add_argument("--client-cpus", help="ghim các process sinh tải, ví dụ 4,5,10,11 (Linux)")
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
+    server_cpus = parse_cpus(args.server_cpus)
+    client_cpus = parse_cpus(args.client_cpus)
+    check_disjoint(server_cpus, client_cpus)
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     tmp = Path(tempfile.mkdtemp())
@@ -337,6 +401,7 @@ def main() -> int:
         ],
         cwd=BACKEND,
         env=env,
+        preexec_fn=pin_to(server_cpus),
     )
     worker = subprocess.Popen(
         ["uv", "run", "python", "-m", "app.worker.runner"],
@@ -344,6 +409,15 @@ def main() -> int:
         env=env,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
+        preexec_fn=pin_to(server_cpus),
+    )
+    affinity = (
+        {
+            "api": sorted(os.sched_getaffinity(api.pid)),
+            "worker": sorted(os.sched_getaffinity(worker.pid)),
+        }
+        if hasattr(os, "sched_getaffinity")
+        else {}
     )
     try:
         wait_ready(base)
@@ -359,9 +433,12 @@ def main() -> int:
 
         ids = list(range(args.clients))
         if args.client_procs <= 1:
-            rows, errors, idle, detail = run_clients(
+            if client_cpus:
+                os.sched_setaffinity(0, client_cpus)
+            rows, errors, idle, detail, cpu = run_clients(
                 ids, base, wav, args.polls, args.interval, before_release, lambda: None
             )
+            client_cpu = [cpu]
         else:
             ctx = mp.get_context("spawn")
             all_ready = ctx.Barrier(args.client_procs + 1)
@@ -381,6 +458,7 @@ def main() -> int:
                         all_ready,
                         go,
                         results,
+                        client_cpus,
                     ),
                 )
                 for k in range(args.client_procs)
@@ -392,13 +470,14 @@ def main() -> int:
             except threading.BrokenBarrierError:
                 pass
             go.set()
-            rows, errors, idle, detail = [], [], [], []
+            rows, errors, idle, detail, client_cpu = [], [], [], [], []
             for _ in procs:
-                r, e, i, d = results.get()
+                r, e, i, d, cpu = results.get()
                 rows += r
                 errors += e
                 idle += i
                 detail += d
+                client_cpu.append(cpu)
             [p.join() for p in procs]
         wall = time.perf_counter() - snaps.get("t0", time.perf_counter())
         if "before" in snaps:
@@ -461,6 +540,17 @@ def main() -> int:
         if "after" in snaps
         else {"skipped": snaps.get("error", "không đọc được /metrics")},
         "burst_wall_clock_s": round(wall, 2),
+        # Trung bình số CPU các process sinh tải dùng từ lúc thả tới upload cuối (không tính poll).
+        "client_cpu": {
+            "cpu_s": round(sum(c["cpu_s"] for c in client_cpu), 2),
+            "wall_s": round(max(c["wall_s"] for c in client_cpu), 2),
+            "cpus_busy": round(
+                sum(c["cpu_s"] for c in client_cpu)
+                / max(max(c["wall_s"] for c in client_cpu), 1e-9),
+                2,
+            ),
+            "cpus_allowed": len(client_cpus) if client_cpus else os.cpu_count(),
+        },
         "meeting_status_at_end": statuses,
         "verdict": "PASS" if allv and not errors and pct(allv, 0.95) <= args.threshold else "FAIL",
     }
@@ -519,6 +609,9 @@ def main() -> int:
                 "workers": 1,
                 "api_workers": args.api_workers,
                 "client_procs": args.client_procs,
+                "server_cpus": sorted(server_cpus) if server_cpus else None,
+                "client_cpus": sorted(client_cpus) if client_cpus else None,
+                "affinity_read_back": affinity,
             },
             indent=2,
         )
@@ -568,6 +661,7 @@ def main() -> int:
 
 Mục tiêu p95 ≤ {args.threshold} s: **{summary["verdict"]}**. Lỗi: {summary["errors"]} {summary["error_kinds"] or ""}. Từ lúc thả client tới khi xong: {summary["burst_wall_clock_s"]} s. Process sinh tải: {args.client_procs}.
 Trạng thái meeting khi kết thúc: {statuses}.
+Máy sinh tải dùng trung bình {summary["client_cpu"]["cpus_busy"]} CPU trong pha upload (được dùng {summary["client_cpu"]["cpus_allowed"]}). Ghim CPU: server {args.server_cpus or "không"}, client {args.client_cpus or "không"}.
 Kết nối nằm rảnh từ lúc đăng nhập tới lúc upload: p50 {summary["idle_before_upload"]["p50_s"]} s, max {summary["idle_before_upload"]["max_s"]} s; {summary["idle_before_upload"]["over_uvicorn_keepalive_5s"]}/{summary["idle_before_upload"]["n"]} quá 5 s (timeout keep-alive mặc định của uvicorn). Lỗi upload chi tiết: `summary.json`, khóa `create_error_detail`.
 
 ## Phía server (`/metrics`, hiệu giữa lúc thả barrier và lúc mọi client xong)
