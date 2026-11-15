@@ -70,48 +70,47 @@ def get_meeting_transcript(
             .all()
         )
 
-        if segments:
-            speakers_out = [
-                SpeakerOut(
-                    id=spk.id,
-                    meeting_id=spk.meeting_id,
-                    label=spk.label,
-                    default_name=spk.default_name,
-                    display_name=spk.display_name,
-                    is_edited=spk.display_name != spk.default_name,
-                    color_index=idx % 10,
-                    segment_count=0,
-                    speaking_time_sec=0.0,
-                    version=spk.version,
-                )
-                for idx, spk in enumerate(speakers)
-            ]
-            segments_out = [
-                TranscriptSegmentOut(
-                    id=seg.id,
-                    index=seg.idx,
-                    start_sec=seg.start_sec,
-                    end_sec=seg.end_sec,
-                    speaker_id=seg.speaker_id,
-                    ai_speaker_id=seg.ai_speaker_id,
-                    text=seg.text,
-                    ai_text=seg.ai_text,
-                    is_edited=seg.text != seg.ai_text or seg.speaker_id != seg.ai_speaker_id,
-                    confidence=seg.confidence,
-                    flags=list(seg.flags.keys())
-                    if isinstance(seg.flags, dict)
-                    else (list(seg.flags) if isinstance(seg.flags, list) else []),
-                    version=seg.version,
-                    updated_at=seg.updated_at,
-                )
-                for seg in segments
-            ]
-            return TranscriptOut(
-                status="ready",
-                diarization_status="ok",
-                speakers=speakers_out,
-                segments=segments_out,
+        speakers_out = [
+            SpeakerOut(
+                id=spk.id,
+                meeting_id=spk.meeting_id,
+                label=spk.label,
+                default_name=spk.default_name,
+                display_name=spk.display_name,
+                is_edited=spk.display_name != spk.default_name,
+                color_index=idx % 10,
+                segment_count=0,
+                speaking_time_sec=0.0,
+                version=spk.version,
             )
+            for idx, spk in enumerate(speakers)
+        ]
+        segments_out = [
+            TranscriptSegmentOut(
+                id=seg.id,
+                index=seg.idx,
+                start_sec=seg.start_sec,
+                end_sec=seg.end_sec,
+                speaker_id=seg.speaker_id,
+                ai_speaker_id=seg.ai_speaker_id,
+                text=seg.text,
+                ai_text=seg.ai_text,
+                is_edited=seg.text != seg.ai_text or seg.speaker_id != seg.ai_speaker_id,
+                confidence=seg.confidence,
+                flags=list(seg.flags.keys())
+                if isinstance(seg.flags, dict)
+                else (list(seg.flags) if isinstance(seg.flags, list) else []),
+                version=seg.version,
+                updated_at=seg.updated_at,
+            )
+            for seg in segments
+        ]
+        return TranscriptOut(
+            status="ready",
+            diarization_status="ok",
+            speakers=speakers_out,
+            segments=segments_out,
+        )
 
     status_val = "failed" if meeting.status == "failed" else "pending"
     return TranscriptOut(
