@@ -5,7 +5,8 @@ import {
   type ChildProcess,
 } from 'node:child_process'
 import { createWriteStream } from 'node:fs'
-import { mkdir, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { createHash } from 'node:crypto'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { test, expect } from '../fixtures.js'
@@ -204,5 +205,170 @@ test('VT-018: capture queued, running, succeeded and a failed job retry without 
     )
   } finally {
     stopWorker()
+  }
+})
+
+// Ca riêng chỉ thêm ảnh lỗi; không chạy lại hoặc thay bốn ảnh tiến độ ngày 12/11.
+test('FE-20: API failed for partial meeting after #56 and capture summary error', async ({
+  page,
+}, testInfo) => {
+  // Worker của ca này luôn dùng summary_fail, kể cả khi chạy cùng bộ ảnh slow.
+  const errors: string[] = []
+  page.on('pageerror', (error) => errors.push(error.name))
+  const log = createWriteStream(testInfo.outputPath('worker-summary-fail.log'))
+  const worker = spawn(
+    process.env.UV || 'uv',
+    ['run', '--no-sync', 'python', '-m', 'app.worker.runner'],
+    {
+      cwd: backend,
+      detached: process.platform !== 'win32',
+      env: {
+        ...process.env,
+        DATABASE_URL: process.env.E2E_DATABASE_URL,
+        DEBUG: 'false',
+        ENVIRONMENT: 'development',
+        PIPELINE_BACKEND: 'fake',
+        FAKE_SCENARIO: 'summary_fail',
+        FAKE_STAGE_SLEEP_SEC: '2',
+        LLM_PROVIDER: 'disabled',
+        PYTHONUTF8: '1',
+      },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    },
+  )
+  worker.stdout?.pipe(log)
+  worker.stderr?.pipe(log)
+  worker.on('exit', () => log.end())
+  worker.on('error', (error) => log.end(error.name))
+  try {
+    const created = await uploadMeeting(
+      page,
+      'FE-20 · Tóm tắt lỗi, transcript vẫn đọc được',
+    )
+    await page.goto(`/meetings/${created.meeting.id}/processing`)
+    await expect(
+      page
+        .getByRole('region', { name: 'Tiến độ xử lý cuộc họp' })
+        .getByRole('status'),
+    ).toHaveText('Xử lý thất bại', { timeout: 90_000 })
+    const meetingResponse = await page.request.get(
+      `/api/v1/meetings/${created.meeting.id}`,
+    )
+    const summaryResponse = await page.request.get(
+      `/api/v1/meetings/${created.meeting.id}/summary`,
+    )
+    expect(meetingResponse.status()).toBe(200)
+    expect(summaryResponse.status()).toBe(200)
+    const meeting = await meetingResponse.json()
+    const summary = await summaryResponse.json()
+    expect(meeting.status).toBe('partial')
+    expect(summary.status).toBe('failed')
+    expect(summary.content).toBeNull()
+    const uiSummaryResponse = page.waitForResponse(
+      (response) =>
+        response.request().method() === 'GET' &&
+        response.url().endsWith(`/meetings/${created.meeting.id}/summary`),
+    )
+    await page.goto(`/meetings/${created.meeting.id}`)
+    const renderedSummary = await uiSummaryResponse
+    expect(renderedSummary.status()).toBe(200)
+    expect((await renderedSummary.json()).status).toBe('failed')
+    const transcript = page.getByRole('region', {
+      name: 'Transcript',
+      exact: true,
+    })
+    await expect(
+      transcript.getByRole('button', { name: /^Sửa đoạn / }).first(),
+    ).toBeVisible()
+    await expect(
+      page.getByText('Tạo tóm tắt thất bại.', { exact: true }),
+    ).toBeVisible()
+    await expect(
+      page.getByRole('button', { name: 'Tạo lại tóm tắt', exact: true }),
+    ).toBeEnabled()
+    await expect(
+      page.getByText('Đang tạo tóm tắt…', { exact: true }),
+    ).toHaveCount(0)
+    expect(errors).toEqual([])
+    await page.evaluate(() => document.fonts.ready)
+    const imagePath = testInfo.outputPath('05-summary-failed.png')
+    await page.screenshot({
+      path: imagePath,
+      fullPage: true,
+      animations: 'disabled',
+    })
+    const files = [
+      'frontend/src/features/meetings/RemoteSummary.tsx',
+      'frontend/src/mocks/handlers.ts',
+      'frontend/e2e/evidence/progress.spec.ts',
+      'frontend/playwright.evidence.config.ts',
+      'frontend/e2e/stack.mjs',
+      'backend/app/api/v1/summary.py',
+    ]
+    const hashes = Object.fromEntries(
+      await Promise.all(
+        files.map(async (file) => [
+          file,
+          createHash('sha256')
+            .update(await readFile(path.join(root, file)))
+            .digest('hex'),
+        ]),
+      ),
+    )
+    await writeFile(
+      testInfo.outputPath('summary-failed-capture.json'),
+      JSON.stringify(
+        {
+          source_commit: execFileSync('git', ['rev-parse', 'HEAD'], {
+            cwd: root,
+            encoding: 'utf8',
+          }).trim(),
+          main_base_commit: execFileSync(
+            'git',
+            ['merge-base', 'HEAD', 'origin/main'],
+            { cwd: root, encoding: 'utf8' },
+          ).trim(),
+          working_tree_modified_during_capture: Boolean(
+            execFileSync('git', ['status', '--porcelain'], {
+              cwd: root,
+              encoding: 'utf8',
+            }).trim(),
+          ),
+          source_sha256: hashes,
+          captured_at_utc: new Date().toISOString(),
+          synthetic_only: true,
+          pipeline: 'fake',
+          scenario: 'summary_fail',
+          playwright_retries: testInfo.retry,
+          viewport: page.viewportSize(),
+          meeting_id: created.meeting.id,
+          job_id: created.job.id,
+          meeting_status: meeting.status,
+          summary_status: summary.status,
+          api_status: {
+            meeting: meetingResponse.status(),
+            summary: summaryResponse.status(),
+          },
+          transcript_rendered_segments: await transcript
+            .getByRole('button', { name: /^Sửa đoạn / })
+            .count(),
+          screenshot_sha256: createHash('sha256')
+            .update(await readFile(imagePath))
+            .digest('hex'),
+          page_errors: errors,
+        },
+        null,
+        2,
+      ) + '\n',
+      'utf8',
+    )
+  } finally {
+    if (worker.pid) {
+      if (process.platform === 'win32')
+        spawnSync('taskkill', ['/PID', String(worker.pid), '/T', '/F'], {
+          stdio: 'ignore',
+        })
+      else process.kill(-worker.pid, 'SIGTERM')
+    }
   }
 })

@@ -1,0 +1,55 @@
+$ node node_modules/@playwright/test/cli.js test --config playwright.evidence.config.ts --grep API failed for partial
+[WebServer] Resolved 55 packages in 27ms
+[WebServer] Checked 54 packages in 6ms
+[WebServer] INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+[WebServer] INFO  [alembic.runtime.migration] Will assume transactional DDL.
+[WebServer] INFO  [alembic.runtime.migration] Running upgrade  -> 0001_users_meetings, create users and meetings tables
+[WebServer] INFO  [alembic.runtime.migration] Running upgrade 0001_users_meetings -> 0002_jobs_table, create jobs table with status check and partial unique active job index
+[WebServer] INFO  [alembic.runtime.migration] Running upgrade 0002_jobs_table -> 0003_transcript_summary_audit, create transcript, summary, and audit tables with integrity guards
+[WebServer] INFO  [alembic.runtime.migration] Running upgrade 0003_transcript_summary_audit -> 0004_prevent_edit_events_delete, prevent edit_events delete trigger
+[WebServer] INFO  [alembic.runtime.migration] Running upgrade 0004_prevent_edit_events_delete -> 0005_edit_events_cascade_delete, allow edit_events delete on meeting cascade
+[WebServer] INFO  [alembic.runtime.migration] Running upgrade 0005_edit_events_cascade_delete -> 0006_segments_unique_idx, unique (meeting_id, idx) on segments
+[WebServer] INFO  [alembic.runtime.migration] Running upgrade 0006_segments_unique_idx -> 0007_jobs_started_finished, jobs.started_at and jobs.finished_at
+[WebServer] (node:25384) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:11712) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] INFO:     Started server process [31188]
+[WebServer] INFO:     Waiting for application startup.
+[WebServer] INFO:     Application startup complete.
+[WebServer] INFO:     Uvicorn running on http://127.0.0.1:18000 (Press CTRL+C to quit)
+[WebServer] {"timestamp": "2026-11-15T08:16:14.869279+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "4ebb889d-731e-4763-a20f-7e0c59e3d899", "method": "GET", "path": "/api/v1/health", "status_code": 200, "duration_ms": 3.73}
+[WebServer] (node:7884) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] {"timestamp": "2026-11-15T08:16:15.689329+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "e8f872d9-0fec-4762-9c69-a4a246e7267c", "method": "GET", "path": "/api/v1/health", "status_code": 200, "duration_ms": 0.63}
+
+Running 1 test using 1 worker
+
+(node:4112) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] {"timestamp": "2026-11-15T08:16:17.529184+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "a6660440-f80d-4b93-b7f1-19a63747584c", "method": "POST", "path": "/api/v1/auth/login", "status_code": 200, "duration_ms": 518.6}
+[WebServer] {"timestamp": "2026-11-15T08:16:17.665480+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "6b25d224-d2d5-4dce-8f8f-f1328095b0f0", "method": "GET", "path": "/api/v1/meetings", "status_code": 200, "duration_ms": 85.77}
+[WebServer] {"timestamp": "2026-11-15T08:16:17.705443+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "0dcbd992-f084-4f46-b555-cecb3743ff20", "method": "GET", "path": "/api/v1/auth/me", "status_code": 200, "duration_ms": 11.78}
+[WebServer] {"timestamp": "2026-11-15T08:16:17.762343+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "cb29df47-a951-4af8-af5e-b013a68db76f", "method": "GET", "path": "/api/v1/config", "status_code": 200, "duration_ms": 2.79}
+[WebServer] {"timestamp": "2026-11-15T08:16:18.246674+00:00", "level": "INFO", "logger": "app.services.meetings.upload", "message": "Job ba9cb462-68e5-4f12-9336-42dcc750ee79 đã được tạo cho cuộc họp fa7b611f-012f-476d-bec6-043b3e149de7", "request_id": "51953b30-342b-475a-9725-9d4767a13aa6", "event": "job_created", "job_id": "ba9cb462-68e5-4f12-9336-42dcc750ee79", "meeting_id": "fa7b611f-012f-476d-bec6-043b3e149de7", "stage": "preprocess", "attempt": 1, "status": "queued"}
+[WebServer] {"timestamp": "2026-11-15T08:16:18.248297+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "51953b30-342b-475a-9725-9d4767a13aa6", "method": "POST", "path": "/api/v1/meetings", "status_code": 201, "duration_ms": 179.67}
+[WebServer] {"timestamp": "2026-11-15T08:16:18.336778+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "c9f7e052-3a46-4be8-a163-4425cb181056", "method": "GET", "path": "/api/v1/meetings/fa7b611f-012f-476d-bec6-043b3e149de7", "status_code": 200, "duration_ms": 63.11}
+[WebServer] {"timestamp": "2026-11-15T08:16:18.377674+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "a48d43f2-30a8-4054-a89f-29aeaae9a9b8", "method": "GET", "path": "/api/v1/meetings/fa7b611f-012f-476d-bec6-043b3e149de7/transcript", "status_code": 200, "duration_ms": 95.91}
+[WebServer] {"timestamp": "2026-11-15T08:16:18.411738+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "6d02aacd-f8bc-4787-86a9-a03356135a38", "method": "GET", "path": "/api/v1/auth/me", "status_code": 200, "duration_ms": 17.47}
+[WebServer] {"timestamp": "2026-11-15T08:16:18.464001+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "b1dd7fe9-52ea-44da-8ece-fcd9540d8bde", "method": "GET", "path": "/api/v1/meetings/fa7b611f-012f-476d-bec6-043b3e149de7", "status_code": 200, "duration_ms": 23.88}
+[WebServer] {"timestamp": "2026-11-15T08:16:18.521681+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "d67cd947-10bf-4fba-82bb-316cab8fe330", "method": "GET", "path": "/api/v1/jobs/ba9cb462-68e5-4f12-9336-42dcc750ee79", "status_code": 200, "duration_ms": 43.52}
+[WebServer] {"timestamp": "2026-11-15T08:16:20.540287+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "a5f63093-0bee-4b97-bcb8-08a99dc2b6fd", "method": "GET", "path": "/api/v1/jobs/ba9cb462-68e5-4f12-9336-42dcc750ee79", "status_code": 200, "duration_ms": 8.28}
+[WebServer] {"timestamp": "2026-11-15T08:16:22.563051+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "0821546d-6b10-4f27-ac6a-4b51a53070c6", "method": "GET", "path": "/api/v1/jobs/ba9cb462-68e5-4f12-9336-42dcc750ee79", "status_code": 200, "duration_ms": 9.06}
+[WebServer] {"timestamp": "2026-11-15T08:16:22.853424+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "9a3d66d6-91b6-4494-a39a-339f42dfb54a", "method": "GET", "path": "/api/v1/meetings/fa7b611f-012f-476d-bec6-043b3e149de7", "status_code": 200, "duration_ms": 11.15}
+[WebServer] {"timestamp": "2026-11-15T08:16:22.877518+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "578bf4e1-98e6-44ed-817b-fc1fb5dce584", "method": "GET", "path": "/api/v1/meetings/fa7b611f-012f-476d-bec6-043b3e149de7/summary", "status_code": 200, "duration_ms": 12.6}
+[WebServer] {"timestamp": "2026-11-15T08:16:22.928640+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "5374e559-392f-40fb-8485-550fe234ab92", "method": "GET", "path": "/api/v1/auth/me", "status_code": 200, "duration_ms": 8.14}
+[WebServer] {"timestamp": "2026-11-15T08:16:22.956760+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "f57f4c3b-ab65-4154-ae27-815e4cc15dd7", "method": "GET", "path": "/api/v1/meetings/fa7b611f-012f-476d-bec6-043b3e149de7", "status_code": 200, "duration_ms": 16.64}
+[WebServer] {"timestamp": "2026-11-15T08:16:22.959305+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "9a6bcb7e-8afa-4971-8bd5-aece851b2a6b", "method": "GET", "path": "/api/v1/meetings/fa7b611f-012f-476d-bec6-043b3e149de7/transcript", "status_code": 200, "duration_ms": 19.47}
+[WebServer] {"timestamp": "2026-11-15T08:16:23.002428+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "ded2ea4c-3f7d-4113-b80e-70ce3f35a875", "method": "GET", "path": "/api/v1/meetings/fa7b611f-012f-476d-bec6-043b3e149de7/summary", "status_code": 200, "duration_ms": 13.22}
+[WebServer] {"timestamp": "2026-11-15T08:16:23.002428+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "a3f80010-76a0-46bc-b7b8-5d0d76dedc0e", "method": "GET", "path": "/api/v1/jobs/ba9cb462-68e5-4f12-9336-42dcc750ee79", "status_code": 200, "duration_ms": 13.65}
+[WebServer] {"timestamp": "2026-11-15T08:16:23.048492+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "a0294476-e5d1-4812-89b6-eb052d1b081b", "method": "GET", "path": "/api/v1/meetings/fa7b611f-012f-476d-bec6-043b3e149de7/audio", "status_code": 206, "duration_ms": 14.88}
+  ok 1 [chromium] › e2e\evidence\progress.spec.ts:212:1 › FE-20: API failed for partial meeting after #56 and capture summary error (7.5s)
+
+  1 passed (19.5s)
+
+EXIT=0

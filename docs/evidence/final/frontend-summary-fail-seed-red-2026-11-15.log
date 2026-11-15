@@ -1,0 +1,63 @@
+$ node node_modules/@playwright/test/cli.js test --config playwright.evidence.config.ts --grep API failed for partial
+[WebServer] Resolved 55 packages in 25ms
+[WebServer] Checked 54 packages in 9ms
+[WebServer] INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+[WebServer] INFO  [alembic.runtime.migration] Will assume transactional DDL.
+[WebServer] (node:26164) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:12632) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] INFO:     Started server process [14388]
+[WebServer] INFO:     Waiting for application startup.
+[WebServer] INFO:     Application startup complete.
+[WebServer] INFO:     Uvicorn running on http://127.0.0.1:18000 (Press CTRL+C to quit)
+[WebServer] {"timestamp": "2026-11-15T08:15:01.461627+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "09de9310-68e7-4438-ab05-945c0873c22d", "method": "GET", "path": "/api/v1/health", "status_code": 200, "duration_ms": 3.82}
+[WebServer] (node:3456) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] {"timestamp": "2026-11-15T08:15:02.566251+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "879dae2d-5d71-40c8-a899-893b7914cbed", "method": "GET", "path": "/api/v1/health", "status_code": 200, "duration_ms": 0.5}
+
+Running 1 test using 1 worker
+
+(node:19936) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] {"timestamp": "2026-11-15T08:15:04.794715+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "6682c5f7-deeb-4e94-9802-693c6e467414", "method": "POST", "path": "/api/v1/auth/login", "status_code": 401, "duration_ms": 449.63}
+  x  1 [chromium] › e2e\evidence\progress.spec.ts:212:1 › FE-20: API failed for partial meeting after #56 and capture summary error (1.6s)
+
+
+  1) [chromium] › e2e\evidence\progress.spec.ts:212:1 › FE-20: API failed for partial meeting after #56 and capture summary error 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 401
+
+       at fixtures.ts:16
+
+      14 |   )
+      15 |   await page.getByRole('button', { name: 'Đăng nhập', exact: true }).click()
+    > 16 |   expect((await response).status()).toBe(200)
+         |                                     ^
+      17 |   await expect(page).toHaveURL(/\/meetings$/)
+      18 | }
+      19 |
+        at login (D:\Project\CNPM\SE2026_Codex\frontend\e2e\fixtures.ts:16:37)
+        at Object.base.extend.signedIn.auto (D:\Project\CNPM\SE2026_Codex\frontend\e2e\fixtures.ts:23:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\evidence-progress-FE-20-AP-bfde2-6-and-capture-summary-error-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\evidence-progress-FE-20-AP-bfde2-6-and-capture-summary-error-chromium\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\evidence-progress-FE-20-AP-bfde2-6-and-capture-summary-error-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\evidence-progress-FE-20-AP-bfde2-6-and-capture-summary-error-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [chromium] › e2e\evidence\progress.spec.ts:212:1 › FE-20: API failed for partial meeting after #56 and capture summary error 
+
+EXIT=1

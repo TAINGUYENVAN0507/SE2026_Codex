@@ -1,0 +1,92 @@
+{
+  "source_commit": "88789ca74211aac6018ef69339df568d7db34294",
+  "main_base_commit": "f8d22fd002c6f0830645b1520acb41e8264d911f",
+  "working_tree_modified_during_capture": true,
+  "source_sha256": {
+    "frontend/src/features/meetings/RemoteSummary.tsx": "8574d335c8b9ffb8235ca31a6a0a451b46e8f69c8d76285ebc46fead8a8aa014",
+    "frontend/src/mocks/handlers.ts": "f52b49f75d9ea836189be2e1a688f3730f2910b55cc798f981f44811069e7434",
+    "frontend/e2e/evidence/progress.spec.ts": "7e3d7c82db7a42563aadea288f071efb7ee2c29506a03c6be3cf2e3bfdae27b0",
+    "frontend/playwright.evidence.config.ts": "c047b9f6d8e6944c3590a64f6172099b34940ddd3bf4fab377eefc4515bd3ecf",
+    "frontend/e2e/stack.mjs": "51a48a3755d4a3ac4afe073b8a207ef6b50471c07950f9fac22e89c6644d1306",
+    "backend/app/api/v1/summary.py": "749a8a39fd679d0005c163a1d1a1fb1f9fdb77e27b9909fd27ca31845de1680b"
+  },
+  "captured_at_utc": "2026-11-15T08:16:23.410Z",
+  "synthetic_only": true,
+  "pipeline": "fake",
+  "scenario": "summary_fail",
+  "playwright_retries": 0,
+  "viewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "meeting_id": "fa7b611f-012f-476d-bec6-043b3e149de7",
+  "job_id": "ba9cb462-68e5-4f12-9336-42dcc750ee79",
+  "meeting_status": "partial",
+  "summary_status": "failed",
+  "api_status": {
+    "meeting": 200,
+    "summary": 200
+  },
+  "transcript_rendered_segments": 6,
+  "screenshot_sha256": "dd8f4b0caf31c99f6cd973c24bf2c47abc048e8cab02676c6aa85254ca7c9976",
+  "page_errors": [],
+  "attempts": [
+    {
+      "command": [
+        "node",
+        "node_modules/@playwright/test/cli.js",
+        "test",
+        "--config",
+        "playwright.evidence.config.ts",
+        "--grep",
+        "API failed for partial"
+      ],
+      "exit_code": 0,
+      "duration_sec": 31.54,
+      "source_commit": "88789ca74211aac6018ef69339df568d7db34294",
+      "synthetic_only": true,
+      "reason": "Lượt đầu đạt; sau đó bổ sung assert response UI và bỏ phụ thuộc scenario ngoài worker",
+      "log_sha256": "e9d795cea09a94af7d280aef7546beb8a65d2238fd91c3dd38b1b4cf8afc0a21"
+    },
+    {
+      "command": [
+        "node",
+        "node_modules/@playwright/test/cli.js",
+        "test",
+        "--config",
+        "playwright.evidence.config.ts",
+        "--grep",
+        "API failed for partial"
+      ],
+      "exit_code": 1,
+      "duration_sec": 14.56,
+      "source_commit": "88789ca74211aac6018ef69339df568d7db34294",
+      "synthetic_only": true,
+      "reason": "Lỗi chuẩn bị local: mật khẩu random mới không khớp tài khoản seed đã có; chưa tới ca summary",
+      "log_sha256": "922b45fbca0f9e3adfeada46692a2353ac3cb71b382b40deb838a1ace23134fe"
+    },
+    {
+      "command": [
+        "node",
+        "node_modules/@playwright/test/cli.js",
+        "test",
+        "--config",
+        "playwright.evidence.config.ts",
+        "--grep",
+        "API failed for partial"
+      ],
+      "exit_code": 0,
+      "duration_sec": 20.3,
+      "source_commit": "88789ca74211aac6018ef69339df568d7db34294",
+      "synthetic_only": true,
+      "reason": "DB QA mới; source cuối, API meeting partial/summary failed, transcript 6 segment đọc được",
+      "log_sha256": "dbb815a79b1aad70222dee0b032bfc1bff58c6ad0892ccfb2430f307a6b9aa0d"
+    }
+  ],
+  "postgres_version": 16,
+  "msw": false,
+  "api_interception": false,
+  "browser": "Chromium",
+  "test_count": 1,
+  "note": "Ba lượt phát triển cùng một ca, không tính thành ba E2E; source cuối retries=0. Backend/DB thật, pipeline fake. Source chưa commit khi chụp; hash xác định đúng nội dung."
+}
