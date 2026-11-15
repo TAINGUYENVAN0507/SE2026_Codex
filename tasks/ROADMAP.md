@@ -1,6 +1,6 @@
 # Kế hoạch còn lại
 
-> Cập nhật 2026-11-13. Trạng thái yêu cầu đọc từ `main` tại `f255e01` (sau #53, #54). Nhóm trưởng cập nhật file này mỗi khi phân công.
+> Cập nhật 2026-11-15. Trạng thái yêu cầu đọc từ `main` tại `115c905` (sau #56, #57). Nhóm trưởng cập nhật file này mỗi khi phân công.
 
 ## Tiếp tục vào ngày sau
 
@@ -234,3 +234,15 @@ Bắt đầu sau khi #53 (A) vào `main` (`a75853d`, CI xanh 12/12). B push vi�
 | A | E2E trên `main` có cả #53 và #54; kịch bản demo gắn với ảnh và test của VT-018 |
 | B | `GET summary` trả `failed` khi meeting `partial` (lỗi A báo ở #53), test đỏ trước; đọc lại bảng xóa dữ liệu sau khi C sửa |
 | C | Test xóa dữ liệu trên Postgres đã migrate (test cũ chạy SQLite); sửa bảng bằng chứng AD-018; chẩn đoán 40 client (ffprobe thật/giả); thời gian phản hồi PR; bản đồ bằng chứng |
+
+### Đợt 9 (giao ngày 2026-11-15: `tasks/2026-11-15/`, sau hạn nộp 11-14, mỗi người 5 commit)
+
+Bắt đầu sau khi #56 (B) và #57 (A) vào `main` (`1e71c89`, `115c905`). C gộp thử cả hai: backend 444 passed / 16 skipped; #56 CI xanh 15/15. Người dùng giao tiếp việc sau hạn nộp. Chỉ sửa lỗi, thêm test và bằng chứng; không thêm tính năng.
+
+| Member | Việc |
+|---|---|
+| A | Giao diện và MSW theo API sau #56; poll tóm tắt dừng khi `failed`; E2E kiểm API thật trả `failed` cho meeting `partial`; ảnh màn tóm tắt lỗi cho demo |
+| B | `GET meeting` trả `summary_status: ready` cho meeting `partial` (`meetings.py:87`); transcript của meeting `ready` có 0 segment trả `pending` (`transcript.py:116`); test log access và log container không giữ canary; giới hạn log ở mọi service |
+| C | Test chặn file bằng chứng không phải UTF-8; 40 client: fsync khi commit và ghi audio; 247 client tách CPU máy sinh tải; thời gian phản hồi PR, bản đồ bằng chứng |
+
+Việc chung: A và B comment review PR của nhau trong 18 giờ (không chặn merge), vì 18/23 PR từ 11-06 merge khi chưa có phản hồi của người khác.
