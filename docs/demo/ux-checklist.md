@@ -1,8 +1,47 @@
-# Checklist UX và demo — 10/11/2026
+# Checklist UX và demo — 13/11/2026
 
-Ảnh chụp Chromium từ ứng dụng đang chạy: API, worker và PostgreSQL thật;
-pipeline fake, WAV tổng hợp 30 giây. Không dùng cuộc họp hay ghi âm của người
-thật. Đây là kiểm thử luồng sản phẩm, không phải đánh giá độ chính xác/tốc độ AI.
+Ảnh và test dùng tài khoản, text và WAV tổng hợp; API, worker và PostgreSQL thật,
+pipeline fake. Mỗi phần ghi ngày và nguồn bằng chứng. Đây là kiểm thử luồng sản phẩm,
+không phải đánh giá độ chính xác hay tốc độ AI trên cuộc họp thật.
+
+## Đợt 8 — kịch bản demo gắn bằng chứng, 13/11/2026
+
+Đây là kịch bản đang dùng. Các phần 08–10/11 phía dưới giữ lại làm lịch sử.
+Lượt E2E mới trên main có cả #53 và #54 được ghi riêng ở
+[báo cáo 13/11](../evidence/final/frontend-2026-11-13.md), có commit và số test thật.
+Bốn ảnh dưới đây vẫn là ảnh **12/11**, có [manifest nguồn/hash](../evidence/vt-018/ui/manifest.json);
+không ghi thành ảnh mới của lượt E2E 13/11.
+
+### Chuẩn bị
+
+- Dùng tài khoản và database E2E riêng, API/worker thật, `VITE_API_MOCK=0`, pipeline fake và LLM disabled.
+- Chuẩn bị WAV tổng hợp 30 giây cho phần nghe evidence, như [export-evidence.spec.ts](../../frontend/e2e/flows/export-evidence.spec.ts); không dùng bản ghi cuộc họp thật.
+- Chuẩn bị một meeting ready và một meeting có tóm tắt lỗi trên stack kiểm thử. Luồng lỗi được kiểm bằng [progress.spec.ts](../../frontend/e2e/evidence/progress.spec.ts) với fake scenario có kiểm soát; chưa có nút trên giao diện để tự tiêm lỗi.
+- Khi trạng thái queued/running trôi qua nhanh, mở ảnh tương ứng và nói rõ đó là ảnh bằng chứng 12/11. Nếu chưa chuẩn bị được meeting lỗi, trình bày ảnh/test của luồng lỗi, không tuyên bố vừa chạy live thành công.
+- [Hướng dẫn chạy lại bộ ảnh](../evidence/vt-018/ui/README.md). Kịch bản 5 phút là thời lượng trình bày, không phải số đo tốc độ xử lý.
+
+### Kịch bản 5 phút và bằng chứng từng bước
+
+| Thời gian | Thao tác / điều trình bày | Ảnh hoặc test chứng minh |
+| --- | --- | --- |
+| 00:00–00:30 | Giới thiệu dữ liệu tổng hợp và pipeline fake; đăng nhập, mở danh sách. | [login.spec.ts](../../frontend/e2e/flows/login.spec.ts): auth/me HTTP 200, đúng tài khoản E2E, không dùng service worker mock. Môi trường thật/fake ghi trong báo cáo 13/11. |
+| 00:30–01:00 | Chọn WAV, đặt tên, xác nhận consent, bấm Tạo biên bản; mở Xem tiến độ. | [upload.spec.ts](../../frontend/e2e/flows/upload.spec.ts), ca Upload có consent qua đủ sáu stage tới ready; [meeting.ts](../../frontend/e2e/meeting.ts) kiểm POST tạo meeting HTTP 201. |
+| 01:00–01:20 | Chỉ job đang chờ: 0%, chưa có giờ bắt đầu; bước sắp tới ghi Chờ bắt đầu. | [01-queued.png](../evidence/vt-018/ui/01-queued.png); E2E ảnh 12/11 kiểm queued trước khi bật worker. [JobStatusCard.test.tsx](../../frontend/src/features/jobs/JobStatusCard.test.tsx) có hai ca queued không ghi đang chạy. |
+| 01:20–01:40 | Chỉ job đang chạy giữa chừng, phần trăm và sáu bước. Có thể reload để thấy vẫn là job cũ. | [02-running.png](../evidence/vt-018/ui/02-running.png) ở 60%; E2E ảnh chờ progress >=40%. Ca RT-11 trong upload.spec.ts kiểm reload, cùng latest_job_id, không POST thêm job. |
+| 01:40–02:00 | Chỉ trạng thái hoàn tất: 100%, có giờ bắt đầu và hoàn thành. | [03-succeeded.png](../evidence/vt-018/ui/03-succeeded.png); E2E ảnh kiểm succeeded, started_at/finished_at và hai thẻ time. Upload E2E kiểm đủ sáu stage succeeded. |
+| 02:00–02:30 | Mở meeting tóm tắt lỗi; transcript vẫn đọc được và có nút Tạo lại tóm tắt. | E2E ảnh 12/11 trong progress.spec.ts chạy summary_fail và đợi job failed trước khi tìm nút. [PartialSummaryRetry.test.tsx](../../frontend/src/features/meetings/PartialSummaryRetry.test.tsx) kiểm cả trường hợp API summary pending nhưng meeting partial. **Chưa có ảnh riêng màn lỗi được duyệt**; bằng chứng ở bước này là test. |
+| 02:30–03:10 | Bấm Tạo lại tóm tắt; mở tiến độ của job mới. Giải thích chỉ chạy lại bước 6 nên giữ năm bước trước, bắt đầu khoảng 83%, lượt thử 1. | [04-retry-reset.png](../evidence/vt-018/ui/04-retry-reset.png); E2E ảnh kiểm POST HTTP 202, ID job mới, attempt=1, progress=5/6 và thời gian chưa bắt đầu khi queued. |
+| 03:10–03:35 | Khi hoàn tất, quay về transcript và đối chiếu không có segment trùng. | E2E ảnh tiếp tục sau ảnh thứ tư tới succeeded; [capture.json](../evidence/vt-018/ui/capture.json) ghi mẫu đã kiểm: 6 segment trước/sau cùng toàn bộ ID, số hàng UI khớp. Đây là retry tóm tắt, không phải bằng chứng chạy lại toàn bộ ASR. |
+| 03:35–04:00 | Giới thiệu việc nút retry bị khóa khi request còn chờ; bấm nhanh hai lần chỉ gửi một POST. | [RetryDoubleClick.test.tsx](../../frontend/src/features/meetings/RetryDoubleClick.test.tsx): **MSW/Vitest**, giữ POST pending, dblClick, kiểm đúng 1 POST có UUID Idempotency-Key và nút disabled. Không coi test này là kiểm concurrency của backend. |
+| 04:00–05:00 | Sửa một đoạn transcript, lưu/reload và mở lịch sử; tải một file export, chỉ mốc evidence. | [edit.spec.ts](../../frontend/e2e/flows/edit.spec.ts) kiểm dữ liệu giữ sau reload và event; [export.spec.ts](../../frontend/e2e/flows/export.spec.ts) kiểm download; export-evidence.spec.ts đối chiếu từng evidence hoặc nhãn thiếu giữa UI và TXT/MD. |
+
+### Giới hạn của kịch bản
+
+- Nhận dạng đúng danh tính người nói từ giọng: **chưa có bằng chứng trong kịch bản này**; dữ liệu fake dùng Speaker N hoặc tên được sửa thủ công.
+- Chất lượng ASR/diarization/LLM thật và chịu tải 239/247: **chưa có bằng chứng từ lượt demo/E2E này**; dùng báo cáo đánh giá riêng nếu cần trình bày.
+- Điện thoại vật lý và screen reader thật: **chưa có bằng chứng trong lượt này**. Ảnh viewport giả lập và axe không thay kiểm thủ công.
+- Bộ `npm run e2e` slow ngày 13/11 không bao gồm scenario summary_fail hay file evidence config. Luồng lỗi → retry dùng đúng bằng chứng 12/11 nêu ở bảng; không cộng gộp thành số E2E vừa chạy hôm nay.
+
 
 ## Đợt 5 — bận và thời gian job, 10/11/2026
 

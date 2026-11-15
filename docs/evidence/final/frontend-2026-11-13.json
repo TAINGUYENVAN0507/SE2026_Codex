@@ -1,0 +1,142 @@
+{
+  "date": "2026-11-13",
+  "source_commit": "7b99a7a83e068155887160fd7ec3fabf8f069ee8",
+  "initial_working_tree_clean": true,
+  "pipeline": "fake",
+  "scenario": "slow",
+  "playwright_retries": 0,
+  "synthetic_only": true,
+  "runs": [
+    {
+      "name": "lint",
+      "command": "npm run lint",
+      "started_at_utc": "2026-11-13T06:40:09.945469+00:00",
+      "duration_sec": 61.41,
+      "exit_code": 0,
+      "log_sha256": "4e78d8ab8a8c9f8a56314acedd7493901f7bec338f59ee6152a7f26ca116b8fe"
+    },
+    {
+      "name": "format",
+      "command": "npm run format:check",
+      "started_at_utc": "2026-11-13T06:41:11.343610+00:00",
+      "duration_sec": 4.0,
+      "exit_code": 0,
+      "log_sha256": "69f73fb915a3fa94b518f2a30c499051278038792c92d54d98a4d2bd69b969a0"
+    },
+    {
+      "name": "typecheck",
+      "command": "npm run typecheck",
+      "started_at_utc": "2026-11-13T06:41:15.346971+00:00",
+      "duration_sec": 17.97,
+      "exit_code": 0,
+      "log_sha256": "5cb53ebbd7501c980a2e93c60120654d7b7056e3a4cf55d491d8145c3c84ee87"
+    },
+    {
+      "name": "coverage",
+      "command": "npm run test:coverage",
+      "started_at_utc": "2026-11-13T06:41:33.311467+00:00",
+      "duration_sec": 61.66,
+      "exit_code": 0,
+      "log_sha256": "a7808afe4893bb089adfae3c09eff9ddd6da3b518a465abfd70a2bc5ec6347a7",
+      "passed": 301
+    },
+    {
+      "name": "build",
+      "command": "npm run build",
+      "started_at_utc": "2026-11-13T06:42:34.971174+00:00",
+      "duration_sec": 6.38,
+      "exit_code": 0,
+      "log_sha256": "ccf6844fe64400709b0c429d2708700e2aafa4f2cebad7be473008f31dbac908"
+    },
+    {
+      "name": "chromium",
+      "command": "npx playwright install chromium",
+      "started_at_utc": "2026-11-13T06:42:41.349245+00:00",
+      "duration_sec": 14.08,
+      "exit_code": 0,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "e2e-slow",
+      "command": "npm run e2e",
+      "started_at_utc": "2026-11-13T06:42:55.420237+00:00",
+      "duration_sec": 304.22,
+      "exit_code": 0,
+      "log_sha256": "54b8d90755fcd407522865bb4b74fa14c5ddb4a2db7493eb13a7bcea702094f7",
+      "passed": 24,
+      "failed": 0,
+      "killpg_warnings": 1,
+      "tests": [
+        "ok  1 [chromium] › e2e\\flows\\accessibility.spec.ts:7:3 › FE-16 axe Chromium: list, desktop và mobile (3.0s)",
+        "ok  2 [chromium] › e2e\\flows\\accessibility.spec.ts:7:3 › FE-16 axe Chromium: upload, desktop và mobile (1.2s)",
+        "ok  3 [chromium] › e2e\\flows\\accessibility.spec.ts:7:3 › FE-16 axe Chromium: detail, desktop và mobile (28.6s)",
+        "ok  4 [chromium] › e2e\\flows\\accessibility.spec.ts:7:3 › FE-16 axe Chromium: settings, desktop và mobile (980ms)",
+        "ok  5 [chromium] › e2e\\flows\\delete-account.spec.ts:7:1 › FE-19: xóa tài khoản thật, mất phiên, không đăng nhập lại và không ảnh hưởng user khác (1.0m)",
+        "ok  6 [chromium] › e2e\\flows\\delete.spec.ts:4:1 › RT-15/PRIV-13: xóa cuộc họp lúc job đang chạy và không truy cập lại được (3.4s)",
+        "ok  7 [chromium] › e2e\\flows\\edit.spec.ts:4:1 › FE-17: chỉnh sửa tồn tại sau reload và có đúng event trong lịch sử (22.7s)",
+        "ok  8 [chromium] › e2e\\flows\\export-evidence.spec.ts:11:1 › FE-18: từng ý/công việc có cùng evidence hoặc nhãn thiếu trong UI và TXT/MD (27.8s)",
+        "ok  9 [chromium] › e2e\\flows\\export.spec.ts:8:1 › FE-18: tóm tắt thật, evidence tua đúng audio và tải đủ TXT/MD/JSON (27.1s)",
+        "ok 10 [chromium] › e2e\\flows\\keyboard.spec.ts:28:1 › FE-16: chỉ bàn phím đăng nhập, upload, mở lại meeting và export (17.3s)",
+        "ok 11 [chromium] › e2e\\flows\\login.spec.ts:3:1 › Đăng nhập demo qua API thật và thấy danh sách cuộc họp (493ms)",
+        "ok 12 [chromium] › e2e\\flows\\retention.spec.ts:6:1 › FE-19: cleanup xóa audio/artifacts hết hạn thật, transcript vẫn đọc được (23.7s)",
+        "ok 13 [chromium] › e2e\\flows\\settings.spec.ts:4:1 › FE-19: cài đặt mở từ điều hướng, reload được và chỉ bật xóa khi có contract (540ms)",
+        "ok 14 [chromium] › e2e\\flows\\upload.spec.ts:4:1 › Upload có consent qua đủ sáu stage tới ready (17.5s)",
+        "ok 15 [chromium] › e2e\\flows\\upload.spec.ts:29:1 › RT-11: reload khi đang xử lý, tiếp tục job cũ và không tạo thêm job (18.7s)",
+        "ok 16 [chromium] › e2e\\privacy\\recorder.spec.ts:68:1 › PRIV-01: mở app và chuyển trang không tự xin micro (602ms)",
+        "ok 17 [chromium] › e2e\\privacy\\recorder.spec.ts:79:1 › PRIV-02: chưa consent thì nút bắt đầu bị khóa và không gọi micro (540ms)",
+        "ok 18 [chromium] › e2e\\privacy\\recorder.spec.ts:89:1 › PRIV-03: click bắt đầu chỉ gọi micro một lần, hiện indicator và timer (2.2s)",
+        "ok 19 [chromium] › e2e\\privacy\\recorder.spec.ts:103:1 › PRIV-04: dừng ghi âm kết thúc mọi track và tắt indicator (2.0s)",
+        "ok 20 [chromium] › e2e\\privacy\\recorder.spec.ts:114:1 › PRIV-05: hủy bỏ bản ghi, dừng track, không gửi meeting (2.2s)",
+        "ok 21 [chromium] › e2e\\privacy\\recorder.spec.ts:132:1 › PRIV-06: chỉ upload sau click tạo biên bản và đúng một request (20.8s)",
+        "ok 22 [chromium] › e2e\\privacy\\recorder.spec.ts:158:1 › PRIV-07: reload lúc ghi có cảnh báo, không tự ghi lại hay upload (1.1s)",
+        "ok 23 [chromium] › e2e\\privacy\\recorder.spec.ts:179:1 › PRIV-08: từ chối micro hiện hướng dẫn và không tự xin lại (738ms)",
+        "ok 24 [chromium] › e2e\\privacy\\recorder.spec.ts:202:1 › PRIV-09: điều hướng khỏi recorder dừng mọi track (779ms)"
+      ]
+    }
+  ],
+  "database": {
+    "version": 16,
+    "name": "meeting_e2e_day8",
+    "port": 55453,
+    "container": "se-day8-e2e-db"
+  },
+  "completed": true,
+  "coverage": {
+    "lines": {
+      "total": 1400,
+      "covered": 1215,
+      "skipped": 0,
+      "pct": 86.78
+    },
+    "statements": {
+      "total": 1561,
+      "covered": 1317,
+      "skipped": 0,
+      "pct": 84.36
+    },
+    "functions": {
+      "total": 500,
+      "covered": 403,
+      "skipped": 0,
+      "pct": 80.6
+    },
+    "branches": {
+      "total": 1410,
+      "covered": 1151,
+      "skipped": 0,
+      "pct": 81.63
+    },
+    "branchesTrue": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 100
+    }
+  },
+  "node": "v24.13.0",
+  "npm": "11.6.2",
+  "vitest_files": 50,
+  "vitest_skipped": 0,
+  "e2e_skipped": 0,
+  "frontend_matches_434b9f0": true
+}
