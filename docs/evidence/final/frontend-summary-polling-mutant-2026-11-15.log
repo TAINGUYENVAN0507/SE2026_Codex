@@ -1,0 +1,36 @@
+$ node node_modules/vitest/vitest.mjs run src/features/meetings/RemoteSummaryPolling.test.tsx
+
+ RUN  v5.0.5 D:/Project/CNPM/SE2026_Codex/frontend
+
+ ❯ src/features/meetings/RemoteSummaryPolling.test.tsx (2 tests | 1 failed) 158ms
+   × FE-20: API failed dừng GET summary, sau 15 giây vẫn đúng một request 134ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/features/meetings/RemoteSummaryPolling.test.tsx > FE-20: API failed dừng GET summary, sau 15 giây vẫn đúng một request
+AssertionError: expected 4 to be 1 // Object.is equality
+
+- Expected
++ Received
+
+- 1
++ 4
+
+ ❯ src/features/meetings/RemoteSummaryPolling.test.tsx:60:19
+     58|   expect(screen.getByRole('button', { name: 'Tạo lại tóm tắt' })).toBe…
+     59|   for (let second = 0; second < 15; second++) await advance(1000)
+     60|   expect(count()).toBe(1)
+       |                   ^
+     61| })
+     62|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed (2)
+   Start at  15:10:59
+   Duration  2.05s (environment 64%, import 12%, setup 10%, tests 9%, transform 5%)
+
+
+EXIT=1
