@@ -82,9 +82,17 @@ git checkout vantuong && git fetch origin && git merge origin/main
 - README chung và bản Lab03 không đổi. Chưa push, mở PR, xác nhận CI hoặc merge
   cho đợt 15/11; cần người dùng cho phép push trước khi công bố.
 
-### Việc chung còn chờ
+### Việc chung - đã review, chờ B sửa finding
 
-Kiểm tra GitHub lúc kết thúc phần triển khai: chưa có PR đang mở, nên chưa có
-PR ngày 15/11 của B để đọc diff/chạy test/đăng nhận xét. **Chưa hoàn thành review**,
-không tick thay. Khi B mở PR, cần review trong 18 giờ từ created_at, ghi link,
-commit được review và kết quả kiểm thật. Không tự merge.
+- Đã đọc diff và đăng [review PR #61](https://github.com/TAINGUYENVAN0507/SE2026_Codex/pull/61#pullrequestreview-5910990678) của Quang trên
+  head `32f188fee4a4b58d1af6e31933fa8cd4ab3a2984`.
+- Mở PR `2026-11-15T09:14:28Z`, review `2026-11-15T13:39:45Z`: **4.42
+  giờ**, trong hạn 18 giờ. Trạng thái COMMENTED, không approve/request-changes/merge.
+- 27 test API/privacy/logging liên quan đạt, Ruff đạt. Probe độc lập phát hiện
+  P1 query canary vẫn vào Uvicorn access log và P2 Docker logs lỗi vẫn báo smoke
+  thành công. Đã gửi hai nhận xét inline; chưa coi finding đã được giải quyết.
+- [Báo cáo và bằng chứng review](../../docs/frontend/reviews/PR-61-2026-11-15.md).
+  Chờ Quang sửa rồi kiểm lại head mới; review ban đầu đã hoàn thành.
+- PR #60 của A đã push/mở theo yêu cầu người dùng; head a92ceca có 12 check-runs
+  success trước commit bổ sung tài liệu review. Chưa merge, không bật auto-merge.
+  Năm commit công việc được giao giữ nguyên; commit review là bổ sung sau khi B mở PR.
