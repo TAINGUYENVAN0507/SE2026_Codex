@@ -9,8 +9,12 @@ gây race thay vì tái hiện nó.
 
 import importlib.util
 import inspect
+import os
+import subprocess
+import sys
 from pathlib import Path
 
+import pytest
 import uvicorn.config
 
 SCRIPT = Path(__file__).resolve().parents[2] / "scripts" / "load_vt018.py"
@@ -40,3 +44,62 @@ def test_client_drops_idle_connections_well_before_uvicorn_does():
 def test_harness_does_not_shorten_uvicorn_keep_alive():
     source = SCRIPT.read_text(encoding="utf-8")
     assert "--timeout-keep-alive" not in source
+
+
+# Ghim CPU (AD-018, AI-19): tách máy sinh tải khỏi server khi đo 247 client trên một máy.
+
+
+def test_parse_cpus_reads_ranges_and_lists(monkeypatch):
+    harness = load_harness()
+    monkeypatch.setattr(harness.os, "cpu_count", lambda: 12)
+    assert harness.parse_cpus("0-3,6-9") == {0, 1, 2, 3, 6, 7, 8, 9}
+    assert harness.parse_cpus("4,5,10,11") == {4, 5, 10, 11}
+    assert harness.parse_cpus(None) is None
+    assert harness.parse_cpus("") is None
+
+
+def test_parse_cpus_rejects_reversed_or_missing_cpus(monkeypatch):
+    harness = load_harness()
+    monkeypatch.setattr(harness.os, "cpu_count", lambda: 4)
+    with pytest.raises(ValueError, match="ngược"):
+        harness.parse_cpus("3-1")
+    with pytest.raises(ValueError, match="không có"):
+        harness.parse_cpus("0-5")
+
+
+def test_server_and_client_cpus_must_not_overlap():
+    harness = load_harness()
+    with pytest.raises(ValueError, match="trùng CPU \\[3\\]"):
+        harness.check_disjoint({0, 1, 2, 3}, {3, 4})
+    harness.check_disjoint({0, 1}, {2, 3})
+    harness.check_disjoint(None, {2, 3})
+
+
+@pytest.mark.skipif(not hasattr(os, "sched_setaffinity"), reason="chỉ Linux có sched_setaffinity")
+def test_pinned_process_and_its_children_run_only_on_the_given_cpu():
+    """API chạy qua `uv run uvicorn --workers N`: worker của uvicorn là cháu của Popen, nên
+    ghim phải được kế thừa xuống process cháu."""
+    harness = load_harness()
+    cpu = min(os.sched_getaffinity(0))
+    show = "import os;print(sorted(os.sched_getaffinity(0)))"
+    grandchild = f"import subprocess,sys;subprocess.run([sys.executable,'-c',{show!r}])"
+    out = subprocess.run(
+        [sys.executable, "-c", f"{show};{grandchild}"],
+        preexec_fn=harness.pin_to({cpu}),
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.split()
+    assert out == [f"[{cpu}]", f"[{cpu}]"]
+    assert harness.pin_to(None) is None
+
+
+def test_run_clients_without_clients_does_not_wait_for_uploads():
+    """Pha upload kết thúc khi upload cuối xong; không có client thì không được chờ 600 s."""
+    harness = load_harness()
+    rows, errors, idle, detail, cpu = harness.run_clients(
+        [], "http://127.0.0.1:1", Path("khong-co.wav"), 0, 0.0, lambda: None, lambda: None
+    )
+    assert (rows, errors, idle, detail) == ([], [], [], [])
+    assert set(cpu) == {"cpu_s", "wall_s"}
+    assert cpu["wall_s"] < 5
