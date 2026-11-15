@@ -250,7 +250,12 @@ export const handlers = [
   ),
   http.get('*/api/v1/meetings/:meetingId/summary', ({ params }) =>
     params.meetingId === meetingProcessing.id
-      ? HttpResponse.json(editedSummary ?? summaryReady)
+      ? HttpResponse.json(
+          editedSummary ??
+            (meetingProcessing.status === 'partial'
+              ? { ...summaryDisabled, status: 'failed' }
+              : summaryReady),
+        )
       : createdMeetings.has(String(params.meetingId))
         ? HttpResponse.json(summaryDisabled)
         : notFound('Không tìm thấy tóm tắt.'),
