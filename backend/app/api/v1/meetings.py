@@ -87,7 +87,7 @@ def serialize_meeting_summary(
     if meeting.status in ("ready", "partial"):
         transcript_status = "ready"
         diarization_status = "ok"
-        summary_status = "ready"
+        summary_status = "failed" if meeting.status == "partial" else "ready"
     elif meeting.status == "failed":
         transcript_status = "failed"
         diarization_status = "failed"

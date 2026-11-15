@@ -400,3 +400,29 @@ def test_job_serialization_consistent_between_meeting_and_job_routes(
 
     assert meeting_job_data is not None
     assert meeting_job_data == standalone_job_data
+
+
+def test_get_meeting_detail_partial_status_reports_failed_summary(
+    client_a: TestClient,
+    test_db: Session,
+    user_a: User,
+) -> None:
+    """Meeting partial có transcript_status ready nhưng summary_status failed (BE-05)."""
+    meeting_id = str(uuid.uuid4())
+    meeting = Meeting(
+        id=meeting_id,
+        owner_id=user_a.id,
+        title="Cuộc họp lỗi tóm tắt (partial)",
+        source="upload",
+        status="partial",
+        version=1,
+    )
+    test_db.add(meeting)
+    test_db.commit()
+
+    res = client_a.get(f"/api/v1/meetings/{meeting_id}")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "partial"
+    assert data["artifacts"]["transcript"] == "ready"
+    assert data["artifacts"]["summary"] == "failed"

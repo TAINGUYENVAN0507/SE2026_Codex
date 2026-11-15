@@ -1,0 +1,65 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.12.13, pytest-9.1.1, pluggy-1.7.0
+rootdir: D:\kicuoi\SE2026_Codex\backend
+configfile: pyproject.toml
+plugins: anyio-4.15.1, cov-7.1.0
+collected 7 items / 6 deselected / 1 selected
+
+tests\api\test_meeting_list_detail.py F                                  [100%]
+
+================================== FAILURES ===================================
+________ test_get_meeting_detail_partial_status_reports_failed_summary ________
+
+client_a = <starlette.testclient.TestClient object at 0x0000028D11463B90>
+test_db = <sqlalchemy.orm.session.Session object at 0x0000028D11309EE0>
+user_a = <app.db.models.user.User object at 0x0000028D11462A20>
+
+    def test_get_meeting_detail_partial_status_reports_failed_summary(
+        client_a: TestClient,
+        test_db: Session,
+        user_a: User,
+    ) -> None:
+        """Meeting partial có transcript_status ready nhưng summary_status failed (BE-05)."""
+        meeting_id = str(uuid.uuid4())
+        meeting = Meeting(
+            id=meeting_id,
+            owner_id=user_a.id,
+            title="Cuộc họp lỗi tóm tắt (partial)",
+            source="upload",
+            status="partial",
+            version=1,
+        )
+        test_db.add(meeting)
+        test_db.commit()
+    
+        res = client_a.get(f"/api/v1/meetings/{meeting_id}")
+        assert res.status_code == 200
+        data = res.json()
+        assert data["status"] == "partial"
+        assert data["artifacts"]["transcript"] == "ready"
+>       assert data["artifacts"]["summary"] == "failed"
+E       AssertionError: assert 'ready' == 'failed'
+E         
+E         - failed
+E         + ready
+
+tests\api\test_meeting_list_detail.py:428: AssertionError
+---------------------------- Captured stderr call -----------------------------
+{"timestamp": "2026-11-15T08:53:23.049135+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "c08ad5e1-6d3a-4c8c-a494-0dac10c521ce", "method": "GET", "path": "/api/v1/meetings/b1559531-a452-49c0-9ae9-d0d980e10c11", "status_code": 200, "duration_ms": 32.74}
+{"timestamp": "2026-11-15T08:53:23.050133+00:00", "level": "INFO", "logger": "httpx", "message": "HTTP Request: GET http://testserver/api/v1/meetings/b1559531-a452-49c0-9ae9-d0d980e10c11 \"HTTP/1.1 200 OK\"", "request_id": null}
+------------------------------ Captured log call ------------------------------
+INFO     app.access:middleware.py:49 HTTP request completed
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/v1/meetings/b1559531-a452-49c0-9ae9-d0d980e10c11 "HTTP/1.1 200 OK"
+============================== warnings summary ===============================
+.venv\Lib\site-packages\fastapi\testclient.py:1
+  D:\kicuoi\SE2026_Codex\backend\.venv\Lib\site-packages\fastapi\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/api/test_meeting_list_detail.py::test_get_meeting_detail_partial_status_reports_failed_summary
+  D:\kicuoi\SE2026_Codex\backend\.venv\Lib\site-packages\jwt\api_jwt.py:149: InsecureKeyLengthWarning: The HMAC key is 31 bytes long, which is below the minimum recommended length of 32 bytes for SHA256. See RFC 7518 Section 3.2.
+    return self._jws.encode(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/api/test_meeting_list_detail.py::test_get_meeting_detail_partial_status_reports_failed_summary
+================= 1 failed, 6 deselected, 2 warnings in 1.89s =================
