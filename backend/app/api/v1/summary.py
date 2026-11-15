@@ -62,7 +62,7 @@ def get_meeting_summary(
     ).scalar_one_or_none()
 
     if summary is None:
-        status_val = "failed" if meeting.status == "failed" else "pending"
+        status_val = "failed" if meeting.status in ("failed", "partial") else "pending"
         return SummaryOut(
             meeting_id=meeting.id,
             status=status_val,

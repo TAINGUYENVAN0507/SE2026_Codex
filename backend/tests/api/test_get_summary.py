@@ -268,6 +268,33 @@ def test_get_summary_when_row_not_exists_yet(
     assert result.content is None
 
 
+def test_get_summary_when_meeting_partial_and_no_summary_row_returns_failed(
+    app_with_db, test_db: Session, users: dict[str, User]
+) -> None:
+    """Khi meeting partial (transcript xong nhưng tóm tắt lỗi) và chưa có row summary
+    -> status == 'failed'.
+    """
+    owner = users["a"]
+    meeting = Meeting(
+        id=str(uuid.uuid4()),
+        owner_id=owner.id,
+        title="Cuộc họp partial không có summary",
+        source="upload",
+        status="partial",
+        version=1,
+    )
+    test_db.add(meeting)
+    test_db.commit()
+
+    client = create_auth_client(app_with_db, owner)
+    response = client.get(f"/api/v1/meetings/{meeting.id}/summary")
+    assert response.status_code == 200
+
+    result = SummaryOut.model_validate(response.json())
+    assert result.status == "failed"
+    assert result.content is None
+
+
 def test_get_summary_priv12_other_user_404(
     app_with_db, test_db: Session, users: dict[str, User]
 ) -> None:
