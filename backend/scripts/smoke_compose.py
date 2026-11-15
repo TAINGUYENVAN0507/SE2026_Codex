@@ -107,12 +107,13 @@ def run_smoke(base_url: str, timeout_sec: int = 60) -> None:
             raise RuntimeError(f"Đăng nhập thất bại ({login_res.status_code}): {login_res.text}")
         print("   -> Đăng nhập thành công, nhận session cookie.")
 
-        # 4. Upload file WAV tổng hợp
+        # 4. Upload file WAV tổng hợp kèm tiêu đề canary (AD-018)
         print("4. Tải lên tệp âm thanh WAV tổng hợp...")
         wav_data = make_wav_bytes(2)
         files = {"file": ("smoke.wav", wav_data, "audio/wav")}
+        canary_title = f"CANARY_SMOKE_TITLE_{uid}"
         data = {
-            "title": f"Smoke Meeting {uid}",
+            "title": canary_title,
             "consent_confirmed": "true",
             "source": "upload",
         }
@@ -179,6 +180,32 @@ def run_smoke(base_url: str, timeout_sec: int = 60) -> None:
                 "trên /metrics sau khi job hoàn thành."
             )
         print("   -> Đã xác nhận pipeline_stage_duration_seconds_count > 0 trên /metrics.")
+
+        # 5.2 Kiểm tra log container api và worker không chứa tiêu đề canary (AD-018, BE-16)
+        print("   -> Kiểm tra docker compose logs api worker không chứa tiêu đề canary...")
+        try:
+            logs_proc = subprocess.run(
+                ["docker", "compose", "logs", "api", "worker"],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            if logs_proc.returncode == 0:
+                combined_logs = logs_proc.stdout + logs_proc.stderr
+                if canary_title in combined_logs:
+                    raise RuntimeError(
+                        f"Phát hiện tiêu đề canary '{canary_title}' bị lộ trong log "
+                        "của api hoặc worker container!"
+                    )
+                print("   -> Xác nhận log của container api và worker không chứa tiêu đề canary.")
+            else:
+                err_msg = logs_proc.stderr.strip()
+                print(f"   [CẢNH BÁO] Không lấy được log qua docker compose: {err_msg}")
+        except FileNotFoundError:
+            print(
+                "   [CẢNH BÁO] docker CLI không có trên máy, "
+                "bỏ qua kiểm tra docker compose logs cục bộ."
+            )
 
         # 6. Tải export biên bản cuộc họp
         print("6. Tải bản xuất cuộc họp qua GET /api/v1/meetings/{id}/export...")
