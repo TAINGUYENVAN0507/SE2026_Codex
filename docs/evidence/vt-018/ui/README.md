@@ -27,7 +27,7 @@ UV/FFPROBE_BIN nếu chưa ở PATH; giữ cổng 14173/18000 trống. Từ fron
 
 ```powershell
 $env:FAKE_SCENARIO='slow'
-npx playwright test --config playwright.evidence.config.ts
+npx playwright test --config playwright.evidence.config.ts --grep "VT-018: capture"
 ```
 
 Config riêng bật E2E_MANUAL_WORKER chỉ cho bộ ảnh; test tự khởi động worker sau ảnh queued,
@@ -55,3 +55,31 @@ không tự POST thêm sau khi trả 202. Có trong bộ 301 test/50 file đạt
 Test này chứng minh phía frontend chặn gửi trùng; không thay kiểm concurrency phía backend.
 Các file ảnh và test double-click được gộp một commit để dành commit riêng cho lỗi tích hợp
 vừa phát hiện và vẫn giữ giới hạn tối đa 5 commit hôm nay.
+
+
+## Bổ sung màn tóm tắt lỗi - 15/11/2026
+
+[05-summary-failed.png](05-summary-failed.png) chụp trong ca E2E riêng trên main
+nền `f8d22fd` đã có #56/#57. Source được xác minh sau capture tại commit `dd374b675a7b3e58996dadd0bc773193deef38bd`.
+Ảnh 1440×1000, API/worker/PostgreSQL 16 thật; pipeline fake `summary_fail`, không
+MSW hoặc dựng response. Transcript có 6 segment; hiển thị “Tạo tóm tắt thất bại.”
+và nút “Tạo lại tóm tắt” bật. Đã xem ảnh local; không sửa ảnh hoặc đóng băng giờ.
+
+Bốn ảnh trước giữ nguyên SHA256, nguồn và ngày 12/11. Root metadata của manifest
+vẫn mô tả bộ cũ; `additional_captures` mô tả ảnh mới với date/source/hash riêng.
+`capture.json.summary_failed` là snapshot trạng thái cho ảnh 15/11.
+
+```powershell
+$env:FAKE_SCENARIO='summary_fail'
+npx playwright test --config playwright.evidence.config.ts --grep "API failed for partial"
+```
+
+Cần database/tài khoản E2E riêng và biến môi trường như hướng dẫn FE-17. Test
+lưu ảnh và snapshot mới trong `frontend/test-results/`; chỉ copy đúng ảnh mới
+vào thư mục này sau khi kiểm nguồn/hash, không ghi đè ảnh lịch sử.
+
+Ca này đã chạy 3 lượt trong quá trình hoàn thiện: đầu tiên pass; lượt bổ sung
+assert response UI lỗi 401 do mật khẩu local không khớp tài khoản seed cũ; DB
+mới và source cuối pass **1 E2E**, retries=0. Giữ log đỏ và từng lượt ở
+[JSON thực thi](../../final/frontend-summary-fail-2026-11-15.json). Không coi đây
+là 3 test khác nhau hoặc bằng chứng flaky ba lượt ổn định.
