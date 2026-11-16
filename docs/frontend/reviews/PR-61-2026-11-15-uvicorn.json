@@ -1,0 +1,12 @@
+{
+  "pr_head": "32f188fee4a4b58d1af6e31933fa8cd4ab3a2984",
+  "method": "GET",
+  "path": "/api/v1/meetings?q=<synthetic canary>",
+  "http_status": 401,
+  "server": "real Uvicorn TCP, default access logging",
+  "canary_found": true,
+  "matched_lines": [
+    "INFO:     127.0.0.1:57489 - \"GET /api/v1/meetings?q=CANARY_SEARCH_QUERY_PARAM_GHI_666 HTTP/1.1\" 401 Unauthorized"
+  ],
+  "note": "Unauthenticated request; query string logging happens regardless of authentication result."
+}

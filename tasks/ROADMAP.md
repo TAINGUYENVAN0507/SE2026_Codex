@@ -1,6 +1,6 @@
 # Kế hoạch còn lại
 
-> Cập nhật 2026-11-15. Trạng thái yêu cầu đọc từ `main` tại `115c905` (sau #56, #57). Nhóm trưởng cập nhật file này mỗi khi phân công.
+> Cập nhật 2026-11-16. Trạng thái yêu cầu đọc từ `main` tại `3ed9c0d` (sau #60; #61 chưa merge; `backend/app` như `115c905`). Nhóm trưởng cập nhật file này mỗi khi phân công.
 
 ## Tiếp tục vào ngày sau
 
@@ -62,7 +62,7 @@ Commit của C trong các đợt này ghi thêm mã bài, ví dụ `(BE-17, VT-0
 
 ## Yêu cầu repo phải đáp ứng
 
-Hiện trạng đọc từ `main` tại `f255e01` (sau #53, #54; đóng băng code từ 11-12) ngày 2026-11-13. ✓ đã có · ◐ một phần · ✗ chưa có. Số đo tải: một máy, pipeline fake; chi tiết và giới hạn ở [`docs/evidence/README.md`](../docs/evidence/README.md). Bảng theo code ngày 11-06 (`53f753b`) đã thay bằng bảng này; lịch sử xem git.
+Hiện trạng đọc từ `main` tại `3ed9c0d` ngày 2026-11-16 (từ 11-12 chỉ sửa lỗi; sau hạn nộp 11-14, chỉ sửa lỗi, thêm test và bằng chứng). ✓ đã có · ◐ một phần · ✗ chưa có. Số đo tải: một máy, pipeline fake; chi tiết và giới hạn ở [`docs/evidence/README.md`](../docs/evidence/README.md). Bảng theo code ngày 11-06 (`53f753b`) đã thay bằng bảng này; lịch sử xem git.
 
 ### RE-018
 
@@ -77,7 +77,7 @@ Hiện trạng đọc từ `main` tại `f255e01` (sau #53, #54; đóng băng co
 | Runbook truy nguyên nhân, có thời gian đo thật | ✓ Diễn tập 2 sự cố trên Compose đo thời gian thật tại `docs/backend/runbook-drill-2026-11-10.md`, bổ sung runbook `docs/backend/BE-19.md` | BE-19 | B | 5 |
 | Lưu 14 ngày chạy thật | ✓ Worker gọi `run_retention_cleanup`; `backend/tests/api/test_retention.py`; test giữ tài liệu khớp cấu hình | BE-14 | B, C | 1, 4 |
 | 239 người dùng đồng thời | Xem bảng tải bên dưới | AI-19 | C | 3–5 |
-| Phản hồi change request trong 20 giờ | ◐ `docs/evidence/pr-response-times.md` (sinh lại 11-15): từ 11-06, 5/27 PR có phản hồi của người khác, 4/5 trong 20 giờ; 22 PR merge khi chưa có phản hồi. #56, #57 chờ 44 giờ không ai phản hồi. Đợt 9 giao A và B review chéo trong 18 giờ | | A, B, C | 9 |
+| Phản hồi change request trong 20 giờ | ◐ `docs/evidence/pr-response-times.md` (sinh lại 11-16): từ 11-06, 7/31 PR có phản hồi của người khác, 5/7 trong 20 giờ; 24 PR merge khi chưa có phản hồi. Review chéo Đợt 9: A review #61 sau 4,4 giờ; B không review #60 (phản hồi đầu tiên là của C sau 20,2 giờ). #56, #57 chờ 44 giờ | | A, B, C | 9, 10 |
 
 ### AD-018
 
@@ -85,14 +85,14 @@ Hiện trạng đọc từ `main` tại `f255e01` (sau #53, #54; đóng băng co
 |---|---|---|---|---|
 | Xóa khỏi mọi nơi lưu | ✓ `backend/app/services/erasure/`; `test_delete_meeting.py` (SQLite); canary: `idempotency_keys` không còn tiêu đề; 11-13: `tests/integration/test_erasure_postgres.py` trên Postgres đã migrate, bảng nơi lưu → test ở `docs/evidence/ad-018/README.md`. Log Docker chưa có test | BE-18 | B | 1 |
 | Xóa được cả tài khoản | ✓ `DELETE /auth/me` và giao diện xóa tài khoản (#42) | BE-18 | B, A | 2 |
-| Log không giữ dữ liệu cá nhân | ✓ Canary ở API, worker (`backend/tests/privacy/`) và pipeline (tìm ra và sửa rò stderr) | BE-18, BE-19, AI-18 | B, C | 1, 3 |
+| Log không giữ dữ liệu cá nhân | ◐ Canary ở API, worker (`backend/tests/privacy/`) và pipeline (tìm ra và sửa rò stderr). Access log của uvicorn và nginx ghi cả query string, gồm `?q=<tiêu đề>` (C xác nhận uvicorn bằng server thật ngày 11-16); B sửa trên #61, A sửa nginx (Đợt 10) | BE-18, BE-19, AI-18, FE-19 | A, B, C | 1, 3, 10 |
 | Adapter cho bên thứ ba | ✓ `engines/`, `llm/` có interface và bản fake | | C | |
 | Có cơ chế cưỡng chế boundary | ✓ Test AST, `docs/pipeline/AI-17.md` | AI-17 | C | 1 |
 | Tách controller quá lớn | ✓ 100% controller trong `app/api/v1/` $\le 500$ dòng (`meetings.py` 455 dòng, `action_items.py` 452 dòng); upload tách sang service; test kiến trúc `test_controller_limits.py` giữ chốt | BE-12 | B | 2–5 |
 | ADR | ✓ `docs/adr/0001-asr.md`, `0002-adapter-boundary-and-erasure.md`, `0003-controller-size-limit-and-layer-boundary.md` | | C, B | 3, 5 |
 | 247 đồng thời, p95 ≤ 2,0 s | Xem bảng tải bên dưới | AI-19, BE-12 | B, C | 3–5 |
 | Lưu dữ liệu vận hành 28 ngày | ✓ `OPERATIONAL_RETENTION_DAYS=28`, `backend/tests/api/test_retention.py` | BE-14 | B | 1 |
-| Phản hồi trong 18 giờ | ◐ Như dòng 20 giờ ở RE-018: 4/5 PR có phản hồi là trong 18 giờ; #44 phản hồi sau 22,0 giờ; #56, #57 chờ 44 giờ | | A, B, C | 9 |
+| Phản hồi trong 18 giờ | ◐ Như dòng 20 giờ ở RE-018: 5/7 PR có phản hồi là trong 18 giờ; #44 sau 22,0 giờ, #60 sau 20,2 giờ; #56, #57 chờ 44 giờ | | A, B, C | 9, 10 |
 
 ### VT-018
 
@@ -117,10 +117,11 @@ Hiện trạng đọc từ `main` tại `f255e01` (sau #53, #54; đóng băng co
 
 | Mốc | Cấu hình | Kết quả | Trạng thái |
 |---|---|---|---|
-| VT-018: 40 đồng thời, p95 ≤ 1,5 s | 1 process API | 11-15 trên `115c905`: 16/16 đạt, p95 upload 0,34 đến 0,73 s; xen kẽ `synchronous_commit` bật/tắt và thư mục lưu đầy/rỗng/RAM: fsync khi commit và ghi đĩa không giải thích được mức chậm; thư mục lưu đầy (18.080 thư mục con) chậm hơn khoảng 0,13 s (`docs/evidence/vt-018/load-40-2026-11-15/README.md`). 11-13 trên `a75853d`: 12/12 đạt, p95 upload 0,36 đến 0,87 s; xen kẽ ffprobe thật và giả, ffprobe không giải thích được mức chậm (`docs/evidence/vt-018/load-40-2026-11-13/README.md`). 11-12 trên `d9c2d50`: 5/6, 1 lượt 1,56 s; hai mức quanh 0,5 s và 1,4 đến 1,6 s. 11-11: 6/6. Gộp 39/40 | ◐ đạt 39/40 lượt, 1 lượt không đạt chưa rõ nguyên nhân |
+| VT-018: 40 đồng thời, p95 ≤ 1,5 s | 1 process API | 11-16 trên `3ed9c0d`: 12/12 đạt, p95 upload 0,38 đến 0,64 s; thư mục đầy/rỗng xen kẽ, đổi thứ tự giữa các vòng: thứ tự không phải lý do, thư mục đầy trung bình chậm hơn 0,08 s ở 4/6 vòng (`docs/evidence/vt-018/load-40-2026-11-16/README.md`). 11-15 trên `115c905`: 16/16 đạt, p95 upload 0,34 đến 0,73 s; xen kẽ `synchronous_commit` bật/tắt và thư mục lưu đầy/rỗng/RAM: fsync khi commit và ghi đĩa không giải thích được mức chậm; thư mục lưu đầy (18.080 thư mục con) chậm hơn khoảng 0,13 s (`docs/evidence/vt-018/load-40-2026-11-15/README.md`). 11-13 trên `a75853d`: 12/12 đạt, p95 upload 0,36 đến 0,87 s; xen kẽ ffprobe thật và giả, ffprobe không giải thích được mức chậm (`docs/evidence/vt-018/load-40-2026-11-13/README.md`). 11-12 trên `d9c2d50`: 5/6, 1 lượt 1,56 s; hai mức quanh 0,5 s và 1,4 đến 1,6 s. 11-11: 6/6. Gộp 51/52 | ◐ đạt 51/52 lượt, 1 lượt không đạt chưa rõ nguyên nhân |
 | RE-018: 239 đồng thời (không có mục tiêu độ trễ) | 1 process API | 239/239 upload, 0 lỗi, 3 lượt; p95 upload 3,03 đến 3,25 s | ✓ chịu được |
-| AD-018: 247 đồng thời, p95 ≤ 2,0 s | 1 process API (mặc định) | 11-15 trên `115c905`: p95 upload 2,09 đến 2,75 s, 6/6 lượt trên mốc; ghim máy sinh tải sang nhân riêng không đổi kết quả (`docs/evidence/load-247/pinned-2026-11-15/README.md`). 11-11: 3,16 đến 3,79 s, 3/3 trên mốc (11-10: 14/14) | ✗ |
-| AD-018: 247 đồng thời, p95 ≤ 2,0 s | 4 process API, `API_MAX_INFLIGHT=20` | 11-15 trên `115c905`: 9/9 lượt đạt, p95 upload 1,00 đến 1,37 s. A/B với app 11-11 (`1f9d1ca`): 1,05 đến 1,18 s, nên chênh với 11-11 không do code. 11-11: 2,30 đến 2,60 s, 15/15 lượt trên mốc. 11-10: 10/12 đạt | ◐ đạt ở 11-10 và 11-15, không đạt ở 11-11; nguyên nhân chênh giữa các ngày chưa rõ |
+| AD-018: 247 đồng thời, p95 ≤ 2,0 s | 1 process API (mặc định) | 11-16 trên `3ed9c0d`: 2,32 đến 3,24 s, 3/3 trên mốc; process uvicorn dùng 1,10 đến 1,15 CPU (trần của một process Python có GIL), event loop 0,28 đến 0,32 (`docs/evidence/load-247/event-loop-2026-11-16/README.md`). 11-15 trên `115c905`: p95 upload 2,09 đến 2,75 s, 6/6 lượt trên mốc; ghim máy sinh tải sang nhân riêng không đổi kết quả (`docs/evidence/load-247/pinned-2026-11-15/README.md`). 11-11: 3,16 đến 3,79 s, 3/3 trên mốc (11-10: 14/14) | ✗ |
+| AD-018: 247 đồng thời, p95 ≤ 2,0 s | 2 process API | 11-16 trên `3ed9c0d`: 3/3 đạt, p95 upload 1,50 đến 1,60 s; mỗi process khoảng 1,0 CPU. Chưa đo ngày khác, chưa đo trên Compose | ◐ đạt ở lần đo duy nhất |
+| AD-018: 247 đồng thời, p95 ≤ 2,0 s | 4 process API, `API_MAX_INFLIGHT=20` | 11-16 trên `3ed9c0d`: 3/3 đạt, 1,04 đến 1,39 s. 11-15 trên `115c905`: 9/9 lượt đạt, p95 upload 1,00 đến 1,37 s. A/B với app 11-11 (`1f9d1ca`): 1,05 đến 1,18 s, nên chênh với 11-11 không do code. 11-11: 2,30 đến 2,60 s, 15/15 lượt trên mốc. 11-10: 10/12 đạt | ◐ đạt ở 11-10, 11-15 và 11-16, không đạt ở 11-11; nguyên nhân chênh giữa các ngày chưa rõ |
 
 0 lỗi ở 21 lượt 247 client ngày 11-11 (5.187 upload). Phía server 4 process: thời gian nằm trong xử lý upload, không ở hàng đợi admission (95 đến 97 % request vào trong ≤ 1,5 s). Phía server 1 process: 2/3 lượt có ≥ 99,6 % upload ≤ 2,0 s, trong khi client chỉ thấy 49 đến 58 %, nên phần chậm nằm trước middleware (một event loop). Ngày 11-15 kiểm phần "máy sinh tải": nó chỉ dùng 0,27 đến 0,71 CPU, và ghim nó sang nhân riêng không đổi kết quả, nên phần chậm không ở máy sinh tải. 0 lỗi ở 18 lượt 247 client ngày 11-15 (4.446 upload).
 
@@ -215,13 +216,13 @@ Phần cá nhân của BT1/BT2/BT3 (phân tích, Bước 0 trước khi code, re
 ## Việc treo
 
 - Đã xong: #33–#39 vào `main`. Nhánh `tainguyen-vt018-tests` (Đợt 2 của C) vào `main` qua PR hôm 2026-11-08.
-- Đo tải 247: 1 process **không đạt** ở mọi ngày. 4 process đạt 11-10 (10/12) và 11-15 (9/9), không đạt 11-11 (0/15); A/B 11-15 cho thấy không do code. Chưa biết vì sao ngày 11-11 chậm hơn (khác biệt đã biết: cluster Postgres mới, TCP thay vì Unix socket). Xem mục Tải.
+- Đo tải 247: 1 process **không đạt** ở mọi ngày; 11-16 cho thấy process chạm trần khoảng 1 CPU. 2 process đạt 3/3 (chỉ đo 11-16). 4 process đạt 11-10 (10/12), 11-15 (9/9) và 11-16 (3/3), không đạt 11-11 (0/15); A/B 11-15 cho thấy không do code. Compose vẫn đặt `API_WORKERS: 1`: đổi mặc định là quyết định cấu hình, cần đo lại trên Compose. Chưa biết vì sao ngày 11-11 chậm hơn (khác biệt đã biết: cluster Postgres mới, TCP thay vì Unix socket). Xem mục Tải.
 - PR #40 vào `main` ngày 2026-11-08 không có review ghi lại trong PR; #41 và #42 có review (A review #41, C review #42).
 - PR #43 (VT-018) vào `main` ngày 2026-11-09 **trước** khi có review; B review sau khi merge, ở `docs/backend/reviews/PR-43-2026-11-09.md` (vào `main` qua #45). Ngày 2026-11-10 nhóm trưởng bỏ yêu cầu review của thành viên khác (xem mục Tham số).
 - #44 và #45: C review (approve có ghi chú) rồi merge ngày 2026-11-10. Các điểm làm tiếp của review #45 nằm trong `tasks/2026-11-10/member-b.md`.
 - BT3: test AI thô và việc xóa hoặc sửa test yếu đã có (`docs/evidence/vt-018/ai-tests/`, 2026-11-12). Bước 0 (plan AI trước khi code, bác bỏ ≥ 2 điểm) là phần của người dùng. Plan thô của AI cho bộ test này ở `docs/evidence/vt-018/ai-tests/01-plan-raw.md`, commit trước khi có test.
-- 40 client 11-12: 1/6 lượt không đạt, hai mức độ trễ, nguyên nhân chưa rõ. Đã loại ffprobe (11-13), fsync khi commit và ghi đĩa (11-15); mức chậm không tái hiện ở 28 lượt sau đó.
-- Harness tải không dọn file audio sau mỗi lượt, và `LocalStorage` cứng thư mục `backend/appdata` (không có biến môi trường), nên thư mục lưu của máy đo lớn dần (1,8 GB, 18.080 thư mục ngày 11-15).
+- 40 client 11-12: 1/6 lượt không đạt, hai mức độ trễ, nguyên nhân chưa rõ. Đã loại ffprobe (11-13), fsync khi commit và ghi đĩa (11-15), thứ tự chạy (11-16); thư mục lưu đầy chỉ giải thích khoảng 0,1 s. Mức chậm không tái hiện ở 40 lượt sau đó.
+- Từ 11-16 harness tải xóa file audio và artifact của các meeting nó tạo sau mỗi lượt (`--keep-audio` để giữ). Trước đó không dọn, nên thư mục lưu của máy đo lên 22.947 thư mục (2,3 GB); số này giữ nguyên, vì không biết thư mục nào là của harness. `LocalStorage` vẫn cứng thư mục `backend/appdata` (không có biến môi trường).
 
 - SH-01: chưa có bản ghi âm họp thật. AI-12 phần thu thật, AI-14, benchmark trên audio họp phụ thuộc vào đây.
 - Quyết định về Claude API với audio họp thật và ngân sách API.
@@ -248,3 +249,15 @@ Bắt đầu sau khi #56 (B) và #57 (A) vào `main` (`1e71c89`, `115c905`). C g
 | C | Test chặn file bằng chứng không phải UTF-8; 40 client: fsync khi commit và ghi audio; 247 client tách CPU máy sinh tải; thời gian phản hồi PR, bản đồ bằng chứng |
 
 Việc chung: A và B comment review PR của nhau trong 18 giờ (không chặn merge), vì 18/23 PR từ 11-06 merge khi chưa có phản hồi của người khác.
+
+### Đợt 10 (giao ngày 2026-11-16: `tasks/2026-11-16/`, sau hạn nộp, mỗi người 5 commit)
+
+Bắt đầu sau khi #60 (A) vào `main` (`544333d`, CI xanh 11/11). #61 (B) chưa merge: A review sau 4,4 giờ, nêu hai điểm. C chạy uvicorn thật và xác nhận access log ghi `?q=<canary>`; đọc code xác nhận smoke Compose báo thành công khi không đọc được log. B sửa trên chính #61.
+
+| Member | Việc |
+|---|---|
+| A | Log nginx không ghi query string; ô tìm cuộc họp gửi `q` lên API thay vì lọc trang đang xem (`MeetingListPage.tsx:35`), có E2E trên API thật; transcript `ready` không có lời nói hiện đúng câu và không poll |
+| B | Trên #61: tắt access log của uvicorn, có test chạy uvicorn thật; smoke Compose lỗi khi không đọc được log, và tìm theo tiêu đề canary; `segment_count`, `speaking_time_sec` luôn bằng 0 ở transcript và meeting detail |
+| C | Harness dọn file của meeting nó tạo; CPU của event loop ở 247 client, 1 và 4 process; 40 client thư mục đầy và rỗng, đổi thứ tự; thời gian phản hồi PR, bản đồ bằng chứng |
+
+Thứ tự merge: #61 trước PR của A, vì A cho giao diện gửi tiêu đề tìm kiếm qua `?q=`.

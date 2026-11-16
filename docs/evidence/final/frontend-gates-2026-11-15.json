@@ -1,0 +1,72 @@
+{
+  "date": "2026-11-15",
+  "main_base_commit": "f8d22fd002c6f0830645b1520acb41e8264d911f",
+  "unit_command": {
+    "command": [
+      "node",
+      "node_modules/vitest/vitest.mjs",
+      "run",
+      "--coverage"
+    ],
+    "exit_code": 0,
+    "duration_sec": 43.87,
+    "source_commit": "88789ca74211aac6018ef69339df568d7db34294",
+    "synthetic_only": true
+  },
+  "tests_passed": 305,
+  "test_files": 52,
+  "tests_skipped": 0,
+  "coverage": {
+    "lines": {
+      "total": 1400,
+      "covered": 1215,
+      "skipped": 0,
+      "pct": 86.78
+    },
+    "statements": {
+      "total": 1561,
+      "covered": 1317,
+      "skipped": 0,
+      "pct": 84.36
+    },
+    "functions": {
+      "total": 500,
+      "covered": 403,
+      "skipped": 0,
+      "pct": 80.6
+    },
+    "branches": {
+      "total": 1410,
+      "covered": 1151,
+      "skipped": 0,
+      "pct": 81.63
+    },
+    "branchesTrue": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 100
+    }
+  },
+  "thresholds": {
+    "lines": 84.53,
+    "branches": 79.11
+  },
+  "gates": {
+    "lint": 0,
+    "format_check": 0,
+    "typecheck": 0,
+    "build": 0,
+    "docs_utf8": {
+      "passed": 2
+    }
+  },
+  "e2e": {
+    "scenario": "summary_fail",
+    "unique_tests": 1,
+    "retries": 0,
+    "final_passed": 1,
+    "details": "frontend-summary-fail-2026-11-15.json"
+  },
+  "note": "Sau coverage chỉ đổi test E2E và tài liệu/ảnh, không đổi runtime frontend. Các gate lint/typecheck chạy lại sau source E2E cuối; build cuối exit 0."
+}

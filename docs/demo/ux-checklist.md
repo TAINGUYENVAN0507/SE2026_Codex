@@ -1,4 +1,4 @@
-# Checklist UX và demo — 13/11/2026
+# Checklist UX và demo — cập nhật 15/11/2026
 
 Ảnh và test dùng tài khoản, text và WAV tổng hợp; API, worker và PostgreSQL thật,
 pipeline fake. Mỗi phần ghi ngày và nguồn bằng chứng. Đây là kiểm thử luồng sản phẩm,
@@ -10,7 +10,7 @@ không phải đánh giá độ chính xác hay tốc độ AI trên cuộc họ
 Lượt E2E mới trên main có cả #53 và #54 được ghi riêng ở
 [báo cáo 13/11](../evidence/final/frontend-2026-11-13.md), có commit và số test thật.
 Bốn ảnh dưới đây vẫn là ảnh **12/11**, có [manifest nguồn/hash](../evidence/vt-018/ui/manifest.json);
-không ghi thành ảnh mới của lượt E2E 13/11.
+không ghi thành ảnh mới của lượt E2E 13/11. Ảnh thứ năm được bổ sung ngày **15/11**, có nguồn và SHA256 riêng; không đổi ngày bốn ảnh cũ.
 
 ### Chuẩn bị
 
@@ -29,7 +29,7 @@ không ghi thành ảnh mới của lượt E2E 13/11.
 | 01:00–01:20 | Chỉ job đang chờ: 0%, chưa có giờ bắt đầu; bước sắp tới ghi Chờ bắt đầu. | [01-queued.png](../evidence/vt-018/ui/01-queued.png); E2E ảnh 12/11 kiểm queued trước khi bật worker. [JobStatusCard.test.tsx](../../frontend/src/features/jobs/JobStatusCard.test.tsx) có hai ca queued không ghi đang chạy. |
 | 01:20–01:40 | Chỉ job đang chạy giữa chừng, phần trăm và sáu bước. Có thể reload để thấy vẫn là job cũ. | [02-running.png](../evidence/vt-018/ui/02-running.png) ở 60%; E2E ảnh chờ progress >=40%. Ca RT-11 trong upload.spec.ts kiểm reload, cùng latest_job_id, không POST thêm job. |
 | 01:40–02:00 | Chỉ trạng thái hoàn tất: 100%, có giờ bắt đầu và hoàn thành. | [03-succeeded.png](../evidence/vt-018/ui/03-succeeded.png); E2E ảnh kiểm succeeded, started_at/finished_at và hai thẻ time. Upload E2E kiểm đủ sáu stage succeeded. |
-| 02:00–02:30 | Mở meeting tóm tắt lỗi; transcript vẫn đọc được và có nút Tạo lại tóm tắt. | E2E ảnh 12/11 trong progress.spec.ts chạy summary_fail và đợi job failed trước khi tìm nút. [PartialSummaryRetry.test.tsx](../../frontend/src/features/meetings/PartialSummaryRetry.test.tsx) kiểm cả trường hợp API summary pending nhưng meeting partial. **Chưa có ảnh riêng màn lỗi được duyệt**; bằng chứng ở bước này là test. |
+| 02:00–02:30 | Mở meeting tóm tắt lỗi; transcript vẫn đọc được và có nút Tạo lại tóm tắt. | [05-summary-failed.png](../evidence/vt-018/ui/05-summary-failed.png), chụp **15/11** trên API/worker/PostgreSQL thật, pipeline summary_fail: transcript đọc được, thông báo lỗi và nút tạo lại bật. [E2E/log nguồn](../evidence/final/frontend-summary-fail-2026-11-15.json) kiểm meeting partial, summary failed và response UI failed. PartialSummaryRetry vẫn kiểm pending của API cũ. |
 | 02:30–03:10 | Bấm Tạo lại tóm tắt; mở tiến độ của job mới. Giải thích chỉ chạy lại bước 6 nên giữ năm bước trước, bắt đầu khoảng 83%, lượt thử 1. | [04-retry-reset.png](../evidence/vt-018/ui/04-retry-reset.png); E2E ảnh kiểm POST HTTP 202, ID job mới, attempt=1, progress=5/6 và thời gian chưa bắt đầu khi queued. |
 | 03:10–03:35 | Khi hoàn tất, quay về transcript và đối chiếu không có segment trùng. | E2E ảnh tiếp tục sau ảnh thứ tư tới succeeded; [capture.json](../evidence/vt-018/ui/capture.json) ghi mẫu đã kiểm: 6 segment trước/sau cùng toàn bộ ID, số hàng UI khớp. Đây là retry tóm tắt, không phải bằng chứng chạy lại toàn bộ ASR. |
 | 03:35–04:00 | Giới thiệu việc nút retry bị khóa khi request còn chờ; bấm nhanh hai lần chỉ gửi một POST. | [RetryDoubleClick.test.tsx](../../frontend/src/features/meetings/RetryDoubleClick.test.tsx): **MSW/Vitest**, giữ POST pending, dblClick, kiểm đúng 1 POST có UUID Idempotency-Key và nút disabled. Không coi test này là kiểm concurrency của backend. |
@@ -40,7 +40,7 @@ không ghi thành ảnh mới của lượt E2E 13/11.
 - Nhận dạng đúng danh tính người nói từ giọng: **chưa có bằng chứng trong kịch bản này**; dữ liệu fake dùng Speaker N hoặc tên được sửa thủ công.
 - Chất lượng ASR/diarization/LLM thật và chịu tải 239/247: **chưa có bằng chứng từ lượt demo/E2E này**; dùng báo cáo đánh giá riêng nếu cần trình bày.
 - Điện thoại vật lý và screen reader thật: **chưa có bằng chứng trong lượt này**. Ảnh viewport giả lập và axe không thay kiểm thủ công.
-- Bộ `npm run e2e` slow ngày 13/11 không bao gồm scenario summary_fail hay file evidence config. Luồng lỗi → retry dùng đúng bằng chứng 12/11 nêu ở bảng; không cộng gộp thành số E2E vừa chạy hôm nay.
+- Bộ `npm run e2e` slow ngày 13/11 không bao gồm scenario summary_fail hay file evidence config. Luồng retry tiếp tục dùng bằng chứng 12/11; màn lỗi được bổ sung từ ca E2E ngày 15/11. Không cộng các lượt hoặc ngày thành số E2E mới.
 
 
 ## Đợt 5 — bận và thời gian job, 10/11/2026

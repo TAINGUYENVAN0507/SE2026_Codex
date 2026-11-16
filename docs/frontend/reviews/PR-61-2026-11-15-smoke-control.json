@@ -1,0 +1,18 @@
+[
+  {
+    "case": "nonzero_exit",
+    "smoke_reported_success": true,
+    "warning_lines": [
+      "   [CẢNH BÁO] Không lấy được log qua docker compose: cannot read compose logs"
+    ],
+    "note": "Negative control of unchanged run_smoke; HTTP/user preparation mocked. Not a real Compose run."
+  },
+  {
+    "case": "missing_docker",
+    "smoke_reported_success": true,
+    "warning_lines": [
+      "   [CẢNH BÁO] docker CLI không có trên máy, bỏ qua kiểm tra docker compose logs cục bộ."
+    ],
+    "note": "Negative control of unchanged run_smoke; HTTP/user preparation mocked. Not a real Compose run."
+  }
+]

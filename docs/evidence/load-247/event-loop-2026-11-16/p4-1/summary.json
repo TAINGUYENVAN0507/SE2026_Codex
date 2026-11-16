@@ -1,0 +1,175 @@
+{
+  "clients": 247,
+  "threshold_p95_s": 2.0,
+  "create": {
+    "n": 247,
+    "p50_s": 0.9509,
+    "p95_s": 1.3935,
+    "max_s": 1.4456
+  },
+  "poll": {
+    "n": 1235,
+    "p50_s": 0.0171,
+    "p95_s": 0.1145,
+    "max_s": 0.1502
+  },
+  "all_requests": {
+    "n": 1482,
+    "p50_s": 0.025,
+    "p95_s": 1.0588,
+    "max_s": 1.4456
+  },
+  "errors": 0,
+  "create_error_detail": [],
+  "idle_before_upload": {
+    "n": 247,
+    "p50_s": 5.4469,
+    "p95_s": 10.2459,
+    "max_s": 10.8234,
+    "over_uvicorn_keepalive_5s": 134
+  },
+  "error_kinds": {},
+  "client_share_within": {
+    "create": {
+      "le_1.5": 1.0,
+      "le_2.0": 1.0
+    },
+    "poll": {
+      "le_1.5": 1.0,
+      "le_2.0": 1.0
+    }
+  },
+  "server": {
+    "create": {
+      "n": 247,
+      "mean_s": 0.8747,
+      "p50_in_s": [
+        0.75,
+        1.0
+      ],
+      "p95_in_s": [
+        1.0,
+        1.5
+      ],
+      "le_1.5": 1.0,
+      "le_2.0": 1.0
+    },
+    "poll": {
+      "n": 1235,
+      "mean_s": 0.0264,
+      "p50_in_s": [
+        0.01,
+        0.025
+      ],
+      "p95_in_s": [
+        0.05,
+        0.1
+      ],
+      "le_1.5": 1.0,
+      "le_2.0": 1.0
+    },
+    "admission_wait": {
+      "n": 1482,
+      "mean_s": 0.0848,
+      "p50_in_s": [
+        0.0,
+        0.001
+      ],
+      "p95_in_s": [
+        0.75,
+        1.0
+      ],
+      "le_1.5": 1.0,
+      "le_2.0": 1.0
+    }
+  },
+  "burst_wall_clock_s": 11.61,
+  "client_cpu": {
+    "cpu_s": 0.82,
+    "wall_s": 1.46,
+    "cpus_busy": 0.56,
+    "cpus_allowed": 12
+  },
+  "meeting_status_at_end": {
+    "queued": 100
+  },
+  "storage_cleanup": {
+    "audio_dirs_at_start": 22947,
+    "kept": false,
+    "meetings": 247,
+    "removed_dirs": 251,
+    "audio_dirs_at_end": 22947
+  },
+  "server_cpu": {
+    "wall_s": 1.46,
+    "api": [
+      {
+        "comm": "uv",
+        "depth": 0,
+        "process_cpus": 0.0,
+        "main_thread_cpus": 0.0
+      },
+      {
+        "comm": "uvicorn",
+        "depth": 1,
+        "process_cpus": 0.0,
+        "main_thread_cpus": 0.0
+      },
+      {
+        "comm": "python",
+        "depth": 2,
+        "process_cpus": 0.0,
+        "main_thread_cpus": 0.0
+      },
+      {
+        "comm": "python",
+        "depth": 2,
+        "process_cpus": 0.54,
+        "main_thread_cpus": 0.19
+      },
+      {
+        "comm": "python",
+        "depth": 2,
+        "process_cpus": 0.79,
+        "main_thread_cpus": 0.23
+      },
+      {
+        "comm": "python",
+        "depth": 2,
+        "process_cpus": 0.56,
+        "main_thread_cpus": 0.17
+      },
+      {
+        "comm": "python",
+        "depth": 2,
+        "process_cpus": 0.58,
+        "main_thread_cpus": 0.18
+      }
+    ],
+    "worker": [
+      {
+        "comm": "uv",
+        "depth": 0,
+        "process_cpus": 0.0,
+        "main_thread_cpus": 0.0
+      },
+      {
+        "comm": "python",
+        "depth": 1,
+        "process_cpus": 0.02,
+        "main_thread_cpus": 0.02
+      }
+    ]
+  },
+  "verdict": "PASS",
+  "server_count_vs_client": {
+    "create": {
+      "server": 247,
+      "client": 247
+    },
+    "poll": {
+      "server": 1235,
+      "client": 1235
+    }
+  }
+}
