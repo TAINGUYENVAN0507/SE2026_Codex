@@ -132,6 +132,22 @@ def run_smoke(base_url: str, timeout_sec: int = 60, skip_docker_logs: bool = Fal
         job_id = payload["job"]["id"]
         print(f"   -> Upload thành công: meeting_id={meeting_id}, job_id={job_id}")
 
+        # 4.1 Tìm kiếm cuộc họp theo tiêu đề canary (AD-018, BE-19)
+        print("   -> Tìm kiếm cuộc họp qua GET /api/v1/meetings?q=<canary_title>...")
+        search_res = client.get(f"/api/v1/meetings?q={canary_title}")
+        if search_res.status_code != 200:
+            raise RuntimeError(
+                f"Tìm kiếm meeting thất bại ({search_res.status_code}): {search_res.text}"
+            )
+        search_data = search_res.json()
+        items = search_data.get("items", [])
+        total = search_data.get("total", len(items))
+        if total != 1 or not items or items[0]["id"] != meeting_id:
+            raise RuntimeError(
+                f"Kết quả tìm kiếm không khớp meeting vừa tạo: total={total}, items={items}"
+            )
+        print("   -> Tìm thấy đúng cuộc họp vừa tạo theo tiêu đề canary (total == 1).")
+
         # 5. Poll trạng thái job tới khi succeeded
         print("5. Theo dõi tiến trình xử lý job qua worker...")
         deadline = time.time() + timeout_sec

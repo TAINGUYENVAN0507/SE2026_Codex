@@ -68,13 +68,22 @@ def mock_smoke_env():
                 return mock_upload_res
             return mock_login_res
 
+        mock_search_res = MagicMock()
+        mock_search_res.status_code = 200
+        mock_search_res.json.return_value = {
+            "items": [{"id": "mock-meeting-id"}],
+            "total": 1,
+        }
+
         def client_get(url, **kwargs):
+            if "/export" in url:
+                return mock_export_res
+            if "/meetings" in url:
+                return mock_search_res
             if "/jobs/" in url:
                 return mock_poll_res
             if "/metrics" in url:
                 return mock_metrics_res
-            if "/export" in url:
-                return mock_export_res
             return mock_poll_res
 
         def client_delete(url, **kwargs):
@@ -117,3 +126,15 @@ def test_smoke_compose_allows_skipping_docker_logs_with_flag(mock_smoke_env):
 
         # Phải chạy trót lọt không ném ngoại lệ
         smoke_compose.run_smoke("http://localhost:8000", timeout_sec=5, skip_docker_logs=True)
+
+
+def test_smoke_compose_searches_by_canary_title(mock_smoke_env):
+    """Smoke compose gọi GET /meetings?q=<canary_title> và xác thực meeting (AD-018, BE-19)."""
+    with patch("subprocess.run") as mock_subproc:
+        mock_subproc.return_value = CompletedProcess(
+            args=["docker", "compose", "logs", "api", "worker"],
+            returncode=0,
+            stdout="clean logs without canary",
+            stderr="",
+        )
+        smoke_compose.run_smoke("http://localhost:8000", timeout_sec=5)
