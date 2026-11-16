@@ -109,7 +109,7 @@ export function RemoteSummary({
     )
 
   const summary = query.data
-  // API hiện có thể trả pending khi meeting partial; partial xác nhận tóm tắt lỗi.
+  // API từ #56 trả failed; nhánh pending + summaryFailed giữ cho dữ liệu cũ.
   const failedSummary =
     summary.status === 'failed' ||
     (summary.status === 'pending' && meeting.summaryFailed)

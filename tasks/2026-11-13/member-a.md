@@ -51,4 +51,4 @@ git checkout vantuong && git fetch origin && git merge origin/main
 - Slow không chạy scenario summary_fail hay evidence config; E2E lỗi → retry dẫn đúng lượt 12/11, không cộng vào 24 ca hôm nay. Các regression MSW nằm trong 301 Vitest chạy lại hôm nay.
 - API/worker/DB thật, pipeline fake; WAV và tài khoản tổng hợp, micro giả của Chromium. Chưa chứng minh AI thật hay phần cứng thực tế.
 - Có **1 cảnh báo os.killpg native Windows** đã biết khi hủy job; ghi nguyên giới hạn, không coi UI/API đạt là chứng minh cleanup subprocess mọi trường hợp.
-- Hoàn thành local; **chưa push, mở PR, xác nhận CI hoặc merge** của đợt 13/11. Definition of Done còn cần CI phù hợp và nhóm trưởng merge.
+- Đợt 13/11: **#57 merge `115c905` ngày 11-15**. Các giới hạn bằng chứng của lượt kiểm nêu trên vẫn giữ nguyên.
