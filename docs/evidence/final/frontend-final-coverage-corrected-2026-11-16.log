@@ -1,0 +1,25 @@
+$ node node_modules/vitest/vitest.mjs run --coverage
+
+ RUN  v5.0.5 D:/Project/CNPM/SE2026_Codex/frontend
+      Coverage enabled with v8
+
+
+ Test Files  53 passed (53)
+      Tests  311 passed (311)
+   Start at  21:11:04
+   Duration  38.83s (environment 45%, tests 31%, import 11%, setup 9%, worker 2%, transform 1%)
+
+Environment  jsdom was created 53 times · 62.81s total, 45% of tracked time
+             create it once per worker with pool: 'vmThreads' (keeps per-file isolation) or isolate: false (shares it across files)
+             learn more: https://vitest.dev/guide/improving-performance#test-environments
+
+ % Coverage report from v8
+
+=============================== Coverage summary ===============================
+Statements   : 84.51% ( 1326/1569 )
+Branches     : 82.11% ( 1166/1420 )
+Functions    : 80.87% ( 406/502 )
+Lines        : 86.91% ( 1222/1406 )
+================================================================================
+
+EXIT=0

@@ -1,0 +1,12 @@
+$ node node_modules/vitest/vitest.mjs run PageStates Transcript
+
+ RUN  v5.0.5 D:/Project/CNPM/SE2026_Codex/frontend
+
+
+ Test Files  3 passed (3)
+      Tests  19 passed (19)
+   Start at  21:10:26
+   Duration  5.44s (environment 46%, tests 22%, import 15%, setup 9%, transform 8%)
+
+
+EXIT=0
