@@ -8,7 +8,7 @@ cleanup() {
     result=$?
     trap - EXIT HUP INT TERM
     if [ "$result" -ne 0 ]; then
-        docker logs "$container" 2>/dev/null || true
+        docker logs "$container" 2>&1 || true
     fi
     docker rm --force "$container" >/dev/null 2>&1 || true
     exit "$result"
@@ -41,3 +41,29 @@ done
 code=$(curl --silent --max-time 3 --output /dev/null --write-out '%{http_code}' "$base/metrics")
 [ "$code" = 404 ] || { echo 'Web proxy phải chặn /metrics bằng HTTP 404.' >&2; exit 1; }
 echo 'Web smoke /metrics: HTTP 404; Nginx non-root đạt.'
+
+
+# AD-018: cả đường SPA và API phải giữ query/referer khỏi log container.
+canary="CANARY_WEB_QUERY_$(date +%s)_$$"
+for path in "/?q=$canary" "/api/v1/meetings?q=$canary"; do
+    code=$(curl --silent --max-time 5 --referer "http://example.invalid/?q=$canary" \
+        --output /dev/null --write-out '%{http_code}' "$base$path")
+    case "$code" in
+        200|502) ;;
+        *) echo "Web privacy smoke: nhận HTTP $code không mong đợi." >&2; exit 1 ;;
+    esac
+done
+# Đợi bộ lọc ghi chẩn đoán upstream ra stderr; kiểm logging vẫn hoạt động.
+count=0
+while :; do
+    logs=$(docker logs "$container" 2>&1)
+    printf '%s' "$logs" | grep -Fq 'connect() failed' && break
+    count=$((count + 1))
+    [ "$count" -lt 5 ] || { echo 'Thiếu chẩn đoán upstream trong error log.' >&2; exit 1; }
+    sleep 1
+done
+if printf '%s' "$logs" | grep -Fq "$canary"; then
+    echo 'Web privacy smoke: query/referer canary bị ghi vào log container.' >&2
+    exit 1
+fi
+echo 'Web privacy smoke: query string và referer không xuất hiện trong log container.'

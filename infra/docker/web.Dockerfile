@@ -24,6 +24,7 @@ FROM nginx:1.27-alpine
 
 # Copy tệp cấu hình Nginx bảo mật (chặn /metrics, proxy /api và /health)
 COPY infra/docker/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --chmod=755 infra/docker/25-sanitize-request-logs.sh /docker-entrypoint.d/25-sanitize-request-logs.sh
 
 # Copy bản build frontend vào thư mục phục vụ web của Nginx
 COPY --from=builder /app/frontend/dist /usr/share/nginx/html
