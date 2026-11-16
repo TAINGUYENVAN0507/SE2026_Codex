@@ -18,6 +18,7 @@ import {
 interface Props {
   meeting: Meeting
   pending?: boolean
+  transcriptReady?: boolean
   position: number
   onSeek: (seconds: number) => void
   onUpdate: (transform: (m: Meeting) => Meeting) => void
@@ -42,6 +43,7 @@ function Highlight({ text, query }: { text: string; query: string }) {
 export function Transcript({
   meeting,
   pending = false,
+  transcriptReady = false,
   position,
   onSeek,
   onUpdate,
@@ -555,12 +557,16 @@ export function Transcript({
             <h2>
               {meeting.segments.length
                 ? 'Không tìm thấy đoạn phù hợp'
-                : 'Chưa có transcript'}
+                : transcriptReady
+                  ? 'Không nhận ra lời nói trong bản ghi'
+                  : 'Chưa có transcript'}
             </h2>
             <p>
               {meeting.segments.length
                 ? 'Thử từ khóa khác hoặc chọn tất cả người nói.'
-                : 'Transcript sẽ xuất hiện khi cuộc họp được xử lý.'}
+                : transcriptReady
+                  ? 'Bản ghi đã được xử lý và không có đoạn thoại để hiển thị.'
+                  : 'Transcript sẽ xuất hiện khi cuộc họp được xử lý.'}
             </p>
           </div>
         )}

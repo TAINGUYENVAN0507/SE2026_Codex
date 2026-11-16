@@ -1,0 +1,859 @@
+$ node node_modules/vitest/vitest.mjs run TranscriptEmpty
+
+ RUN  v5.0.5 D:/Project/CNPM/SE2026_Codex/frontend
+
+ ❯ src/features/meetings/TranscriptEmpty.test.tsx (4 tests | 1 failed) 1365ms
+   × FE-20: trang API ready với 0 segment báo không nhận ra lời nói, không chờ xử lý 1161ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/features/meetings/TranscriptEmpty.test.tsx > FE-20: trang API ready với 0 segment báo không nhận ra lời nói, không chờ xử lý
+TestingLibraryElementError: Unable to find an element with the text: Không nhận ra lời nói trong bản ghi. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<main[39m
+      [33mclass[39m=[32m"detail-page"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33mclass[39m=[32m"detail-header"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"breadcrumbs"[39m
+        [36m>[39m
+          [36m<a[39m
+            [33mdata-discover[39m=[32m"true"[39m
+            [33mhref[39m=[32m"/meetings"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33mfill[39m=[32m"currentColor"[39m
+              [33mheight[39m=[32m"1em"[39m
+              [33mviewBox[39m=[32m"0 0 256 256"[39m
+              [33mwidth[39m=[32m"1em"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M224,128a8,8,0,0,1-8,8H59.31l58.35,58.34a8,8,0,0,1-11.32,11.32l-72-72a8,8,0,0,1,0-11.32l72-72a8,8,0,0,1,11.32,11.32L59.31,120H216A8,8,0,0,1,224,128Z"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mCuộc họp[0m
+          [36m</a>[39m
+          [36m<span>[39m
+            [0m/[0m
+          [36m</span>[39m
+          [36m<strong>[39m
+            [0mHọp sprint planning tuần 42[0m
+          [36m</strong>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"meeting-intro"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"meeting-title-row"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"editable-title"[39m
+            [36m>[39m
+              [36m<h1>[39m
+                [0mHọp sprint planning tuần 42[0m
+              [36m</h1>[39m
+              [36m<button[39m
+                [33maria-label[39m=[32m"Đổi tên cuộc họp"[39m
+                [33mclass[39m=[32m"icon-button"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33mfill[39m=[32m"currentColor"[39m
+                  [33mheight[39m=[32m"17"[39m
+                  [33mviewBox[39m=[32m"0 0 256 256"[39m
+                  [33mwidth[39m=[32m"17"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M227.31,73.37,182.63,28.68a16,16,0,0,0-22.63,0L36.69,152A15.86,15.86,0,0,0,32,163.31V208a16,16,0,0,0,16,16H92.69A15.86,15.86,0,0,0,104,219.31L227.31,96a16,16,0,0,0,0-22.63ZM92.69,208H48V163.31l88-88L180.69,120ZM192,108.68,147.31,64l24-24L216,84.68Z"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+              [36m</button>[39m
+            [36m</div>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"status-label ready"[39m
+            [36m>[39m
+              [36m<i />[39m
+              [0mĐã xử lý[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"meeting-meta"[39m
+          [36m>[39m
+            [36m<span>[39m
+              [36m<svg[39m
+                [33mfill[39m=[32m"currentColor"[39m
+                [33mheight[39m=[32m"1em"[39m
+                [33mviewBox[39m=[32m"0 0 256 256"[39m
+                [33mwidth[39m=[32m"1em"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm64-88a8,8,0,0,1-8,8H128a8,8,0,0,1-8-8V72a8,8,0,0,1,16,0v48h48A8,8,0,0,1,192,128Z"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0m15/10/2026[0m
+              [0m · [0m
+              [0m15:30[0m
+            [36m</span>[39m
+            [36m<span>[39m
+              [0m30 phút[0m
+            [36m</span>[39m
+            [36m<span>[39m
+              [36m<svg[39m
+                [33mfill[39m=[32m"currentColor"[39m
+                [33mheight[39m=[32m"1em"[39m
+                [33mviewBox[39m=[32m"0 0 256 256"[39m
+                [33mwidth[39m=[32m"1em"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M117.25,157.92a60,60,0,1,0-66.5,0A95.83,95.83,0,0,0,3.53,195.63a8,8,0,1,0,13.4,8.74,80,80,0,0,1,134.14,0,8,8,0,0,0,13.4-8.74A95.83,95.83,0,0,0,117.25,157.92ZM40,108a44,44,0,1,1,44,44A44.05,44.05,0,0,1,40,108Zm210.14,98.7a8,8,0,0,1-11.07-2.33A79.83,79.83,0,0,0,172,168a8,8,0,0,1,0-16,44,44,0,1,0-16.34-84.87,8,8,0,1,1-5.94-14.85,60,60,0,0,1,55.53,105.64,95.83,95.83,0,0,1,47.22,37.71A8,8,0,0,1,250.14,206.7Z"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mChưa xác định[0m
+              [0m người nói[0m
+            [36m</span>[39m
+            [36m<span>[39m
+              [0mTiếng Việt[0m
+            [36m</span>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"detail-actions"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-label[39m=[32m"Xóa cuộc họp"[39m
+            [33mclass[39m=[32m"button secondary small delete-meeting"[39m
+            [33mtitle[39m=[32m"Xóa cuộc họp"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mfill[39m=[32m"currentColor"[39m
+              [33mheight[39m=[32m"1em"[39m
+              [33mviewBox[39m=[32m"0 0 256 256"[39m
+              [33mwidth[39m=[32m"1em"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M216,48H176V40a24,24,0,0,0-24-24H104A24,24,0,0,0,80,40v8H40a8,8,0,0,0,0,16h8V208a16,16,0,0,0,16,16H192a16,16,0,0,0,16-16V64h8a8,8,0,0,0,0-16ZM96,40a8,8,0,0,1,8-8h48a8,8,0,0,1,8,8v8H96Zm96,168H64V64H192ZM112,104v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Zm48,0v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Z"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0m [0m
+            [36m<span>[39m
+              [0mXóa cuộc họp[0m
+            [36m</span>[39m
+          [36m</button>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"dropdown"[39m
+          [36m>[39m
+            [36m<span>[39m
+              [36m<button[39m
+                [33maria-controls[39m=[32m"export-menu"[39m
+                [33maria-expanded[39m=[32m"false"[39m
+                [33mclass[39m=[32m"button primary"[39m
+                [33mtitle[39m=[32m"Xuất dữ liệu đã lưu trên máy chủ"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33mfill[39m=[32m"currentColor"[39m
+                  [33mheight[39m=[32m"1em"[39m
+                  [33mviewBox[39m=[32m"0 0 256 256"[39m
+                  [33mwidth[39m=[32m"1em"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M224,144v64a8,8,0,0,1-8,8H40a8,8,0,0,1-8-8V144a8,8,0,0,1,16,0v56H208V144a8,8,0,0,1,16,0Zm-101.66,5.66a8,8,0,0,0,11.32,0l40-40a8,8,0,0,0-11.32-11.32L136,124.69V32a8,8,0,0,0-16,0v92.69L93.66,98.34a8,8,0,0,0-11.32,11.32Z"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+                [0mXuất biên bản[0m
+                [36m<svg[39m
+                  [33mfill[39m=[32m"currentColor"[39m
+                  [33mheight[39m=[32m"12"[39m
+                  [33mviewBox[39m=[32m"0 0 256 256"[39m
+                  [33mwidth[39m=[32m"12"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+              [36m</button>[39m
+            [36m</span>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</header>[39m
+      [36m<section[39m
+        [33maria-label[39m=[32m"Player audio cuộc họp"[39m
+        [33mclass[39m=[32m"audio-expired"[39m
+      [36m>[39m
+        [36m<p[39m
+          [33mrole[39m=[32m"status"[39m
+        [36m>[39m
+          [0mAudio đã hết hạn lưu trữ[0m
+        [36m</p>[39m
+        [36m<p>[39m
+          [0mTranscript và nội dung cuộc họp vẫn có thể đọc được.[0m
+        [36m</p>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"audio-retention"[39m
+        [36m>[39m
+          [0mLưu audio đến[0m
+          [0m [0m
+          [36m<time[39m
+            [33mdatetime[39m=[32m"2026-11-14T08:30:00Z"[39m
+          [36m>[39m
+            [0m15:30 14/11/26[0m
+          [36m</time>[39m
+          [0m [0m
+          [0m(giờ địa phương)[0m
+        [36m</p>[39m
+      [36m</section>[39m
+      [36m<nav[39m
+        [33maria-label[39m=[32m"Nội dung cuộc họp"[39m
+        [33mclass[39m=[32m"mobile-detail-tabs"[39m
+      [36m>[39m
+        [36m<button[39m
+          [33maria-pressed[39m=[32m"true"[39m
+          [33mclass[39m=[32m"selected"[39m
+        [36m>[39m
+          [0mTranscript[0m
+        [36m</button>[39m
+        [36m<button[39m
+          [33maria-pressed[39m=[32m"false"[39m
+          [33mclass[39m=[32m""[39m
+        [36m>[39m
+          [0mTóm tắt[0m
+        [36m</button>[39m
+        [36m<button[39m
+          [33maria-pressed[39m=[32m"false"[39m
+          [33mclass[39m=[32m""[39m
+        [36m>[39m
+          [0mCông việc[0m
+        [36m</button>[39m
+        [36m<button[39m
+          [33maria-pressed[39m=[32m"false"[39m
+          [33mclass[39m=[32m""[39m
+        [36m>[39m
+          [0mLịch sử[0m
+        [36m</button>[39m
+      [36m</nav>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"meeting-workspace"[39m
+        [33mdata-mobile[39m=[32m"transcript"[39m
+      [36m>[39m
+        [36m<section[39m
+          [33maria-label[39m=[32m"Transcript"[39m
+          [33mclass[39m=[32m"transcript-panel"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"transcript-toolbar"[39m
+          [36m>[39m
+            [36m<label[39m
+              [33mclass[39m=[32m"search-input"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mfill[39m=[32m"currentColor"[39m
+                [33mheight[39m=[32m"1em"[39m
+                [33mviewBox[39m=[32m"0 0 256 256"[39m
+                [33mwidth[39m=[32m"1em"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [36m<input[39m
+                [33maria-label[39m=[32m"Tìm trong transcript"[39m
+                [33mplaceholder[39m=[32m"Tìm trong transcript…"[39m
+                [33mvalue[39m=[32m""[39m
+              [36m/>[39m
+            [36m</label>[39m
+            [36m<label[39m
+              [33mclass[39m=[32m"follow-control"[39m
+            [36m>[39m
+              [36m<input[39m
+                [33mtype[39m=[32m"checkbox"[39m
+              [36m/>[39m
+              [0mTheo đoạn đang phát[0m
+            [36m</label>[39m
+            [36m<label[39m
+              [33mclass[39m=[32m"follow-control"[39m
+            [36m>[39m
+              [36m<input[39m
+                [33mtype[39m=[32m"checkbox"[39m
+              [36m/>[39m
+              [0mBản AI gốc[0m
+            [36m</label>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"transcript-scroll"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"Lọc người nói"[39m
+              [33mclass[39m=[32m"speaker-filters"[39m
+              [33mrole[39m=[32m"group"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33maria-pressed[39m=[32m"true"[39m
+                [33mclass[39m=[32m"selected"[39m
+              [36m>[39m
+                [0mTất cả[0m
+              [36m</button>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"empty-state"[39m
+            [36m>[39m
+              [36m<h2>[39m
+                [0mChưa có transcript[0m
+              [36m</h2>[39m
+              [36m<p>[39m
+                [0mTranscript sẽ xuất hiện khi cuộc họp được xử lý.[0m
+              [36m</p>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</section>[39m
+        [36m<aside[39m
+          [33mclass[39m=[32m"notes-panel"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"notes-tabs"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33maria-pressed[39m=[32m"true"[39m
+              [33mclass[39m=[32m"selected"[39m
+            [36m>[39m
+              [0mTóm tắt[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-pressed[39m=[32m"false"[39m
+              [33mclass[39m=[32m""[39m
+            [36m>[39m
+              [0mCông việc[0m
+              [0m [0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-pressed[39m=[32m"false"[39m
+              [33mclass[39m=[32m""[39m
+            [36m>[39m
+              [0mLịch sử[0m
+            [36m</button>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"notes-scroll"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"notes-status"[39m
+            [36m>[39m
+              [36m<span>[39m
+                [0mBản tóm tắt · [0m
+                [0mĐã sửa[0m
+              [36m</span>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"button quiet small"[39m
+              [36m>[39m
+                [0mChỉnh sửa[0m
+              [36m</button>[39m
+            [36m</div>[39m
+            [36m<section[39m
+              [33mclass[39m=[32m"note-section"[39m
+            [36m>[39m
+              [36m<h2>[39m
+                [0mTổng quan[0m
+              [36m</h2>[39m
+              [36m<p>[39m
+                [0mNhóm chốt phạm vi sprint 42: hoàn thiện upload audio và màn hình transcript, lùi export DOCX.[0m
+              [36m</p>[39m
+            [36m</section>[39m
+            [36m<section[39m
+              [33mclass[39m=[32m"note-section"[39m
+            [36m>[39m
+              [36m<h2>[39m
+                [0mÝ chính[0m
+              [36m</h2>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"decision"[39m
+              [36m>[39m
+                [36m<p>[39m
+                  [0mAPI upload phải chống tạo meeting trùng khi retry.[0m
+                  [0m [0m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"evidence-links"[39m
+                  [36m>[39m
+                    [36m<span[39m
+                      [33mclass[39m=[32m"unverified-evidence"[39m
+                    [36m>[39m
+                      [0mChưa có bằng chứng[0m
+                    [36m</span>[39m
+                  [36m</span>[39m
+                [36m</p>[39m
+              [36m</div>[39m
+            [36m</section>[39m
+            [36m<section[39m
+              [33mclass[39m=[32m"note-section"[39m
+            [36m>[39m
+              [36m<h2>[39m
+                [0mQuyết định[0m
+              [36m</h2>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"decision"[39m
+              [36m>[39m
+                [36m<p>[39m
+                  [0mLùi export DOCX sang sau MVP.[0m
+                  [0m [0m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"evidence-links"[39m
+                  [36m>[39m
+                    [36m<span[39m
+                      [33mclass[39m=[32m"unverified-evidence"[39m
+                    [36m>[39m
+                      [0mChưa có bằng chứng[0m
+                    [36m</span>[39m
+                  [36m</span>[39m
+                [36m</p>[39m
+              [36m</div>[39m
+            [36m</section>[39m
+          [36m</div>[39m
+        [36m</aside>[39m
+      [36m</div>[39m
+    [36m</main>[39m
+  [36m</div>[39m
+[36m</body>[39m
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<main[39m
+      [33mclass[39m=[32m"detail-page"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33mclass[39m=[32m"detail-header"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"breadcrumbs"[39m
+        [36m>[39m
+          [36m<a[39m
+            [33mdata-discover[39m=[32m"true"[39m
+            [33mhref[39m=[32m"/meetings"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33mfill[39m=[32m"currentColor"[39m
+              [33mheight[39m=[32m"1em"[39m
+              [33mviewBox[39m=[32m"0 0 256 256"[39m
+              [33mwidth[39m=[32m"1em"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M224,128a8,8,0,0,1-8,8H59.31l58.35,58.34a8,8,0,0,1-11.32,11.32l-72-72a8,8,0,0,1,0-11.32l72-72a8,8,0,0,1,11.32,11.32L59.31,120H216A8,8,0,0,1,224,128Z"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mCuộc họp[0m
+          [36m</a>[39m
+          [36m<span>[39m
+            [0m/[0m
+          [36m</span>[39m
+          [36m<strong>[39m
+            [0mHọp sprint planning tuần 42[0m
+          [36m</strong>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"meeting-intro"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"meeting-title-row"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"editable-title"[39m
+            [36m>[39m
+              [36m<h1>[39m
+                [0mHọp sprint planning tuần 42[0m
+              [36m</h1>[39m
+              [36m<button[39m
+                [33maria-label[39m=[32m"Đổi tên cuộc họp"[39m
+                [33mclass[39m=[32m"icon-button"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33mfill[39m=[32m"currentColor"[39m
+                  [33mheight[39m=[32m"17"[39m
+                  [33mviewBox[39m=[32m"0 0 256 256"[39m
+                  [33mwidth[39m=[32m"17"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M227.31,73.37,182.63,28.68a16,16,0,0,0-22.63,0L36.69,152A15.86,15.86,0,0,0,32,163.31V208a16,16,0,0,0,16,16H92.69A15.86,15.86,0,0,0,104,219.31L227.31,96a16,16,0,0,0,0-22.63ZM92.69,208H48V163.31l88-88L180.69,120ZM192,108.68,147.31,64l24-24L216,84.68Z"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+              [36m</button>[39m
+            [36m</div>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"status-label ready"[39m
+            [36m>[39m
+              [36m<i />[39m
+              [0mĐã xử lý[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"meeting-meta"[39m
+          [36m>[39m
+            [36m<span>[39m
+              [36m<svg[39m
+                [33mfill[39m=[32m"currentColor"[39m
+                [33mheight[39m=[32m"1em"[39m
+                [33mviewBox[39m=[32m"0 0 256 256"[39m
+                [33mwidth[39m=[32m"1em"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm64-88a8,8,0,0,1-8,8H128a8,8,0,0,1-8-8V72a8,8,0,0,1,16,0v48h48A8,8,0,0,1,192,128Z"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0m15/10/2026[0m
+              [0m · [0m
+              [0m15:30[0m
+            [36m</span>[39m
+            [36m<span>[39m
+              [0m30 phút[0m
+            [36m</span>[39m
+            [36m<span>[39m
+              [36m<svg[39m
+                [33mfill[39m=[32m"currentColor"[39m
+                [33mheight[39m=[32m"1em"[39m
+                [33mviewBox[39m=[32m"0 0 256 256"[39m
+                [33mwidth[39m=[32m"1em"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M117.25,157.92a60,60,0,1,0-66.5,0A95.83,95.83,0,0,0,3.53,195.63a8,8,0,1,0,13.4,8.74,80,80,0,0,1,134.14,0,8,8,0,0,0,13.4-8.74A95.83,95.83,0,0,0,117.25,157.92ZM40,108a44,44,0,1,1,44,44A44.05,44.05,0,0,1,40,108Zm210.14,98.7a8,8,0,0,1-11.07-2.33A79.83,79.83,0,0,0,172,168a8,8,0,0,1,0-16,44,44,0,1,0-16.34-84.87,8,8,0,1,1-5.94-14.85,60,60,0,0,1,55.53,105.64,95.83,95.83,0,0,1,47.22,37.71A8,8,0,0,1,250.14,206.7Z"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mChưa xác định[0m
+              [0m người nói[0m
+            [36m</span>[39m
+            [36m<span>[39m
+              [0mTiếng Việt[0m
+            [36m</span>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"detail-actions"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-label[39m=[32m"Xóa cuộc họp"[39m
+            [33mclass[39m=[32m"button secondary small delete-meeting"[39m
+            [33mtitle[39m=[32m"Xóa cuộc họp"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mfill[39m=[32m"currentColor"[39m
+              [33mheight[39m=[32m"1em"[39m
+              [33mviewBox[39m=[32m"0 0 256 256"[39m
+              [33mwidth[39m=[32m"1em"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M216,48H176V40a24,24,0,0,0-24-24H104A24,24,0,0,0,80,40v8H40a8,8,0,0,0,0,16h8V208a16,16,0,0,0,16,16H192a16,16,0,0,0,16-16V64h8a8,8,0,0,0,0-16ZM96,40a8,8,0,0,1,8-8h48a8,8,0,0,1,8,8v8H96Zm96,168H64V64H192ZM112,104v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Zm48,0v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Z"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0m [0m
+            [36m<span>[39m
+              [0mXóa cuộc họp[0m
+            [36m</span>[39m
+          [36m</button>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"dropdown"[39m
+          [36m>[39m
+            [36m<span>[39m
+              [36m<button[39m
+                [33maria-controls[39m=[32m"export-menu"[39m
+                [33maria-expanded[39m=[32m"false"[39m
+                [33mclass[39m=[32m"button primary"[39m
+                [33mtitle[39m=[32m"Xuất dữ liệu đã lưu trên máy chủ"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33mfill[39m=[32m"currentColor"[39m
+                  [33mheight[39m=[32m"1em"[39m
+                  [33mviewBox[39m=[32m"0 0 256 256"[39m
+                  [33mwidth[39m=[32m"1em"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M224,144v64a8,8,0,0,1-8,8H40a8,8,0,0,1-8-8V144a8,8,0,0,1,16,0v56H208V144a8,8,0,0,1,16,0Zm-101.66,5.66a8,8,0,0,0,11.32,0l40-40a8,8,0,0,0-11.32-11.32L136,124.69V32a8,8,0,0,0-16,0v92.69L93.66,98.34a8,8,0,0,0-11.32,11.32Z"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+                [0mXuất biên bản[0m
+                [36m<svg[39m
+                  [33mfill[39m=[32m"currentColor"[39m
+                  [33mheight[39m=[32m"12"[39m
+                  [33mviewBox[39m=[32m"0 0 256 256"[39m
+                  [33mwidth[39m=[32m"12"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+              [36m</button>[39m
+            [36m</span>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</header>[39m
+      [36m<section[39m
+        [33maria-label[39m=[32m"Player audio cuộc họp"[39m
+        [33mclass[39m=[32m"audio-expired"[39m
+      [36m>[39m
+        [36m<p[39m
+          [33mrole[39m=[32m"status"[39m
+        [36m>[39m
+          [0mAudio đã hết hạn lưu trữ[0m
+        [36m</p>[39m
+        [36m<p>[39m
+          [0mTranscript và nội dung cuộc họp vẫn có thể đọc được.[0m
+        [36m</p>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"audio-retention"[39m
+        [36m>[39m
+          [0mLưu audio đến[0m
+          [0m [0m
+          [36m<time[39m
+            [33mdatetime[39m=[32m"2026-11-14T08:30:00Z"[39m
+          [36m>[39m
+            [0m15:30 14/11/26[0m
+          [36m</time>[39m
+          [0m [0m
+          [0m(giờ địa phương)[0m
+        [36m</p>[39m
+      [36m</section>[39m
+      [36m<nav[39m
+        [33maria-label[39m=[32m"Nội dung cuộc họp"[39m
+        [33mclass[39m=[32m"mobile-detail-tabs"[39m
+      [36m>[39m
+        [36m<button[39m
+          [33maria-pressed[39m=[32m"true"[39m
+          [33mclass[39m=[32m"selected"[39m
+        [36m>[39m
+          [0mTranscript[0m
+        [36m</button>[39m
+        [36m<button[39m
+          [33maria-pressed[39m=[32m"false"[39m
+          [33mclass[39m=[32m""[39m
+        [36m>[39m
+          [0mTóm tắt[0m
+        [36m</button>[39m
+        [36m<button[39m
+          [33maria-pressed[39m=[32m"false"[39m
+          [33mclass[39m=[32m""[39m
+        [36m>[39m
+          [0mCông việc[0m
+        [36m</button>[39m
+        [36m<button[39m
+          [33maria-pressed[39m=[32m"false"[39m
+          [33mclass[39m=[32m""[39m
+        [36m>[39m
+          [0mLịch sử[0m
+        [36m</button>[39m
+      [36m</nav>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"meeting-workspace"[39m
+        [33mdata-mobile[39m=[32m"transcript"[39m
+      [36m>[39m
+        [36m<section[39m
+          [33maria-label[39m=[32m"Transcript"[39m
+          [33mclass[39m=[32m"transcript-panel"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"transcript-toolbar"[39m
+          [36m>[39m
+            [36m<label[39m
+              [33mclass[39m=[32m"search-input"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mfill[39m=[32m"currentColor"[39m
+                [33mheight[39m=[32m"1em"[39m
+                [33mviewBox[39m=[32m"0 0 256 256"[39m
+                [33mwidth[39m=[32m"1em"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [36m<input[39m
+                [33maria-label[39m=[32m"Tìm trong transcript"[39m
+                [33mplaceholder[39m=[32m"Tìm trong transcript…"[39m
+                [33mvalue[39m=[32m""[39m
+              [36m/>[39m
+            [36m</label>[39m
+            [36m<label[39m
+              [33mclass[39m=[32m"follow-control"[39m
+            [36m>[39m
+              [36m<input[39m
+                [33mtype[39m=[32m"checkbox"[39m
+              [36m/>[39m
+              [0mTheo đoạn đang phát[0m
+            [36m</label>[39m
+            [36m<label[39m
+              [33mclass[39m=[32m"follow-control"[39m
+            [36m>[39m
+              [36m<input[39m
+                [33mtype[39m=[32m"checkbox"[39m
+              [36m/>[39m
+              [0mBản AI gốc[0m
+            [36m</label>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"transcript-scroll"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"Lọc người nói"[39m
+              [33mclass[39m=[32m"speaker-filters"[39m
+              [33mrole[39m=[32m"group"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33maria-pressed[39m=[32m"true"[39m
+                [33mclass[39m=[32m"selected"[39m
+              [36m>[39m
+                [0mTất cả[0m
+              [36m</button>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"empty-state"[39m
+            [36m>[39m
+              [36m<h2>[39m
+                [0mChưa có transcript[0m
+              [36m</h2>[39m
+              [36m<p>[39m
+                [0mTranscript sẽ xuất hiện khi cuộc họp được xử lý.[0m
+              [36m</p>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</section>[39m
+        [36m<aside[39m
+          [33mclass[39m=[32m"notes-panel"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"notes-tabs"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33maria-pressed[39m=[32m"true"[39m
+              [33mclass[39m=[32m"selected"[39m
+            [36m>[39m
+              [0mTóm tắt[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-pressed[39m=[32m"false"[39m
+              [33mclass[39m=[32m""[39m
+            [36m>[39m
+              [0mCông việc[0m
+              [0m [0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-pressed[39m=[32m"false"[39m
+              [33mclass[39m=[32m""[39m
+            [36m>[39m
+              [0mLịch sử[0m
+            [36m</button>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"notes-scroll"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"notes-status"[39m
+            [36m>[39m
+              [36m<span>[39m
+                [0mBản tóm tắt · [0m
+                [0mĐã sửa[0m
+              [36m</span>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"button quiet small"[39m
+              [36m>[39m
+                [0mChỉnh sửa[0m
+              [36m</button>[39m
+            [36m</div>[39m
+            [36m<section[39m
+              [33mclass[39m=[32m"note-section"[39m
+            [36m>[39m
+              [36m<h2>[39m
+                [0mTổng quan[0m
+              [36m</h2>[39m
+              [36m<p>[39m
+                [0mNhóm chốt phạm vi sprint 42: hoàn thiện upload audio và màn hình transcript, lùi export DOCX.[0m
+              [36m</p>[39m
+            [36m</section>[39m
+            [36m<section[39m
+              [33mclass[39m=[32m"note-section"[39m
+            [36m>[39m
+              [36m<h2>[39m
+                [0mÝ chính[0m
+              [36m</h2>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"decision"[39m
+              [36m>[39m
+                [36m<p>[39m
+                  [0mAPI upload phải chống tạo meeting trùng khi retry.[0m
+                  [0m [0m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"evidence-links"[39m
+                  [36m>[39m
+                    [36m<span[39m
+                      [33mclass[39m=[32m"unverified-evidence"[39m
+                    [36m>[39m
+                      [0mChưa có bằng chứng[0m
+                    [36m</span>[39m
+                  [36m</span>[39m
+                [36m</p>[39m
+              [36m</div>[39m
+            [36m</section>[39m
+            [36m<section[39m
+              [33mclass[39m=[32m"note-section"[39m
+            [36m>[39m
+              [36m<h2>[39m
+                [0mQuyết định[0m
+              [36m</h2>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"decision"[39m
+              [36m>[39m
+                [36m<p>[39m
+                  [0mLùi export DOCX sang sau MVP.[0m
+                  [0m [0m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"evidence-links"[39m
+                  [36m>[39m
+                    [36m<span[39m
+                      [33mclass[39m=[32m"unverified-evidence"[39m
+                    [36m>[39m
+                      [0mChưa có bằng chứng[0m
+                    [36m</span>[39m
+                  [36m</span>[39m
+                [36m</p>[39m
+              [36m</div>[39m
+            [36m</section>[39m
+          [36m</div>[39m
+        [36m</aside>[39m
+      [36m</div>[39m
+    [36m</main>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ waitForWrapper node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/features/meetings/TranscriptEmpty.test.tsx:68:18
+     66|   )
+     67|   expect(
+     68|     await screen.findByText('Không nhận ra lời nói trong bản ghi'),
+       |                  ^
+     69|   ).toBeVisible()
+     70|   expect(
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 3 passed (4)
+   Start at  21:01:12
+   Duration  56.44s (environment 62%, import 17%, setup 13%, transform 5%, tests 2%)
+
+
+EXIT=1

@@ -390,6 +390,7 @@ function Detail({
         <Transcript
           meeting={meeting}
           pending={pending}
+          transcriptReady={transcriptReady}
           position={position}
           onSeek={seek}
           onUpdate={onUpdate}

@@ -114,7 +114,7 @@ it('list: no search results explains recovery and clearing restores the meeting'
     'UNMATCHED_SEARCH',
   )
   expect(
-    screen.getByRole('heading', { name: 'Không tìm thấy cuộc họp' }),
+    await screen.findByRole('heading', { name: 'Không tìm thấy cuộc họp' }),
   ).toBeInTheDocument()
   await user.click(screen.getByRole('button', { name: 'Xóa bộ lọc' }))
   expect(screen.getByRole('textbox', { name: 'Tìm cuộc họp' })).toHaveValue('')
@@ -145,7 +145,9 @@ it('detail: an empty transcript has a message and no unrelated sample paragraphs
   )
   setup(detailPath)
   expect(
-    await screen.findByRole('heading', { name: 'Chưa có transcript' }),
+    await screen.findByRole('heading', {
+      name: 'Không nhận ra lời nói trong bản ghi',
+    }),
   ).toBeInTheDocument()
   expect(screen.queryByRole('article')).not.toBeInTheDocument()
   expect(screen.getByRole('link', { name: 'Cuộc họp' })).toHaveAttribute(

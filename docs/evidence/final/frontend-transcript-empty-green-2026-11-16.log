@@ -1,0 +1,12 @@
+$ node node_modules/vitest/vitest.mjs run Transcript
+
+ RUN  v5.0.5 D:/Project/CNPM/SE2026_Codex/frontend
+
+
+ Test Files  2 passed (2)
+      Tests  8 passed (8)
+   Start at  21:04:34
+   Duration  15.64s (environment 91%, import 4%, setup 2%, tests 2%, transform 1%)
+
+
+EXIT=0
