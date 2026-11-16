@@ -1,0 +1,38 @@
+{
+  "head": "44d47c3974107190c4cad41e179a785c19e85711",
+  "command": [
+    "node",
+    "node_modules/@playwright/test/cli.js",
+    "test",
+    "--config",
+    "playwright.evidence.config.ts",
+    "--grep",
+    "FE-04"
+  ],
+  "cwd": "frontend",
+  "exit_code": 0,
+  "duration_sec": 51.65,
+  "finished_at_utc": "2026-11-16T14:02:49.056473+00:00",
+  "source_commit": "44d47c3974107190c4cad41e179a785c19e85711",
+  "scenario": "eleven uploads; no worker",
+  "postgres_version": 16,
+  "synthetic_only": true,
+  "api_interception": false,
+  "retries": 0,
+  "total_uploaded": 11,
+  "oldest_id": "1acf6ad1-c8a5-4b21-a199-d25045bd1af1",
+  "oldest_on_first_page": false,
+  "oldest_on_second_page": true,
+  "search_total": 1,
+  "displayed_rows": 1,
+  "page_errors": [],
+  "captured_at_utc": "2026-11-16T14:02:46.026Z",
+  "working_tree_modified": true,
+  "source_sha256": {
+    "frontend/src/pages/MeetingListPage.tsx": "d779f2948e765fb29bed45aa607a9851ea44d8e35d00d2add37a72470f9651b3",
+    "frontend/src/api/client.ts": "b94caa338634ba0b192b97e061471c8e2accf66cb5e5d0700d778056953fd4eb",
+    "frontend/src/features/meetings/useMeetingsQuery.ts": "deca8d0bbb5d269d18f60560a511982eda52166fe5f4e8940ab1eeeac74b7068",
+    "frontend/e2e/evidence/search.spec.ts": "26379e6a044ccf31580feb63241fdedf0ac129da4d7743c93730aa6147deb08e",
+    "frontend/playwright.evidence.config.ts": "6e580938c2d62324d2a246d25516a0746f36746a9b375beb4ee7975e75bd8003"
+  }
+}

@@ -7,7 +7,7 @@ if (!server || Array.isArray(server))
 
 export default defineConfig({
   ...base,
-  testMatch: ['evidence/progress.spec.ts'],
+  testMatch: ['evidence/progress.spec.ts', 'evidence/search.spec.ts'],
   timeout: 180_000,
   projects: base.projects?.map((project) => ({
     ...project,
