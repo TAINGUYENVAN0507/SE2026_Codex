@@ -12,6 +12,7 @@ import inspect
 import os
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 import pytest
@@ -163,3 +164,69 @@ def test_harness_storage_is_where_the_app_writes():
     from app.services.storage.local import LocalStorage
 
     assert LocalStorage().base_dir == load_harness().STORAGE
+
+
+BUSY = """
+import subprocess, sys, threading, time
+
+
+def spin(sec):
+    end = time.perf_counter() + sec
+    while time.perf_counter() < end:
+        pass
+
+
+if sys.argv[1] == "parent":
+    child = subprocess.Popen([sys.executable, __file__, "thread"])
+    spin(2.5)  # luồng chính bận
+    child.wait()
+else:
+    t = threading.Thread(target=spin, args=(2.5,))  # luồng phụ bận, luồng chính chờ
+    t.start()
+    t.join()
+"""
+
+
+def test_stat_fields_survive_spaces_and_parens_in_the_process_name():
+    harness = load_harness()
+    fields = harness.stat_fields("4242 (a b) c)) S 17 4242 " + " ".join(["0"] * 8) + " 30 12 0 0")
+    assert fields[0] == "S"
+    assert fields[1] == "17"
+    assert int(fields[11]) + int(fields[12]) == 42
+
+
+@pytest.mark.skipif(not Path("/proc/self/stat").exists(), reason="cần /proc (Linux)")
+def test_cpu_snapshot_follows_children_and_separates_the_main_thread(tmp_path):
+    """Event loop của uvicorn chạy ở luồng chính; endpoint `def` chạy ở threadpool. Số của luồng
+    chính phải là của riêng luồng đó, và process con (worker của --workers N) phải được đếm."""
+    harness = load_harness()
+    script = tmp_path / "busy.py"
+    script.write_text(BUSY)
+    proc = subprocess.Popen([sys.executable, str(script), "parent"])
+    try:
+        time.sleep(0.5)
+        before = harness.cpu_snapshot(proc.pid)
+        t0 = time.perf_counter()
+        time.sleep(1.0)
+        after = harness.cpu_snapshot(proc.pid)
+        wall = time.perf_counter() - t0
+    finally:
+        proc.wait(timeout=15)
+    rows = {r["depth"]: r for r in harness.cpu_busy(before, after, wall)}
+    assert set(rows) == {0, 1}
+    assert rows[0]["main_thread_cpus"] > 0.4
+    assert rows[1]["process_cpus"] > 0.4
+    assert rows[1]["main_thread_cpus"] < 0.2
+
+
+def test_cpu_busy_skips_processes_that_started_after_the_first_snapshot():
+    harness = load_harness()
+    tick = harness.CLK_TCK
+    before = {1: {"comm": "python", "depth": 0, "total": 0, "main": 0}}
+    after = {
+        1: {"comm": "python", "depth": 0, "total": 2 * tick, "main": tick},
+        2: {"comm": "python", "depth": 1, "total": 5 * tick, "main": 5 * tick},
+    }
+    assert harness.cpu_busy(before, after, 2.0) == [
+        {"comm": "python", "depth": 0, "process_cpus": 1.0, "main_thread_cpus": 0.5}
+    ]

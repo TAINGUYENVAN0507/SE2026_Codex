@@ -130,6 +130,76 @@ def run_meeting_ids(db_url: str) -> list[str]:
         engine.dispose()
 
 
+CLK_TCK = os.sysconf("SC_CLK_TCK") if hasattr(os, "sysconf") else 100
+HAS_PROC = Path("/proc/self/stat").exists()
+
+
+def stat_fields(text: str) -> list[str]:
+    """Các trường của /proc/<pid>/stat sau tên process. Tên nằm trong ngoặc và có thể chứa dấu
+    cách hoặc ')', nên tách sau dấu ')' cuối. Phần tử 0 là trường 3 (state) của proc(5)."""
+    return text[text.rindex(")") + 2 :].split()
+
+
+def stat_ticks(path: Path) -> int | None:
+    """utime + stime (tick) của một process hoặc một luồng; None nếu nó đã thoát."""
+    try:
+        f = stat_fields(path.read_text())
+    except (OSError, ValueError):
+        return None
+    return int(f[11]) + int(f[12])  # trường 14 và 15
+
+
+def process_tree(root: int) -> list[tuple[int, int]]:
+    """(pid, độ sâu) của `root` và mọi process con cháu, đọc từ /proc."""
+    children: dict[int, list[int]] = {}
+    for d in Path("/proc").iterdir():
+        if d.name.isdigit():
+            try:
+                ppid = int(stat_fields((d / "stat").read_text())[1])
+            except (OSError, ValueError):
+                continue
+            children.setdefault(ppid, []).append(int(d.name))
+    out, todo = [], [(root, 0)]
+    while todo:
+        pid, depth = todo.pop()
+        out.append((pid, depth))
+        todo.extend((c, depth + 1) for c in children.get(pid, []))
+    return sorted(out)
+
+
+def cpu_snapshot(root: int) -> dict[int, dict]:
+    """Tick CPU của từng process trong cây `root`: cả process (mọi luồng) và riêng luồng chính.
+    Với uvicorn, luồng chính chạy event loop; endpoint `def` chạy ở threadpool, luồng khác."""
+    snap = {}
+    for pid, depth in process_tree(root):
+        total = stat_ticks(Path(f"/proc/{pid}/stat"))
+        main = stat_ticks(Path(f"/proc/{pid}/task/{pid}/stat"))
+        try:
+            comm = Path(f"/proc/{pid}/comm").read_text().strip()
+        except OSError:
+            continue
+        if total is not None and main is not None:
+            snap[pid] = {"comm": comm, "depth": depth, "total": total, "main": main}
+    return snap
+
+
+def cpu_busy(before: dict, after: dict, wall: float) -> list[dict]:
+    """Số CPU trung bình mỗi process dùng giữa hai lần chụp (process có ở cả hai lần)."""
+    wall = max(wall, 1e-9)
+    return [
+        {
+            "comm": after[pid]["comm"],
+            "depth": after[pid]["depth"],
+            "process_cpus": round((after[pid]["total"] - before[pid]["total"]) / CLK_TCK / wall, 2),
+            "main_thread_cpus": round(
+                (after[pid]["main"] - before[pid]["main"]) / CLK_TCK / wall, 2
+            ),
+        }
+        for pid in sorted(after)
+        if pid in before
+    ]
+
+
 def make_wav(path: Path, seconds: int = 3) -> None:
     with wave.open(str(path), "wb") as w:
         w.setnchannels(1)
@@ -316,7 +386,7 @@ def client_run(
                 errors.append(("poll", r.status_code))
 
 
-def run_clients(ids, base, wav, polls, interval, on_ready, on_abort):
+def run_clients(ids, base, wav, polls, interval, on_ready, on_abort, on_uploads_done=None):
     """Chạy các client trong process hiện tại: đăng nhập hết, gọi on_ready (chặn tới lúc thả),
     rồi thả mọi thread cùng lúc. Trả về (rows, errors)."""
     rows: list = []
@@ -358,11 +428,15 @@ def run_clients(ids, base, wav, polls, interval, on_ready, on_abort):
     cpu0, wall0 = time.process_time(), time.perf_counter()
     uploads_done.wait(timeout=600)
     cpu = {"cpu_s": time.process_time() - cpu0, "wall_s": time.perf_counter() - wall0}
+    if on_uploads_done:
+        on_uploads_done()
     [t.join() for t in threads]
     return rows, errors, idle, detail, cpu
 
 
-def child_main(ids, base, wav, polls, interval, login_slots, all_ready, go, results, cpus=None):
+def child_main(
+    ids, base, wav, polls, interval, login_slots, all_ready, go, results, cpus=None, uploaded=None
+):
     """Một process client (--client-procs > 1): mọi process đăng nhập xong mới cùng được thả."""
     global LOGIN_SLOTS
     if cpus:
@@ -373,7 +447,11 @@ def child_main(ids, base, wav, polls, interval, login_slots, all_ready, go, resu
         all_ready.wait()
         go.wait()
 
-    results.put(run_clients(ids, base, wav, polls, interval, on_ready, all_ready.abort))
+    results.put(
+        run_clients(
+            ids, base, wav, polls, interval, on_ready, all_ready.abort, uploaded and uploaded.set
+        )
+    )
 
 
 def main() -> int:
@@ -486,14 +564,35 @@ def main() -> int:
                 snaps["before"] = scrape(base)
             except httpx.HTTPError as e:
                 snaps["error"] = type(e).__name__
+            if HAS_PROC:
+                snaps["cpu_before"] = {
+                    "api": cpu_snapshot(api.pid),
+                    "worker": cpu_snapshot(worker.pid),
+                }
             snaps["t0"] = time.perf_counter()
+
+        def after_uploads() -> None:
+            # Upload cuối của mọi process sinh tải đã xong; pha poll sau đó phần lớn là ngủ.
+            snaps["t_uploads"] = time.perf_counter()
+            if HAS_PROC:
+                snaps["cpu_after"] = {
+                    "api": cpu_snapshot(api.pid),
+                    "worker": cpu_snapshot(worker.pid),
+                }
 
         ids = list(range(args.clients))
         if args.client_procs <= 1:
             if client_cpus:
                 os.sched_setaffinity(0, client_cpus)
             rows, errors, idle, detail, cpu = run_clients(
-                ids, base, wav, args.polls, args.interval, before_release, lambda: None
+                ids,
+                base,
+                wav,
+                args.polls,
+                args.interval,
+                before_release,
+                lambda: None,
+                after_uploads,
             )
             client_cpu = [cpu]
         else:
@@ -502,6 +601,7 @@ def main() -> int:
             go = ctx.Event()
             results = ctx.Queue()
             slots = max(1, LOGIN_CONCURRENCY // args.client_procs)
+            uploaded = [ctx.Event() for _ in range(args.client_procs)]
             procs = [
                 ctx.Process(
                     target=child_main,
@@ -516,6 +616,7 @@ def main() -> int:
                         go,
                         results,
                         client_cpus,
+                        uploaded[k],
                     ),
                 )
                 for k in range(args.client_procs)
@@ -527,6 +628,9 @@ def main() -> int:
             except threading.BrokenBarrierError:
                 pass
             go.set()
+            for event in uploaded:
+                event.wait(timeout=600)
+            after_uploads()
             rows, errors, idle, detail, client_cpu = [], [], [], [], []
             for _ in procs:
                 r, e, i, d, cpu = results.get()
@@ -618,6 +722,21 @@ def main() -> int:
         },
         "meeting_status_at_end": statuses,
         "storage_cleanup": storage_cleanup,
+        # Số CPU từng process API và worker dùng từ lúc thả tới upload cuối; luồng chính của
+        # process uvicorn là event loop, nên main_thread_cpus gần 1,0 là event loop đã bão hòa.
+        "server_cpu": {
+            "wall_s": round(snaps["t_uploads"] - snaps["t0"], 2),
+            **{
+                role: cpu_busy(
+                    snaps["cpu_before"][role],
+                    snaps["cpu_after"][role],
+                    snaps["t_uploads"] - snaps["t0"],
+                )
+                for role in ("api", "worker")
+            },
+        }
+        if "cpu_after" in snaps and "cpu_before" in snaps
+        else {"skipped": "không có /proc (chỉ đo trên Linux)"},
         "verdict": "PASS" if allv and not errors and pct(allv, 0.95) <= args.threshold else "FAIL",
     }
     if "skipped" not in summary["server"]:
@@ -717,6 +836,22 @@ def main() -> int:
             ]
         )
 
+    sc = summary["server_cpu"]
+    server_cpu_md = (
+        "CPU phía server trong pha upload ({} s), process dùng ≥ 0,05 CPU: {}.".format(
+            sc["wall_s"],
+            "; ".join(
+                f"{role} {r['comm']} cấp {r['depth']}: luồng chính {r['main_thread_cpus']}, "
+                f"cả process {r['process_cpus']}"
+                for role in ("api", "worker")
+                for r in sc[role]
+                if r["process_cpus"] >= 0.05
+            )
+            or "không có",
+        )
+        if "skipped" not in sc
+        else f"CPU phía server: {sc['skipped']}."
+    )
     md = f"""# Kết quả tải VT-018 ({args.clients} client đồng thời)
 
 | Loại | n | p50 (s) | p95 (s) | max (s) |
@@ -728,6 +863,8 @@ def main() -> int:
 Mục tiêu p95 ≤ {args.threshold} s: **{summary["verdict"]}**. Lỗi: {summary["errors"]} {summary["error_kinds"] or ""}. Từ lúc thả client tới khi xong: {summary["burst_wall_clock_s"]} s. Process sinh tải: {args.client_procs}.
 Trạng thái meeting khi kết thúc: {statuses}.
 Máy sinh tải dùng trung bình {summary["client_cpu"]["cpus_busy"]} CPU trong pha upload (được dùng {summary["client_cpu"]["cpus_allowed"]}). Ghim CPU: server {args.server_cpus or "không"}, client {args.client_cpus or "không"}.
+
+{server_cpu_md}
 
 Thư mục lưu `appdata/audio` có {storage_cleanup["audio_dirs_at_start"]} thư mục lúc bắt đầu, {storage_cleanup["audio_dirs_at_end"]} lúc kết thúc ({"giữ file của lượt này" if args.keep_audio else f"đã xóa {storage_cleanup['removed_dirs']} thư mục audio và artifact của {storage_cleanup['meetings']} meeting lượt này tạo"}).
 Kết nối nằm rảnh từ lúc đăng nhập tới lúc upload: p50 {summary["idle_before_upload"]["p50_s"]} s, max {summary["idle_before_upload"]["max_s"]} s; {summary["idle_before_upload"]["over_uvicorn_keepalive_5s"]}/{summary["idle_before_upload"]["n"]} quá 5 s (timeout keep-alive mặc định của uvicorn). Lỗi upload chi tiết: `summary.json`, khóa `create_error_detail`.

@@ -1,0 +1,145 @@
+{
+  "clients": 247,
+  "threshold_p95_s": 2.0,
+  "create": {
+    "n": 247,
+    "p50_s": 1.5543,
+    "p95_s": 3.2409,
+    "max_s": 3.2854
+  },
+  "poll": {
+    "n": 1235,
+    "p50_s": 0.0645,
+    "p95_s": 0.6097,
+    "max_s": 0.8904
+  },
+  "all_requests": {
+    "n": 1482,
+    "p50_s": 0.1108,
+    "p95_s": 2.4365,
+    "max_s": 3.2854
+  },
+  "errors": 0,
+  "create_error_detail": [],
+  "idle_before_upload": {
+    "n": 247,
+    "p50_s": 5.3729,
+    "p95_s": 10.4381,
+    "max_s": 10.8331,
+    "over_uvicorn_keepalive_5s": 133
+  },
+  "error_kinds": {},
+  "client_share_within": {
+    "create": {
+      "le_1.5": 0.4858,
+      "le_2.0": 0.5749
+    },
+    "poll": {
+      "le_1.5": 1.0,
+      "le_2.0": 1.0
+    }
+  },
+  "server": {
+    "create": {
+      "n": 247,
+      "mean_s": 1.2556,
+      "p50_in_s": [
+        1.0,
+        1.5
+      ],
+      "p95_in_s": [
+        2.0,
+        2.5
+      ],
+      "le_1.5": 0.5749,
+      "le_2.0": 0.7814
+    },
+    "poll": {
+      "n": 1235,
+      "mean_s": 0.0947,
+      "p50_in_s": [
+        0.05,
+        0.1
+      ],
+      "p95_in_s": [
+        0.5,
+        0.75
+      ],
+      "le_1.5": 1.0,
+      "le_2.0": 1.0
+    },
+    "admission_wait": {
+      "n": 1482,
+      "mean_s": 0.16,
+      "p50_in_s": [
+        0.0,
+        0.001
+      ],
+      "p95_in_s": [
+        0.75,
+        1.0
+      ],
+      "le_1.5": 0.9561,
+      "le_2.0": 1.0
+    }
+  },
+  "burst_wall_clock_s": 13.87,
+  "client_cpu": {
+    "cpu_s": 0.85,
+    "wall_s": 3.31,
+    "cpus_busy": 0.26,
+    "cpus_allowed": 12
+  },
+  "meeting_status_at_end": {
+    "queued": 100
+  },
+  "storage_cleanup": {
+    "audio_dirs_at_start": 22947,
+    "kept": false,
+    "meetings": 247,
+    "removed_dirs": 253,
+    "audio_dirs_at_end": 22947
+  },
+  "server_cpu": {
+    "wall_s": 3.31,
+    "api": [
+      {
+        "comm": "uv",
+        "depth": 0,
+        "process_cpus": 0.0,
+        "main_thread_cpus": 0.0
+      },
+      {
+        "comm": "uvicorn",
+        "depth": 1,
+        "process_cpus": 1.1,
+        "main_thread_cpus": 0.29
+      }
+    ],
+    "worker": [
+      {
+        "comm": "uv",
+        "depth": 0,
+        "process_cpus": 0.0,
+        "main_thread_cpus": 0.0
+      },
+      {
+        "comm": "python",
+        "depth": 1,
+        "process_cpus": 0.02,
+        "main_thread_cpus": 0.02
+      }
+    ]
+  },
+  "verdict": "FAIL",
+  "server_count_vs_client": {
+    "create": {
+      "server": 247,
+      "client": 247
+    },
+    "poll": {
+      "server": 1235,
+      "client": 1235
+    }
+  }
+}
