@@ -1,0 +1,99 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.12.13, pytest-9.1.1, pluggy-1.7.0
+rootdir: D:\kicuoi\SE2026_Codex\backend
+configfile: pyproject.toml
+plugins: anyio-4.15.1, cov-7.1.0
+collected 4 items / 2 deselected / 2 selected
+
+tests\privacy\test_privacy_access_log.py F.                              [100%]
+
+================================== FAILURES ===================================
+_______________ test_real_uvicorn_access_log_no_canary_in_query _______________
+
+    def test_real_uvicorn_access_log_no_canary_in_query() -> None:
+        """Chạy uvicorn thật bằng subprocess với đúng cờ từ compose và Dockerfile.
+    
+        Kiểm tra query string ?q=<canary> và tiêu đề canary không xuất hiện trong stdout/stderr.
+        (AD-018, BE-19).
+        """
+        flags = _extract_uvicorn_flags_from_infra()
+        port = _get_free_port()
+        backend_dir = Path(__file__).resolve().parents[2]
+    
+        cmd = [
+            sys.executable,
+            "-m",
+            "uvicorn",
+            "app.main:create_app",
+            "--factory",
+            "--host",
+            "127.0.0.1",
+            "--port",
+            str(port),
+        ] + flags
+    
+        proc = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            cwd=backend_dir,
+        )
+        try:
+            _wait_for_server(port)
+            with httpx.Client(base_url=f"http://127.0.0.1:{port}", timeout=5.0) as client:
+                client.get(f"/api/v1/meetings?q={CANARY_QUERY}")
+                fake_wav = io.BytesIO(b"RIFF" + b"\x00" * 100)
+                client.post(
+                    "/api/v1/meetings",
+                    data={"title": CANARY_TITLE, "consent_confirmed": "true"},
+                    files={"file": (CANARY_FILENAME, fake_wav, "audio/wav")},
+                )
+        finally:
+            proc.terminate()
+            stdout, stderr = proc.communicate(timeout=5)
+    
+        combined = stdout + stderr
+>       assert CANARY_QUERY not in combined, (
+            f"Uvicorn access log làm rò rỉ query string canary '{CANARY_QUERY}' trong log: {combined}"
+        )
+E       AssertionError: Uvicorn access log làm rò rỉ query string canary 'CANARY_SEARCH_QUERY_PARAM_GHI_666' trong log: INFO:     127.0.0.1:57126 - "GET /api/v1/health HTTP/1.1" 200 OK
+E         INFO:     127.0.0.1:57127 - "GET /api/v1/meetings?q=CANARY_SEARCH_QUERY_PARAM_GHI_666 HTTP/1.1" 401 Unauthorized
+E         INFO:     127.0.0.1:57127 - "POST /api/v1/meetings HTTP/1.1" 401 Unauthorized
+E         INFO:     Started server process [23824]
+E         INFO:     Waiting for application startup.
+E         INFO:     Application startup complete.
+E         INFO:     Uvicorn running on http://127.0.0.1:57120 (Press CTRL+C to quit)
+E         {"timestamp": "2026-11-16T14:04:06.073532+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "ab92ae03-2774-4e43-9f5e-314c2c1dc1ad", "method": "GET", "path": "/api/v1/health", "status_code": 200, "duration_ms": 2.24}
+E         {"timestamp": "2026-11-16T14:04:06.248722+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "b0032995-049d-4161-91a0-23a8cbe8d1d0", "method": "GET", "path": "/api/v1/meetings", "status_code": 401, "duration_ms": 154.46}
+E         {"timestamp": "2026-11-16T14:04:06.255061+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "1f70f2a9-7e14-4747-915d-0efba0637939", "method": "POST", "path": "/api/v1/meetings", "status_code": 401, "duration_ms": 2.6}
+E         
+E       assert 'CANARY_SEAR...ARAM_GHI_666' not in 'INFO:     1..._ms": 2.6}\n'
+E         
+E         'CANARY_SEARCH_QUERY_PARAM_GHI_666' is contained here:
+E           eetings?q=CANARY_SEARCH_QUERY_PARAM_GHI_666 HTTP/1.1" 401 Unauthorized
+E           INFO:     127.0.0.1:57127 - "POST /api/v1/meetings HTTP/1.1" 401 Unauthorized
+E           INFO:     Started server process [23824]
+E           INFO:     Waiting for application startup.
+E           INFO:     Application startup complete....
+E         
+E         ...Full output truncated (4 lines hidden), use '-vv' to show
+
+tests\privacy\test_privacy_access_log.py:288: AssertionError
+---------------------------- Captured stderr call -----------------------------
+{"timestamp": "2026-11-16T14:04:06.074529+00:00", "level": "INFO", "logger": "httpx", "message": "HTTP Request: GET http://127.0.0.1:57120/api/v1/health \"HTTP/1.1 200 OK\"", "request_id": null}
+{"timestamp": "2026-11-16T14:04:06.249725+00:00", "level": "INFO", "logger": "httpx", "message": "HTTP Request: GET http://127.0.0.1:57120/api/v1/meetings?q=CANARY_SEARCH_QUERY_PARAM_GHI_666 \"HTTP/1.1 401 Unauthorized\"", "request_id": null}
+{"timestamp": "2026-11-16T14:04:06.255745+00:00", "level": "INFO", "logger": "httpx", "message": "HTTP Request: POST http://127.0.0.1:57120/api/v1/meetings \"HTTP/1.1 401 Unauthorized\"", "request_id": null}
+------------------------------ Captured log call ------------------------------
+INFO     httpx:_client.py:1025 HTTP Request: GET http://127.0.0.1:57120/api/v1/health "HTTP/1.1 200 OK"
+INFO     httpx:_client.py:1025 HTTP Request: GET http://127.0.0.1:57120/api/v1/meetings?q=CANARY_SEARCH_QUERY_PARAM_GHI_666 "HTTP/1.1 401 Unauthorized"
+INFO     httpx:_client.py:1025 HTTP Request: POST http://127.0.0.1:57120/api/v1/meetings "HTTP/1.1 401 Unauthorized"
+============================== warnings summary ===============================
+.venv\Lib\site-packages\fastapi\testclient.py:1
+  D:\kicuoi\SE2026_Codex\backend\.venv\Lib\site-packages\fastapi\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/privacy/test_privacy_access_log.py::test_real_uvicorn_access_log_no_canary_in_query
+============ 1 failed, 1 passed, 2 deselected, 1 warning in 3.99s =============

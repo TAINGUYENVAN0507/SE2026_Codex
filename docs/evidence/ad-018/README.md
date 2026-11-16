@@ -34,7 +34,7 @@ B lập ngày 2026-11-12 (#54). C sửa ngày 2026-11-13 sau khi review: bản �
 | Log Python của process API (`caplog`) | Canary không có trong log: `test_erasure_removes_canary_from_all_stores_and_logs`, Postgres | `test_delete_me_canary_erased_from_all_stores_and_other_user_intact`, Postgres | Không áp dụng |
 | Log của worker và pipeline | `test_privacy_canary_worker_internal_failure_does_not_log_error_data`; `pipeline/tests/unit/test_privacy_canary.py` | Như bên trái | Không áp dụng |
 | Log đã ghi ra file hoặc của Docker (`json-file`, `max-size: 10m`, `max-file: 3`) | `test_all_compose_services_have_bounded_json_logging` (mọi service trong `docker-compose.yml` đều có giới hạn); `smoke_compose.py` (kiểm tra `docker compose logs api worker` không chứa tiêu đề canary) | Như bên trái | Docker xoay vòng theo dung lượng (`10m` × `3`), **không** theo 28 ngày. |
-| Log access của uvicorn và app.access | SQLite: `test_access_logs_carry_no_personal_data`; ghi đường dẫn có `meeting_id` (UUID, không phải dữ liệu cá nhân), `path` không kèm query string `?q=...`, không log headers/body | Như bên trái | Như trên |
+| Log access của uvicorn và app.access | Từ đầu dự án tới 11-16, uvicorn ghi cả query string (`?q=...`) ra stdout container `api`. Đã sửa: uvicorn dùng cờ `--no-access-log` ở compose và Dockerfile (`test_real_uvicorn_access_log_no_canary_in_query`, `test_uvicorn_access_log_settings_documented_in_infra`). `app.access` ghi method, path (không kèm query), status, duration_ms, request_id (`test_access_logs_carry_no_personal_data`) | Như bên trái | Như trên |
 
 ## Đo test Postgres có bắt được lỗi
 
