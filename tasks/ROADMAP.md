@@ -248,3 +248,15 @@ Bắt đầu sau khi #56 (B) và #57 (A) vào `main` (`1e71c89`, `115c905`). C g
 | C | Test chặn file bằng chứng không phải UTF-8; 40 client: fsync khi commit và ghi audio; 247 client tách CPU máy sinh tải; thời gian phản hồi PR, bản đồ bằng chứng |
 
 Việc chung: A và B comment review PR của nhau trong 18 giờ (không chặn merge), vì 18/23 PR từ 11-06 merge khi chưa có phản hồi của người khác.
+
+### Đợt 10 (giao ngày 2026-11-16: `tasks/2026-11-16/`, sau hạn nộp, mỗi người 5 commit)
+
+Bắt đầu sau khi #60 (A) vào `main` (`544333d`, CI xanh 11/11). #61 (B) chưa merge: A review sau 4,4 giờ, nêu hai điểm. C chạy uvicorn thật và xác nhận access log ghi `?q=<canary>`; đọc code xác nhận smoke Compose báo thành công khi không đọc được log. B sửa trên chính #61.
+
+| Member | Việc |
+|---|---|
+| A | Log nginx không ghi query string; ô tìm cuộc họp gửi `q` lên API thay vì lọc trang đang xem (`MeetingListPage.tsx:35`), có E2E trên API thật; transcript `ready` không có lời nói hiện đúng câu và không poll |
+| B | Trên #61: tắt access log của uvicorn, có test chạy uvicorn thật; smoke Compose lỗi khi không đọc được log, và tìm theo tiêu đề canary; `segment_count`, `speaking_time_sec` luôn bằng 0 ở transcript và meeting detail |
+| C | Harness dọn file của meeting nó tạo; CPU của event loop ở 247 client, 1 và 4 process; 40 client thư mục đầy và rỗng, đổi thứ tự; thời gian phản hồi PR, bản đồ bằng chứng |
+
+Thứ tự merge: #61 trước PR của A, vì A cho giao diện gửi tiêu đề tìm kiếm qua `?q=`.
