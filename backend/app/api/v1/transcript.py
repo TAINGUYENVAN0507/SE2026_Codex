@@ -70,6 +70,15 @@ def get_meeting_transcript(
             .all()
         )
 
+        speaker_stats: dict[str, dict[str, float | int]] = {
+            spk.id: {"count": 0, "time": 0.0} for spk in speakers
+        }
+        for seg in segments:
+            if seg.speaker_id and seg.speaker_id in speaker_stats:
+                speaker_stats[seg.speaker_id]["count"] += 1
+                dur = max(0.0, (seg.end_sec or 0.0) - (seg.start_sec or 0.0))
+                speaker_stats[seg.speaker_id]["time"] += dur
+
         speakers_out = [
             SpeakerOut(
                 id=spk.id,
@@ -79,8 +88,8 @@ def get_meeting_transcript(
                 display_name=spk.display_name,
                 is_edited=spk.display_name != spk.default_name,
                 color_index=idx % 10,
-                segment_count=0,
-                speaking_time_sec=0.0,
+                segment_count=int(speaker_stats[spk.id]["count"]),
+                speaking_time_sec=round(float(speaker_stats[spk.id]["time"]), 2),
                 version=spk.version,
             )
             for idx, spk in enumerate(speakers)

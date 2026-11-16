@@ -24,7 +24,7 @@ from app.db.base import Base
 from app.db.models.idempotency import IdempotencyKey
 from app.db.models.job import Job
 from app.db.models.meeting import Meeting
-from app.db.models.transcript import Speaker
+from app.db.models.transcript import Segment, Speaker
 from app.db.models.user import User
 from app.db.session import get_db
 from app.main import create_app
@@ -44,6 +44,7 @@ def test_db() -> Generator[Session, None, None]:
         Job.__table__,
         IdempotencyKey.__table__,
         Speaker.__table__,
+        Segment.__table__,
     ]
     Base.metadata.create_all(bind=engine, tables=tables)
     session_factory = sessionmaker(autocommit=False, autoflush=False, bind=engine)

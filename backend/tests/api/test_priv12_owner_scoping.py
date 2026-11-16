@@ -13,7 +13,7 @@ from app.core.security import create_access_token, hash_password
 from app.db.base import Base
 from app.db.models.job import Job
 from app.db.models.meeting import Meeting
-from app.db.models.transcript import Speaker
+from app.db.models.transcript import Segment, Speaker
 from app.db.models.user import User
 from app.db.session import get_db
 from app.main import create_app
@@ -27,7 +27,13 @@ def test_db() -> Generator[Session, None, None]:
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
-    tables = [User.__table__, Meeting.__table__, Job.__table__, Speaker.__table__]
+    tables = [
+        User.__table__,
+        Meeting.__table__,
+        Job.__table__,
+        Speaker.__table__,
+        Segment.__table__,
+    ]
     Base.metadata.create_all(bind=engine, tables=tables)
     session_factory = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     session = session_factory()
