@@ -21,6 +21,9 @@ Giới hạn của phép đo (cũng được ghi vào summary.md):
 --server-cpus và --client-cpus (Linux) ghim API, worker và các process sinh tải vào hai tập CPU
 riêng, để tách phần chậm do máy sinh tải tranh CPU với server. Postgres chạy ngoài harness nên
 phải ghim riêng (taskset). summary.json ghi số CPU mà máy sinh tải thật sự dùng trong lúc đo.
+
+Sau mỗi lượt, harness xóa audio/ và artifacts/ của các meeting lượt đó tạo (--keep-audio để giữ).
+Trước 11-16 harness không dọn, nên thư mục lưu lớn dần qua các lượt (22.947 thư mục ngày 11-16).
 """
 
 from __future__ import annotations
@@ -31,6 +34,7 @@ import json
 import multiprocessing as mp
 import os
 import platform
+import shutil
 import statistics
 import subprocess
 import sys
@@ -45,6 +49,9 @@ import httpx
 from prometheus_client.parser import text_string_to_metric_families
 
 BACKEND = Path(__file__).resolve().parent.parent
+# Thư mục lưu mặc định của LocalStorage (app/services/storage/local.py:35), API và worker của
+# harness dùng nó vì không có biến môi trường đổi được; test khóa hai đường dẫn bằng nhau.
+STORAGE = BACKEND / "appdata"
 PASSWORD = "LoadTest!2026"
 LOGIN_CONCURRENCY = 8  # chia đều cho các process client
 LOGIN_SLOTS = threading.Semaphore(LOGIN_CONCURRENCY)
@@ -78,6 +85,49 @@ def pin_to(cpus: set[int] | None):
     if not cpus:
         return None
     return lambda: os.sched_setaffinity(0, cpus)
+
+
+def count_dirs(path: Path) -> int:
+    """Số thư mục con trực tiếp của `path`; 0 nếu chưa có."""
+    try:
+        with os.scandir(path) as entries:
+            return sum(1 for e in entries if e.is_dir(follow_symlinks=False))
+    except FileNotFoundError:
+        return 0
+
+
+def remove_run_files(storage: Path, meeting_ids) -> int:
+    """Xóa `audio/<id>` và `artifacts/<id>` của các meeting một lượt đo đã tạo; trả về số thư mục
+    đã xóa. Kiểm mọi id trước khi xóa: id nào không đúng dạng UUID thì không xóa gì cả."""
+    ids = [str(i) for i in meeting_ids]
+    for i in ids:
+        try:
+            ok = str(uuid.UUID(i)) == i
+        except ValueError:
+            ok = False
+        if not ok:
+            raise ValueError(f"id meeting không phải UUID: {i!r}")
+    removed = 0
+    for i in ids:
+        for sub in ("audio", "artifacts"):
+            d = storage / sub / i
+            if d.is_dir() and not d.is_symlink():
+                shutil.rmtree(d)
+                removed += 1
+    return removed
+
+
+def run_meeting_ids(db_url: str) -> list[str]:
+    """Id các meeting trong DB của lượt đo. Harness tạo lại schema đầu mỗi lượt, nên đây đúng là
+    các meeting lượt này tạo."""
+    from sqlalchemy import create_engine, text
+
+    engine = create_engine(db_url)
+    try:
+        with engine.connect() as conn:
+            return [str(r[0]) for r in conn.execute(text("select id from meetings"))]
+    finally:
+        engine.dispose()
 
 
 def make_wav(path: Path, seconds: int = 3) -> None:
@@ -346,6 +396,11 @@ def main() -> int:
     )
     ap.add_argument("--server-cpus", help="ghim API và worker, ví dụ 0-3,6-9 (Linux)")
     ap.add_argument("--client-cpus", help="ghim các process sinh tải, ví dụ 4,5,10,11 (Linux)")
+    ap.add_argument(
+        "--keep-audio",
+        action="store_true",
+        help="giữ audio/ và artifacts/ của các meeting lượt đo tạo (mặc định xóa sau lượt)",
+    )
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
     server_cpus = parse_cpus(args.server_cpus)
@@ -353,6 +408,8 @@ def main() -> int:
     check_disjoint(server_cpus, client_cpus)
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
+    # Thư mục audio có sẵn lúc bắt đầu: ở 40 client, thư mục đầy chậm hơn thư mục rỗng (11-15).
+    audio_dirs_at_start = count_dirs(STORAGE / "audio")
     tmp = Path(tempfile.mkdtemp())
     prom_dir = tmp / "prometheus"
     prom_dir.mkdir()
@@ -508,6 +565,14 @@ def main() -> int:
         api.wait(timeout=15)
         worker.wait(timeout=15)
 
+    # Worker đã dừng nên không còn ghi artifact. Lượt lỗi giữa chừng không tới đây và để lại file.
+    storage_cleanup = {"audio_dirs_at_start": audio_dirs_at_start, "kept": args.keep_audio}
+    if not args.keep_audio:
+        meeting_ids = run_meeting_ids(args.db)
+        storage_cleanup["meetings"] = len(meeting_ids)
+        storage_cleanup["removed_dirs"] = remove_run_files(STORAGE, meeting_ids)
+    storage_cleanup["audio_dirs_at_end"] = count_dirs(STORAGE / "audio")
+
     with (out / "raw.csv").open("w", newline="") as f:
         w = csv.writer(f)
         w.writerow(["kind", "status", "latency_s"])
@@ -552,6 +617,7 @@ def main() -> int:
             "cpus_allowed": len(client_cpus) if client_cpus else os.cpu_count(),
         },
         "meeting_status_at_end": statuses,
+        "storage_cleanup": storage_cleanup,
         "verdict": "PASS" if allv and not errors and pct(allv, 0.95) <= args.threshold else "FAIL",
     }
     if "skipped" not in summary["server"]:
@@ -662,6 +728,8 @@ def main() -> int:
 Mục tiêu p95 ≤ {args.threshold} s: **{summary["verdict"]}**. Lỗi: {summary["errors"]} {summary["error_kinds"] or ""}. Từ lúc thả client tới khi xong: {summary["burst_wall_clock_s"]} s. Process sinh tải: {args.client_procs}.
 Trạng thái meeting khi kết thúc: {statuses}.
 Máy sinh tải dùng trung bình {summary["client_cpu"]["cpus_busy"]} CPU trong pha upload (được dùng {summary["client_cpu"]["cpus_allowed"]}). Ghim CPU: server {args.server_cpus or "không"}, client {args.client_cpus or "không"}.
+
+Thư mục lưu `appdata/audio` có {storage_cleanup["audio_dirs_at_start"]} thư mục lúc bắt đầu, {storage_cleanup["audio_dirs_at_end"]} lúc kết thúc ({"giữ file của lượt này" if args.keep_audio else f"đã xóa {storage_cleanup['removed_dirs']} thư mục audio và artifact của {storage_cleanup['meetings']} meeting lượt này tạo"}).
 Kết nối nằm rảnh từ lúc đăng nhập tới lúc upload: p50 {summary["idle_before_upload"]["p50_s"]} s, max {summary["idle_before_upload"]["max_s"]} s; {summary["idle_before_upload"]["over_uvicorn_keepalive_5s"]}/{summary["idle_before_upload"]["n"]} quá 5 s (timeout keep-alive mặc định của uvicorn). Lỗi upload chi tiết: `summary.json`, khóa `create_error_detail`.
 
 ## Phía server (`/metrics`, hiệu giữa lúc thả barrier và lúc mọi client xong)

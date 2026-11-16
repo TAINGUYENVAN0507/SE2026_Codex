@@ -103,3 +103,63 @@ def test_run_clients_without_clients_does_not_wait_for_uploads():
     assert (rows, errors, idle, detail) == ([], [], [], [])
     assert set(cpu) == {"cpu_s", "wall_s"}
     assert cpu["wall_s"] < 5
+
+
+A = "0004a7b3-4ce7-4846-adb6-ef15c6a75c80"
+B = "0006dd31-5530-4095-a18a-2771ce8f4184"
+OTHER = "00084d5c-4f2b-4c9e-8a43-2d7e9c1f0b11"
+
+
+def make_meeting_dirs(storage: Path, ids: list[str], subs=("audio", "artifacts")) -> None:
+    for i in ids:
+        for sub in subs:
+            (storage / sub / i).mkdir(parents=True)
+            (storage / sub / i / "original.wav").write_bytes(b"RIFF")
+
+
+def test_remove_run_files_deletes_only_the_meetings_of_the_run(tmp_path):
+    """Harness không dọn file sau mỗi lượt nên thư mục lưu của máy đo lên 22.947 thư mục (11-16)."""
+    harness = load_harness()
+    make_meeting_dirs(tmp_path, [A, OTHER])
+    make_meeting_dirs(tmp_path, [B], subs=("audio",))
+    assert harness.remove_run_files(tmp_path, [A, B]) == 3
+    assert sorted(p.name for p in (tmp_path / "audio").iterdir()) == [OTHER]
+    assert sorted(p.name for p in (tmp_path / "artifacts").iterdir()) == [OTHER]
+    assert harness.count_dirs(tmp_path / "audio") == 1
+
+
+@pytest.mark.parametrize("bad", ["..", "../audio", "", A.upper(), A.replace("-", ""), f"{{{A}}}"])
+def test_remove_run_files_checks_every_id_before_deleting(tmp_path, bad):
+    """Một id không đúng dạng UUID của DB thì không xóa gì, kể cả các id hợp lệ đứng trước."""
+    harness = load_harness()
+    make_meeting_dirs(tmp_path, [A])
+    with pytest.raises(ValueError, match="không phải UUID"):
+        harness.remove_run_files(tmp_path, [A, bad])
+    assert (tmp_path / "audio" / A / "original.wav").exists()
+    assert (tmp_path / "artifacts" / A).is_dir()
+
+
+def test_remove_run_files_does_not_follow_a_symlinked_meeting_dir(tmp_path):
+    harness = load_harness()
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (outside / "keep.txt").write_text("x")
+    (tmp_path / "store" / "audio").mkdir(parents=True)
+    (tmp_path / "store" / "audio" / A).symlink_to(outside, target_is_directory=True)
+    assert harness.remove_run_files(tmp_path / "store", [A]) == 0
+    assert (outside / "keep.txt").exists()
+
+
+def test_count_dirs_counts_subdirectories_only(tmp_path):
+    harness = load_harness()
+    assert harness.count_dirs(tmp_path / "chua-co") == 0
+    make_meeting_dirs(tmp_path, [A, B], subs=("audio",))
+    (tmp_path / "audio" / "note.txt").write_text("x")
+    assert harness.count_dirs(tmp_path / "audio") == 2
+
+
+def test_harness_storage_is_where_the_app_writes():
+    """Harness xóa trong đúng thư mục API và worker ghi (LocalStorage mặc định)."""
+    from app.services.storage.local import LocalStorage
+
+    assert LocalStorage().base_dir == load_harness().STORAGE
