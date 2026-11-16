@@ -21,6 +21,9 @@ Giới hạn của phép đo (cũng được ghi vào summary.md):
 --server-cpus và --client-cpus (Linux) ghim API, worker và các process sinh tải vào hai tập CPU
 riêng, để tách phần chậm do máy sinh tải tranh CPU với server. Postgres chạy ngoài harness nên
 phải ghim riêng (taskset). summary.json ghi số CPU mà máy sinh tải thật sự dùng trong lúc đo.
+
+Sau mỗi lượt, harness xóa audio/ và artifacts/ của các meeting lượt đó tạo (--keep-audio để giữ).
+Trước 11-16 harness không dọn, nên thư mục lưu lớn dần qua các lượt (22.947 thư mục ngày 11-16).
 """
 
 from __future__ import annotations
@@ -31,6 +34,7 @@ import json
 import multiprocessing as mp
 import os
 import platform
+import shutil
 import statistics
 import subprocess
 import sys
@@ -45,6 +49,9 @@ import httpx
 from prometheus_client.parser import text_string_to_metric_families
 
 BACKEND = Path(__file__).resolve().parent.parent
+# Thư mục lưu mặc định của LocalStorage (app/services/storage/local.py:35), API và worker của
+# harness dùng nó vì không có biến môi trường đổi được; test khóa hai đường dẫn bằng nhau.
+STORAGE = BACKEND / "appdata"
 PASSWORD = "LoadTest!2026"
 LOGIN_CONCURRENCY = 8  # chia đều cho các process client
 LOGIN_SLOTS = threading.Semaphore(LOGIN_CONCURRENCY)
@@ -80,6 +87,119 @@ def pin_to(cpus: set[int] | None):
     return lambda: os.sched_setaffinity(0, cpus)
 
 
+def count_dirs(path: Path) -> int:
+    """Số thư mục con trực tiếp của `path`; 0 nếu chưa có."""
+    try:
+        with os.scandir(path) as entries:
+            return sum(1 for e in entries if e.is_dir(follow_symlinks=False))
+    except FileNotFoundError:
+        return 0
+
+
+def remove_run_files(storage: Path, meeting_ids) -> int:
+    """Xóa `audio/<id>` và `artifacts/<id>` của các meeting một lượt đo đã tạo; trả về số thư mục
+    đã xóa. Kiểm mọi id trước khi xóa: id nào không đúng dạng UUID thì không xóa gì cả."""
+    ids = [str(i) for i in meeting_ids]
+    for i in ids:
+        try:
+            ok = str(uuid.UUID(i)) == i
+        except ValueError:
+            ok = False
+        if not ok:
+            raise ValueError(f"id meeting không phải UUID: {i!r}")
+    removed = 0
+    for i in ids:
+        for sub in ("audio", "artifacts"):
+            d = storage / sub / i
+            if d.is_dir() and not d.is_symlink():
+                shutil.rmtree(d)
+                removed += 1
+    return removed
+
+
+def run_meeting_ids(db_url: str) -> list[str]:
+    """Id các meeting trong DB của lượt đo. Harness tạo lại schema đầu mỗi lượt, nên đây đúng là
+    các meeting lượt này tạo."""
+    from sqlalchemy import create_engine, text
+
+    engine = create_engine(db_url)
+    try:
+        with engine.connect() as conn:
+            return [str(r[0]) for r in conn.execute(text("select id from meetings"))]
+    finally:
+        engine.dispose()
+
+
+CLK_TCK = os.sysconf("SC_CLK_TCK") if hasattr(os, "sysconf") else 100
+HAS_PROC = Path("/proc/self/stat").exists()
+
+
+def stat_fields(text: str) -> list[str]:
+    """Các trường của /proc/<pid>/stat sau tên process. Tên nằm trong ngoặc và có thể chứa dấu
+    cách hoặc ')', nên tách sau dấu ')' cuối. Phần tử 0 là trường 3 (state) của proc(5)."""
+    return text[text.rindex(")") + 2 :].split()
+
+
+def stat_ticks(path: Path) -> int | None:
+    """utime + stime (tick) của một process hoặc một luồng; None nếu nó đã thoát."""
+    try:
+        f = stat_fields(path.read_text())
+    except (OSError, ValueError):
+        return None
+    return int(f[11]) + int(f[12])  # trường 14 và 15
+
+
+def process_tree(root: int) -> list[tuple[int, int]]:
+    """(pid, độ sâu) của `root` và mọi process con cháu, đọc từ /proc."""
+    children: dict[int, list[int]] = {}
+    for d in Path("/proc").iterdir():
+        if d.name.isdigit():
+            try:
+                ppid = int(stat_fields((d / "stat").read_text())[1])
+            except (OSError, ValueError):
+                continue
+            children.setdefault(ppid, []).append(int(d.name))
+    out, todo = [], [(root, 0)]
+    while todo:
+        pid, depth = todo.pop()
+        out.append((pid, depth))
+        todo.extend((c, depth + 1) for c in children.get(pid, []))
+    return sorted(out)
+
+
+def cpu_snapshot(root: int) -> dict[int, dict]:
+    """Tick CPU của từng process trong cây `root`: cả process (mọi luồng) và riêng luồng chính.
+    Với uvicorn, luồng chính chạy event loop; endpoint `def` chạy ở threadpool, luồng khác."""
+    snap = {}
+    for pid, depth in process_tree(root):
+        total = stat_ticks(Path(f"/proc/{pid}/stat"))
+        main = stat_ticks(Path(f"/proc/{pid}/task/{pid}/stat"))
+        try:
+            comm = Path(f"/proc/{pid}/comm").read_text().strip()
+        except OSError:
+            continue
+        if total is not None and main is not None:
+            snap[pid] = {"comm": comm, "depth": depth, "total": total, "main": main}
+    return snap
+
+
+def cpu_busy(before: dict, after: dict, wall: float) -> list[dict]:
+    """Số CPU trung bình mỗi process dùng giữa hai lần chụp (process có ở cả hai lần)."""
+    wall = max(wall, 1e-9)
+    return [
+        {
+            "comm": after[pid]["comm"],
+            "depth": after[pid]["depth"],
+            "process_cpus": round((after[pid]["total"] - before[pid]["total"]) / CLK_TCK / wall, 2),
+            "main_thread_cpus": round(
+                (after[pid]["main"] - before[pid]["main"]) / CLK_TCK / wall, 2
+            ),
+        }
+        for pid in sorted(after)
+        if pid in before
+    ]
+
+
 def make_wav(path: Path, seconds: int = 3) -> None:
     with wave.open(str(path), "wb") as w:
         w.setnchannels(1)
@@ -91,6 +211,20 @@ def make_wav(path: Path, seconds: int = 3) -> None:
 def pct(values: list[float], q: float) -> float:
     s = sorted(values)
     return s[min(len(s) - 1, max(0, int(round(q * len(s) + 0.5)) - 1))] if s else float("nan")
+
+
+def verdicts(rows, errors, threshold: float) -> dict:
+    """Kết luận theo p95. `all` gộp upload và poll (khóa `verdict` từ trước, quyết định exit code);
+    `upload` chỉ tính `POST /meetings`, là số các README dùng để kết luận. Ở 247 client, poll nhanh
+    chiếm 5/6 số request, nên `all` có thể PASS khi p95 upload trên mốc (11-16, lượt p1-2)."""
+
+    def one(kinds, failed: bool) -> str:
+        ok = [d for k, st, d in rows if k in kinds and st < 400]
+        return "PASS" if ok and not failed and pct(ok, 0.95) <= threshold else "FAIL"
+
+    # Lỗi kết nối không có dòng trong `rows`, chỉ có trong `errors`; đăng nhập lỗi thì lượt bị hủy.
+    upload_failed = any(k in ("create", "login") for k, _ in errors)
+    return {"all": one(("create", "poll"), bool(errors)), "upload": one(("create",), upload_failed)}
 
 
 def stats(values: list[float]) -> dict:
@@ -266,7 +400,7 @@ def client_run(
                 errors.append(("poll", r.status_code))
 
 
-def run_clients(ids, base, wav, polls, interval, on_ready, on_abort):
+def run_clients(ids, base, wav, polls, interval, on_ready, on_abort, on_uploads_done=None):
     """Chạy các client trong process hiện tại: đăng nhập hết, gọi on_ready (chặn tới lúc thả),
     rồi thả mọi thread cùng lúc. Trả về (rows, errors)."""
     rows: list = []
@@ -308,11 +442,15 @@ def run_clients(ids, base, wav, polls, interval, on_ready, on_abort):
     cpu0, wall0 = time.process_time(), time.perf_counter()
     uploads_done.wait(timeout=600)
     cpu = {"cpu_s": time.process_time() - cpu0, "wall_s": time.perf_counter() - wall0}
+    if on_uploads_done:
+        on_uploads_done()
     [t.join() for t in threads]
     return rows, errors, idle, detail, cpu
 
 
-def child_main(ids, base, wav, polls, interval, login_slots, all_ready, go, results, cpus=None):
+def child_main(
+    ids, base, wav, polls, interval, login_slots, all_ready, go, results, cpus=None, uploaded=None
+):
     """Một process client (--client-procs > 1): mọi process đăng nhập xong mới cùng được thả."""
     global LOGIN_SLOTS
     if cpus:
@@ -323,7 +461,11 @@ def child_main(ids, base, wav, polls, interval, login_slots, all_ready, go, resu
         all_ready.wait()
         go.wait()
 
-    results.put(run_clients(ids, base, wav, polls, interval, on_ready, all_ready.abort))
+    results.put(
+        run_clients(
+            ids, base, wav, polls, interval, on_ready, all_ready.abort, uploaded and uploaded.set
+        )
+    )
 
 
 def main() -> int:
@@ -346,6 +488,11 @@ def main() -> int:
     )
     ap.add_argument("--server-cpus", help="ghim API và worker, ví dụ 0-3,6-9 (Linux)")
     ap.add_argument("--client-cpus", help="ghim các process sinh tải, ví dụ 4,5,10,11 (Linux)")
+    ap.add_argument(
+        "--keep-audio",
+        action="store_true",
+        help="giữ audio/ và artifacts/ của các meeting lượt đo tạo (mặc định xóa sau lượt)",
+    )
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
     server_cpus = parse_cpus(args.server_cpus)
@@ -353,6 +500,8 @@ def main() -> int:
     check_disjoint(server_cpus, client_cpus)
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
+    # Thư mục audio có sẵn lúc bắt đầu: ở 40 client, thư mục đầy chậm hơn thư mục rỗng (11-15).
+    audio_dirs_at_start = count_dirs(STORAGE / "audio")
     tmp = Path(tempfile.mkdtemp())
     prom_dir = tmp / "prometheus"
     prom_dir.mkdir()
@@ -429,14 +578,35 @@ def main() -> int:
                 snaps["before"] = scrape(base)
             except httpx.HTTPError as e:
                 snaps["error"] = type(e).__name__
+            if HAS_PROC:
+                snaps["cpu_before"] = {
+                    "api": cpu_snapshot(api.pid),
+                    "worker": cpu_snapshot(worker.pid),
+                }
             snaps["t0"] = time.perf_counter()
+
+        def after_uploads() -> None:
+            # Upload cuối của mọi process sinh tải đã xong; pha poll sau đó phần lớn là ngủ.
+            snaps["t_uploads"] = time.perf_counter()
+            if HAS_PROC:
+                snaps["cpu_after"] = {
+                    "api": cpu_snapshot(api.pid),
+                    "worker": cpu_snapshot(worker.pid),
+                }
 
         ids = list(range(args.clients))
         if args.client_procs <= 1:
             if client_cpus:
                 os.sched_setaffinity(0, client_cpus)
             rows, errors, idle, detail, cpu = run_clients(
-                ids, base, wav, args.polls, args.interval, before_release, lambda: None
+                ids,
+                base,
+                wav,
+                args.polls,
+                args.interval,
+                before_release,
+                lambda: None,
+                after_uploads,
             )
             client_cpu = [cpu]
         else:
@@ -445,6 +615,7 @@ def main() -> int:
             go = ctx.Event()
             results = ctx.Queue()
             slots = max(1, LOGIN_CONCURRENCY // args.client_procs)
+            uploaded = [ctx.Event() for _ in range(args.client_procs)]
             procs = [
                 ctx.Process(
                     target=child_main,
@@ -459,6 +630,7 @@ def main() -> int:
                         go,
                         results,
                         client_cpus,
+                        uploaded[k],
                     ),
                 )
                 for k in range(args.client_procs)
@@ -470,6 +642,9 @@ def main() -> int:
             except threading.BrokenBarrierError:
                 pass
             go.set()
+            for event in uploaded:
+                event.wait(timeout=600)
+            after_uploads()
             rows, errors, idle, detail, client_cpu = [], [], [], [], []
             for _ in procs:
                 r, e, i, d, cpu = results.get()
@@ -507,6 +682,14 @@ def main() -> int:
         worker.terminate()
         api.wait(timeout=15)
         worker.wait(timeout=15)
+
+    # Worker đã dừng nên không còn ghi artifact. Lượt lỗi giữa chừng không tới đây và để lại file.
+    storage_cleanup = {"audio_dirs_at_start": audio_dirs_at_start, "kept": args.keep_audio}
+    if not args.keep_audio:
+        meeting_ids = run_meeting_ids(args.db)
+        storage_cleanup["meetings"] = len(meeting_ids)
+        storage_cleanup["removed_dirs"] = remove_run_files(STORAGE, meeting_ids)
+    storage_cleanup["audio_dirs_at_end"] = count_dirs(STORAGE / "audio")
 
     with (out / "raw.csv").open("w", newline="") as f:
         w = csv.writer(f)
@@ -552,7 +735,24 @@ def main() -> int:
             "cpus_allowed": len(client_cpus) if client_cpus else os.cpu_count(),
         },
         "meeting_status_at_end": statuses,
-        "verdict": "PASS" if allv and not errors and pct(allv, 0.95) <= args.threshold else "FAIL",
+        "storage_cleanup": storage_cleanup,
+        # Số CPU từng process API và worker dùng từ lúc thả tới upload cuối; luồng chính của
+        # process uvicorn là event loop, nên main_thread_cpus gần 1,0 là event loop đã bão hòa.
+        "server_cpu": {
+            "wall_s": round(snaps["t_uploads"] - snaps["t0"], 2),
+            **{
+                role: cpu_busy(
+                    snaps["cpu_before"][role],
+                    snaps["cpu_after"][role],
+                    snaps["t_uploads"] - snaps["t0"],
+                )
+                for role in ("api", "worker")
+            },
+        }
+        if "cpu_after" in snaps and "cpu_before" in snaps
+        else {"skipped": "không có /proc (chỉ đo trên Linux)"},
+        "verdict": verdicts(rows, errors, args.threshold)["all"],
+        "verdict_upload": verdicts(rows, errors, args.threshold)["upload"],
     }
     if "skipped" not in summary["server"]:
         # Server đếm đủ request của mọi process thì hai số này bằng nhau (BE-19, #48).
@@ -651,6 +851,22 @@ def main() -> int:
             ]
         )
 
+    sc = summary["server_cpu"]
+    server_cpu_md = (
+        "CPU phía server trong pha upload ({} s), process dùng ≥ 0,05 CPU: {}.".format(
+            sc["wall_s"],
+            "; ".join(
+                f"{role} {r['comm']} cấp {r['depth']}: luồng chính {r['main_thread_cpus']}, "
+                f"cả process {r['process_cpus']}"
+                for role in ("api", "worker")
+                for r in sc[role]
+                if r["process_cpus"] >= 0.05
+            )
+            or "không có",
+        )
+        if "skipped" not in sc
+        else f"CPU phía server: {sc['skipped']}."
+    )
     md = f"""# Kết quả tải VT-018 ({args.clients} client đồng thời)
 
 | Loại | n | p50 (s) | p95 (s) | max (s) |
@@ -659,9 +875,13 @@ def main() -> int:
 | poll trạng thái job | {summary["poll"]["n"]} | {summary["poll"]["p50_s"]} | {summary["poll"]["p95_s"]} | {summary["poll"]["max_s"]} |
 | **tất cả** | {summary["all_requests"]["n"]} | {summary["all_requests"]["p50_s"]} | **{summary["all_requests"]["p95_s"]}** | {summary["all_requests"]["max_s"]} |
 
-Mục tiêu p95 ≤ {args.threshold} s: **{summary["verdict"]}**. Lỗi: {summary["errors"]} {summary["error_kinds"] or ""}. Từ lúc thả client tới khi xong: {summary["burst_wall_clock_s"]} s. Process sinh tải: {args.client_procs}.
+Mục tiêu p95 ≤ {args.threshold} s: upload **{summary["verdict_upload"]}** (p95 upload {summary["create"]["p95_s"]} s); mọi request gộp upload và poll **{summary["verdict"]}** (exit code theo số này). Lỗi: {summary["errors"]} {summary["error_kinds"] or ""}. Từ lúc thả client tới khi xong: {summary["burst_wall_clock_s"]} s. Process sinh tải: {args.client_procs}.
 Trạng thái meeting khi kết thúc: {statuses}.
 Máy sinh tải dùng trung bình {summary["client_cpu"]["cpus_busy"]} CPU trong pha upload (được dùng {summary["client_cpu"]["cpus_allowed"]}). Ghim CPU: server {args.server_cpus or "không"}, client {args.client_cpus or "không"}.
+
+{server_cpu_md}
+
+Thư mục lưu `appdata/audio` có {storage_cleanup["audio_dirs_at_start"]} thư mục lúc bắt đầu, {storage_cleanup["audio_dirs_at_end"]} lúc kết thúc ({"giữ file của lượt này" if args.keep_audio else f"đã xóa {storage_cleanup['removed_dirs']} thư mục audio và artifact của {storage_cleanup['meetings']} meeting lượt này tạo"}).
 Kết nối nằm rảnh từ lúc đăng nhập tới lúc upload: p50 {summary["idle_before_upload"]["p50_s"]} s, max {summary["idle_before_upload"]["max_s"]} s; {summary["idle_before_upload"]["over_uvicorn_keepalive_5s"]}/{summary["idle_before_upload"]["n"]} quá 5 s (timeout keep-alive mặc định của uvicorn). Lỗi upload chi tiết: `summary.json`, khóa `create_error_detail`.
 
 ## Phía server (`/metrics`, hiệu giữa lúc thả barrier và lúc mọi client xong)

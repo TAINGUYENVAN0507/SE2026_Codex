@@ -12,6 +12,7 @@ import inspect
 import os
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 import pytest
@@ -103,3 +104,148 @@ def test_run_clients_without_clients_does_not_wait_for_uploads():
     assert (rows, errors, idle, detail) == ([], [], [], [])
     assert set(cpu) == {"cpu_s", "wall_s"}
     assert cpu["wall_s"] < 5
+
+
+A = "0004a7b3-4ce7-4846-adb6-ef15c6a75c80"
+B = "0006dd31-5530-4095-a18a-2771ce8f4184"
+OTHER = "00084d5c-4f2b-4c9e-8a43-2d7e9c1f0b11"
+
+
+def make_meeting_dirs(storage: Path, ids: list[str], subs=("audio", "artifacts")) -> None:
+    for i in ids:
+        for sub in subs:
+            (storage / sub / i).mkdir(parents=True)
+            (storage / sub / i / "original.wav").write_bytes(b"RIFF")
+
+
+def test_remove_run_files_deletes_only_the_meetings_of_the_run(tmp_path):
+    """Harness không dọn file sau mỗi lượt nên thư mục lưu của máy đo lên 22.947 thư mục (11-16)."""
+    harness = load_harness()
+    make_meeting_dirs(tmp_path, [A, OTHER])
+    make_meeting_dirs(tmp_path, [B], subs=("audio",))
+    assert harness.remove_run_files(tmp_path, [A, B]) == 3
+    assert sorted(p.name for p in (tmp_path / "audio").iterdir()) == [OTHER]
+    assert sorted(p.name for p in (tmp_path / "artifacts").iterdir()) == [OTHER]
+    assert harness.count_dirs(tmp_path / "audio") == 1
+
+
+@pytest.mark.parametrize("bad", ["..", "../audio", "", A.upper(), A.replace("-", ""), f"{{{A}}}"])
+def test_remove_run_files_checks_every_id_before_deleting(tmp_path, bad):
+    """Một id không đúng dạng UUID của DB thì không xóa gì, kể cả các id hợp lệ đứng trước."""
+    harness = load_harness()
+    make_meeting_dirs(tmp_path, [A])
+    with pytest.raises(ValueError, match="không phải UUID"):
+        harness.remove_run_files(tmp_path, [A, bad])
+    assert (tmp_path / "audio" / A / "original.wav").exists()
+    assert (tmp_path / "artifacts" / A).is_dir()
+
+
+def test_remove_run_files_does_not_follow_a_symlinked_meeting_dir(tmp_path):
+    harness = load_harness()
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (outside / "keep.txt").write_text("x")
+    (tmp_path / "store" / "audio").mkdir(parents=True)
+    (tmp_path / "store" / "audio" / A).symlink_to(outside, target_is_directory=True)
+    assert harness.remove_run_files(tmp_path / "store", [A]) == 0
+    assert (outside / "keep.txt").exists()
+
+
+def test_count_dirs_counts_subdirectories_only(tmp_path):
+    harness = load_harness()
+    assert harness.count_dirs(tmp_path / "chua-co") == 0
+    make_meeting_dirs(tmp_path, [A, B], subs=("audio",))
+    (tmp_path / "audio" / "note.txt").write_text("x")
+    assert harness.count_dirs(tmp_path / "audio") == 2
+
+
+def test_harness_storage_is_where_the_app_writes():
+    """Harness xóa trong đúng thư mục API và worker ghi (LocalStorage mặc định)."""
+    from app.services.storage.local import LocalStorage
+
+    assert LocalStorage().base_dir == load_harness().STORAGE
+
+
+BUSY = """
+import subprocess, sys, threading, time
+
+
+def spin(sec):
+    end = time.perf_counter() + sec
+    while time.perf_counter() < end:
+        pass
+
+
+if sys.argv[1] == "parent":
+    child = subprocess.Popen([sys.executable, __file__, "thread"])
+    spin(2.5)  # luồng chính bận
+    child.wait()
+else:
+    t = threading.Thread(target=spin, args=(2.5,))  # luồng phụ bận, luồng chính chờ
+    t.start()
+    t.join()
+"""
+
+
+def test_stat_fields_survive_spaces_and_parens_in_the_process_name():
+    harness = load_harness()
+    fields = harness.stat_fields("4242 (a b) c)) S 17 4242 " + " ".join(["0"] * 8) + " 30 12 0 0")
+    assert fields[0] == "S"
+    assert fields[1] == "17"
+    assert int(fields[11]) + int(fields[12]) == 42
+
+
+@pytest.mark.skipif(not Path("/proc/self/stat").exists(), reason="cần /proc (Linux)")
+def test_cpu_snapshot_follows_children_and_separates_the_main_thread(tmp_path):
+    """Event loop của uvicorn chạy ở luồng chính; endpoint `def` chạy ở threadpool. Số của luồng
+    chính phải là của riêng luồng đó, và process con (worker của --workers N) phải được đếm."""
+    harness = load_harness()
+    script = tmp_path / "busy.py"
+    script.write_text(BUSY)
+    proc = subprocess.Popen([sys.executable, str(script), "parent"])
+    try:
+        time.sleep(0.5)
+        before = harness.cpu_snapshot(proc.pid)
+        t0 = time.perf_counter()
+        time.sleep(1.0)
+        after = harness.cpu_snapshot(proc.pid)
+        wall = time.perf_counter() - t0
+    finally:
+        proc.wait(timeout=15)
+    rows = {r["depth"]: r for r in harness.cpu_busy(before, after, wall)}
+    assert set(rows) == {0, 1}
+    assert rows[0]["main_thread_cpus"] > 0.4
+    assert rows[1]["process_cpus"] > 0.4
+    assert rows[1]["main_thread_cpus"] < 0.2
+
+
+def test_cpu_busy_skips_processes_that_started_after_the_first_snapshot():
+    harness = load_harness()
+    tick = harness.CLK_TCK
+    before = {1: {"comm": "python", "depth": 0, "total": 0, "main": 0}}
+    after = {
+        1: {"comm": "python", "depth": 0, "total": 2 * tick, "main": tick},
+        2: {"comm": "python", "depth": 1, "total": 5 * tick, "main": 5 * tick},
+    }
+    assert harness.cpu_busy(before, after, 2.0) == [
+        {"comm": "python", "depth": 0, "process_cpus": 1.0, "main_thread_cpus": 0.5}
+    ]
+
+
+def test_upload_verdict_is_separate_from_the_all_requests_verdict():
+    """247 client, 1.235 poll nhanh: 49 upload chậm là 20 % upload nhưng chỉ 3 % mọi request, nên
+    p95 gộp đạt còn p95 upload không (như lượt p1-2 ngày 11-16)."""
+    harness = load_harness()
+    uploads = [("create", 201, 1.0)] * 198 + [("create", 201, 2.4)] * 49
+    rows = uploads + [("poll", 200, 0.1)] * 1235
+    assert harness.verdicts(rows, [], 2.0) == {"all": "PASS", "upload": "FAIL"}
+    fast = [("create", 201, 1.0)] * 247 + [("poll", 200, 0.1)] * 1235
+    assert harness.verdicts(fast, [], 2.0) == {"all": "PASS", "upload": "PASS"}
+
+
+def test_upload_verdict_fails_on_upload_errors_without_a_row():
+    harness = load_harness()
+    rows = [("create", 201, 1.0)] * 10
+    assert harness.verdicts(rows, [("create", "RemoteProtocolError")], 2.0)["upload"] == "FAIL"
+    assert harness.verdicts(rows, [("poll", 500)], 2.0) == {"all": "FAIL", "upload": "PASS"}
+    assert harness.verdicts([], [], 2.0) == {"all": "FAIL", "upload": "FAIL"}
