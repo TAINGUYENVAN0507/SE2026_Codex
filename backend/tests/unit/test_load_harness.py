@@ -230,3 +230,22 @@ def test_cpu_busy_skips_processes_that_started_after_the_first_snapshot():
     assert harness.cpu_busy(before, after, 2.0) == [
         {"comm": "python", "depth": 0, "process_cpus": 1.0, "main_thread_cpus": 0.5}
     ]
+
+
+def test_upload_verdict_is_separate_from_the_all_requests_verdict():
+    """247 client, 1.235 poll nhanh: 49 upload chậm là 20 % upload nhưng chỉ 3 % mọi request, nên
+    p95 gộp đạt còn p95 upload không (như lượt p1-2 ngày 11-16)."""
+    harness = load_harness()
+    uploads = [("create", 201, 1.0)] * 198 + [("create", 201, 2.4)] * 49
+    rows = uploads + [("poll", 200, 0.1)] * 1235
+    assert harness.verdicts(rows, [], 2.0) == {"all": "PASS", "upload": "FAIL"}
+    fast = [("create", 201, 1.0)] * 247 + [("poll", 200, 0.1)] * 1235
+    assert harness.verdicts(fast, [], 2.0) == {"all": "PASS", "upload": "PASS"}
+
+
+def test_upload_verdict_fails_on_upload_errors_without_a_row():
+    harness = load_harness()
+    rows = [("create", 201, 1.0)] * 10
+    assert harness.verdicts(rows, [("create", "RemoteProtocolError")], 2.0)["upload"] == "FAIL"
+    assert harness.verdicts(rows, [("poll", 500)], 2.0) == {"all": "FAIL", "upload": "PASS"}
+    assert harness.verdicts([], [], 2.0) == {"all": "FAIL", "upload": "FAIL"}

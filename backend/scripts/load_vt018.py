@@ -213,6 +213,20 @@ def pct(values: list[float], q: float) -> float:
     return s[min(len(s) - 1, max(0, int(round(q * len(s) + 0.5)) - 1))] if s else float("nan")
 
 
+def verdicts(rows, errors, threshold: float) -> dict:
+    """Kết luận theo p95. `all` gộp upload và poll (khóa `verdict` từ trước, quyết định exit code);
+    `upload` chỉ tính `POST /meetings`, là số các README dùng để kết luận. Ở 247 client, poll nhanh
+    chiếm 5/6 số request, nên `all` có thể PASS khi p95 upload trên mốc (11-16, lượt p1-2)."""
+
+    def one(kinds, failed: bool) -> str:
+        ok = [d for k, st, d in rows if k in kinds and st < 400]
+        return "PASS" if ok and not failed and pct(ok, 0.95) <= threshold else "FAIL"
+
+    # Lỗi kết nối không có dòng trong `rows`, chỉ có trong `errors`; đăng nhập lỗi thì lượt bị hủy.
+    upload_failed = any(k in ("create", "login") for k, _ in errors)
+    return {"all": one(("create", "poll"), bool(errors)), "upload": one(("create",), upload_failed)}
+
+
 def stats(values: list[float]) -> dict:
     return {
         "n": len(values),
@@ -737,7 +751,8 @@ def main() -> int:
         }
         if "cpu_after" in snaps and "cpu_before" in snaps
         else {"skipped": "không có /proc (chỉ đo trên Linux)"},
-        "verdict": "PASS" if allv and not errors and pct(allv, 0.95) <= args.threshold else "FAIL",
+        "verdict": verdicts(rows, errors, args.threshold)["all"],
+        "verdict_upload": verdicts(rows, errors, args.threshold)["upload"],
     }
     if "skipped" not in summary["server"]:
         # Server đếm đủ request của mọi process thì hai số này bằng nhau (BE-19, #48).
@@ -860,7 +875,7 @@ def main() -> int:
 | poll trạng thái job | {summary["poll"]["n"]} | {summary["poll"]["p50_s"]} | {summary["poll"]["p95_s"]} | {summary["poll"]["max_s"]} |
 | **tất cả** | {summary["all_requests"]["n"]} | {summary["all_requests"]["p50_s"]} | **{summary["all_requests"]["p95_s"]}** | {summary["all_requests"]["max_s"]} |
 
-Mục tiêu p95 ≤ {args.threshold} s: **{summary["verdict"]}**. Lỗi: {summary["errors"]} {summary["error_kinds"] or ""}. Từ lúc thả client tới khi xong: {summary["burst_wall_clock_s"]} s. Process sinh tải: {args.client_procs}.
+Mục tiêu p95 ≤ {args.threshold} s: upload **{summary["verdict_upload"]}** (p95 upload {summary["create"]["p95_s"]} s); mọi request gộp upload và poll **{summary["verdict"]}** (exit code theo số này). Lỗi: {summary["errors"]} {summary["error_kinds"] or ""}. Từ lúc thả client tới khi xong: {summary["burst_wall_clock_s"]} s. Process sinh tải: {args.client_procs}.
 Trạng thái meeting khi kết thúc: {statuses}.
 Máy sinh tải dùng trung bình {summary["client_cpu"]["cpus_busy"]} CPU trong pha upload (được dùng {summary["client_cpu"]["cpus_allowed"]}). Ghim CPU: server {args.server_cpus or "không"}, client {args.client_cpus or "không"}.
 
