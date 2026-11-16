@@ -138,9 +138,12 @@ export function getJob(id: Job['id'], signal?: AbortSignal): Promise<Job> {
 export function listMeetings(
   page: number,
   status?: MeetingDetail['status'],
+  q?: string,
 ): Promise<MeetingList> {
   return unwrap(
-    client.GET('/meetings', { params: { query: { page, status } } }),
+    client.GET('/meetings', {
+      params: { query: { page, status, q: q?.trim() || undefined } },
+    }),
   )
 }
 

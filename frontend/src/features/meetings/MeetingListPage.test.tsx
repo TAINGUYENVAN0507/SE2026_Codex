@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { act, render, screen } from '@testing-library/react'
+import { act, render, screen, fireEvent, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
@@ -16,12 +16,15 @@ import {
 import fixture from '../../../../contracts/fixtures/api/meeting_list.json'
 import { MeetingListPage } from '../../pages/MeetingListPage'
 import { DemoStore } from './DemoStore'
+import { handlers, resetMockMeetings } from '../../mocks/handlers'
 import userMe from '../../../../contracts/fixtures/api/user_me.json'
 
 const server = setupServer()
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
 afterEach(() => {
   server.resetHandlers()
+  server.events.removeAllListeners()
+  resetMockMeetings()
   vi.useRealTimers()
 })
 afterAll(() => server.close())
@@ -136,4 +139,86 @@ describe('FE-04 meeting list', () => {
     })
     expect(requests).toBe(2)
   })
+})
+
+it('FE-04: tìm cuộc họp thứ 11 qua API, đổi từ trang 2 về trang 1 và trim q', async () => {
+  server.use(...handlers)
+  for (let index = 0; index < 10; index++) {
+    const body = new FormData()
+    body.set('title', `Cuộc họp mới ${index}`)
+    const result = await fetch('http://localhost/api/v1/meetings', {
+      method: 'POST',
+      body,
+    })
+    expect(result.status).toBe(201)
+  }
+  const requests: URL[] = []
+  server.events.on('request:start', ({ request }) => {
+    if (
+      request.method === 'GET' &&
+      new URL(request.url).pathname === '/api/v1/meetings'
+    )
+      requests.push(new URL(request.url))
+  })
+  const view = renderPage()
+  await screen.findByText('Cuộc họp mới 0')
+  expect(view.container.querySelectorAll('.meeting-row')).toHaveLength(10)
+  expect(screen.queryByText(fixture.items[0].title)).not.toBeInTheDocument()
+  fireEvent.change(screen.getByRole('textbox', { name: 'Tìm cuộc họp' }), {
+    target: { value: `  ${fixture.items[0].title}  ` },
+  })
+  await screen.findByText(fixture.items[0].title)
+  expect(view.container.querySelectorAll('.meeting-row')).toHaveLength(1)
+  expect(screen.getByText('Hiển thị 1 trên 1 cuộc họp')).toBeInTheDocument()
+  expect(
+    requests.some(
+      (url) => url.searchParams.get('q') === fixture.items[0].title,
+    ),
+  ).toBe(true)
+
+  fireEvent.change(screen.getByRole('textbox', { name: 'Tìm cuộc họp' }), {
+    target: { value: '' },
+  })
+  await screen.findByText('Cuộc họp mới 0')
+  await userEvent.click(screen.getByRole('button', { name: 'Trang sau' }))
+  await screen.findByText('Trang 2')
+  await screen.findByText(fixture.items[0].title)
+  fireEvent.change(screen.getByRole('textbox', { name: 'Tìm cuộc họp' }), {
+    target: { value: fixture.items[0].title },
+  })
+  await waitFor(() =>
+    expect(screen.getByText('Hiển thị 1 trên 1 cuộc họp')).toBeInTheDocument(),
+  )
+  expect(requests.at(-1)?.searchParams.get('page')).toBe('1')
+  expect(requests.at(-1)?.searchParams.get('q')).toBe(fixture.items[0].title)
+})
+
+it('FE-04: debounce 300 ms gộp từ khóa và hủy lịch gửi trước', async () => {
+  const requests: URL[] = []
+  server.use(
+    http.get('*/api/v1/meetings', ({ request }) => {
+      requests.push(new URL(request.url))
+      return HttpResponse.json({
+        ...fixture,
+        items: [{ ...fixture.items[0], status: 'ready' }],
+      })
+    }),
+  )
+  vi.useFakeTimers()
+  renderPage()
+  await act(() => vi.advanceTimersByTimeAsync(100))
+  expect(requests).toHaveLength(1)
+  fireEvent.change(screen.getByRole('textbox', { name: 'Tìm cuộc họp' }), {
+    target: { value: 'cũ' },
+  })
+  await act(() => vi.advanceTimersByTimeAsync(299))
+  expect(requests).toHaveLength(1)
+  fireEvent.change(screen.getByRole('textbox', { name: 'Tìm cuộc họp' }), {
+    target: { value: '  từ khóa mới  ' },
+  })
+  await act(() => vi.advanceTimersByTimeAsync(299))
+  expect(requests).toHaveLength(1)
+  await act(() => vi.advanceTimersByTimeAsync(1))
+  expect(requests).toHaveLength(2)
+  expect(requests[1].searchParams.get('q')).toBe('từ khóa mới')
 })
