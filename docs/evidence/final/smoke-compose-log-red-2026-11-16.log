@@ -1,0 +1,98 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.12.13, pytest-9.1.1, pluggy-1.7.0
+rootdir: D:\kicuoi\SE2026_Codex\backend
+configfile: pyproject.toml
+plugins: anyio-4.15.1, cov-7.1.0
+collected 3 items
+
+tests\unit\test_smoke_compose_failure.py FFF                             [100%]
+
+================================== FAILURES ===================================
+__________ test_smoke_compose_fails_when_docker_logs_return_nonzero ___________
+
+mock_smoke_env = None
+
+    def test_smoke_compose_fails_when_docker_logs_return_nonzero(mock_smoke_env):
+        """Khi docker compose logs trả về mã lỗi khác 0, run_smoke phải ném RuntimeError (AD-018, BE-16)."""
+        with patch("subprocess.run") as mock_subproc:
+            mock_subproc.return_value = CompletedProcess(
+                args=["docker", "compose", "logs", "api", "worker"],
+                returncode=1,
+                stdout="",
+                stderr="cannot read compose logs: daemon unreachable",
+            )
+    
+>           with pytest.raises(RuntimeError, match="Không lấy được log qua docker compose"):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           Failed: DID NOT RAISE RuntimeError
+
+tests\unit\test_smoke_compose_failure.py:98: Failed
+---------------------------- Captured stdout call -----------------------------
+3. Đăng nhập qua POST /api/v1/auth/login...
+   -> Đăng nhập thành công, nhận session cookie.
+4. Tải lên tệp âm thanh WAV tổng hợp...
+   -> Upload thành công: meeting_id=mock-meeting-id, job_id=mock-job-id
+5. Theo dõi tiến trình xử lý job qua worker...
+   ... trạng thái: succeeded (giai đoạn: summarize)
+   -> Job đã hoàn thành thành công (succeeded).
+   -> Kiểm tra metric pipeline_stage_duration_seconds trên /metrics...
+   -> Đã xác nhận pipeline_stage_duration_seconds_count > 0 trên /metrics.
+   -> Kiểm tra docker compose logs api worker không chứa tiêu đề canary...
+   [CẢNH BÁO] Không lấy được log qua docker compose: cannot read compose logs: daemon unreachable
+6. Tải bản xuất cuộc họp qua GET /api/v1/meetings/{id}/export...
+   -> Tải xuất biên bản (TXT, JSON, MD) thành công.
+7. Dọn dẹp dữ liệu kiểm thử (DELETE meeting & user)...
+   -> Đã xóa meeting và user tổng hợp sạch sẽ.
+
+=== SMOKE TEST THÀNH CÔNG: Toàn bộ quy trình End-to-End đã đạt ===
+______________ test_smoke_compose_fails_when_docker_cli_missing _______________
+
+mock_smoke_env = None
+
+    def test_smoke_compose_fails_when_docker_cli_missing(mock_smoke_env):
+        """Khi máy thiếu docker CLI (FileNotFoundError), run_smoke phải ném RuntimeError (AD-018, BE-16)."""
+        with patch("subprocess.run") as mock_subproc:
+            mock_subproc.side_effect = FileNotFoundError("No such file or directory: 'docker'")
+    
+>           with pytest.raises(RuntimeError, match="Không tìm thấy docker CLI"):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           Failed: DID NOT RAISE RuntimeError
+
+tests\unit\test_smoke_compose_failure.py:107: Failed
+---------------------------- Captured stdout call -----------------------------
+3. Đăng nhập qua POST /api/v1/auth/login...
+   -> Đăng nhập thành công, nhận session cookie.
+4. Tải lên tệp âm thanh WAV tổng hợp...
+   -> Upload thành công: meeting_id=mock-meeting-id, job_id=mock-job-id
+5. Theo dõi tiến trình xử lý job qua worker...
+   ... trạng thái: succeeded (giai đoạn: summarize)
+   -> Job đã hoàn thành thành công (succeeded).
+   -> Kiểm tra metric pipeline_stage_duration_seconds trên /metrics...
+   -> Đã xác nhận pipeline_stage_duration_seconds_count > 0 trên /metrics.
+   -> Kiểm tra docker compose logs api worker không chứa tiêu đề canary...
+   [CẢNH BÁO] docker CLI không có trên máy, bỏ qua kiểm tra docker compose logs cục bộ.
+6. Tải bản xuất cuộc họp qua GET /api/v1/meetings/{id}/export...
+   -> Tải xuất biên bản (TXT, JSON, MD) thành công.
+7. Dọn dẹp dữ liệu kiểm thử (DELETE meeting & user)...
+   -> Đã xóa meeting và user tổng hợp sạch sẽ.
+
+=== SMOKE TEST THÀNH CÔNG: Toàn bộ quy trình End-to-End đã đạt ===
+__________ test_smoke_compose_allows_skipping_docker_logs_with_flag ___________
+
+mock_smoke_env = None
+
+    def test_smoke_compose_allows_skipping_docker_logs_with_flag(mock_smoke_env):
+        """Khi có cờ skip_docker_logs=True, run_smoke bỏ qua kiểm tra log container mà không fail."""
+        with patch("subprocess.run") as mock_subproc:
+            mock_subproc.side_effect = FileNotFoundError("docker not found")
+    
+            # Phải chạy trót lọt không ném ngoại lệ
+>           smoke_compose.run_smoke("http://localhost:8000", timeout_sec=5, skip_docker_logs=True)
+E           TypeError: run_smoke() got an unexpected keyword argument 'skip_docker_logs'
+
+tests\unit\test_smoke_compose_failure.py:117: TypeError
+=========================== short test summary info ===========================
+FAILED tests/unit/test_smoke_compose_failure.py::test_smoke_compose_fails_when_docker_logs_return_nonzero
+FAILED tests/unit/test_smoke_compose_failure.py::test_smoke_compose_fails_when_docker_cli_missing
+FAILED tests/unit/test_smoke_compose_failure.py::test_smoke_compose_allows_skipping_docker_logs_with_flag
+============================== 3 failed in 0.22s ==============================

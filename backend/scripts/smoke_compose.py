@@ -85,7 +85,7 @@ def create_synthetic_user(email: str, name: str, password: str) -> None:
         raise RuntimeError(f"Không thể tạo user tổng hợp: {exc}") from exc
 
 
-def run_smoke(base_url: str, timeout_sec: int = 60) -> None:
+def run_smoke(base_url: str, timeout_sec: int = 60, skip_docker_logs: bool = False) -> None:
     """Chạy toàn bộ luồng smoke test."""
     wait_for_api(base_url, timeout_sec=timeout_sec)
 
@@ -183,14 +183,19 @@ def run_smoke(base_url: str, timeout_sec: int = 60) -> None:
 
         # 5.2 Kiểm tra log container api và worker không chứa tiêu đề canary (AD-018, BE-16)
         print("   -> Kiểm tra docker compose logs api worker không chứa tiêu đề canary...")
-        try:
-            logs_proc = subprocess.run(
-                ["docker", "compose", "logs", "api", "worker"],
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-            if logs_proc.returncode == 0:
+        if skip_docker_logs:
+            print("   [BỎ QUA] Chưa kiểm log container do sử dụng cờ --skip-docker-logs.")
+        else:
+            try:
+                logs_proc = subprocess.run(
+                    ["docker", "compose", "logs", "api", "worker"],
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                if logs_proc.returncode != 0:
+                    err_msg = logs_proc.stderr.strip()
+                    raise RuntimeError(f"Không lấy được log qua docker compose: {err_msg}")
                 combined_logs = logs_proc.stdout + logs_proc.stderr
                 if canary_title in combined_logs:
                     raise RuntimeError(
@@ -198,14 +203,11 @@ def run_smoke(base_url: str, timeout_sec: int = 60) -> None:
                         "của api hoặc worker container!"
                     )
                 print("   -> Xác nhận log của container api và worker không chứa tiêu đề canary.")
-            else:
-                err_msg = logs_proc.stderr.strip()
-                print(f"   [CẢNH BÁO] Không lấy được log qua docker compose: {err_msg}")
-        except FileNotFoundError:
-            print(
-                "   [CẢNH BÁO] docker CLI không có trên máy, "
-                "bỏ qua kiểm tra docker compose logs cục bộ."
-            )
+            except FileNotFoundError as exc:
+                raise RuntimeError(
+                    "Không tìm thấy docker CLI trong môi trường để thu thập log container! "
+                    "Nếu chạy cục bộ không có Docker, truyền thêm cờ --skip-docker-logs."
+                ) from exc
 
         # 6. Tải export biên bản cuộc họp
         print("6. Tải bản xuất cuộc họp qua GET /api/v1/meetings/{id}/export...")
@@ -251,10 +253,20 @@ def main() -> None:
         default=60,
         help="Thời gian timeout tối đa cho job (giây)",
     )
+    parser.add_argument(
+        "--skip-docker-logs",
+        action="store_true",
+        default=False,
+        help="Bỏ qua kiểm tra log container (chỉ dùng khi test cục bộ không có Docker)",
+    )
     args = parser.parse_args()
 
     try:
-        run_smoke(args.base_url, timeout_sec=args.timeout)
+        run_smoke(
+            args.base_url,
+            timeout_sec=args.timeout,
+            skip_docker_logs=args.skip_docker_logs,
+        )
     except Exception as exc:
         print(f"\n[THẤT BẠI] Smoke test gặp lỗi: {exc}", file=sys.stderr)
         sys.exit(1)
