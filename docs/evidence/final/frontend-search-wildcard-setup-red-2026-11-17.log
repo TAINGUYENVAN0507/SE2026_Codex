@@ -1,0 +1,101 @@
+$ node node_modules/@playwright/test/cli.js test --config playwright.evidence.config.ts --grep literal characters
+[WebServer] Resolved 55 packages in 80ms
+[WebServer] Checked 54 packages in 240ms
+[WebServer] INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+[WebServer] INFO  [alembic.runtime.migration] Will assume transactional DDL.
+[WebServer] INFO  [alembic.runtime.migration] Running upgrade  -> 0001_users_meetings, create users and meetings tables
+[WebServer] INFO  [alembic.runtime.migration] Running upgrade 0001_users_meetings -> 0002_jobs_table, create jobs table with status check and partial unique active job index
+[WebServer] INFO  [alembic.runtime.migration] Running upgrade 0002_jobs_table -> 0003_transcript_summary_audit, create transcript, summary, and audit tables with integrity guards
+[WebServer] INFO  [alembic.runtime.migration] Running upgrade 0003_transcript_summary_audit -> 0004_prevent_edit_events_delete, prevent edit_events delete trigger
+[WebServer] INFO  [alembic.runtime.migration] Running upgrade 0004_prevent_edit_events_delete -> 0005_edit_events_cascade_delete, allow edit_events delete on meeting cascade
+[WebServer] INFO  [alembic.runtime.migration] Running upgrade 0005_edit_events_cascade_delete -> 0006_segments_unique_idx, unique (meeting_id, idx) on segments
+[WebServer] INFO  [alembic.runtime.migration] Running upgrade 0006_segments_unique_idx -> 0007_jobs_started_finished, jobs.started_at and jobs.finished_at
+[WebServer] (node:26088) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:25712) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] INFO:     Started server process [19864]
+[WebServer] INFO:     Waiting for application startup.
+[WebServer] INFO:     Application startup complete.
+[WebServer] INFO:     Uvicorn running on http://127.0.0.1:18000 (Press CTRL+C to quit)
+[WebServer] {"timestamp": "2026-11-17T06:50:47.535165+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "bcfc04a5-4e53-4b9e-bc78-d402eb627be1", "method": "GET", "path": "/api/v1/health", "status_code": 200, "duration_ms": 12.06}
+[WebServer] (node:33044) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] {"timestamp": "2026-11-17T06:50:48.740315+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "9f87a2e7-f50d-4fd6-8618-7cca763b1cb0", "method": "GET", "path": "/api/v1/health", "status_code": 200, "duration_ms": 0.57}
+
+Running 1 test using 1 worker
+
+(node:20184) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] {"timestamp": "2026-11-17T06:50:52.896698+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "85c9f98a-a738-400f-a30a-e0eb4b007ea4", "method": "POST", "path": "/api/v1/auth/login", "status_code": 200, "duration_ms": 273.12}
+[WebServer] {"timestamp": "2026-11-17T06:50:52.990416+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "a999e920-43e7-44ed-8d3e-29e22e064563", "method": "GET", "path": "/api/v1/meetings", "status_code": 200, "duration_ms": 46.27}
+[WebServer] {"timestamp": "2026-11-17T06:50:53.584843+00:00", "level": "INFO", "logger": "app.services.meetings.upload", "message": "Job 28c48d51-ce9b-4bc9-baef-63b3dcdf3548 đã được tạo cho cuộc họp 35b8ed11-10f8-47ac-9215-c19a7c8bfc71", "request_id": "bc858a52-996b-4907-b427-bcdcbcc8802d", "event": "job_created", "job_id": "28c48d51-ce9b-4bc9-baef-63b3dcdf3548", "meeting_id": "35b8ed11-10f8-47ac-9215-c19a7c8bfc71", "stage": "preprocess", "attempt": 1, "status": "queued"}
+[WebServer] {"timestamp": "2026-11-17T06:50:53.585388+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "bc858a52-996b-4907-b427-bcdcbcc8802d", "method": "POST", "path": "/api/v1/meetings", "status_code": 201, "duration_ms": 613.8}
+[WebServer] {"timestamp": "2026-11-17T06:50:53.724794+00:00", "level": "INFO", "logger": "app.services.meetings.upload", "message": "Job 719d8517-430c-4bf2-be54-f8070afa2cbb đã được tạo cho cuộc họp db8db998-bd87-4975-a15e-5f15a0d0fc23", "request_id": "1b88d7a2-370d-452e-b9ef-3c8ad9880b64", "event": "job_created", "job_id": "719d8517-430c-4bf2-be54-f8070afa2cbb", "meeting_id": "db8db998-bd87-4975-a15e-5f15a0d0fc23", "stage": "preprocess", "attempt": 1, "status": "queued"}
+[WebServer] {"timestamp": "2026-11-17T06:50:53.725362+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "1b88d7a2-370d-452e-b9ef-3c8ad9880b64", "method": "POST", "path": "/api/v1/meetings", "status_code": 201, "duration_ms": 124.88}
+[WebServer] {"timestamp": "2026-11-17T06:50:53.812374+00:00", "level": "INFO", "logger": "app.services.meetings.upload", "message": "Job 5e25468e-c544-4c7c-b825-0808608afbff đã được tạo cho cuộc họp 92cbe8c0-c76d-4106-9e37-ec523d2067e3", "request_id": "c8db76df-46da-48c6-9680-917e5f4b7b57", "event": "job_created", "job_id": "5e25468e-c544-4c7c-b825-0808608afbff", "meeting_id": "92cbe8c0-c76d-4106-9e37-ec523d2067e3", "stage": "preprocess", "attempt": 1, "status": "queued"}
+[WebServer] {"timestamp": "2026-11-17T06:50:53.812883+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "c8db76df-46da-48c6-9680-917e5f4b7b57", "method": "POST", "path": "/api/v1/meetings", "status_code": 201, "duration_ms": 79.47}
+[WebServer] {"timestamp": "2026-11-17T06:50:53.865109+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "e9a697fe-3412-4dc9-b66c-6c2bdbbc168c", "method": "GET", "path": "/api/v1/auth/me", "status_code": 200, "duration_ms": 6.63}
+[WebServer] {"timestamp": "2026-11-17T06:50:53.896306+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "15767a12-0225-412f-8a99-55cc724e2a33", "method": "GET", "path": "/api/v1/meetings", "status_code": 200, "duration_ms": 16.76}
+[WebServer] {"timestamp": "2026-11-17T06:50:58.929670+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "b0472737-c6cd-4b44-b7dd-835e10d7a791", "method": "GET", "path": "/api/v1/meetings", "status_code": 200, "duration_ms": 18.68}
+[WebServer] {"timestamp": "2026-11-17T06:51:03.954768+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "91cacf2f-3540-4a36-9440-8f9697e78174", "method": "GET", "path": "/api/v1/meetings", "status_code": 200, "duration_ms": 11.94}
+[WebServer] {"timestamp": "2026-11-17T06:51:08.979392+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "1f6a2fbe-eba0-4649-9345-510f2815faeb", "method": "GET", "path": "/api/v1/meetings", "status_code": 200, "duration_ms": 12.17}
+[WebServer] {"timestamp": "2026-11-17T06:51:14.005384+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "80b58589-14ba-4c1d-808d-288ed1103015", "method": "GET", "path": "/api/v1/meetings", "status_code": 200, "duration_ms": 13.61}
+[WebServer] {"timestamp": "2026-11-17T06:51:16.132977+00:00", "level": "INFO", "logger": "backend.services.erasure", "message": "Đã xóa cuộc họp: meeting_id=35b8ed11-10f8-47ac-9215-c19a7c8bfc71", "request_id": "281fd2ec-6dde-4f7f-92a2-f52dea710146"}
+[WebServer] {"timestamp": "2026-11-17T06:51:16.132977+00:00", "level": "INFO", "logger": "backend.api.meetings", "message": "Đã xóa cuộc họp: meeting_id=35b8ed11-10f8-47ac-9215-c19a7c8bfc71", "request_id": "281fd2ec-6dde-4f7f-92a2-f52dea710146"}
+[WebServer] {"timestamp": "2026-11-17T06:51:16.133515+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "281fd2ec-6dde-4f7f-92a2-f52dea710146", "method": "DELETE", "path": "/api/v1/meetings/35b8ed11-10f8-47ac-9215-c19a7c8bfc71", "status_code": 204, "duration_ms": 2254.58}
+[WebServer] {"timestamp": "2026-11-17T06:51:17.350010+00:00", "level": "INFO", "logger": "backend.services.erasure", "message": "Đã xóa cuộc họp: meeting_id=db8db998-bd87-4975-a15e-5f15a0d0fc23", "request_id": "169d82af-d81c-4ea7-8413-e47ae3ca0ded"}
+[WebServer] {"timestamp": "2026-11-17T06:51:17.350518+00:00", "level": "INFO", "logger": "backend.api.meetings", "message": "Đã xóa cuộc họp: meeting_id=db8db998-bd87-4975-a15e-5f15a0d0fc23", "request_id": "169d82af-d81c-4ea7-8413-e47ae3ca0ded"}
+[WebServer] {"timestamp": "2026-11-17T06:51:17.350518+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "169d82af-d81c-4ea7-8413-e47ae3ca0ded", "method": "DELETE", "path": "/api/v1/meetings/db8db998-bd87-4975-a15e-5f15a0d0fc23", "status_code": 204, "duration_ms": 1210.95}
+[WebServer] {"timestamp": "2026-11-17T06:51:17.960086+00:00", "level": "INFO", "logger": "backend.services.erasure", "message": "Đã xóa cuộc họp: meeting_id=92cbe8c0-c76d-4106-9e37-ec523d2067e3", "request_id": "6b84bd20-09e8-49a1-a234-156230c0623c"}
+[WebServer] {"timestamp": "2026-11-17T06:51:17.960086+00:00", "level": "INFO", "logger": "backend.api.meetings", "message": "Đã xóa cuộc họp: meeting_id=92cbe8c0-c76d-4106-9e37-ec523d2067e3", "request_id": "6b84bd20-09e8-49a1-a234-156230c0623c"}
+[WebServer] {"timestamp": "2026-11-17T06:51:17.961162+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "6b84bd20-09e8-49a1-a234-156230c0623c", "method": "DELETE", "path": "/api/v1/meetings/92cbe8c0-c76d-4106-9e37-ec523d2067e3", "status_code": 204, "duration_ms": 604.81}
+[WebServer] {"timestamp": "2026-11-17T06:51:19.033806+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "9b5ff7a4-a8c0-4d51-9be2-730df322579e", "method": "GET", "path": "/api/v1/meetings", "status_code": 200, "duration_ms": 9.31}
+  x  1 [chromium] › e2e\evidence\search-wildcard.spec.ts:6:1 › FE-04: real API search treats % and _ as literal characters (35.9s)
+
+
+  1) [chromium] › e2e\evidence\search-wildcard.spec.ts:6:1 › FE-04: real API search treats % and _ as literal characters 
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  locator('.meeting-row')
+    Expected: 3
+    Received: 4
+    Timeout:  20000ms
+
+    Call log:
+      - Expect "toHaveCount" locator('.meeting-row') with timeout 20000ms
+      - waiting for locator('.meeting-row')
+        2 × locator resolved to 0 elements
+          - unexpected value "0"
+        41 × locator resolved to 4 elements
+           - unexpected value "4"
+
+
+      37 |     }
+      38 |     await page.goto('/meetings')
+    > 39 |     await expect(page.locator('.meeting-row')).toHaveCount(3)
+         |                                                ^
+      40 |     for (const [q, expectedIndex] of [
+      41 |       ['%', 0],
+      42 |       ['_', 1],
+        at D:\Project\CNPM\SE2026_Codex\frontend\e2e\evidence\search-wildcard.spec.ts:39:48
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\evidence-search-wildcard-F-9a785-s-and-as-literal-characters-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\evidence-search-wildcard-F-9a785-s-and-as-literal-characters-chromium\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\evidence-search-wildcard-F-9a785-s-and-as-literal-characters-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\evidence-search-wildcard-F-9a785-s-and-as-literal-characters-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [chromium] › e2e\evidence\search-wildcard.spec.ts:6:1 › FE-04: real API search treats % and _ as literal characters 
+
+EXIT=1
