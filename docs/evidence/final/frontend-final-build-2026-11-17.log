@@ -1,0 +1,17 @@
+$ npm.cmd run build
+
+> vietnamese-meeting-minutes-frontend@0.0.0 build
+> tsc -b && vite build
+
+vite v8.3.4 building client environment for production...
+transforming...
+✓ 188 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.76 kB │ gzip:   0.44 kB
+dist/assets/index-ByPfKui-.css   43.73 kB │ gzip:   9.77 kB
+dist/assets/index-BhKJWAXP.js   481.87 kB │ gzip: 144.45 kB
+
+✓ built in 277ms
+
+EXIT=0

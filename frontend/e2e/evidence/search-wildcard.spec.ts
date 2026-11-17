@@ -62,13 +62,11 @@ test('FE-04: real API search treats % and _ as literal characters', async ({
       await expect
         .soft(page.locator('.meeting-row'))
         .toHaveCount(1, { timeout: 1500 })
-      expect
+      await expect
         .soft(
-          await page
-            .locator('.meeting-row')
-            .evaluateAll((rows) => rows.map((row) => row.getAttribute('href'))),
+          page.locator(`.meeting-row[href="/meetings/${ids[expectedIndex]}"]`),
         )
-        .toEqual([`/meetings/${ids[expectedIndex]}`])
+        .toBeVisible({ timeout: 1500 })
       await expect
         .soft(page.getByText('Hiển thị 1 trên 1 cuộc họp'))
         .toBeVisible({ timeout: 1500 })

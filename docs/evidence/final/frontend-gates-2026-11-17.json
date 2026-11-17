@@ -1,0 +1,101 @@
+{
+  "base_commit": "dddbdefa7240d712dc17b98ff665fc1a85af18f5",
+  "source_head": "3bf0fab71303a60dd865ab289f9975ae6624e920",
+  "source_sha256": {
+    "frontend/e2e/evidence/search-wildcard.spec.ts": "f4b1bfbffaf892f42c93b8b20ff72c76100e182fde14dd0da901621e32ce83dd",
+    "frontend/playwright.evidence.config.ts": "0ae58256faf1ba370998b70bfd600ca26f7f205626eefe8015ef04f51d082a48",
+    "frontend/src/features/meetings/MeetingListPage.search.test.tsx": "583ee234654e4f525f7a943184ec82d9f2e744543c1a2af49d4f9bd0bd069520"
+  },
+  "gates": {
+    "final-lint": {
+      "head": "3bf0fab71303a60dd865ab289f9975ae6624e920",
+      "command": [
+        "npm.cmd",
+        "run",
+        "lint"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 7.52,
+      "finished_at_utc": "2026-11-17T07:02:57.359264+00:00",
+      "log": "frontend-final-lint-2026-11-17.log"
+    },
+    "final-types": {
+      "head": "3bf0fab71303a60dd865ab289f9975ae6624e920",
+      "command": [
+        "npm.cmd",
+        "run",
+        "typecheck"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 4.99,
+      "finished_at_utc": "2026-11-17T07:03:02.541432+00:00",
+      "log": "frontend-final-types-2026-11-17.log"
+    },
+    "final-coverage": {
+      "head": "3bf0fab71303a60dd865ab289f9975ae6624e920",
+      "command": [
+        "npm.cmd",
+        "run",
+        "test:coverage"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 70.85,
+      "finished_at_utc": "2026-11-17T07:00:58.078125+00:00",
+      "log": "frontend-final-coverage-2026-11-17.log"
+    },
+    "final-build": {
+      "head": "3bf0fab71303a60dd865ab289f9975ae6624e920",
+      "command": [
+        "npm.cmd",
+        "run",
+        "build"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 5.09,
+      "finished_at_utc": "2026-11-17T07:01:03.404640+00:00",
+      "log": "frontend-final-build-2026-11-17.log"
+    },
+    "final-format": {
+      "head": "3bf0fab71303a60dd865ab289f9975ae6624e920",
+      "command": [
+        "npm.cmd",
+        "run",
+        "format:check"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 3.66,
+      "finished_at_utc": "2026-11-17T07:01:07.165791+00:00",
+      "log": "frontend-final-format-2026-11-17.log"
+    }
+  },
+  "tests": 315,
+  "test_files": 54,
+  "coverage_percent": {
+    "statements": 84.51,
+    "branches": 82.18,
+    "functions": 80.87,
+    "lines": 86.91
+  },
+  "wildcard_status": "red_on_current_main; awaiting_backend_PR_merge",
+  "backend_review_status": "no_open_PR_by_member_B_at_last_check",
+  "note": "Unit/coverage và build chạy trước bước đổi assertion E2E sang chờ đúng href; src ứng dụng và unit test giữ nguyên. E2E cuối, lint/typecheck kiểm source sau bước đó.",
+  "docs_utf8": {
+    "head": "3bf0fab71303a60dd865ab289f9975ae6624e920",
+    "command": [
+      "backend/.venv/Scripts/python.exe",
+      "-m",
+      "pytest",
+      "backend/tests/unit/test_docs_utf8.py",
+      "-q"
+    ],
+    "cwd": "root",
+    "exit_code": 0,
+    "duration_sec": 10.51,
+    "finished_at_utc": "2026-11-17T07:04:29.821570+00:00"
+  }
+}
