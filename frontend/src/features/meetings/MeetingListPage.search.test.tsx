@@ -1,5 +1,12 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { http, HttpResponse } from 'msw'
@@ -141,4 +148,53 @@ it('FE-04: phản hồi a về trễ 1 giây không ghi đè kết quả ab mớ
   expect(view.container.querySelectorAll('.meeting-row')).toHaveLength(1)
   expect(screen.getByText('Hiển thị 1 trên 1 cuộc họp')).toBeVisible()
   expect(input).toHaveValue('ab')
+})
+
+it('FE-04: đổi trạng thái từ trang 2 về trang 1 và giữ từ khóa tìm', async () => {
+  const items = Array.from({ length: 12 }, (_, index) => ({
+    ...item,
+    id: `00000000-0000-4000-8000-${String(index + 1).padStart(12, '0')}`,
+    title: `nhóm ${index + 1}`,
+    status: index < 7 ? 'ready' : 'failed',
+  }))
+  const requests: URL[] = []
+  server.use(
+    http.get('*/api/v1/meetings', ({ request }) => {
+      const url = new URL(request.url)
+      requests.push(url)
+      const q = url.searchParams.get('q') || ''
+      const status = url.searchParams.get('status')
+      const page = Number(url.searchParams.get('page') || 1)
+      const matched = items.filter(
+        (meeting) =>
+          meeting.title.includes(q) && (!status || meeting.status === status),
+      )
+      return HttpResponse.json({
+        items: matched.slice((page - 1) * 10, page * 10),
+        total: matched.length,
+        page,
+        page_size: 10,
+      })
+    }),
+  )
+  const view = renderPage()
+  await screen.findByText('nhóm 1')
+  const input = screen.getByRole('textbox', { name: 'Tìm cuộc họp' })
+  fireEvent.change(input, { target: { value: 'nhóm' } })
+  await waitFor(() =>
+    expect(requests.at(-1)?.searchParams.get('q')).toBe('nhóm'),
+  )
+  await userEvent.click(screen.getByRole('button', { name: 'Trang sau' }))
+  expect(await screen.findByText('nhóm 12')).toBeVisible()
+  expect(view.container.querySelectorAll('.meeting-row')).toHaveLength(2)
+  expect(screen.getByText('Hiển thị 2 trên 12 cuộc họp')).toBeVisible()
+  await userEvent.click(screen.getByRole('button', { name: /^Hoàn thành/ }))
+  expect(await screen.findByText('Hiển thị 7 trên 7 cuộc họp')).toBeVisible()
+  expect(view.container.querySelectorAll('.meeting-row')).toHaveLength(7)
+  expect(screen.getByText('nhóm 1')).toBeVisible()
+  expect(screen.queryByText('nhóm 12')).not.toBeInTheDocument()
+  expect(input).toHaveValue('nhóm')
+  expect(requests.at(-1)?.searchParams.get('page')).toBe('1')
+  expect(requests.at(-1)?.searchParams.get('status')).toBe('ready')
+  expect(requests.at(-1)?.searchParams.get('q')).toBe('nhóm')
 })
