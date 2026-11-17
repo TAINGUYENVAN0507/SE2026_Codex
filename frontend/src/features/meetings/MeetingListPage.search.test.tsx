@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { http, HttpResponse } from 'msw'
@@ -93,3 +93,52 @@ it.each(['500', 'network'] as const)(
     expect(requests).toEqual([q, q])
   },
 )
+
+it('FE-04: phản hồi a về trễ 1 giây không ghi đè kết quả ab mới hơn', async () => {
+  const requests: string[] = []
+  const responses: string[] = []
+  server.use(
+    http.get('*/api/v1/meetings', async ({ request }) => {
+      const q = new URL(request.url).searchParams.get('q')
+      if (!q) return HttpResponse.json(list([item]))
+      requests.push(q)
+      if (q === 'a') {
+        await new Promise<void>((resolve) => setTimeout(resolve, 1000))
+        responses.push(q)
+        return HttpResponse.json(
+          list([
+            { ...item, title: 'Kết quả cũ a' },
+            {
+              ...item,
+              id: '00000000-0000-4000-8000-000000000002',
+              title: 'Kết quả cũ a thứ hai',
+            },
+          ]),
+        )
+      }
+      responses.push(q)
+      return HttpResponse.json(list([{ ...item, title: 'Kết quả mới ab' }]))
+    }),
+  )
+  vi.useFakeTimers()
+  const view = renderPage()
+  await act(() => vi.advanceTimersByTimeAsync(100))
+  expect(screen.getByText(item.title)).toBeVisible()
+  const input = screen.getByRole('textbox', { name: 'Tìm cuộc họp' })
+  fireEvent.change(input, { target: { value: 'a' } })
+  await act(() => vi.advanceTimersByTimeAsync(300))
+  expect(requests).toEqual(['a'])
+  fireEvent.change(input, { target: { value: 'ab' } })
+  await act(() => vi.advanceTimersByTimeAsync(300))
+  await act(() => vi.advanceTimersByTimeAsync(10))
+  expect(requests).toEqual(['a', 'ab'])
+  expect(responses).toEqual(['ab'])
+  expect(screen.getByText('Kết quả mới ab')).toBeVisible()
+  await act(() => vi.advanceTimersByTimeAsync(1000))
+  expect(responses).toEqual(['ab', 'a'])
+  expect(screen.getByText('Kết quả mới ab')).toBeVisible()
+  expect(screen.queryByText('Kết quả cũ a')).not.toBeInTheDocument()
+  expect(view.container.querySelectorAll('.meeting-row')).toHaveLength(1)
+  expect(screen.getByText('Hiển thị 1 trên 1 cuộc họp')).toBeVisible()
+  expect(input).toHaveValue('ab')
+})
