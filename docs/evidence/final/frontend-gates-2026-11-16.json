@@ -1,0 +1,157 @@
+{
+  "verified_source_commit": "21abf36f76d346ddaccd4f1313261a2d09d0ccd5",
+  "execution_head_before_amend": "84a8bdaf93b11a873de380d09fd4e3a02232c938",
+  "working_tree_modified_during_execution": true,
+  "note": "Các gate chạy sau khi sửa PageStates và trước amend commit local thứ tư; mã nguồn được kiểm giữ nguyên, hash bên dưới xác định snapshot.",
+  "source_sha256": {
+    "frontend/e2e/evidence/search.spec.ts": "26379e6a044ccf31580feb63241fdedf0ac129da4d7743c93730aa6147deb08e",
+    "frontend/playwright.evidence.config.ts": "6e580938c2d62324d2a246d25516a0746f36746a9b375beb4ee7975e75bd8003",
+    "frontend/src/api/client.ts": "b94caa338634ba0b192b97e061471c8e2accf66cb5e5d0700d778056953fd4eb",
+    "frontend/src/features/meetings/MeetingListPage.test.tsx": "952c45ba3b412393b8d31b98c90aa5331df713f8db9220b058d90b27481eb659",
+    "frontend/src/features/meetings/Transcript.tsx": "e5438b6e9117168e330c302ff19a5f3c171e2043ca173f8217a68260841e178b",
+    "frontend/src/features/meetings/TranscriptEmpty.test.tsx": "bcbee0fe92cf546673c7d8aa4c4d913a7233063be8eadf02486e26704698244e",
+    "frontend/src/features/meetings/useMeetingsQuery.ts": "deca8d0bbb5d269d18f60560a511982eda52166fe5f4e8940ab1eeeac74b7068",
+    "frontend/src/mocks/handlers.ts": "7a059c76134360fdb238414d30dd6c2838cd6340b0dec9df82ab48ae73850a05",
+    "frontend/src/pages/MeetingDetailPage.tsx": "147419967281f38a2161dc434689e6c551afceca58cd757fdd253a6c6493477b",
+    "frontend/src/pages/MeetingListPage.tsx": "d779f2948e765fb29bed45aa607a9851ea44d8e35d00d2add37a72470f9651b3",
+    "frontend/src/pages/PageStates.test.tsx": "8c02df8744aee02a35bae7c92c9833810fcd4e961d8c5cd42343ff4cab2cd015",
+    "infra/docker/25-sanitize-request-logs.sh": "add3115f34e5068d5580cb6dfed387d6b5792f6d59f0308c52cd494ebdc62dff",
+    "infra/docker/nginx.conf": "430b72a93b50526247704988dfd520c898e08204cd85ed9306e0b6f1a74712b8",
+    "infra/docker/smoke_web.sh": "876a8bbb66e07c9a04f7291153869b93b5e0cf809e1d23c52cf6de523e0ee505",
+    "infra/docker/web.Dockerfile": "c33aec3c851016c1ef62d6b759d874873c062b5c7d0fefb2a1c722eaf397f331"
+  },
+  "gates": {
+    "final-lint-corrected": {
+      "head": "84a8bdaf93b11a873de380d09fd4e3a02232c938",
+      "command": [
+        "node",
+        "node_modules/eslint/bin/eslint.js",
+        "."
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 5.99,
+      "finished_at_utc": "2026-11-16T14:10:56.797469+00:00",
+      "log": "frontend-final-lint-corrected-2026-11-16.log"
+    },
+    "final-oxlint-corrected": {
+      "head": "84a8bdaf93b11a873de380d09fd4e3a02232c938",
+      "command": [
+        "node",
+        "node_modules/oxlint/bin/oxlint",
+        "."
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 0.19,
+      "finished_at_utc": "2026-11-16T14:10:57.093504+00:00",
+      "log": "frontend-final-oxlint-corrected-2026-11-16.log"
+    },
+    "final-format-corrected": {
+      "head": "84a8bdaf93b11a873de380d09fd4e3a02232c938",
+      "command": [
+        "node",
+        "node_modules/prettier/bin/prettier.cjs",
+        "--check",
+        "."
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 1.69,
+      "finished_at_utc": "2026-11-16T14:10:58.898737+00:00",
+      "log": "frontend-final-format-corrected-2026-11-16.log"
+    },
+    "final-typecheck-corrected": {
+      "head": "84a8bdaf93b11a873de380d09fd4e3a02232c938",
+      "command": [
+        "node",
+        "node_modules/typescript/bin/tsc",
+        "-b",
+        "--pretty",
+        "false"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 4.73,
+      "finished_at_utc": "2026-11-16T14:11:03.716215+00:00",
+      "log": "frontend-final-typecheck-corrected-2026-11-16.log"
+    },
+    "final-coverage-corrected": {
+      "head": "84a8bdaf93b11a873de380d09fd4e3a02232c938",
+      "command": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "--coverage"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 40.0,
+      "finished_at_utc": "2026-11-16T14:11:43.843903+00:00",
+      "log": "frontend-final-coverage-corrected-2026-11-16.log"
+    },
+    "final-build-corrected": {
+      "head": "84a8bdaf93b11a873de380d09fd4e3a02232c938",
+      "command": [
+        "npm.cmd",
+        "run",
+        "build"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 5.7,
+      "finished_at_utc": "2026-11-16T14:11:49.694318+00:00",
+      "log": "frontend-final-build-corrected-2026-11-16.log"
+    },
+    "pagestates-transcript-corrected": {
+      "head": "84a8bdaf93b11a873de380d09fd4e3a02232c938",
+      "command": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "PageStates",
+        "Transcript"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 6.1,
+      "finished_at_utc": "2026-11-16T14:10:32.048801+00:00",
+      "log": "frontend-pagestates-transcript-corrected-2026-11-16.log"
+    }
+  },
+  "tests": 311,
+  "test_files": 53,
+  "coverage_percent": {
+    "statements": 84.51,
+    "branches": 82.11,
+    "functions": 80.87,
+    "lines": 86.91
+  },
+  "initial_full_suite": {
+    "exit_code": 1,
+    "failed": 2,
+    "passed": 309,
+    "reason": "PageStates chưa chờ debounce/API và còn kỳ vọng thông báo transcript ready/rỗng cũ.",
+    "log": "frontend-full-suite-initial-red-2026-11-16.log"
+  },
+  "pr61": {
+    "state": "open",
+    "head": "32f188fee4a4b58d1af6e31933fa8cd4ab3a2984",
+    "checked_at_utc": "2026-11-16T14:11:19.846699+00:00",
+    "new_review_required_after_new_head": true
+  },
+  "docs_utf8": {
+    "head": "21abf36f76d346ddaccd4f1313261a2d09d0ccd5",
+    "command": [
+      "backend/.venv/Scripts/python.exe",
+      "-m",
+      "pytest",
+      "backend/tests/unit/test_docs_utf8.py",
+      "-q"
+    ],
+    "cwd": "root",
+    "exit_code": 0,
+    "duration_sec": 2.06,
+    "finished_at_utc": "2026-11-16T14:13:41.000599+00:00"
+  }
+}

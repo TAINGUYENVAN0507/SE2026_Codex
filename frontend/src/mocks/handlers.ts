@@ -215,9 +215,12 @@ export const handlers = [
     const allItems = [...createdMeetings.values(), ...meetingList.items].filter(
       (item) => !deletedMeetings.has(item.id),
     )
-    const items = status
-      ? allItems.filter((item) => item.status === status)
-      : allItems
+    const q = url.searchParams.get('q')?.trim().toLocaleLowerCase('vi')
+    const items = allItems.filter(
+      (item) =>
+        (!status || item.status === status) &&
+        (!q || item.title.toLocaleLowerCase('vi').includes(q)),
+    )
     return HttpResponse.json({
       items: items.slice((page - 1) * 10, page * 10),
       page,

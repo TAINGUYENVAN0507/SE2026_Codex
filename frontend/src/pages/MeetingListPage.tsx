@@ -5,7 +5,7 @@ import { MagnifyingGlassIcon } from '@phosphor-icons/react/dist/csr/MagnifyingGl
 import { PlusIcon } from '@phosphor-icons/react/dist/csr/Plus'
 import { SpinnerGapIcon } from '@phosphor-icons/react/dist/csr/SpinnerGap'
 import { WarningCircleIcon } from '@phosphor-icons/react/dist/csr/WarningCircle'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Topbar } from '../components/Topbar'
 import { ApiError } from '../api/errors'
@@ -27,16 +27,22 @@ export function MeetingListPage() {
   const [filter, setFilter] = useState<Status | 'all'>('all')
   const [page, setPage] = useState(1)
   const [query, setQuery] = useState('')
+  const [search, setSearch] = useState('')
+  useEffect(() => {
+    const text = query.trim()
+    if (text === search) return
+    const timer = window.setTimeout(() => {
+      setSearch(text)
+      setPage(1)
+    }, 300)
+    return () => window.clearTimeout(timer)
+  }, [query, search])
   const meetingsQuery = useMeetingsQuery({
     page,
     status: filter === 'all' ? undefined : filter,
+    q: search,
   })
   const meetings = meetingsQuery.data?.items ?? []
-  const filtered = meetings.filter((m) =>
-    m.title
-      .toLocaleLowerCase('vi')
-      .includes(query.trim().toLocaleLowerCase('vi')),
-  )
   return (
     <>
       <Topbar />
@@ -110,7 +116,7 @@ export function MeetingListPage() {
               </button>
             </div>
           )}
-          {filtered.map((m) => (
+          {meetings.map((m) => (
             <Link key={m.id} className="meeting-row" to={`/meetings/${m.id}`}>
               <span className="meeting-name">
                 {m.status === 'failed' ? (
@@ -154,16 +160,12 @@ export function MeetingListPage() {
               <ArrowUpRightIcon className="row-arrow" />
             </Link>
           ))}
-          {meetingsQuery.isSuccess && !filtered.length && (
+          {meetingsQuery.isSuccess && !meetings.length && (
             <div className="empty-state">
               <MagnifyingGlassIcon size={28} />
-              <h2>
-                {meetings.length
-                  ? 'Không tìm thấy cuộc họp'
-                  : 'Chưa có cuộc họp'}
-              </h2>
+              <h2>{search ? 'Không tìm thấy cuộc họp' : 'Chưa có cuộc họp'}</h2>
               <p>
-                {meetings.length
+                {search
                   ? 'Thử từ khóa khác hoặc chọn “Tất cả”.'
                   : 'Tạo cuộc họp mới để bắt đầu.'}
               </p>
@@ -181,7 +183,7 @@ export function MeetingListPage() {
           )}
         </div>
         <p className="list-footer">
-          Hiển thị {filtered.length} trên {meetingsQuery.data?.total ?? 0} cuộc
+          Hiển thị {meetings.length} trên {meetingsQuery.data?.total ?? 0} cuộc
           họp
         </p>
         {(meetingsQuery.data?.total ?? 0) >

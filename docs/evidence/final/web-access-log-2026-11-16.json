@@ -1,0 +1,52 @@
+{
+  "web-access-red": {
+    "head": "ee24c3850b90985d271de90e831dd425a3330e60",
+    "command": [
+      "C:\\Program Files\\Git\\bin\\bash.exe",
+      "--noprofile",
+      "--norc",
+      "infra/docker/smoke_web.sh",
+      "se-day10-web:baseline"
+    ],
+    "cwd": "root",
+    "exit_code": 1,
+    "duration_sec": 3.96,
+    "finished_at_utc": "2026-11-16T10:31:59.348184+00:00"
+  },
+  "web-access-only-red": {
+    "head": "ee24c3850b90985d271de90e831dd425a3330e60",
+    "command": [
+      "C:\\Program Files\\Git\\bin\\bash.exe",
+      "--noprofile",
+      "--norc",
+      "infra/docker/smoke_web.sh",
+      "se-day10-web:privacy"
+    ],
+    "cwd": "root",
+    "exit_code": 1,
+    "duration_sec": 2.75,
+    "finished_at_utc": "2026-11-16T10:33:02.667934+00:00"
+  },
+  "web-filtered": {
+    "head": "ee24c3850b90985d271de90e831dd425a3330e60",
+    "command": [
+      "C:\\Program Files\\Git\\bin\\bash.exe",
+      "--noprofile",
+      "--norc",
+      "infra/docker/smoke_web.sh",
+      "se-day10-web:filtered"
+    ],
+    "cwd": "root",
+    "exit_code": 0,
+    "duration_sec": 2.68,
+    "finished_at_utc": "2026-11-16T10:34:59.048418+00:00"
+  },
+  "source_sha256": {
+    "infra/docker/nginx.conf": "430b72a93b50526247704988dfd520c898e08204cd85ed9306e0b6f1a74712b8",
+    "infra/docker/smoke_web.sh": "876a8bbb66e07c9a04f7291153869b93b5e0cf809e1d23c52cf6de523e0ee505",
+    "infra/docker/25-sanitize-request-logs.sh": "add3115f34e5068d5580cb6dfed387d6b5792f6d59f0308c52cd494ebdc62dff",
+    "infra/docker/web.Dockerfile": "c33aec3c851016c1ef62d6b759d874873c062b5c7d0fefb2a1c722eaf397f331"
+  },
+  "baseline_image": "sha256:40424969446d57279b2a29bf08e835781ba169549dba86e2b2662fc6eabe57c1",
+  "final_image": "sha256:5a95988ce5c9217335d4d85de423b6fe57baae43a6277c983c23f4434ed681e7"
+}
