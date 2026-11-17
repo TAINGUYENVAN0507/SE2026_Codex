@@ -15,7 +15,7 @@ from fastapi import (
     status,
 )
 from fastapi import Path as FastApiPath
-from sqlalchemy import func, select, update
+from sqlalchemy import case, func, select, update
 from sqlalchemy.orm import Session
 
 from app.api.deps import CurrentUser, get_current_user
@@ -32,7 +32,7 @@ from app.api.v1.transcript import router as transcript_router
 from app.core.errors import APIError
 from app.db.models.job import Job
 from app.db.models.meeting import Meeting
-from app.db.models.transcript import Speaker
+from app.db.models.transcript import Segment, Speaker
 from app.db.session import get_db
 from app.schemas.common import ErrorResponse
 from app.schemas.meeting import (
@@ -87,7 +87,7 @@ def serialize_meeting_summary(
     if meeting.status in ("ready", "partial"):
         transcript_status = "ready"
         diarization_status = "ok"
-        summary_status = "ready"
+        summary_status = "failed" if meeting.status == "partial" else "ready"
     elif meeting.status == "failed":
         transcript_status = "failed"
         diarization_status = "failed"
@@ -238,15 +238,21 @@ def serialize_meeting_detail(meeting: Meeting, db: Session) -> MeetingDetailOut:
         .first()
     )
 
-    speakers = (
-        db.execute(
-            select(Speaker)
-            .where(Speaker.meeting_id == meeting.id)
-            .order_by(Speaker.created_at.asc())
-        )
-        .scalars()
-        .all()
+    duration_expr = case(
+        (Segment.end_sec > Segment.start_sec, Segment.end_sec - Segment.start_sec),
+        else_=0.0,
     )
+    speaker_rows = db.execute(
+        select(
+            Speaker,
+            func.count(Segment.id).label("segment_count"),
+            func.coalesce(func.sum(duration_expr), 0.0).label("speaking_time"),
+        )
+        .outerjoin(Segment, Segment.speaker_id == Speaker.id)
+        .where(Speaker.meeting_id == meeting.id)
+        .group_by(Speaker.id, Speaker.created_at)
+        .order_by(Speaker.created_at.asc())
+    ).all()
 
     speakers_out = [
         SpeakerOut(
@@ -257,11 +263,11 @@ def serialize_meeting_detail(meeting: Meeting, db: Session) -> MeetingDetailOut:
             display_name=spk.display_name,
             is_edited=spk.display_name != spk.default_name,
             color_index=idx % 10,
-            segment_count=0,
-            speaking_time_sec=0.0,
+            segment_count=int(seg_count),
+            speaking_time_sec=round(float(spk_time), 2),
             version=spk.version,
         )
-        for idx, spk in enumerate(speakers)
+        for idx, (spk, seg_count, spk_time) in enumerate(speaker_rows)
     ]
 
     job_out = serialize_job(latest_job) if latest_job else None

@@ -1,0 +1,63 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.12.13, pytest-9.1.1, pluggy-1.7.0
+rootdir: D:\kicuoi\SE2026_Codex\backend
+configfile: pyproject.toml
+plugins: anyio-4.15.1, cov-7.1.0
+collected 6 items / 5 deselected / 1 selected
+
+tests\api\test_transcript_and_job_status.py F                            [100%]
+
+================================== FAILURES ===================================
+_________ test_get_transcript_ready_meeting_no_segments_returns_ready _________
+
+client_a = <starlette.testclient.TestClient object at 0x0000019939997530>
+test_db = <sqlalchemy.orm.session.Session object at 0x00000199398693D0>
+user_a = <app.db.models.user.User object at 0x00000199397EF080>
+
+    def test_get_transcript_ready_meeting_no_segments_returns_ready(
+        client_a: TestClient,
+        test_db: Session,
+        user_a: User,
+    ) -> None:
+        """Meeting ready không có segment phải trả status ready, segments=[] chứ không phải pending (BE-05)."""
+        meeting_id = str(uuid.uuid4())
+        meeting = Meeting(
+            id=meeting_id,
+            owner_id=user_a.id,
+            title="Cuộc họp im lặng không có segment",
+            source="upload",
+            status="ready",
+            version=1,
+        )
+        test_db.add(meeting)
+        test_db.commit()
+    
+        res = client_a.get(f"/api/v1/meetings/{meeting_id}/transcript")
+        assert res.status_code == 200
+        data = res.json()
+>       assert data["status"] == "ready"
+E       AssertionError: assert 'pending' == 'ready'
+E         
+E         - ready
+E         + pending
+
+tests\api\test_transcript_and_job_status.py:391: AssertionError
+---------------------------- Captured stderr call -----------------------------
+{"timestamp": "2026-11-15T08:54:57.781908+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "51c7ac3a-c9d3-46e4-aec0-2715f5f4ddfc", "method": "GET", "path": "/api/v1/meetings/2df16624-af74-4780-844a-c06e81cf080b/transcript", "status_code": 200, "duration_ms": 19.07}
+{"timestamp": "2026-11-15T08:54:57.782907+00:00", "level": "INFO", "logger": "httpx", "message": "HTTP Request: GET http://testserver/api/v1/meetings/2df16624-af74-4780-844a-c06e81cf080b/transcript \"HTTP/1.1 200 OK\"", "request_id": null}
+------------------------------ Captured log call ------------------------------
+INFO     app.access:middleware.py:49 HTTP request completed
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/api/v1/meetings/2df16624-af74-4780-844a-c06e81cf080b/transcript "HTTP/1.1 200 OK"
+============================== warnings summary ===============================
+.venv\Lib\site-packages\fastapi\testclient.py:1
+  D:\kicuoi\SE2026_Codex\backend\.venv\Lib\site-packages\fastapi\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/api/test_transcript_and_job_status.py::test_get_transcript_ready_meeting_no_segments_returns_ready
+  D:\kicuoi\SE2026_Codex\backend\.venv\Lib\site-packages\jwt\api_jwt.py:149: InsecureKeyLengthWarning: The HMAC key is 31 bytes long, which is below the minimum recommended length of 32 bytes for SHA256. See RFC 7518 Section 3.2.
+    return self._jws.encode(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/api/test_transcript_and_job_status.py::test_get_transcript_ready_meeting_no_segments_returns_ready
+================= 1 failed, 5 deselected, 2 warnings in 0.93s =================

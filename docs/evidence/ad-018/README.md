@@ -9,6 +9,8 @@ B lập ngày 2026-11-12 (#54). C sửa ngày 2026-11-13 sau khi review: bản �
 | `backend/tests/api/test_delete_meeting.py` | SQLite in-memory, cứng trong fixture | Trigger `edit_events` được **viết lại bằng SQL của SQLite** trong fixture, không lấy từ migration |
 | `backend/tests/api/test_delete_user.py` | SQLite in-memory | Không có dòng `jobs`, `ai_outputs`, `edit_events` |
 | `backend/tests/privacy/test_privacy_canary.py` | SQLite in-memory | Chạy worker với fake pipeline nên có `jobs`, `ai_outputs`; sửa transcript qua API nên có `edit_events`. Chỉ quét chuỗi canary, không đếm dòng |
+| `backend/tests/privacy/test_privacy_access_log.py` (B, 11-15) | SQLite in-memory | Upload canary ở title, filename, idempotency key và ?q=<canary>; assert caplog của app.access và uvicorn.access không chứa canary |
+| `backend/tests/unit/test_docker_compose_logging.py` (B, 11-15) | Không dùng DB | Đọc docker-compose.yml; kiểm tra mọi service (db, api, worker, web) đều có logging json-file với max-size: 10m và max-file: 3 |
 | `backend/tests/integration/test_erasure_postgres.py` (C, 11-13) | **Postgres đã migrate bằng Alembic** | Mọi bảng con của meeting đều có 1 dòng; đếm dòng trước và sau; trigger và FK cascade là của migration |
 
 `DATABASE_URL` không đổi được DB của ba test đầu. Log [`deletion-2026-11-12.log`](deletion-2026-11-12.log) của B (15 passed, Windows) vì vậy là log chạy trên SQLite dù máy có Postgres. Bản gốc là UTF-16 nên GitHub hiện là file nhị phân; C đổi sang UTF-8, nội dung giữ nguyên. Log của test Postgres: [`erasure-postgres-2026-11-13.log`](erasure-postgres-2026-11-13.log).
@@ -31,8 +33,8 @@ B lập ngày 2026-11-12 (#54). C sửa ngày 2026-11-13 sau khi review: bản �
 | Artifact `artifacts/<meeting_id>/` | Như audio | Như audio | 14 ngày: `test_retention_boundary_condition` |
 | Log Python của process API (`caplog`) | Canary không có trong log: `test_erasure_removes_canary_from_all_stores_and_logs`, Postgres | `test_delete_me_canary_erased_from_all_stores_and_other_user_intact`, Postgres | Không áp dụng |
 | Log của worker và pipeline | `test_privacy_canary_worker_internal_failure_does_not_log_error_data`; `pipeline/tests/unit/test_privacy_canary.py` | Như bên trái | Không áp dụng |
-| Log đã ghi ra file hoặc của Docker (`json-file`, `max-size: 10m`) | **Chưa có test.** Thiết kế là không ghi dữ liệu cá nhân vào log, nên không có gì cần xóa; điều này chỉ được kiểm qua `caplog` ở trên, chưa kiểm trên log thật của container | Như bên trái | Docker xoay vòng theo kích thước, không theo 28 ngày. **Chưa có test** |
-| Log access của uvicorn | **Chưa có test.** Ghi đường dẫn có `meeting_id` (UUID, không phải dữ liệu cá nhân) | Như bên trái | Như trên |
+| Log đã ghi ra file hoặc của Docker (`json-file`, `max-size: 10m`, `max-file: 3`) | `test_all_compose_services_have_bounded_json_logging` (mọi service trong `docker-compose.yml` đều có giới hạn); `smoke_compose.py` (kiểm tra `docker compose logs api worker` không chứa tiêu đề canary) | Như bên trái | Docker xoay vòng theo dung lượng (`10m` × `3`), **không** theo 28 ngày. |
+| Log access của uvicorn và app.access | Từ đầu dự án tới 11-16, uvicorn ghi cả query string (`?q=...`) ra stdout container `api`. Đã sửa: uvicorn dùng cờ `--no-access-log` ở compose và Dockerfile (`test_real_uvicorn_access_log_no_canary_in_query`, `test_uvicorn_access_log_settings_documented_in_infra`). `app.access` ghi method, path (không kèm query), status, duration_ms, request_id (`test_access_logs_carry_no_personal_data`) | Như bên trái | Như trên |
 
 ## Đo test Postgres có bắt được lỗi
 

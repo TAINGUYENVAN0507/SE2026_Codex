@@ -16,6 +16,11 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   api:
     build:
@@ -30,7 +35,7 @@ services:
       PROMETHEUS_MULTIPROC_DIR: /tmp/prometheus_multiproc_dir
       API_WORKERS: 1
     command: >
-      sh -c "python -c 'from app.core.metrics import clean_multiproc_dir; clean_multiproc_dir()' && alembic upgrade head && exec uvicorn app.main:create_app --factory --host 0.0.0.0 --port 8000 --workers $${API_WORKERS:-1}"
+      sh -c "python -c 'from app.core.metrics import clean_multiproc_dir; clean_multiproc_dir()' && alembic upgrade head && exec uvicorn app.main:create_app --factory --host 0.0.0.0 --port 8000 --workers $${API_WORKERS:-1} --no-access-log"
     ports:
       - "8000:8000"
     volumes:
@@ -101,6 +106,11 @@ services:
       timeout: 5s
       retries: 5
       start_period: 5s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   pgdata:

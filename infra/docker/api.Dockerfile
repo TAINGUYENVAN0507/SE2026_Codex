@@ -62,5 +62,5 @@ VOLUME ["/app/backend/appdata"]
 EXPOSE 8000
 
 # Mặc định khởi chạy API server với số worker từ API_WORKERS (mặc định 1) (AD-018, BE-16)
-CMD ["sh", "-c", "python -c 'from app.core.metrics import clean_multiproc_dir; clean_multiproc_dir()' && exec uvicorn app.main:create_app --factory --host 0.0.0.0 --port 8000 --workers \"${API_WORKERS:-1}\""]
+CMD ["sh", "-c", "python -c 'from app.core.metrics import clean_multiproc_dir; clean_multiproc_dir()' && exec uvicorn app.main:create_app --factory --host 0.0.0.0 --port 8000 --workers \"${API_WORKERS:-1}\" --no-access-log"]
 

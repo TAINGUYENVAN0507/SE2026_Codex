@@ -24,7 +24,7 @@ from app.db.base import Base
 from app.db.models.idempotency import IdempotencyKey
 from app.db.models.job import Job
 from app.db.models.meeting import Meeting
-from app.db.models.transcript import Speaker
+from app.db.models.transcript import Segment, Speaker
 from app.db.models.user import User
 from app.db.session import get_db
 from app.main import create_app
@@ -44,6 +44,7 @@ def test_db() -> Generator[Session, None, None]:
         Job.__table__,
         IdempotencyKey.__table__,
         Speaker.__table__,
+        Segment.__table__,
     ]
     Base.metadata.create_all(bind=engine, tables=tables)
     session_factory = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -400,3 +401,29 @@ def test_job_serialization_consistent_between_meeting_and_job_routes(
 
     assert meeting_job_data is not None
     assert meeting_job_data == standalone_job_data
+
+
+def test_get_meeting_detail_partial_status_reports_failed_summary(
+    client_a: TestClient,
+    test_db: Session,
+    user_a: User,
+) -> None:
+    """Meeting partial có transcript_status ready nhưng summary_status failed (BE-05)."""
+    meeting_id = str(uuid.uuid4())
+    meeting = Meeting(
+        id=meeting_id,
+        owner_id=user_a.id,
+        title="Cuộc họp lỗi tóm tắt (partial)",
+        source="upload",
+        status="partial",
+        version=1,
+    )
+    test_db.add(meeting)
+    test_db.commit()
+
+    res = client_a.get(f"/api/v1/meetings/{meeting_id}")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "partial"
+    assert data["artifacts"]["transcript"] == "ready"
+    assert data["artifacts"]["summary"] == "failed"

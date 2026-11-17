@@ -365,3 +365,32 @@ def test_get_job_not_found_and_scoping_404(
     assert res_user_b.status_code == 404
     assert res_user_b.status_code != 403
     assert res_user_b.json()["error"]["code"] == "NOT_FOUND"
+
+
+def test_get_transcript_ready_meeting_no_segments_returns_ready(
+    client_a: TestClient,
+    test_db: Session,
+    user_a: User,
+) -> None:
+    """Meeting ready không có segment phải trả status ready, segments=[].
+
+    Tránh trả pending khiến frontend poll vô hạn (BE-05).
+    """
+    meeting_id = str(uuid.uuid4())
+    meeting = Meeting(
+        id=meeting_id,
+        owner_id=user_a.id,
+        title="Cuộc họp im lặng không có segment",
+        source="upload",
+        status="ready",
+        version=1,
+    )
+    test_db.add(meeting)
+    test_db.commit()
+
+    res = client_a.get(f"/api/v1/meetings/{meeting_id}/transcript")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "ready"
+    assert data["diarization_status"] == "ok"
+    assert data["segments"] == []

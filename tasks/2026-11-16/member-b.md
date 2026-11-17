@@ -18,7 +18,7 @@ Log ghi **UTF-8**: `uv run pytest ... 2>&1 | Out-File -Encoding utf8 <file>`.
 
 ## Việc
 
-### 1. [ ] Access log của uvicorn ghi cả query string (AD-018, BE-19). P1 của A
+### 1. [x] Access log của uvicorn ghi cả query string (AD-018, BE-19). P1 của A
 - **Lỗi:**
   - C chạy `uvicorn app.main:create_app --factory` với log mặc định, như `docker-compose.yml:33` và `infra/docker/api.Dockerfile:65`, rồi gọi `GET /api/v1/meetings?q=CANARY_...`.
   - Kết quả 401, nhưng stdout có `"GET /api/v1/meetings?q=CANARY_... HTTP/1.1" 401`.
@@ -35,19 +35,22 @@ Log ghi **UTF-8**: `uv run pytest ... 2>&1 | Out-File -Encoding utf8 <file>`.
   - Sửa docstring sai ở đầu `test_privacy_access_log.py`, và test `test_uvicorn_access_log_settings_documented_in_infra` (hiện assert **không** có `--no-access-log`).
   - Sửa dòng "Log access của uvicorn và app.access" trong `docs/evidence/ad-018/README.md`: từ đầu dự án tới commit này, query string nằm trong log của container `api`.
 - **Message:** `fix(infra): uvicorn writes no access log with query strings (AD-018, BE-19)`
+- **Commit:** `ccf1ee6`
 
-### 2. [ ] Smoke Compose báo thành công khi không đọc được log container (AD-018, BE-16). P2 của A
+### 2. [x] Smoke Compose báo thành công khi không đọc được log container (AD-018, BE-16). P2 của A
 - **Lỗi:** `backend/scripts/smoke_compose.py:203-208`: `docker compose logs` trả mã khác 0, hoặc máy không có `docker`, thì script chỉ in `[CẢNH BÁO]` rồi đi tiếp tới "SMOKE TEST THÀNH CÔNG".
-- **Test đỏ trước:** mock `subprocess.run` của lệnh logs trả 1, và mock ném `FileNotFoundError`. Cả hai phải làm smoke lỗi. A đã dựng cách mock này ở `docs/frontend/reviews/PR-61-2026-11-15-smoke-control.json`. Lưu log đỏ UTF-8.
+- **Test đỏ trước:** mock `subprocess.run` của lệnh logs trả 1, và mock ném `FileNotFoundError`. Cả hai phải làm smoke lỗi. A đã dựng cách mock này ở `docs/frontend/reviews/PR-61-2026-11-15-smoke-control.json`. Lưu log đỏ UTF-8: `docs/evidence/final/smoke-compose-log-red-2026-11-16.log`.
 - **Sửa:** lỗi thu log thì smoke lỗi. Muốn bỏ qua khi chạy cục bộ thì dùng cờ riêng, ví dụ `--skip-docker-logs`; khi đó smoke in rõ "chưa kiểm log container", không in là đã kiểm. CI không dùng cờ này.
 - **Message:** `fix(infra): compose smoke fails when container logs cannot be read (AD-018, BE-16)`
+- **Commit:** `1187070`
 
-### 3. [ ] Smoke Compose kiểm cả tìm kiếm có canary (AD-018, BE-19)
+### 3. [x] Smoke Compose kiểm cả tìm kiếm có canary (AD-018, BE-19)
 - Sau upload có tiêu đề canary: gọi `GET /api/v1/meetings?q=<tiêu đề canary>` đã đăng nhập. Kết quả phải tìm thấy đúng meeting đó (`total == 1`). Sau đó `docker compose logs api worker` không được chứa canary.
 - Đây là kiểm đầu-cuối của việc 1 trên image thật, chạy ở job `compose-smoke` của CI. Ghi link run vào file task.
 - **Message:** `test(infra): compose smoke searches by the canary title and checks container logs (AD-018, BE-19)`
+- **Commit:** `2ed359e`
 
-### 4. [ ] Số đoạn và thời gian nói của người nói luôn bằng 0 (BE-05)
+### 4. [x] Số đoạn và thời gian nói của người nói luôn bằng 0 (BE-05)
 - **Lỗi:**
   - `GET /meetings/{id}/transcript` (`transcript.py:82-83` trên head #61) và `GET /meetings/{id}` (`meetings.py:260-261`) trả `segment_count: 0`, `speaking_time_sec: 0.0` cho mọi người nói.
   - Trong khi đó `PATCH /speakers/{id}` (`speakers.py:55-70`) tính số thật, và fixture hợp đồng `contracts/fixtures/api/transcript_ready.json:12-13` có `1` và `6.42`. Ba nơi trả ba kiểu.
@@ -57,11 +60,14 @@ Log ghi **UTF-8**: `uv run pytest ... 2>&1 | Out-File -Encoding utf8 <file>`.
   - Meeting detail dùng **một** truy vấn gộp theo `speaker_id`, không truy vấn từng người nói. `test_get_meeting_detail_query_budget_and_no_n_plus_one` (`backend/tests/api/test_poll_query_budget.py:176`) phải vẫn xanh.
   - Kiểm `openapi.json` không drift.
 - **Message:** `fix(backend): speaker segment count and speaking time in transcript and meeting detail (BE-05)`
+- **Commit:** `0975854`
 
-### 5. [ ] Tick, hash (G0)
+### 5. [x] Tick, hash (G0)
 - Ghi hash từng commit; hash của chính commit này ghi "commit này".
 - Chạy cả backend: `uv run pytest -q`, `uv run ruff check .`, `uv run ruff format --check .`. Ghi số test.
+- Kết quả test: 466 passed, 24 skipped (cần Postgres), 0 failed; ruff sạch (168 files).
 - **Message:** `docs(tasks): record 2026-11-16 member B results (G0)`
+- **Commit:** commit này
 
 ## Việc chung (không tính commit)
 

@@ -146,7 +146,10 @@ def test_remove_run_files_does_not_follow_a_symlinked_meeting_dir(tmp_path):
     outside.mkdir()
     (outside / "keep.txt").write_text("x")
     (tmp_path / "store" / "audio").mkdir(parents=True)
-    (tmp_path / "store" / "audio" / A).symlink_to(outside, target_is_directory=True)
+    try:
+        (tmp_path / "store" / "audio" / A).symlink_to(outside, target_is_directory=True)
+    except OSError:
+        pytest.skip("máy không có quyền tạo symlink (Windows cần Developer Mode)")
     assert harness.remove_run_files(tmp_path / "store", [A]) == 0
     assert (outside / "keep.txt").exists()
 
