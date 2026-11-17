@@ -9,6 +9,7 @@ gây race thay vì tái hiện nó.
 
 import importlib.util
 import inspect
+import json
 import os
 import subprocess
 import sys
@@ -252,3 +253,43 @@ def test_upload_verdict_fails_on_upload_errors_without_a_row():
     assert harness.verdicts(rows, [("create", "RemoteProtocolError")], 2.0)["upload"] == "FAIL"
     assert harness.verdicts(rows, [("poll", 500)], 2.0) == {"all": "FAIL", "upload": "PASS"}
     assert harness.verdicts([], [], 2.0) == {"all": "FAIL", "upload": "FAIL"}
+
+
+def _app_line(path: str) -> str:
+    return json.dumps({"message": "HTTP request completed", "path": path, "status_code": 200})
+
+
+def test_api_log_stats_counts_app_and_uvicorn_access(tmp_path: Path) -> None:
+    log = tmp_path / "api.stdout"
+    log.write_text(
+        "\n".join(
+            [
+                _app_line("/api/v1/meetings"),
+                _app_line("/api/v1/jobs/abc"),
+                '{"message": "other"}',
+                'INFO:     127.0.0.1:5 - "GET /api/v1/jobs/abc HTTP/1.1" 200 OK',
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    stats = load_harness().api_log_stats(log)
+    assert stats == {
+        "lines": 4,
+        "app_access": 2,
+        "uvicorn_access": 1,
+        "with_query_string": 0,
+    }
+
+
+@pytest.mark.parametrize(
+    "line",
+    [
+        _app_line("/api/v1/meetings?q=CANARY"),
+        'INFO:     127.0.0.1:5 - "GET /api/v1/meetings?q=CANARY HTTP/1.1" 401 Unauthorized',
+    ],
+)
+def test_api_log_stats_flags_a_query_string(tmp_path: Path, line: str) -> None:
+    log = tmp_path / "api.stdout"
+    log.write_text(line + "\n", encoding="utf-8")
+    assert load_harness().api_log_stats(log)["with_query_string"] == 1

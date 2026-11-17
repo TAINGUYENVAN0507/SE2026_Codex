@@ -34,6 +34,7 @@ import json
 import multiprocessing as mp
 import os
 import platform
+import re
 import shutil
 import statistics
 import subprocess
@@ -85,6 +86,39 @@ def pin_to(cpus: set[int] | None):
     if not cpus:
         return None
     return lambda: os.sched_setaffinity(0, cpus)
+
+
+def api_log_stats(path: Path) -> dict[str, int]:
+    """Đếm dòng stdout của API: dòng access của app, và dòng có query string (AD-018, BE-19).
+
+    Dòng của app (`app.access`) là JSON có khóa `path`; dòng access mặc định của uvicorn có dạng
+    `"GET /đường/dẫn HTTP/1.1"`. Cả hai kiểu đều không được mang `?` sau đường dẫn."""
+    lines = app_access = uvicorn_access = with_query = 0
+    for raw in path.read_text(encoding="utf-8", errors="replace").splitlines():
+        if not raw.strip():
+            continue
+        lines += 1
+        is_app = False
+        if raw.startswith("{"):
+            try:
+                rec = json.loads(raw)
+            except ValueError:
+                rec = {}
+            if isinstance(rec, dict) and rec.get("message") == "HTTP request completed":
+                app_access += 1
+                is_app = True
+                if "?" in str(rec.get("path", "")):
+                    with_query += 1
+        if not is_app and re.search(r'"(GET|POST|PUT|PATCH|DELETE) \S+ HTTP/', raw):
+            uvicorn_access += 1
+            if re.search(r'"(?:GET|POST|PUT|PATCH|DELETE) \S*\?\S* HTTP/', raw):
+                with_query += 1
+    return {
+        "lines": lines,
+        "app_access": app_access,
+        "uvicorn_access": uvicorn_access,
+        "with_query_string": with_query,
+    }
 
 
 def count_dirs(path: Path) -> int:
@@ -535,6 +569,7 @@ def main() -> int:
     wav = tmp / "load.wav"
     make_wav(wav)
     base = f"http://127.0.0.1:{args.port}"
+    api_log = tmp / "api.stdout"
     api = subprocess.Popen(
         [
             "uv",
@@ -550,6 +585,8 @@ def main() -> int:
         ],
         cwd=BACKEND,
         env=env,
+        stdout=api_log.open("wb"),
+        stderr=subprocess.STDOUT,
         preexec_fn=pin_to(server_cpus),
     )
     worker = subprocess.Popen(
@@ -736,6 +773,8 @@ def main() -> int:
         },
         "meeting_status_at_end": statuses,
         "storage_cleanup": storage_cleanup,
+        # stdout của API không giữ lại (có request_id); chỉ giữ số đếm, để kiểm log dưới tải.
+        "api_log": api_log_stats(api_log),
         # Số CPU từng process API và worker dùng từ lúc thả tới upload cuối; luồng chính của
         # process uvicorn là event loop, nên main_thread_cpus gần 1,0 là event loop đã bão hòa.
         "server_cpu": {
@@ -880,6 +919,8 @@ Trạng thái meeting khi kết thúc: {statuses}.
 Máy sinh tải dùng trung bình {summary["client_cpu"]["cpus_busy"]} CPU trong pha upload (được dùng {summary["client_cpu"]["cpus_allowed"]}). Ghim CPU: server {args.server_cpus or "không"}, client {args.client_cpus or "không"}.
 
 {server_cpu_md}
+
+Stdout của API: {summary["api_log"]["lines"]} dòng, trong đó {summary["api_log"]["app_access"]} dòng access của app, {summary["api_log"]["uvicorn_access"]} dòng access của uvicorn; dòng có query string: **{summary["api_log"]["with_query_string"]}**.
 
 Thư mục lưu `appdata/audio` có {storage_cleanup["audio_dirs_at_start"]} thư mục lúc bắt đầu, {storage_cleanup["audio_dirs_at_end"]} lúc kết thúc ({"giữ file của lượt này" if args.keep_audio else f"đã xóa {storage_cleanup['removed_dirs']} thư mục audio và artifact của {storage_cleanup['meetings']} meeting lượt này tạo"}).
 Kết nối nằm rảnh từ lúc đăng nhập tới lúc upload: p50 {summary["idle_before_upload"]["p50_s"]} s, max {summary["idle_before_upload"]["max_s"]} s; {summary["idle_before_upload"]["over_uvicorn_keepalive_5s"]}/{summary["idle_before_upload"]["n"]} quá 5 s (timeout keep-alive mặc định của uvicorn). Lỗi upload chi tiết: `summary.json`, khóa `create_error_detail`.
