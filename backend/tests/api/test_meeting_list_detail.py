@@ -282,6 +282,111 @@ def test_list_meetings_search_wildcard_literals_and_bounds(
     assert res_long.status_code == 422
 
 
+def test_list_meetings_combined_query_and_status_pagination(
+    client_a: TestClient,
+    test_db: Session,
+    user_a: User,
+    user_b: User,
+) -> None:
+    """Kiểm tra kết hợp q, status và phân trang: total và các trang khớp nhau (BE-05)."""
+    # 25 cuộc họp của user_a:
+    # 12 cuộc họp khớp từ khóa "Chiến lược" (5 failed, 7 ready)
+    # 13 cuộc họp không khớp (status queued)
+    meetings_a: list[Meeting] = []
+    for i in range(5):
+        meetings_a.append(
+            Meeting(
+                id=str(uuid.uuid4()),
+                owner_id=user_a.id,
+                title=f"Họp Chiến lược Q{i + 1} Thất bại",
+                source="upload",
+                status="failed",
+                version=1,
+            )
+        )
+    for i in range(7):
+        meetings_a.append(
+            Meeting(
+                id=str(uuid.uuid4()),
+                owner_id=user_a.id,
+                title=f"Họp Chiến lược Sản phẩm Đợt {i + 1}",
+                source="upload",
+                status="ready",
+                version=1,
+            )
+        )
+    for i in range(13):
+        meetings_a.append(
+            Meeting(
+                id=str(uuid.uuid4()),
+                owner_id=user_a.id,
+                title=f"Đồng bộ Kỹ thuật Định kỳ Tuần {i + 1}",
+                source="upload",
+                status="queued",
+                version=1,
+            )
+        )
+
+    # Thêm 5 cuộc họp của user_b cũng chứa "Chiến lược" và có status="failed"
+    meetings_b: list[Meeting] = [
+        Meeting(
+            id=str(uuid.uuid4()),
+            owner_id=user_b.id,
+            title=f"Chiến lược Bí mật User B {i + 1}",
+            source="upload",
+            status="failed",
+            version=1,
+        )
+        for i in range(5)
+    ]
+
+    test_db.add_all(meetings_a + meetings_b)
+    test_db.commit()
+
+    # 1. q + status=failed -> total = 5 (không lọt cuộc họp của user_b)
+    res_failed = client_a.get("/api/v1/meetings?q=Chiến lược&status=failed")
+    assert res_failed.status_code == 200
+    data_failed = res_failed.json()
+    assert data_failed["total"] == 5
+    assert len(data_failed["items"]) == 5
+    for item in data_failed["items"]:
+        assert item["status"] == "failed"
+        assert "Chiến lược" in item["title"]
+
+    # 2. Phân trang q=Chiến lược với page_size=5 -> trang 1: 5, trang 2: 5, trang 3: 2
+    res_p1 = client_a.get("/api/v1/meetings?q=Chiến lược&page=1&page_size=5")
+    assert res_p1.status_code == 200
+    data_p1 = res_p1.json()
+    assert data_p1["total"] == 12
+    assert len(data_p1["items"]) == 5
+
+    res_p2 = client_a.get("/api/v1/meetings?q=Chiến lược&page=2&page_size=5")
+    assert res_p2.status_code == 200
+    data_p2 = res_p2.json()
+    assert data_p2["total"] == 12
+    assert len(data_p2["items"]) == 5
+
+    res_p3 = client_a.get("/api/v1/meetings?q=Chiến lược&page=3&page_size=5")
+    assert res_p3.status_code == 200
+    data_p3 = res_p3.json()
+    assert data_p3["total"] == 12
+    assert len(data_p3["items"]) == 2
+
+    # Không trùng, không sót
+    ids_p1 = [item["id"] for item in data_p1["items"]]
+    ids_p2 = [item["id"] for item in data_p2["items"]]
+    ids_p3 = [item["id"] for item in data_p3["items"]]
+
+    assert set(ids_p1).isdisjoint(set(ids_p2))
+    assert set(ids_p2).isdisjoint(set(ids_p3))
+    assert set(ids_p1).isdisjoint(set(ids_p3))
+
+    all_ids = set(ids_p1 + ids_p2 + ids_p3)
+    assert len(all_ids) == 12
+    expected_ids = {m.id for m in meetings_a[:12]}
+    assert all_ids == expected_ids
+
+
 def test_list_meetings_owner_scoping(
     client_a: TestClient,
     client_b: TestClient,
