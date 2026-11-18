@@ -208,3 +208,170 @@ def test_speaker_segment_count_and_speaking_time_consistent(
         == d_speakers[spk1_id]["speaking_time_sec"]
         == p_spk1["speaking_time_sec"]
     )
+
+
+def test_speaker_stats_consistent_after_segment_moves_to_another_speaker(
+    client_a: TestClient,
+    test_db: Session,
+    user_a: User,
+) -> None:
+    """Sau khi chuyển một đoạn sang người nói khác qua PATCH /segments/{id},
+
+    cả 3 endpoint (GET transcript, GET meeting detail, PATCH speaker)
+    phải thống nhất: số đoạn người cũ giảm 1, người mới tăng 1, tổng thời gian khớp (BE-05).
+    """
+    meeting_id = str(uuid.uuid4())
+    spk1_id = str(uuid.uuid4())
+    spk2_id = str(uuid.uuid4())
+    seg1_id = str(uuid.uuid4())
+    seg2_id = str(uuid.uuid4())
+    seg3_id = str(uuid.uuid4())
+
+    meeting = Meeting(
+        id=meeting_id,
+        owner_id=user_a.id,
+        title="Họp kiểm tra chuyển người nói phân đoạn",
+        source="upload",
+        status="ready",
+        version=1,
+    )
+    spk1 = Speaker(
+        id=spk1_id,
+        meeting_id=meeting_id,
+        label="spk_0",
+        default_name="Người nói 1",
+        display_name="Người nói 1",
+        version=1,
+    )
+    spk2 = Speaker(
+        id=spk2_id,
+        meeting_id=meeting_id,
+        label="spk_1",
+        default_name="Người nói 2",
+        display_name="Người nói 2",
+        version=1,
+    )
+
+    # Ban đầu:
+    # Speaker 1 có 2 đoạn: seg1 (0.0 -> 3.5s, dt=3.5s), seg2 (4.0 -> 6.0s, dt=2.0s) -> 2 đoạn, 5.5s
+    # Speaker 2 có 1 đoạn: seg3 (7.0 -> 10.0s, dt=3.0s) -> 1 đoạn, 3.0s
+    seg1 = Segment(
+        id=seg1_id,
+        meeting_id=meeting_id,
+        speaker_id=spk1_id,
+        start_sec=0.0,
+        end_sec=3.5,
+        text="Đoạn 1 của spk 1",
+        ai_text="Đoạn 1 của spk 1",
+        version=1,
+        idx=0,
+    )
+    seg2 = Segment(
+        id=seg2_id,
+        meeting_id=meeting_id,
+        speaker_id=spk1_id,
+        start_sec=4.0,
+        end_sec=6.0,
+        text="Đoạn 2 của spk 1",
+        ai_text="Đoạn 2 của spk 1",
+        version=1,
+        idx=1,
+    )
+    seg3 = Segment(
+        id=seg3_id,
+        meeting_id=meeting_id,
+        speaker_id=spk2_id,
+        start_sec=7.0,
+        end_sec=10.0,
+        text="Đoạn 1 của spk 2",
+        ai_text="Đoạn 1 của spk 2",
+        version=1,
+        idx=2,
+    )
+
+    test_db.add_all([meeting, spk1, spk2, seg1, seg2, seg3])
+    test_db.commit()
+
+    # Xác nhận số liệu ban đầu
+    res_init = client_a.get(f"/api/v1/meetings/{meeting_id}/transcript")
+    assert res_init.status_code == 200
+    init_spks = {s["id"]: s for s in res_init.json()["speakers"]}
+    assert init_spks[spk1_id]["segment_count"] == 2
+    assert init_spks[spk1_id]["speaking_time_sec"] == 5.5
+    assert init_spks[spk2_id]["segment_count"] == 1
+    assert init_spks[spk2_id]["speaking_time_sec"] == 3.0
+
+    # Chuyển seg1 từ spk1 sang spk2
+    res_patch_seg = client_a.patch(
+        f"/api/v1/meetings/{meeting_id}/segments/{seg1_id}",
+        json={"speaker_id": spk2_id, "version": 1},
+    )
+    assert res_patch_seg.status_code == 200
+    assert res_patch_seg.json()["speaker_id"] == spk2_id
+
+    # Sau khi chuyển:
+    # Speaker 1: còn 1 đoạn (seg2), thời gian = 2.0s
+    # Speaker 2: có 2 đoạn (seg3 + seg1), thời gian = 3.0 + 3.5 = 6.5s
+
+    # 1. Kiểm tra GET /api/v1/meetings/{id}/transcript
+    res_transcript = client_a.get(f"/api/v1/meetings/{meeting_id}/transcript")
+    assert res_transcript.status_code == 200
+    t_speakers = {s["id"]: s for s in res_transcript.json()["speakers"]}
+    assert t_speakers[spk1_id]["segment_count"] == 1
+    assert t_speakers[spk1_id]["speaking_time_sec"] == 2.0
+    assert t_speakers[spk2_id]["segment_count"] == 2
+    assert t_speakers[spk2_id]["speaking_time_sec"] == 6.5
+
+    # 2. Kiểm tra GET /api/v1/meetings/{id} (meeting detail)
+    res_detail = client_a.get(f"/api/v1/meetings/{meeting_id}")
+    assert res_detail.status_code == 200
+    d_speakers = {s["id"]: s for s in res_detail.json()["speakers"]}
+    assert d_speakers[spk1_id]["segment_count"] == 1
+    assert d_speakers[spk1_id]["speaking_time_sec"] == 2.0
+    assert d_speakers[spk2_id]["segment_count"] == 2
+    assert d_speakers[spk2_id]["speaking_time_sec"] == 6.5
+
+    # 3. Kiểm tra PATCH /api/v1/meetings/{id}/speakers/{id} cho cả hai người nói
+    res_patch_spk1 = client_a.patch(
+        f"/api/v1/meetings/{meeting_id}/speakers/{spk1_id}",
+        json={"display_name": "Người nói 1 Cập nhật", "version": 1},
+    )
+    assert res_patch_spk1.status_code == 200
+    p_spk1 = res_patch_spk1.json()
+    assert p_spk1["segment_count"] == 1
+    assert p_spk1["speaking_time_sec"] == 2.0
+
+    res_patch_spk2 = client_a.patch(
+        f"/api/v1/meetings/{meeting_id}/speakers/{spk2_id}",
+        json={"display_name": "Người nói 2 Cập nhật", "version": 1},
+    )
+    assert res_patch_spk2.status_code == 200
+    p_spk2 = res_patch_spk2.json()
+    assert p_spk2["segment_count"] == 2
+    assert p_spk2["speaking_time_sec"] == 6.5
+
+    # Khẳng định cả 3 nơi hoàn toàn nhất quán
+    assert (
+        t_speakers[spk1_id]["segment_count"]
+        == d_speakers[spk1_id]["segment_count"]
+        == p_spk1["segment_count"]
+        == 1
+    )
+    assert (
+        t_speakers[spk1_id]["speaking_time_sec"]
+        == d_speakers[spk1_id]["speaking_time_sec"]
+        == p_spk1["speaking_time_sec"]
+        == 2.0
+    )
+    assert (
+        t_speakers[spk2_id]["segment_count"]
+        == d_speakers[spk2_id]["segment_count"]
+        == p_spk2["segment_count"]
+        == 2
+    )
+    assert (
+        t_speakers[spk2_id]["speaking_time_sec"]
+        == d_speakers[spk2_id]["speaking_time_sec"]
+        == p_spk2["speaking_time_sec"]
+        == 6.5
+    )
