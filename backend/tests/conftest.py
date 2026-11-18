@@ -1,6 +1,7 @@
 """Cấu hình pytest và các fixture dùng chung cho kiểm thử backend."""
 
 import os
+import shutil
 from collections.abc import Generator
 from pathlib import Path
 
@@ -72,3 +73,22 @@ def db_session(require_postgres: str) -> Generator[Session, None, None]:
         session.close()
         command.downgrade(cfg, "base")
         engine.dispose()
+
+
+@pytest.fixture(scope="session", autouse=True)
+def guard_no_real_appdata_leak() -> Generator[None, None, None]:
+    """Bảo vệ appdata: không test nào được ghi thư mục vào appdata/audio thật (BE-16)."""
+    appdata_audio = Path(__file__).resolve().parent.parent / "appdata" / "audio"
+    before = set(appdata_audio.iterdir()) if appdata_audio.exists() else set()
+    yield
+    after = set(appdata_audio.iterdir()) if appdata_audio.exists() else set()
+    new_dirs = after - before
+    # Dọn dẹp thư mục rác do test tạo ra để không làm ô nhiễm môi trường chạy tiếp theo
+    for d in new_dirs:
+        if d.is_dir():
+            shutil.rmtree(d, ignore_errors=True)
+    leaked = [d.name for d in new_dirs]
+    assert not new_dirs, (
+        f"Phát hiện test ghi trực tiếp vào backend/appdata/audio thật: {leaked}. "
+        "Test phải sử dụng storage tạm (tmp_path)!"
+    )
