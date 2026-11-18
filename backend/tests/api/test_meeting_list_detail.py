@@ -208,6 +208,80 @@ def test_list_meetings_filter_status_and_search(
     assert "Họp sprint planning kiến trúc mới" in titles
 
 
+def test_list_meetings_search_wildcard_literals_and_bounds(
+    client_a: TestClient,
+    test_db: Session,
+    user_a: User,
+) -> None:
+    """Kiểm tra tìm kiếm khớp chính xác ký tự %, _, \\ và giới hạn độ dài q (BE-05, FE-04)."""
+    m1 = Meeting(
+        id=str(uuid.uuid4()),
+        owner_id=user_a.id,
+        title="Giảm 100% chi phí",
+        source="upload",
+        status="ready",
+        version=1,
+    )
+    m2 = Meeting(
+        id=str(uuid.uuid4()),
+        owner_id=user_a.id,
+        title="Họp_nhóm",
+        source="upload",
+        status="ready",
+        version=1,
+    )
+    m3 = Meeting(
+        id=str(uuid.uuid4()),
+        owner_id=user_a.id,
+        title="Họp nhóm",
+        source="upload",
+        status="ready",
+        version=1,
+    )
+    m4 = Meeting(
+        id=str(uuid.uuid4()),
+        owner_id=user_a.id,
+        title="Họp 100 người",
+        source="upload",
+        status="ready",
+        version=1,
+    )
+    test_db.add_all([m1, m2, m3, m4])
+    test_db.commit()
+
+    # q=% -> chỉ ra 'Giảm 100% chi phí' (1)
+    res_pct = client_a.get("/api/v1/meetings?q=%")
+    assert res_pct.status_code == 200
+    assert res_pct.json()["total"] == 1
+    assert res_pct.json()["items"][0]["title"] == "Giảm 100% chi phí"
+
+    # q=_ -> chỉ ra 'Họp_nhóm' (1)
+    res_us = client_a.get("/api/v1/meetings?q=_")
+    assert res_us.status_code == 200
+    assert res_us.json()["total"] == 1
+    assert res_us.json()["items"][0]["title"] == "Họp_nhóm"
+
+    # q=100% -> chỉ ra 'Giảm 100% chi phí' (1)
+    res_100pct = client_a.get("/api/v1/meetings?q=100%")
+    assert res_100pct.status_code == 200
+    assert res_100pct.json()["total"] == 1
+    assert res_100pct.json()["items"][0]["title"] == "Giảm 100% chi phí"
+
+    # q=\ -> 0
+    res_bs = client_a.get("/api/v1/meetings?q=\\")
+    assert res_bs.status_code == 200
+    assert res_bs.json()["total"] == 0
+
+    # q=100 -> 2 ('Giảm 100% chi phí' và 'Họp 100 người')
+    res_100 = client_a.get("/api/v1/meetings?q=100")
+    assert res_100.status_code == 200
+    assert res_100.json()["total"] == 2
+
+    # q > 200 ký tự -> 422
+    res_long = client_a.get(f"/api/v1/meetings?q={'a' * 201}")
+    assert res_long.status_code == 422
+
+
 def test_list_meetings_owner_scoping(
     client_a: TestClient,
     client_b: TestClient,
