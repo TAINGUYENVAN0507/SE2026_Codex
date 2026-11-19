@@ -1,0 +1,7 @@
+$ npm.cmd run typecheck
+
+> vietnamese-meeting-minutes-frontend@0.0.0 typecheck
+> tsc -b --pretty false
+
+
+EXIT=0

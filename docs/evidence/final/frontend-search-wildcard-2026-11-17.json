@@ -1,0 +1,116 @@
+{
+  "head": "dddbdefa7240d712dc17b98ff665fc1a85af18f5",
+  "command": [
+    "node",
+    "node_modules/@playwright/test/cli.js",
+    "test",
+    "--config",
+    "playwright.evidence.config.ts",
+    "--grep",
+    "literal characters"
+  ],
+  "cwd": "frontend",
+  "exit_code": 1,
+  "duration_sec": 23.22,
+  "finished_at_utc": "2026-11-17T06:52:23.817794+00:00",
+  "results": [
+    {
+      "q": "%",
+      "total": 4,
+      "ids": [
+        "0422f9a6-8db0-4acd-817d-069252f0de57",
+        "81814031-8f32-4c5f-9e07-a6159a88045b",
+        "bb70de3e-1a91-4620-95de-71ec03f4a6f7",
+        "8f6c2a1e-b2c3-4d4e-8f9a-0b1c2d3e4f5a"
+      ],
+      "displayed": 4
+    },
+    {
+      "q": "_",
+      "total": 4,
+      "ids": [
+        "0422f9a6-8db0-4acd-817d-069252f0de57",
+        "81814031-8f32-4c5f-9e07-a6159a88045b",
+        "bb70de3e-1a91-4620-95de-71ec03f4a6f7",
+        "8f6c2a1e-b2c3-4d4e-8f9a-0b1c2d3e4f5a"
+      ],
+      "displayed": 4
+    },
+    {
+      "q": "100%",
+      "total": 1,
+      "ids": [
+        "bb70de3e-1a91-4620-95de-71ec03f4a6f7"
+      ],
+      "displayed": 1
+    }
+  ],
+  "pageErrors": [],
+  "retries": 0,
+  "syntheticOnly": true,
+  "apiInterception": false,
+  "source_sha256": {
+    "frontend/e2e/evidence/search-wildcard.spec.ts": "0e776719bb7ef854656589d9b84f7b198d68b632c7cede99662312f3d3ad9e7c",
+    "frontend/playwright.evidence.config.ts": "0ae58256faf1ba370998b70bfd600ca26f7f205626eefe8015ef04f51d082a48",
+    "backend/app/api/v1/meetings.py": "7da7264d34c97e80a09f2af054536dcaab476cc8ee905a53aacd9738382231e2"
+  },
+  "final_run": {
+    "head": "3bf0fab71303a60dd865ab289f9975ae6624e920",
+    "command": [
+      "node",
+      "node_modules/@playwright/test/cli.js",
+      "test",
+      "--config",
+      "playwright.evidence.config.ts",
+      "--grep",
+      "literal characters"
+    ],
+    "cwd": "frontend",
+    "exit_code": 1,
+    "duration_sec": 28.1,
+    "finished_at_utc": "2026-11-17T07:02:30.611237+00:00",
+    "results": [
+      {
+        "q": "%",
+        "total": 4,
+        "ids": [
+          "a9f08cc8-86d9-424c-b201-1846d63c13a1",
+          "423c082e-63e4-4fa8-8f69-10c313811138",
+          "426eea51-fef9-4a45-81dd-b7c86cc9f7e8",
+          "8f6c2a1e-b2c3-4d4e-8f9a-0b1c2d3e4f5a"
+        ],
+        "displayed": 4
+      },
+      {
+        "q": "_",
+        "total": 4,
+        "ids": [
+          "a9f08cc8-86d9-424c-b201-1846d63c13a1",
+          "423c082e-63e4-4fa8-8f69-10c313811138",
+          "426eea51-fef9-4a45-81dd-b7c86cc9f7e8",
+          "8f6c2a1e-b2c3-4d4e-8f9a-0b1c2d3e4f5a"
+        ],
+        "displayed": 4
+      },
+      {
+        "q": "100%",
+        "total": 1,
+        "ids": [
+          "426eea51-fef9-4a45-81dd-b7c86cc9f7e8"
+        ],
+        "displayed": 1
+      }
+    ],
+    "pageErrors": [],
+    "retries": 0,
+    "syntheticOnly": true,
+    "apiInterception": false,
+    "log": "frontend-search-wildcard-final-red-2026-11-17.log",
+    "source_sha256": {
+      "frontend/e2e/evidence/search-wildcard.spec.ts": "f4b1bfbffaf892f42c93b8b20ff72c76100e182fde14dd0da901621e32ce83dd",
+      "frontend/playwright.evidence.config.ts": "0ae58256faf1ba370998b70bfd600ca26f7f205626eefe8015ef04f51d082a48",
+      "backend/app/api/v1/meetings.py": "7da7264d34c97e80a09f2af054536dcaab476cc8ee905a53aacd9738382231e2"
+    }
+  },
+  "status": "pending_backend_merge_and_green_run"
+}

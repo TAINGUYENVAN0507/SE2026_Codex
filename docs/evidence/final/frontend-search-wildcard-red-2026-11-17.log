@@ -1,0 +1,271 @@
+$ node node_modules/@playwright/test/cli.js test --config playwright.evidence.config.ts --grep literal characters
+[WebServer] Resolved 55 packages in 41ms
+[WebServer] Checked 54 packages in 12ms
+[WebServer] INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+[WebServer] INFO  [alembic.runtime.migration] Will assume transactional DDL.
+[WebServer] (node:12304) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:16440) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] INFO:     Started server process [26204]
+[WebServer] INFO:     Waiting for application startup.
+[WebServer] INFO:     Application startup complete.
+[WebServer] INFO:     Uvicorn running on http://127.0.0.1:18000 (Press CTRL+C to quit)
+[WebServer] {"timestamp": "2026-11-17T06:52:11.076184+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "762895dd-740a-45a0-b6b7-9de7bfa85d33", "method": "GET", "path": "/api/v1/health", "status_code": 200, "duration_ms": 2.32}
+[WebServer] (node:13768) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] {"timestamp": "2026-11-17T06:52:12.130935+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "31111d4c-13bd-443a-97f1-b295ec2d4f3b", "method": "GET", "path": "/api/v1/health", "status_code": 200, "duration_ms": 0.61}
+
+Running 1 test using 1 worker
+
+(node:9824) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] {"timestamp": "2026-11-17T06:52:14.724514+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "54fef413-9708-4ac6-bafd-fecede1dab1a", "method": "POST", "path": "/api/v1/auth/login", "status_code": 200, "duration_ms": 247.1}
+[WebServer] {"timestamp": "2026-11-17T06:52:14.808873+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "0e5210c0-601a-490f-91e0-7bb7cc065e84", "method": "GET", "path": "/api/v1/meetings", "status_code": 200, "duration_ms": 37.61}
+[WebServer] {"timestamp": "2026-11-17T06:52:14.906811+00:00", "level": "INFO", "logger": "app.services.meetings.upload", "message": "Job 0055a1e4-1ecd-422e-aa0c-715a2399f11a đã được tạo cho cuộc họp bb70de3e-1a91-4620-95de-71ec03f4a6f7", "request_id": "a25ca34a-ec1a-44e8-ac95-38a306cc5d19", "event": "job_created", "job_id": "0055a1e4-1ecd-422e-aa0c-715a2399f11a", "meeting_id": "bb70de3e-1a91-4620-95de-71ec03f4a6f7", "stage": "preprocess", "attempt": 1, "status": "queued"}
+[WebServer] {"timestamp": "2026-11-17T06:52:14.907335+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "a25ca34a-ec1a-44e8-ac95-38a306cc5d19", "method": "POST", "path": "/api/v1/meetings", "status_code": 201, "duration_ms": 113.09}
+[WebServer] {"timestamp": "2026-11-17T06:52:14.977195+00:00", "level": "INFO", "logger": "app.services.meetings.upload", "message": "Job 793d2ecc-74b9-4aab-8086-2bad4679255d đã được tạo cho cuộc họp 81814031-8f32-4c5f-9e07-a6159a88045b", "request_id": "44705aca-06b2-4803-900b-7e2d77a1868c", "event": "job_created", "job_id": "793d2ecc-74b9-4aab-8086-2bad4679255d", "meeting_id": "81814031-8f32-4c5f-9e07-a6159a88045b", "stage": "preprocess", "attempt": 1, "status": "queued"}
+[WebServer] {"timestamp": "2026-11-17T06:52:14.978273+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "44705aca-06b2-4803-900b-7e2d77a1868c", "method": "POST", "path": "/api/v1/meetings", "status_code": 201, "duration_ms": 58.89}
+[WebServer] {"timestamp": "2026-11-17T06:52:15.041396+00:00", "level": "INFO", "logger": "app.services.meetings.upload", "message": "Job 9ce2ca99-4eb0-4bc7-9fe3-9267809ca993 đã được tạo cho cuộc họp 0422f9a6-8db0-4acd-817d-069252f0de57", "request_id": "bb01b413-c1da-4314-9a1c-735797d8d429", "event": "job_created", "job_id": "9ce2ca99-4eb0-4bc7-9fe3-9267809ca993", "meeting_id": "0422f9a6-8db0-4acd-817d-069252f0de57", "stage": "preprocess", "attempt": 1, "status": "queued"}
+[WebServer] {"timestamp": "2026-11-17T06:52:15.041976+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "bb01b413-c1da-4314-9a1c-735797d8d429", "method": "POST", "path": "/api/v1/meetings", "status_code": 201, "duration_ms": 55.48}
+[WebServer] {"timestamp": "2026-11-17T06:52:15.090939+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "612eb716-b587-41b4-87a2-f7ba8c6bc1ad", "method": "GET", "path": "/api/v1/auth/me", "status_code": 200, "duration_ms": 6.69}
+[WebServer] {"timestamp": "2026-11-17T06:52:15.118527+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "c45c20e4-6afb-4789-96f5-f2bdd6c263c1", "method": "GET", "path": "/api/v1/meetings", "status_code": 200, "duration_ms": 15.66}
+[WebServer] {"timestamp": "2026-11-17T06:52:15.510804+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "4f00d29e-24b5-4607-8c8e-a8dbb1769839", "method": "GET", "path": "/api/v1/meetings", "status_code": 200, "duration_ms": 25.32}
+[WebServer] {"timestamp": "2026-11-17T06:52:18.906977+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "79a0547d-7122-4df8-8866-d39cc1e6e253", "method": "GET", "path": "/api/v1/meetings", "status_code": 200, "duration_ms": 23.47}
+[WebServer] {"timestamp": "2026-11-17T06:52:22.296860+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "a8fcdf2c-09f6-434f-84fe-9122ad225c35", "method": "GET", "path": "/api/v1/meetings", "status_code": 200, "duration_ms": 32.92}
+[WebServer] {"timestamp": "2026-11-17T06:52:22.383770+00:00", "level": "INFO", "logger": "backend.services.erasure", "message": "Đã xóa cuộc họp: meeting_id=bb70de3e-1a91-4620-95de-71ec03f4a6f7", "request_id": "436e2075-421f-479b-ba04-7385562e1075"}
+[WebServer] {"timestamp": "2026-11-17T06:52:22.383770+00:00", "level": "INFO", "logger": "backend.api.meetings", "message": "Đã xóa cuộc họp: meeting_id=bb70de3e-1a91-4620-95de-71ec03f4a6f7", "request_id": "436e2075-421f-479b-ba04-7385562e1075"}
+[WebServer] {"timestamp": "2026-11-17T06:52:22.383770+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "436e2075-421f-479b-ba04-7385562e1075", "method": "DELETE", "path": "/api/v1/meetings/bb70de3e-1a91-4620-95de-71ec03f4a6f7", "status_code": 204, "duration_ms": 39.65}
+[WebServer] {"timestamp": "2026-11-17T06:52:22.414631+00:00", "level": "INFO", "logger": "backend.services.erasure", "message": "Đã xóa cuộc họp: meeting_id=81814031-8f32-4c5f-9e07-a6159a88045b", "request_id": "44b0f8a5-5bf2-44ee-bcbc-473fb1f4e174"}
+[WebServer] {"timestamp": "2026-11-17T06:52:22.414631+00:00", "level": "INFO", "logger": "backend.api.meetings", "message": "Đã xóa cuộc họp: meeting_id=81814031-8f32-4c5f-9e07-a6159a88045b", "request_id": "44b0f8a5-5bf2-44ee-bcbc-473fb1f4e174"}
+[WebServer] {"timestamp": "2026-11-17T06:52:22.415144+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "44b0f8a5-5bf2-44ee-bcbc-473fb1f4e174", "method": "DELETE", "path": "/api/v1/meetings/81814031-8f32-4c5f-9e07-a6159a88045b", "status_code": 204, "duration_ms": 24.63}
+[WebServer] {"timestamp": "2026-11-17T06:52:22.444631+00:00", "level": "INFO", "logger": "backend.services.erasure", "message": "Đã xóa cuộc họp: meeting_id=0422f9a6-8db0-4acd-817d-069252f0de57", "request_id": "1bf0378b-1dfe-441a-9153-879961088f1e"}
+[WebServer] {"timestamp": "2026-11-17T06:52:22.444631+00:00", "level": "INFO", "logger": "backend.api.meetings", "message": "Đã xóa cuộc họp: meeting_id=0422f9a6-8db0-4acd-817d-069252f0de57", "request_id": "1bf0378b-1dfe-441a-9153-879961088f1e"}
+[WebServer] {"timestamp": "2026-11-17T06:52:22.445144+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "1bf0378b-1dfe-441a-9153-879961088f1e", "method": "DELETE", "path": "/api/v1/meetings/0422f9a6-8db0-4acd-817d-069252f0de57", "status_code": 204, "duration_ms": 24.99}
+  x  1 [chromium] › e2e\evidence\search-wildcard.spec.ts:6:1 › FE-04: real API search treats % and _ as literal characters (9.8s)
+
+
+  1) [chromium] › e2e\evidence\search-wildcard.spec.ts:6:1 › FE-04: real API search treats % and _ as literal characters 
+
+    Error: q=% chỉ khớp ký tự thật
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 1
+    Received: 4
+
+      56 |       expect(response.status()).toBe(200)
+      57 |       const data = await response.json()
+    > 58 |       expect.soft(data.total, `q=${q} chỉ khớp ký tự thật`).toBe(1)
+         |                                                             ^
+      59 |       expect
+      60 |         .soft(data.items.map((item: { id: string }) => item.id))
+      61 |         .toEqual([ids[expectedIndex]])
+        at D:\Project\CNPM\SE2026_Codex\frontend\e2e\evidence\search-wildcard.spec.ts:58:61
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 0
+    + Received  + 3
+
+      Array [
+    +   "0422f9a6-8db0-4acd-817d-069252f0de57",
+    +   "81814031-8f32-4c5f-9e07-a6159a88045b",
+        "bb70de3e-1a91-4620-95de-71ec03f4a6f7",
+    +   "8f6c2a1e-b2c3-4d4e-8f9a-0b1c2d3e4f5a",
+      ]
+
+      59 |       expect
+      60 |         .soft(data.items.map((item: { id: string }) => item.id))
+    > 61 |         .toEqual([ids[expectedIndex]])
+         |          ^
+      62 |       await expect
+      63 |         .soft(page.locator('.meeting-row'))
+      64 |         .toHaveCount(1, { timeout: 1500 })
+        at D:\Project\CNPM\SE2026_Codex\frontend\e2e\evidence\search-wildcard.spec.ts:61:10
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  locator('.meeting-row')
+    Expected: 1
+    Received: 4
+    Timeout:  1500ms
+
+    Call log:
+      - Expect "soft toHaveCount" locator('.meeting-row') with timeout 1500ms
+      - waiting for locator('.meeting-row')
+        16 × locator resolved to 4 elements
+           - unexpected value "4"
+
+
+      62 |       await expect
+      63 |         .soft(page.locator('.meeting-row'))
+    > 64 |         .toHaveCount(1, { timeout: 1500 })
+         |          ^
+      65 |       expect
+      66 |         .soft(
+      67 |           await page
+        at D:\Project\CNPM\SE2026_Codex\frontend\e2e\evidence\search-wildcard.spec.ts:64:10
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 0
+    + Received  + 3
+
+      Array [
+    +   "/meetings/0422f9a6-8db0-4acd-817d-069252f0de57",
+    +   "/meetings/81814031-8f32-4c5f-9e07-a6159a88045b",
+        "/meetings/bb70de3e-1a91-4620-95de-71ec03f4a6f7",
+    +   "/meetings/8f6c2a1e-b2c3-4d4e-8f9a-0b1c2d3e4f5a",
+      ]
+
+      69 |             .evaluateAll((rows) => rows.map((row) => row.getAttribute('href'))),
+      70 |         )
+    > 71 |         .toEqual([`/meetings/${ids[expectedIndex]}`])
+         |          ^
+      72 |       await expect
+      73 |         .soft(page.getByText('Hiển thị 1 trên 1 cuộc họp'))
+      74 |         .toBeVisible({ timeout: 1500 })
+        at D:\Project\CNPM\SE2026_Codex\frontend\e2e\evidence\search-wildcard.spec.ts:71:10
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('Hiển thị 1 trên 1 cuộc họp')
+    Expected: visible
+    Timeout: 1500ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "soft toBeVisible" getByText('Hiển thị 1 trên 1 cuộc họp') with timeout 1500ms
+      - waiting for getByText('Hiển thị 1 trên 1 cuộc họp')
+
+
+      72 |       await expect
+      73 |         .soft(page.getByText('Hiển thị 1 trên 1 cuộc họp'))
+    > 74 |         .toBeVisible({ timeout: 1500 })
+         |          ^
+      75 |       results.push({
+      76 |         q,
+      77 |         total: data.total,
+        at D:\Project\CNPM\SE2026_Codex\frontend\e2e\evidence\search-wildcard.spec.ts:74:10
+
+    Error: q=_ chỉ khớp ký tự thật
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 1
+    Received: 4
+
+      56 |       expect(response.status()).toBe(200)
+      57 |       const data = await response.json()
+    > 58 |       expect.soft(data.total, `q=${q} chỉ khớp ký tự thật`).toBe(1)
+         |                                                             ^
+      59 |       expect
+      60 |         .soft(data.items.map((item: { id: string }) => item.id))
+      61 |         .toEqual([ids[expectedIndex]])
+        at D:\Project\CNPM\SE2026_Codex\frontend\e2e\evidence\search-wildcard.spec.ts:58:61
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 0
+    + Received  + 3
+
+      Array [
+    +   "0422f9a6-8db0-4acd-817d-069252f0de57",
+        "81814031-8f32-4c5f-9e07-a6159a88045b",
+    +   "bb70de3e-1a91-4620-95de-71ec03f4a6f7",
+    +   "8f6c2a1e-b2c3-4d4e-8f9a-0b1c2d3e4f5a",
+      ]
+
+      59 |       expect
+      60 |         .soft(data.items.map((item: { id: string }) => item.id))
+    > 61 |         .toEqual([ids[expectedIndex]])
+         |          ^
+      62 |       await expect
+      63 |         .soft(page.locator('.meeting-row'))
+      64 |         .toHaveCount(1, { timeout: 1500 })
+        at D:\Project\CNPM\SE2026_Codex\frontend\e2e\evidence\search-wildcard.spec.ts:61:10
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  locator('.meeting-row')
+    Expected: 1
+    Received: 4
+    Timeout:  1500ms
+
+    Call log:
+      - Expect "soft toHaveCount" locator('.meeting-row') with timeout 1500ms
+      - waiting for locator('.meeting-row')
+        15 × locator resolved to 4 elements
+           - unexpected value "4"
+
+
+      62 |       await expect
+      63 |         .soft(page.locator('.meeting-row'))
+    > 64 |         .toHaveCount(1, { timeout: 1500 })
+         |          ^
+      65 |       expect
+      66 |         .soft(
+      67 |           await page
+        at D:\Project\CNPM\SE2026_Codex\frontend\e2e\evidence\search-wildcard.spec.ts:64:10
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 0
+    + Received  + 3
+
+      Array [
+    +   "/meetings/0422f9a6-8db0-4acd-817d-069252f0de57",
+        "/meetings/81814031-8f32-4c5f-9e07-a6159a88045b",
+    +   "/meetings/bb70de3e-1a91-4620-95de-71ec03f4a6f7",
+    +   "/meetings/8f6c2a1e-b2c3-4d4e-8f9a-0b1c2d3e4f5a",
+      ]
+
+      69 |             .evaluateAll((rows) => rows.map((row) => row.getAttribute('href'))),
+      70 |         )
+    > 71 |         .toEqual([`/meetings/${ids[expectedIndex]}`])
+         |          ^
+      72 |       await expect
+      73 |         .soft(page.getByText('Hiển thị 1 trên 1 cuộc họp'))
+      74 |         .toBeVisible({ timeout: 1500 })
+        at D:\Project\CNPM\SE2026_Codex\frontend\e2e\evidence\search-wildcard.spec.ts:71:10
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('Hiển thị 1 trên 1 cuộc họp')
+    Expected: visible
+    Timeout: 1500ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "soft toBeVisible" getByText('Hiển thị 1 trên 1 cuộc họp') with timeout 1500ms
+      - waiting for getByText('Hiển thị 1 trên 1 cuộc họp')
+
+
+      72 |       await expect
+      73 |         .soft(page.getByText('Hiển thị 1 trên 1 cuộc họp'))
+    > 74 |         .toBeVisible({ timeout: 1500 })
+         |          ^
+      75 |       results.push({
+      76 |         q,
+      77 |         total: data.total,
+        at D:\Project\CNPM\SE2026_Codex\frontend\e2e\evidence\search-wildcard.spec.ts:74:10
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\evidence-search-wildcard-F-9a785-s-and-as-literal-characters-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\evidence-search-wildcard-F-9a785-s-and-as-literal-characters-chromium\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\evidence-search-wildcard-F-9a785-s-and-as-literal-characters-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\evidence-search-wildcard-F-9a785-s-and-as-literal-characters-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [chromium] › e2e\evidence\search-wildcard.spec.ts:6:1 › FE-04: real API search treats % and _ as literal characters 
+
+EXIT=1
