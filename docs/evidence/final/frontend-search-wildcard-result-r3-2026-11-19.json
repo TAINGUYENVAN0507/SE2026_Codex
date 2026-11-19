@@ -1,0 +1,32 @@
+{
+  "results": [
+    {
+      "q": "%",
+      "total": 1,
+      "ids": [
+        "ae17b19f-b64d-4daa-b0b3-cf4026810d74"
+      ],
+      "displayed": 1
+    },
+    {
+      "q": "_",
+      "total": 1,
+      "ids": [
+        "984086a7-c0a0-4c4c-bab6-96dc03d54ef3"
+      ],
+      "displayed": 1
+    },
+    {
+      "q": "100%",
+      "total": 1,
+      "ids": [
+        "ae17b19f-b64d-4daa-b0b3-cf4026810d74"
+      ],
+      "displayed": 1
+    }
+  ],
+  "pageErrors": [],
+  "retries": 0,
+  "syntheticOnly": true,
+  "apiInterception": false
+}
