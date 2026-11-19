@@ -1,12 +1,14 @@
 """Cấu hình ứng dụng backend sử dụng pydantic-settings."""
 
 from functools import lru_cache
+from pathlib import Path
 from typing import Self
 
 from pydantic import AliasChoices, Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 DEFAULT_DEV_JWT_SECRET = "dev-insecure-jwt-secret-key-change-in-prod"
+DEFAULT_STORAGE_DIR = str(Path(__file__).resolve().parent.parent.parent / "appdata")
 
 
 class Settings(BaseSettings):
@@ -36,6 +38,9 @@ class Settings(BaseSettings):
     POSTGRES_MAX_CONNECTIONS: int = 100
     ENVIRONMENT: str = "development"
     DEBUG: bool = False
+
+    # Thư mục lưu trữ tệp (audio, artifacts). Mặc định là backend/appdata.
+    STORAGE_DIR: str = DEFAULT_STORAGE_DIR
 
     # Giới hạn upload theo kế hoạch
     MAX_UPLOAD_MB: int = 200

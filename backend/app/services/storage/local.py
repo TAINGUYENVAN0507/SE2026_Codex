@@ -32,7 +32,7 @@ class LocalStorage(Storage):
         self.base_dir = (
             Path(base_dir).resolve()
             if base_dir is not None
-            else Path(__file__).resolve().parent.parent.parent.parent / "appdata"
+            else Path(settings.STORAGE_DIR).resolve()
         )
         self.max_upload_bytes = (
             (max_upload_mb if max_upload_mb is not None else settings.MAX_UPLOAD_MB) * 1024 * 1024

@@ -163,10 +163,14 @@ def test_count_dirs_counts_subdirectories_only(tmp_path):
     assert harness.count_dirs(tmp_path / "audio") == 2
 
 
-def test_harness_storage_is_where_the_app_writes():
-    """Harness xóa trong đúng thư mục API và worker ghi (LocalStorage mặc định)."""
+def test_harness_storage_is_where_the_app_writes(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Harness xóa trong đúng thư mục API và worker ghi (LocalStorage mặc định khi không đổi)."""
+    from app.core.config import Settings
     from app.services.storage.local import LocalStorage
 
+    monkeypatch.delenv("STORAGE_DIR", raising=False)
+    default_settings = Settings()
+    monkeypatch.setattr("app.services.storage.local.get_settings", lambda: default_settings)
     assert LocalStorage().base_dir == load_harness().STORAGE
 
 
