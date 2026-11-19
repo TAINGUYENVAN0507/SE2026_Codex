@@ -1,0 +1,12 @@
+$ node node_modules/vitest/vitest.mjs run MeetingListPage
+
+ RUN  v5.0.5 D:/Project/CNPM/SE2026_Codex/frontend
+
+
+ Test Files  2 passed (2)
+      Tests  11 passed (11)
+   Start at  13:25:45
+   Duration  3.64s (tests 52%, environment 30%, import 10%, setup 5%, transform 3%)
+
+
+EXIT=0

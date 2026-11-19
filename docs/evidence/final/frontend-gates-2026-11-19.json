@@ -1,0 +1,114 @@
+{
+  "source_commit": "34aeaac772cb8ed51b20755823a880f97de63734",
+  "base_commit": "3a899b30b7ab5280923118223661539fb0192833",
+  "gates": {
+    "final-lint": {
+      "head": "bbb8669cf77f6ebb105a119a5dd82e2dc895ea16",
+      "command": [
+        "npm.cmd",
+        "run",
+        "lint"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 5.78,
+      "finished_at_utc": "2026-11-19T06:29:37.900417+00:00",
+      "log": "frontend-final-lint-2026-11-19.log"
+    },
+    "final-typecheck": {
+      "head": "bbb8669cf77f6ebb105a119a5dd82e2dc895ea16",
+      "command": [
+        "npm.cmd",
+        "run",
+        "typecheck"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 4.44,
+      "finished_at_utc": "2026-11-19T06:29:42.469668+00:00",
+      "log": "frontend-final-typecheck-2026-11-19.log"
+    },
+    "final-coverage": {
+      "head": "34aeaac772cb8ed51b20755823a880f97de63734",
+      "command": [
+        "npm.cmd",
+        "run",
+        "test:coverage"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 37.01,
+      "finished_at_utc": "2026-11-19T06:30:40.433377+00:00",
+      "log": "frontend-final-coverage-2026-11-19.log"
+    },
+    "final-build": {
+      "head": "34aeaac772cb8ed51b20755823a880f97de63734",
+      "command": [
+        "npm.cmd",
+        "run",
+        "build"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 5.02,
+      "finished_at_utc": "2026-11-19T06:30:45.576207+00:00",
+      "log": "frontend-final-build-2026-11-19.log"
+    },
+    "final-format": {
+      "head": "34aeaac772cb8ed51b20755823a880f97de63734",
+      "command": [
+        "npm.cmd",
+        "run",
+        "format:check"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 3.62,
+      "finished_at_utc": "2026-11-19T06:30:49.358496+00:00",
+      "log": "frontend-final-format-2026-11-19.log"
+    }
+  },
+  "source_sha256": {
+    "frontend/src/features/meetings/MeetingListPage.search.test.tsx": "057d8c5032a550e0b4c468f17e4b30309ee2e43b80fedbd763d5c903cd63e62f",
+    "frontend/src/features/meetings/MeetingListPage.test.tsx": "d622691c649b109987307f801bb48a9a68a91a11cc27db15e7869902e2a1513a",
+    "frontend/src/features/meetings/limits.ts": "66662697e4bf2358f2e4c5a0276c26673589638778f798c161cdf18a41060d8b",
+    "frontend/src/pages/MeetingListPage.tsx": "59d9266d9fe1ac59e829bcfa840cfdcb70cb393330122eec831000f39f5a9dbc"
+  },
+  "tests": 319,
+  "test_files": 54,
+  "skipped": 0,
+  "coverage_percent": {
+    "statements": 84.55,
+    "branches": 82.34,
+    "functions": 80.87,
+    "lines": 86.95
+  },
+  "e2e_wildcard": {
+    "runs": 3,
+    "passed": 3,
+    "retries": 0,
+    "fresh_database_each_run": true,
+    "source_commit": "3a899b30b7ab5280923118223661539fb0192833",
+    "report": "frontend-search-wildcard-green-2026-11-19.json"
+  },
+  "note": "Lint/typecheck chạy trên working tree code task 4 trước commit 34aeaac, source hash ở đây khớp mã đã kiểm. Coverage/build/format chạy tại 34aeaac. E2E chạy 3 lượt trên main nền trước các sửa UI hôm nay.",
+  "review": {
+    "status": "waiting_for_member_B_new_PR",
+    "checked_at_utc": "2026-11-19T06:30:31.753195+00:00"
+  },
+  "docs_utf8": {
+    "head": "34aeaac772cb8ed51b20755823a880f97de63734",
+    "command": [
+      "backend/.venv/Scripts/python.exe",
+      "-m",
+      "pytest",
+      "backend/tests/unit/test_docs_utf8.py",
+      "-q"
+    ],
+    "cwd": "root",
+    "exit_code": 0,
+    "duration_sec": 12.72,
+    "finished_at_utc": "2026-11-19T06:32:00.167143+00:00",
+    "log": "frontend-docs-utf8-2026-11-19.log"
+  }
+}

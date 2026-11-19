@@ -12,6 +12,7 @@ import { ApiError } from '../api/errors'
 import type { MeetingDetail } from '../api/client'
 import { useMeetingsQuery } from '../features/meetings/useMeetingsQuery'
 import { formatDate } from '../features/meetings/model'
+import { MEETING_SEARCH_MAX_LENGTH } from '../features/meetings/limits'
 
 type Status = MeetingDetail['status']
 const filters: { id: Status | 'all'; label: string }[] = [
@@ -43,6 +44,16 @@ export function MeetingListPage() {
     q: search,
   })
   const meetings = meetingsQuery.data?.items ?? []
+  const lastPage = Math.max(
+    1,
+    Math.ceil(
+      (meetingsQuery.data?.total ?? 0) / (meetingsQuery.data?.page_size ?? 10),
+    ),
+  )
+  // FE-04: dữ liệu có thể bị xóa ở tab khác; chỉnh trang trước khi hiện empty state.
+  if (meetingsQuery.isSuccess && !meetings.length && page > lastPage) {
+    setPage(lastPage)
+  }
   return (
     <>
       <Topbar />
@@ -82,6 +93,7 @@ export function MeetingListPage() {
             <MagnifyingGlassIcon />
             <input
               value={query}
+              maxLength={MEETING_SEARCH_MAX_LENGTH}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Tìm theo tiêu đề cuộc họp…"
               aria-label="Tìm cuộc họp"
@@ -163,11 +175,19 @@ export function MeetingListPage() {
           {meetingsQuery.isSuccess && !meetings.length && (
             <div className="empty-state">
               <MagnifyingGlassIcon size={28} />
-              <h2>{search ? 'Không tìm thấy cuộc họp' : 'Chưa có cuộc họp'}</h2>
+              <h2>
+                {search
+                  ? 'Không tìm thấy cuộc họp'
+                  : filter !== 'all'
+                    ? 'Không có cuộc họp ở trạng thái này'
+                    : 'Chưa có cuộc họp'}
+              </h2>
               <p>
                 {search
                   ? 'Thử từ khóa khác hoặc chọn “Tất cả”.'
-                  : 'Tạo cuộc họp mới để bắt đầu.'}
+                  : filter !== 'all'
+                    ? 'Chọn “Tất cả” hoặc thử trạng thái khác.'
+                    : 'Tạo cuộc họp mới để bắt đầu.'}
               </p>
               <button
                 className="button secondary"

@@ -109,7 +109,9 @@ describe('FE-04 meeting list', () => {
     renderPage()
     await screen.findByText(fixture.items[0].title)
     await userEvent.click(screen.getByRole('button', { name: /Có lỗi/ }))
-    expect(await screen.findByText('Chưa có cuộc họp')).toBeInTheDocument()
+    expect(
+      await screen.findByText('Không có cuộc họp ở trạng thái này'),
+    ).toBeInTheDocument()
     expect(statuses).toContain('failed')
   })
 
