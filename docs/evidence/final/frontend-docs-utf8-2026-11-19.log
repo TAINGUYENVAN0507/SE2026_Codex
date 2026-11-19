@@ -1,0 +1,5 @@
+$ backend/.venv/Scripts/python.exe -m pytest backend/tests/unit/test_docs_utf8.py -q
+..                                                                       [100%]
+2 passed in 10.28s
+
+EXIT=0

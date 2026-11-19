@@ -1,0 +1,29 @@
+$ npm.cmd run test:coverage
+
+> vietnamese-meeting-minutes-frontend@0.0.0 test:coverage
+> vitest run --coverage
+
+
+ RUN  v5.0.5 D:/Project/CNPM/SE2026_Codex/frontend
+      Coverage enabled with v8
+
+
+ Test Files  54 passed (54)
+      Tests  319 passed (319)
+   Start at  13:30:05
+   Duration  34.96s (environment 46%, tests 30%, import 10%, setup 9%, transform 3%, worker 2%)
+
+Environment  jsdom was created 54 times · 57.74s total, 46% of tracked time
+             create it once per worker with pool: 'vmThreads' (keeps per-file isolation) or isolate: false (shares it across files)
+             learn more: https://vitest.dev/guide/improving-performance#test-environments
+
+ % Coverage report from v8
+
+=============================== Coverage summary ===============================
+Statements   : 84.55% ( 1330/1573 )
+Branches     : 82.34% ( 1180/1433 )
+Functions    : 80.87% ( 406/502 )
+Lines        : 86.95% ( 1226/1410 )
+================================================================================
+
+EXIT=0

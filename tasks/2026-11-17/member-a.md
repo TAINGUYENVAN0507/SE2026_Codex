@@ -101,5 +101,5 @@ PR #67 và #66 đã merge. A tự chạy E2E wildcard **3/3 lượt đạt** tr�
 3a899b3, mỗi lượt một database PostgreSQL 16 e2e mới, retries=0. %, _ và 100%
 trả đúng 1 mục; 0 pageerror. Bằng chứng frontend-search-wildcard-green-2026-11-19.log,
 JSON cùng tên và ba wildcard-result r1/r2/r3 trong docs/evidence/final/.
-Hash commit đóng việc ghi tại tasks/2026-11-19/member-a.md, việc 1 (commit này).
+Hash commit đóng việc: `7e52573ef6e05ca6de8a1b9b956804b701527934` (việc 1 của A ngày 19/11).
 Các phần trạng thái chờ phía trên là ghi nhận tại thời điểm 17/11.
