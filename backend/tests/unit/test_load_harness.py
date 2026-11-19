@@ -293,3 +293,68 @@ def test_api_log_stats_flags_a_query_string(tmp_path: Path, line: str) -> None:
     log = tmp_path / "api.stdout"
     log.write_text(line + "\n", encoding="utf-8")
     assert load_harness().api_log_stats(log)["with_query_string"] == 1
+
+
+def test_search_terms_rotate_the_wildcards_and_the_client_title() -> None:
+    harness = load_harness()
+    assert harness.search_terms(0, 4) == ["%", "_", "100%", "Tải 0"]
+    assert harness.search_terms(5, 2) == ["_", "100%"]
+    assert harness.search_terms(3, 0) == []
+
+
+@pytest.mark.parametrize(
+    ("term", "total", "ok"),
+    [("%", 0, True), ("%", 3, False), ("_", 1, False), ("100%", 0, True), ("Tải 7", 1, True)],
+)
+def test_search_ok_wants_no_hit_for_wildcards_and_a_hit_for_the_title(
+    term: str, total: int, ok: bool
+) -> None:
+    assert load_harness().search_ok(term, total) is ok
+
+
+def _fake_api(search_total):
+    """API giả cho client_run: total của tìm kiếm do search_total(q) quyết định."""
+    import httpx
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        path = request.url.path
+        if path == "/api/v1/auth/login":
+            return httpx.Response(200, json={})
+        if path == "/api/v1/meetings" and request.method == "POST":
+            return httpx.Response(201, json={"job": {"id": "j1"}})
+        if path == "/api/v1/meetings":
+            q = request.url.params["q"]
+            return httpx.Response(200, json={"total": search_total(q), "items": []})
+        return httpx.Response(200, json={})
+
+    return handler
+
+
+@pytest.mark.parametrize(
+    ("search_total", "wrong"),
+    [
+        (lambda q: 0 if q in ("%", "_", "100%") else 1, []),
+        # Trước #67, % và _ là wildcard nên khớp mọi cuộc họp.
+        (lambda q: 0 if q == "100%" else 5, [("search_wrong", "%"), ("search_wrong", "_")]),
+    ],
+)
+def test_client_run_searches_after_upload_and_counts_wrong_results(
+    monkeypatch, tmp_path: Path, search_total, wrong
+) -> None:
+    import threading
+
+    import httpx
+
+    harness = load_harness()
+    transport = httpx.MockTransport(_fake_api(search_total))
+    monkeypatch.setattr(
+        harness, "make_client", lambda base: httpx.Client(base_url=base, transport=transport)
+    )
+    wav = tmp_path / "a.wav"
+    wav.write_bytes(b"RIFF")
+    ready, start = threading.Barrier(1), threading.Event()
+    start.set()
+    rows, errors = [], []
+    harness.client_run(0, "http://api", wav, ready, start, 0, 0.0, rows, errors, [], [], searches=4)
+    assert [k for k, _, _ in rows] == ["create", "search", "search", "search", "search"]
+    assert errors == wrong

@@ -22,6 +22,11 @@ Giới hạn của phép đo (cũng được ghi vào summary.md):
 riêng, để tách phần chậm do máy sinh tải tranh CPU với server. Postgres chạy ngoài harness nên
 phải ghim riêng (taskset). summary.json ghi số CPU mà máy sinh tải thật sự dùng trong lúc đo.
 
+--search K: sau upload, mỗi client gửi K lượt GET /api/v1/meetings?q=..., xoay vòng ba từ khóa
+wildcard (%, _, 100%) và tiêu đề của chính client. Tiêu đề lượt đo là "Tải i" nên ba wildcard phải
+ra total 0 và tiêu đề phải ra ít nhất 1; sai thì tính lỗi search_wrong (bắt lại lỗi #67 dưới tải).
+Histogram phía server chỉ có nhãn route nên GET tìm kiếm gộp vào dòng upload phía server.
+
 Sau mỗi lượt, harness xóa audio/ và artifacts/ của các meeting lượt đó tạo (--keep-audio để giữ).
 Trước 11-16 harness không dọn, nên thư mục lưu lớn dần qua các lượt (22.947 thư mục ngày 11-16).
 """
@@ -358,6 +363,19 @@ def wait_ready(base: str, timeout: float = 60) -> None:
 # 1 s thì kết nối rảnh qua barrier hay qua khoảng poll 2 s đều được mở lại, giống đường thật:
 # nginx dùng proxy_pass không có upstream keepalive nên không dùng lại kết nối tới uvicorn.
 CLIENT_KEEPALIVE_EXPIRY_S = 1.0
+# Tiêu đề lượt đo là "Tải i": không có %, _ nên các từ khóa này phải ra total 0 (BE-05, #67).
+SEARCH_WILDCARDS = ("%", "_", "100%")
+
+
+def search_terms(i: int, n: int) -> list[str]:
+    """n từ khóa cho client i: xoay vòng ba wildcard và tiêu đề của chính client."""
+    pool = (*SEARCH_WILDCARDS, f"Tải {i}")
+    return [pool[(i + k) % len(pool)] for k in range(n)]
+
+
+def search_ok(term: str, total: int) -> bool:
+    """Wildcard phải khớp đúng ký tự (0 kết quả); tiêu đề của client phải ra chính nó (≥ 1)."""
+    return total == 0 if term in SEARCH_WILDCARDS else total >= 1
 
 
 def make_client(base: str) -> httpx.Client:
@@ -369,7 +387,19 @@ def make_client(base: str) -> httpx.Client:
 
 
 def client_run(
-    i, base, wav, ready, start, polls, interval, rows, errors, idle, detail, on_uploaded=None
+    i,
+    base,
+    wav,
+    ready,
+    start,
+    polls,
+    interval,
+    rows,
+    errors,
+    idle,
+    detail,
+    on_uploaded=None,
+    searches=0,
 ):
     with make_client(base) as c:
         try:
@@ -425,6 +455,14 @@ def client_run(
             errors.append(("create", r.status_code))
             return
         job_id = r.json()["job"]["id"]
+        for term in search_terms(i, searches):
+            t0 = time.perf_counter()
+            r = c.get("/api/v1/meetings", params={"q": term})
+            rows.append(("search", r.status_code, time.perf_counter() - t0))
+            if r.status_code != 200:
+                errors.append(("search", r.status_code))
+            elif not search_ok(term, r.json()["total"]):
+                errors.append(("search_wrong", term))
         for _ in range(polls):
             time.sleep(interval)
             t0 = time.perf_counter()
@@ -434,7 +472,9 @@ def client_run(
                 errors.append(("poll", r.status_code))
 
 
-def run_clients(ids, base, wav, polls, interval, on_ready, on_abort, on_uploads_done=None):
+def run_clients(
+    ids, base, wav, polls, interval, on_ready, on_abort, on_uploads_done=None, searches=0
+):
     """Chạy các client trong process hiện tại: đăng nhập hết, gọi on_ready (chặn tới lúc thả),
     rồi thả mọi thread cùng lúc. Trả về (rows, errors)."""
     rows: list = []
@@ -457,7 +497,7 @@ def run_clients(ids, base, wav, polls, interval, on_ready, on_abort, on_uploads_
         threading.Thread(
             target=client_run,
             args=(i, base, wav, ready, start, polls, interval, rows, errors, idle, detail),
-            kwargs={"on_uploaded": on_uploaded},
+            kwargs={"on_uploaded": on_uploaded, "searches": searches},
         )
         for i in ids
     ]
@@ -483,7 +523,18 @@ def run_clients(ids, base, wav, polls, interval, on_ready, on_abort, on_uploads_
 
 
 def child_main(
-    ids, base, wav, polls, interval, login_slots, all_ready, go, results, cpus=None, uploaded=None
+    ids,
+    base,
+    wav,
+    polls,
+    interval,
+    login_slots,
+    all_ready,
+    go,
+    results,
+    cpus=None,
+    uploaded=None,
+    searches=0,
 ):
     """Một process client (--client-procs > 1): mọi process đăng nhập xong mới cùng được thả."""
     global LOGIN_SLOTS
@@ -497,7 +548,15 @@ def child_main(
 
     results.put(
         run_clients(
-            ids, base, wav, polls, interval, on_ready, all_ready.abort, uploaded and uploaded.set
+            ids,
+            base,
+            wav,
+            polls,
+            interval,
+            on_ready,
+            all_ready.abort,
+            uploaded and uploaded.set,
+            searches,
         )
     )
 
@@ -508,6 +567,12 @@ def main() -> int:
     ap.add_argument("--clients", type=int, default=40)
     ap.add_argument("--polls", type=int, default=5)
     ap.add_argument("--interval", type=float, default=2.0)
+    ap.add_argument(
+        "--search",
+        type=int,
+        default=0,
+        help="số lượt GET /meetings?q=... mỗi client gửi sau upload (wildcard và tiêu đề)",
+    )
     ap.add_argument("--threshold", type=float, default=1.5, help="p95 mục tiêu (giây)")
     ap.add_argument("--port", type=int, default=18000)
     ap.add_argument(
@@ -644,6 +709,7 @@ def main() -> int:
                 before_release,
                 lambda: None,
                 after_uploads,
+                args.search,
             )
             client_cpu = [cpu]
         else:
@@ -668,6 +734,7 @@ def main() -> int:
                         results,
                         client_cpus,
                         uploaded[k],
+                        args.search,
                     ),
                 )
                 for k in range(args.client_procs)
@@ -733,7 +800,7 @@ def main() -> int:
         w.writerow(["kind", "status", "latency_s"])
         w.writerows((k, s, f"{d:.4f}") for k, s, d in rows)
 
-    by = {k: [d for kk, s, d in rows if kk == k and s < 400] for k in ("create", "poll")}
+    by = {k: [d for kk, s, d in rows if kk == k and s < 400] for k in ("create", "poll", "search")}
     allv = by["create"] + by["poll"]
     items = listing.get("items", []) if isinstance(listing, dict) else []
     statuses: dict[str, int] = {}
@@ -744,6 +811,11 @@ def main() -> int:
         "threshold_p95_s": args.threshold,
         "create": stats(by["create"]),
         "poll": stats(by["poll"]),
+        "search": {
+            **stats(by["search"]),
+            "per_client": args.search,
+            "wrong_results": sum(1 for k, _ in errors if k == "search_wrong"),
+        },
         "all_requests": stats(allv),
         "errors": len(errors),
         "create_error_detail": detail,
@@ -796,6 +868,8 @@ def main() -> int:
     if "skipped" not in summary["server"]:
         # Server đếm đủ request của mọi process thì hai số này bằng nhau (BE-19, #48).
         sent = {k: sum(1 for kk, _, _ in rows if kk == k) for k in ("create", "poll")}
+        # Histogram chỉ có nhãn route: GET tìm kiếm cùng route /api/v1/meetings với upload.
+        sent["create"] += sum(1 for kk, _, _ in rows if kk == "search")
         summary["server_count_vs_client"] = {
             k: {"server": summary["server"][k].get("n", 0), "client": sent[k]} for k in sent
         }
@@ -912,6 +986,7 @@ def main() -> int:
 |---|---|---|---|---|
 | tạo cuộc họp (upload) | {summary["create"]["n"]} | {summary["create"]["p50_s"]} | {summary["create"]["p95_s"]} | {summary["create"]["max_s"]} |
 | poll trạng thái job | {summary["poll"]["n"]} | {summary["poll"]["p50_s"]} | {summary["poll"]["p95_s"]} | {summary["poll"]["max_s"]} |
+| tìm kiếm `?q=` | {summary["search"]["n"]} | {summary["search"]["p50_s"]} | {summary["search"]["p95_s"]} | {summary["search"]["max_s"]} |
 | **tất cả** | {summary["all_requests"]["n"]} | {summary["all_requests"]["p50_s"]} | **{summary["all_requests"]["p95_s"]}** | {summary["all_requests"]["max_s"]} |
 
 Mục tiêu p95 ≤ {args.threshold} s: upload **{summary["verdict_upload"]}** (p95 upload {summary["create"]["p95_s"]} s); mọi request gộp upload và poll **{summary["verdict"]}** (exit code theo số này). Lỗi: {summary["errors"]} {summary["error_kinds"] or ""}. Từ lúc thả client tới khi xong: {summary["burst_wall_clock_s"]} s. Process sinh tải: {args.client_procs}.
@@ -919,6 +994,8 @@ Trạng thái meeting khi kết thúc: {statuses}.
 Máy sinh tải dùng trung bình {summary["client_cpu"]["cpus_busy"]} CPU trong pha upload (được dùng {summary["client_cpu"]["cpus_allowed"]}). Ghim CPU: server {args.server_cpus or "không"}, client {args.client_cpus or "không"}.
 
 {server_cpu_md}
+
+Tìm kiếm: {args.search} lượt mỗi client sau upload (wildcard `%`, `_`, `100%` và tiêu đề của client); kết quả sai: **{summary["search"]["wrong_results"]}**. Khi có tìm kiếm, dòng upload phía server gộp cả GET `/api/v1/meetings` (histogram chỉ có nhãn route). Dòng "tất cả" chỉ gộp upload và poll.
 
 Stdout của API: {summary["api_log"]["lines"]} dòng, trong đó {summary["api_log"]["app_access"]} dòng access của app, {summary["api_log"]["uvicorn_access"]} dòng access của uvicorn; dòng có query string: **{summary["api_log"]["with_query_string"]}**.
 
