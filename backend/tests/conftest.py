@@ -1,6 +1,9 @@
 """Cấu hình pytest và các fixture dùng chung cho kiểm thử backend."""
 
+import atexit
 import os
+import shutil
+import tempfile
 from collections.abc import Generator
 from pathlib import Path
 
@@ -11,6 +14,15 @@ from sqlalchemy.orm import Session
 
 from alembic import command
 from app.core.config import get_settings
+from app.services.storage import get_storage
+
+# Đặt STORAGE_DIR sang thư mục tạm cho cả phiên test (BE-16)
+_SESSION_TMP_STORAGE = tempfile.mkdtemp(prefix="codex_test_storage_")
+os.environ["STORAGE_DIR"] = _SESSION_TMP_STORAGE
+atexit.register(lambda: shutil.rmtree(_SESSION_TMP_STORAGE, ignore_errors=True))
+
+get_settings.cache_clear()
+get_storage.cache_clear()
 
 
 def get_alembic_config(db_url: str) -> Config:
