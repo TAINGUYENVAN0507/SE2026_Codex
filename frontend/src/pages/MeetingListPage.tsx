@@ -44,6 +44,16 @@ export function MeetingListPage() {
     q: search,
   })
   const meetings = meetingsQuery.data?.items ?? []
+  const lastPage = Math.max(
+    1,
+    Math.ceil(
+      (meetingsQuery.data?.total ?? 0) / (meetingsQuery.data?.page_size ?? 10),
+    ),
+  )
+  // FE-04: dữ liệu có thể bị xóa ở tab khác; chỉnh trang trước khi hiện empty state.
+  if (meetingsQuery.isSuccess && !meetings.length && page > lastPage) {
+    setPage(lastPage)
+  }
   return (
     <>
       <Topbar />
