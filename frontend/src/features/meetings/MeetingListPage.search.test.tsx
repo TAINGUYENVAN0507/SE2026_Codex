@@ -263,12 +263,10 @@ it.each([
           removed ? remainingTotal : initialTotal,
         )
         return HttpResponse.json({
-          items: available
-            .slice((page - 1) * 10, page * 10)
-            .map((meeting) => ({
-              ...meeting,
-              status: removed ? 'ready' : 'processing',
-            })),
+          items: available.slice((page - 1) * 10, page * 10).map((meeting) => ({
+            ...meeting,
+            status: removed ? 'ready' : 'processing',
+          })),
           total: available.length,
           page,
           page_size: 10,
@@ -314,3 +312,43 @@ it.each([
     ).not.toBeInTheDocument()
   },
 )
+
+it('FE-04: bộ lọc rỗng báo không có cuộc họp ở trạng thái này và xóa lọc được', async () => {
+  const requests: URL[] = []
+  server.use(
+    http.get('*/api/v1/meetings', ({ request }) => {
+      const url = new URL(request.url)
+      requests.push(url)
+      return HttpResponse.json(
+        list(url.searchParams.get('status') === 'failed' ? [] : [item]),
+      )
+    }),
+  )
+  const user = userEvent.setup()
+  renderPage()
+  await screen.findByText(item.title)
+  await user.click(screen.getByRole('button', { name: /Có lỗi/ }))
+  expect(
+    await screen.findByRole('heading', {
+      name: 'Không có cuộc họp ở trạng thái này',
+    }),
+  ).toBeVisible()
+  expect(
+    screen.queryByRole('heading', { name: 'Chưa có cuộc họp' }),
+  ).not.toBeInTheDocument()
+  expect(
+    screen.queryByText('Tạo cuộc họp mới để bắt đầu.'),
+  ).not.toBeInTheDocument()
+  expect(requests.at(-1)?.searchParams.get('status')).toBe('failed')
+  await user.click(screen.getByRole('button', { name: 'Xóa bộ lọc' }))
+  expect(await screen.findByText(item.title)).toBeVisible()
+  expect(screen.getByRole('button', { name: /^Tất cả/ })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
+  expect(
+    screen.queryByRole('heading', {
+      name: 'Không có cuộc họp ở trạng thái này',
+    }),
+  ).not.toBeInTheDocument()
+})

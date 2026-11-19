@@ -175,11 +175,19 @@ export function MeetingListPage() {
           {meetingsQuery.isSuccess && !meetings.length && (
             <div className="empty-state">
               <MagnifyingGlassIcon size={28} />
-              <h2>{search ? 'Không tìm thấy cuộc họp' : 'Chưa có cuộc họp'}</h2>
+              <h2>
+                {search
+                  ? 'Không tìm thấy cuộc họp'
+                  : filter !== 'all'
+                    ? 'Không có cuộc họp ở trạng thái này'
+                    : 'Chưa có cuộc họp'}
+              </h2>
               <p>
                 {search
                   ? 'Thử từ khóa khác hoặc chọn “Tất cả”.'
-                  : 'Tạo cuộc họp mới để bắt đầu.'}
+                  : filter !== 'all'
+                    ? 'Chọn “Tất cả” hoặc thử trạng thái khác.'
+                    : 'Tạo cuộc họp mới để bắt đầu.'}
               </p>
               <button
                 className="button secondary"
