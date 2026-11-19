@@ -198,3 +198,39 @@ it('FE-04: đổi trạng thái từ trang 2 về trang 1 và giữ từ khóa t
   expect(requests.at(-1)?.searchParams.get('status')).toBe('ready')
   expect(requests.at(-1)?.searchParams.get('q')).toBe('nhóm')
 })
+
+it('FE-04: dán 250 ký tự chỉ gửi 200 ký tự và danh sách vẫn hiện', async () => {
+  const queries: string[] = []
+  server.use(
+    http.get('*/api/v1/meetings', ({ request }) => {
+      const q = new URL(request.url).searchParams.get('q')
+      if (q) queries.push(q)
+      if (q && q.length > 200)
+        return HttpResponse.json(
+          {
+            error: {
+              code: 'VALIDATION_ERROR',
+              message: 'Từ khóa quá dài',
+              details: null,
+              request_id: null,
+            },
+          },
+          { status: 422 },
+        )
+      return HttpResponse.json(list([item]))
+    }),
+  )
+  const user = userEvent.setup()
+  renderPage()
+  await screen.findByText(item.title)
+  const input = screen.getByRole('textbox', { name: 'Tìm cuộc họp' })
+  await user.click(input)
+  await user.paste('x'.repeat(250))
+  await waitFor(() => expect(queries.length).toBeGreaterThan(0))
+  expect(queries).toEqual(['x'.repeat(200)])
+  expect(input).toHaveValue('x'.repeat(200))
+  expect(input).toHaveAttribute('maxlength', '200')
+  expect(await screen.findByText('Hiển thị 1 trên 1 cuộc họp')).toBeVisible()
+  expect(screen.getByText(item.title)).toBeVisible()
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+})

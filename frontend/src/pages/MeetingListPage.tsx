@@ -12,6 +12,7 @@ import { ApiError } from '../api/errors'
 import type { MeetingDetail } from '../api/client'
 import { useMeetingsQuery } from '../features/meetings/useMeetingsQuery'
 import { formatDate } from '../features/meetings/model'
+import { MEETING_SEARCH_MAX_LENGTH } from '../features/meetings/limits'
 
 type Status = MeetingDetail['status']
 const filters: { id: Status | 'all'; label: string }[] = [
@@ -82,6 +83,7 @@ export function MeetingListPage() {
             <MagnifyingGlassIcon />
             <input
               value={query}
+              maxLength={MEETING_SEARCH_MAX_LENGTH}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Tìm theo tiêu đề cuộc họp…"
               aria-label="Tìm cuộc họp"

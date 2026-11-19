@@ -1,0 +1,38 @@
+$ node node_modules/vitest/vitest.mjs run MeetingListPage.search -t 250
+
+ RUN  v5.0.5 D:/Project/CNPM/SE2026_Codex/frontend
+
+ ❯ src/features/meetings/MeetingListPage.search.test.tsx (5 tests | 1 failed | 4 skipped) 560ms
+   × FE-04: dán 250 ký tự chỉ gửi 200 ký tự và danh sách vẫn hiện 556ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/features/meetings/MeetingListPage.search.test.tsx > FE-04: dán 250 ký tự chỉ gửi 200 ký tự và danh sách vẫn hiện
+AssertionError: expected [ Array(1) ] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+  [
+-   "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
++   "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  ]
+
+ ❯ src/features/meetings/MeetingListPage.search.test.tsx:230:19
+    228|   await user.paste('x'.repeat(250))
+    229|   await waitFor(() => expect(queries.length).toBeGreaterThan(0))
+    230|   expect(queries).toEqual(['x'.repeat(200)])
+       |                   ^
+    231|   expect(input).toHaveValue('x'.repeat(200))
+    232|   expect(input).toHaveAttribute('maxlength', '200')
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 4 skipped (5)
+   Start at  13:25:22
+   Duration  2.11s (environment 43%, tests 28%, import 15%, setup 9%, transform 4%)
+
+
+EXIT=1
