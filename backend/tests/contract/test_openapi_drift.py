@@ -25,6 +25,7 @@ from app.schemas.transcript import (
     TranscriptOut,
     TranscriptSegmentOut,
 )
+from app.services.storage import LocalStorage, get_storage
 
 
 def get_contracts_root() -> Path:
@@ -485,9 +486,10 @@ def test_create_meeting_missing_consent() -> None:
         assert error.get("code") == "CONSENT_REQUIRED"
 
 
-def test_create_meeting_success() -> None:
+def test_create_meeting_success(tmp_path: Path) -> None:
     """Kiểm tra POST /api/v1/meetings hợp lệ trả về 201 kèm meeting và job."""
     app = create_app()
+    app.dependency_overrides[get_storage] = lambda: LocalStorage(base_dir=tmp_path)
     with TestClient(app) as client:
         response = client.post(
             "/api/v1/meetings",

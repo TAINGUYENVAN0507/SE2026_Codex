@@ -1,0 +1,23 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.12.13, pytest-9.1.1, pluggy-1.7.0 -- D:\kicuoi\SE2026_Codex\backend\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: D:\kicuoi\SE2026_Codex\backend
+configfile: pyproject.toml
+plugins: anyio-4.15.1, cov-7.1.0
+collecting ... collected 2 items
+
+tests/api/test_speaker_stats.py::test_speaker_segment_count_and_speaking_time_consistent PASSED [ 50%]
+tests/api/test_speaker_stats.py::test_speaker_stats_consistent_after_segment_moves_to_another_speaker PASSED [100%]
+
+============================== warnings summary ===============================
+.venv\Lib\site-packages\fastapi\testclient.py:1
+  D:\kicuoi\SE2026_Codex\backend\.venv\Lib\site-packages\fastapi\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/api/test_speaker_stats.py::test_speaker_segment_count_and_speaking_time_consistent
+tests/api/test_speaker_stats.py::test_speaker_stats_consistent_after_segment_moves_to_another_speaker
+  D:\kicuoi\SE2026_Codex\backend\.venv\Lib\site-packages\jwt\api_jwt.py:149: InsecureKeyLengthWarning: The HMAC key is 31 bytes long, which is below the minimum recommended length of 32 bytes for SHA256. See RFC 7518 Section 3.2.
+    return self._jws.encode(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 2 passed, 3 warnings in 1.44s ========================

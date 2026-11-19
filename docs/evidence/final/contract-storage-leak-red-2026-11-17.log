@@ -1,0 +1,49 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.12.13, pytest-9.1.1, pluggy-1.7.0
+rootdir: D:\kicuoi\SE2026_Codex\backend
+configfile: pyproject.toml
+plugins: anyio-4.15.1, cov-7.1.0
+collected 1 item
+
+tests\contract\test_openapi_drift.py .E                                  [100%]
+
+=================================== ERRORS ====================================
+______________ ERROR at teardown of test_create_meeting_success _______________
+
+    @pytest.fixture(scope="session", autouse=True)
+    def guard_no_real_appdata_leak() -> Generator[None, None, None]:
+        """Bảo vệ backend/appdata: không bài test nào được ghi thêm thư mục vào backend/appdata/audio thật (BE-16)."""
+        appdata_audio = Path(__file__).resolve().parent.parent / "appdata" / "audio"
+        before = set(appdata_audio.iterdir()) if appdata_audio.exists() else set()
+        yield
+        after = set(appdata_audio.iterdir()) if appdata_audio.exists() else set()
+        new_dirs = after - before
+        # Dọn dẹp thư mục rác do test tạo ra để không làm ô nhiễm môi trường chạy tiếp theo
+        for d in new_dirs:
+            if d.is_dir():
+                shutil.rmtree(d, ignore_errors=True)
+>       assert not new_dirs, (
+            f"Phát hiện test ghi trực tiếp vào backend/appdata/audio thật: {[d.name for d in new_dirs]}. "
+            "Test phải sử dụng storage tạm (tmp_path)!"
+        )
+E       AssertionError: Phát hiện test ghi trực tiếp vào backend/appdata/audio thật: ['918b38ba-0b92-4dfa-91df-3554852ef426']. Test phải sử dụng storage tạm (tmp_path)!
+E       assert not {WindowsPath('D:/kicuoi/SE2026_Codex/backend/appdata/audio/918b38ba-0b92-4dfa-91df-3554852ef426')}
+
+tests\conftest.py:90: AssertionError
+---------------------------- Captured stderr call -----------------------------
+{"timestamp": "2026-11-18T09:54:49.587524+00:00", "level": "INFO", "logger": "app.services.meetings.upload", "message": "Job 265980a1-9f45-4602-b83b-eb382feea0fc đã được tạo cho cuộc họp 918b38ba-0b92-4dfa-91df-3554852ef426", "request_id": "6a816355-5f8f-47d5-824e-f9d9cd06640e", "event": "job_created", "job_id": "265980a1-9f45-4602-b83b-eb382feea0fc", "meeting_id": "918b38ba-0b92-4dfa-91df-3554852ef426", "stage": "preprocess", "attempt": 1, "status": "queued"}
+{"timestamp": "2026-11-18T09:54:49.589578+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "6a816355-5f8f-47d5-824e-f9d9cd06640e", "method": "POST", "path": "/api/v1/meetings", "status_code": 201, "duration_ms": 71.28}
+{"timestamp": "2026-11-18T09:54:49.590605+00:00", "level": "INFO", "logger": "httpx", "message": "HTTP Request: POST http://testserver/api/v1/meetings \"HTTP/1.1 201 Created\"", "request_id": null}
+------------------------------ Captured log call ------------------------------
+INFO     app.services.meetings.upload:upload.py:223 Job 265980a1-9f45-4602-b83b-eb382feea0fc đã được tạo cho cuộc họp 918b38ba-0b92-4dfa-91df-3554852ef426
+INFO     app.access:middleware.py:49 HTTP request completed
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/api/v1/meetings "HTTP/1.1 201 Created"
+============================== warnings summary ===============================
+.venv\Lib\site-packages\fastapi\testclient.py:1
+  D:\kicuoi\SE2026_Codex\backend\.venv\Lib\site-packages\fastapi\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+ERROR tests/contract/test_openapi_drift.py::test_create_meeting_success - Ass...
+==================== 1 passed, 1 warning, 1 error in 1.12s ====================

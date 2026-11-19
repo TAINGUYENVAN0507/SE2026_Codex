@@ -121,6 +121,11 @@ def serialize_meeting_summary(
     )
 
 
+def escape_like_wildcards(text: str) -> str:
+    """Escape các ký tự đặc biệt của LIKE/ILIKE: \\, %, _."""
+    return text.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+
 @router.get(
     "",
     response_model=MeetingListOut,
@@ -135,14 +140,18 @@ def list_meetings(
     status_filter: Annotated[
         MeetingStatus | None, Query(alias="status", description="Lọc theo trạng thái")
     ] = None,
-    q: Annotated[str | None, Query(description="Tìm kiếm theo tiêu đề cuộc họp")] = None,
+    q: Annotated[
+        str | None,
+        Query(max_length=200, description="Tìm kiếm theo tiêu đề cuộc họp"),
+    ] = None,
 ) -> MeetingListOut:
     """Lấy danh sách cuộc họp có phân trang và lọc theo trạng thái."""
     base_query = select(Meeting).where(Meeting.owner_id == current_user.id)
     if status_filter is not None:
         base_query = base_query.where(Meeting.status == status_filter)
     if q and q.strip():
-        base_query = base_query.where(Meeting.title.ilike(f"%{q.strip()}%"))
+        safe_q = escape_like_wildcards(q.strip())
+        base_query = base_query.where(Meeting.title.ilike(f"%{safe_q}%", escape="\\"))
 
     total = db.scalar(select(func.count()).select_from(base_query.subquery())) or 0
     offset = (page - 1) * page_size
