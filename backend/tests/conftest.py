@@ -41,6 +41,17 @@ def _check_postgres_connection(db_url: str) -> bool:
     if not db_url.startswith("postgresql"):
         return False
     try:
+        import socket
+        from urllib.parse import urlparse
+
+        parsed = urlparse(db_url)
+        host = parsed.hostname or "127.0.0.1"
+        port = parsed.port or 5432
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.settimeout(0.5)
+            if sock.connect_ex((host, port)) != 0:
+                return False
+
         connect_args = {"connect_timeout": 1} if "psycopg" in db_url else {}
         test_engine = create_engine(db_url, connect_args=connect_args)
         with test_engine.connect() as conn:

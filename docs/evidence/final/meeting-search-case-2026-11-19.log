@@ -1,0 +1,18 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.13, pytest-9.1.1, pluggy-1.7.0
+rootdir: D:\kicuoi\SE2026_Codex\backend
+configfile: pyproject.toml
+plugins: anyio-4.15.1, cov-7.1.0
+collected 1 item
+
+tests/integration/test_meeting_search_case_postgres.py::test_meeting_search_ignores_case_for_vietnamese_letters_on_postgres PASSED [100%]
+
+[PostgreSQL Locale Info] {'datname': 'meeting_minutes', 'datcollate': 'C.UTF-8', 'datctype': 'C.UTF-8'}
+- Tiêu đề kiểm thử: 'Họp nhóm', 'HỌP KỸ THUẬT'
+- GET /api/v1/meetings?q=HỌP -> total: 2 (khớp cả hai cuộc họp)
+- GET /api/v1/meetings?q=họp -> total: 2 (khớp cả hai cuộc họp)
+- GET /api/v1/meetings?q=kỹ  -> total: 1 (khớp 'HỌP KỸ THUẬT')
+- GET /api/v1/meetings?q=KỸ  -> total: 1 (khớp 'HỌP KỸ THUẬT')
+
+Kết luận: Không có lỗi. PostgreSQL với locale UTF-8 thực hiện case-folding chính xác cho các chữ tiếng Việt có dấu khi tìm kiếm qua toán tử ILIKE.
+============================== 1 passed in 1.45s ==============================
