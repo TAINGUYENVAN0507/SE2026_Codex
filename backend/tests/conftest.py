@@ -1,7 +1,6 @@
 """Cấu hình pytest và các fixture dùng chung cho kiểm thử backend."""
 
 import os
-import shutil
 from collections.abc import Generator
 from pathlib import Path
 
@@ -75,20 +74,32 @@ def db_session(require_postgres: str) -> Generator[Session, None, None]:
         engine.dispose()
 
 
+def snapshot_directory_entries(dir_path: Path) -> set[Path]:
+    """Lấy snapshot danh sách các file/thư mục hiện có."""
+    return set(dir_path.iterdir()) if dir_path.exists() else set()
+
+
+def check_directory_leak(dir_path: Path, before: set[Path]) -> list[str]:
+    """Kiểm tra và báo lỗi nếu có thư mục mới xuất hiện so với snapshot ban đầu.
+
+    Chỉ báo lỗi và liệt kê tên các thư mục bị rò rỉ, TUYỆT ĐỐI KHÔNG xóa bất kỳ file nào (BE-16),
+    nhằm tránh xóa nhầm dữ liệu của API dev hay load harness đang chạy đồng thời.
+    """
+    after = snapshot_directory_entries(dir_path)
+    new_entries = sorted(after - before)
+    if new_entries:
+        leaked = [p.name for p in new_entries]
+        raise AssertionError(
+            f"Phát hiện test ghi trực tiếp vào backend/appdata/audio thật: {leaked}. "
+            "Test phải sử dụng storage tạm (tmp_path)!"
+        )
+    return []
+
+
 @pytest.fixture(scope="session", autouse=True)
 def guard_no_real_appdata_leak() -> Generator[None, None, None]:
     """Bảo vệ appdata: không test nào được ghi thư mục vào appdata/audio thật (BE-16)."""
     appdata_audio = Path(__file__).resolve().parent.parent / "appdata" / "audio"
-    before = set(appdata_audio.iterdir()) if appdata_audio.exists() else set()
+    before = snapshot_directory_entries(appdata_audio)
     yield
-    after = set(appdata_audio.iterdir()) if appdata_audio.exists() else set()
-    new_dirs = after - before
-    # Dọn dẹp thư mục rác do test tạo ra để không làm ô nhiễm môi trường chạy tiếp theo
-    for d in new_dirs:
-        if d.is_dir():
-            shutil.rmtree(d, ignore_errors=True)
-    leaked = [d.name for d in new_dirs]
-    assert not new_dirs, (
-        f"Phát hiện test ghi trực tiếp vào backend/appdata/audio thật: {leaked}. "
-        "Test phải sử dụng storage tạm (tmp_path)!"
-    )
+    check_directory_leak(appdata_audio, before)
