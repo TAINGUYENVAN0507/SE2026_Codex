@@ -362,3 +362,34 @@ def test_client_run_searches_after_upload_and_counts_wrong_results(
     harness.client_run(0, "http://api", wav, ready, start, 0, 0.0, rows, errors, [], [], searches=4)
     assert [k for k, _, _ in rows] == ["create", "search", "search", "search", "search"]
     assert errors == wrong
+
+
+def test_storage_dir_temp_is_inside_the_run_tmp_and_real_is_backend_appdata(
+    tmp_path: Path,
+) -> None:
+    harness = load_harness()
+    assert harness.storage_dir("temp", tmp_path) == tmp_path / "storage"
+    assert harness.storage_dir("real", tmp_path) == harness.STORAGE
+    with pytest.raises(ValueError):
+        harness.storage_dir("ram", tmp_path)
+
+
+def test_server_env_points_api_and_worker_at_the_run_storage(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """STORAGE_DIR có sẵn (như trong pytest, conftest đặt thư mục tạm) phải bị ghi đè, và app
+    đọc đúng thư mục đó: harness đếm, dọn đúng chỗ API và worker ghi."""
+    from app.core.config import Settings
+    from app.services.storage.local import LocalStorage
+
+    storage = tmp_path / "storage"
+    env = load_harness().server_env(
+        {"STORAGE_DIR": "/khong-dung", "PATH": "x"}, "postgresql://db", 2, tmp_path, storage
+    )
+    assert env["STORAGE_DIR"] == str(storage)
+    assert env["API_WORKERS"] == "2"
+    assert env["PATH"] == "x"
+    monkeypatch.setenv("STORAGE_DIR", env["STORAGE_DIR"])
+    settings = Settings()
+    monkeypatch.setattr("app.services.storage.local.get_settings", lambda: settings)
+    assert LocalStorage().base_dir == storage.resolve()
