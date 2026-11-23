@@ -27,6 +27,10 @@ wildcard (%, _, 100%) và tiêu đề của chính client. Tiêu đề lượt �
 ra total 0 và tiêu đề phải ra ít nhất 1; sai thì tính lỗi search_wrong (bắt lại lỗi #67 dưới tải).
 Histogram phía server chỉ có nhãn route nên GET tìm kiếm gộp vào dòng upload phía server.
 
+--storage temp (mặc định từ 11-23): API và worker ghi vào thư mục trống của lượt đo qua STORAGE_DIR
+(app đọc biến này từ #70), không chạm backend/appdata. --storage real dùng backend/appdata như các
+lượt trước 11-23 (thư mục đầy), để so với số cũ. summary.json ghi kiểu thư mục trong storage_cleanup.
+
 Sau mỗi lượt, harness xóa audio/ và artifacts/ của các meeting lượt đó tạo (--keep-audio để giữ).
 Trước 11-16 harness không dọn, nên thư mục lưu lớn dần qua các lượt (22.947 thư mục ngày 11-16).
 """
@@ -55,8 +59,8 @@ import httpx
 from prometheus_client.parser import text_string_to_metric_families
 
 BACKEND = Path(__file__).resolve().parent.parent
-# Thư mục lưu mặc định của LocalStorage (app/services/storage/local.py:35), API và worker của
-# harness dùng nó vì không có biến môi trường đổi được; test khóa hai đường dẫn bằng nhau.
+# Thư mục lưu mặc định của app (STORAGE_DIR trong app/core/config.py); --storage real dùng nó,
+# test khóa hai đường dẫn bằng nhau.
 STORAGE = BACKEND / "appdata"
 PASSWORD = "LoadTest!2026"
 LOGIN_CONCURRENCY = 8  # chia đều cho các process client
@@ -133,6 +137,32 @@ def count_dirs(path: Path) -> int:
             return sum(1 for e in entries if e.is_dir(follow_symlinks=False))
     except FileNotFoundError:
         return 0
+
+
+def storage_dir(mode: str, tmp: Path) -> Path:
+    """Thư mục API và worker của lượt đo ghi vào: `temp` là thư mục trống trong `tmp` của lượt,
+    `real` là backend/appdata (mặc định của app)."""
+    if mode == "temp":
+        return tmp / "storage"
+    if mode == "real":
+        return STORAGE
+    raise ValueError(f"--storage phải là temp hoặc real: {mode!r}")
+
+
+def server_env(base: dict, db: str, api_workers: int, prom_dir: Path, storage: Path) -> dict:
+    """Biến môi trường cho API, worker, alembic. STORAGE_DIR luôn được đặt (ghi đè giá trị có
+    sẵn), để API và worker ghi đúng thư mục harness đếm và dọn."""
+    return {
+        **base,
+        "DATABASE_URL": db,
+        "PIPELINE_BACKEND": "fake",
+        "FAKE_SCENARIO": "ok",
+        # Để kiểm tra ngân sách kết nối trong Settings áp dụng cho đúng số process được chạy.
+        "API_WORKERS": str(api_workers),
+        # Thư mục trống mỗi lượt: /metrics gộp mọi process API, không lẫn số của lượt trước.
+        "PROMETHEUS_MULTIPROC_DIR": str(prom_dir),
+        "STORAGE_DIR": str(storage),
+    }
 
 
 def remove_run_files(storage: Path, meeting_ids) -> int:
@@ -588,6 +618,12 @@ def main() -> int:
     ap.add_argument("--server-cpus", help="ghim API và worker, ví dụ 0-3,6-9 (Linux)")
     ap.add_argument("--client-cpus", help="ghim các process sinh tải, ví dụ 4,5,10,11 (Linux)")
     ap.add_argument(
+        "--storage",
+        choices=("temp", "real"),
+        default="temp",
+        help="temp: thư mục trống mỗi lượt (mặc định); real: backend/appdata như trước 11-23",
+    )
+    ap.add_argument(
         "--keep-audio",
         action="store_true",
         help="giữ audio/ và artifacts/ của các meeting lượt đo tạo (mặc định xóa sau lượt)",
@@ -599,22 +635,15 @@ def main() -> int:
     check_disjoint(server_cpus, client_cpus)
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
-    # Thư mục audio có sẵn lúc bắt đầu: ở 40 client, thư mục đầy chậm hơn thư mục rỗng (11-15).
-    audio_dirs_at_start = count_dirs(STORAGE / "audio")
     tmp = Path(tempfile.mkdtemp())
     prom_dir = tmp / "prometheus"
     prom_dir.mkdir()
+    storage = storage_dir(args.storage, tmp)
+    storage.mkdir(parents=True, exist_ok=True)
+    # Thư mục audio có sẵn lúc bắt đầu: ở 40 client, thư mục đầy chậm hơn thư mục rỗng (11-15).
+    audio_dirs_at_start = count_dirs(storage / "audio")
 
-    env = {
-        **os.environ,
-        "DATABASE_URL": args.db,
-        "PIPELINE_BACKEND": "fake",
-        "FAKE_SCENARIO": "ok",
-        # Để kiểm tra ngân sách kết nối trong Settings áp dụng cho đúng số process được chạy.
-        "API_WORKERS": str(args.api_workers),
-        # Thư mục trống mỗi lượt: /metrics gộp mọi process API, không lẫn số của lượt trước.
-        "PROMETHEUS_MULTIPROC_DIR": str(prom_dir),
-    }
+    env = server_env(dict(os.environ), args.db, args.api_workers, prom_dir, storage)
     run = lambda cmd, **kw: subprocess.run(cmd, cwd=BACKEND, env=env, check=True, **kw)  # noqa: E731
     run(["uv", "run", "alembic", "downgrade", "base"], capture_output=True)
     run(["uv", "run", "alembic", "upgrade", "head"], capture_output=True)
@@ -788,12 +817,16 @@ def main() -> int:
         worker.wait(timeout=15)
 
     # Worker đã dừng nên không còn ghi artifact. Lượt lỗi giữa chừng không tới đây và để lại file.
-    storage_cleanup = {"audio_dirs_at_start": audio_dirs_at_start, "kept": args.keep_audio}
+    storage_cleanup = {
+        "storage": args.storage,
+        "audio_dirs_at_start": audio_dirs_at_start,
+        "kept": args.keep_audio,
+    }
     if not args.keep_audio:
         meeting_ids = run_meeting_ids(args.db)
         storage_cleanup["meetings"] = len(meeting_ids)
-        storage_cleanup["removed_dirs"] = remove_run_files(STORAGE, meeting_ids)
-    storage_cleanup["audio_dirs_at_end"] = count_dirs(STORAGE / "audio")
+        storage_cleanup["removed_dirs"] = remove_run_files(storage, meeting_ids)
+    storage_cleanup["audio_dirs_at_end"] = count_dirs(storage / "audio")
 
     with (out / "raw.csv").open("w", newline="") as f:
         w = csv.writer(f)
@@ -999,7 +1032,7 @@ Tìm kiếm: {args.search} lượt mỗi client sau upload (wildcard `%`, `_`, `
 
 Stdout của API: {summary["api_log"]["lines"]} dòng, trong đó {summary["api_log"]["app_access"]} dòng access của app, {summary["api_log"]["uvicorn_access"]} dòng access của uvicorn; dòng có query string: **{summary["api_log"]["with_query_string"]}**.
 
-Thư mục lưu `appdata/audio` có {storage_cleanup["audio_dirs_at_start"]} thư mục lúc bắt đầu, {storage_cleanup["audio_dirs_at_end"]} lúc kết thúc ({"giữ file của lượt này" if args.keep_audio else f"đã xóa {storage_cleanup['removed_dirs']} thư mục audio và artifact của {storage_cleanup['meetings']} meeting lượt này tạo"}).
+Thư mục lưu ({"thư mục trống của lượt, STORAGE_DIR" if args.storage == "temp" else "`backend/appdata` thật"}) có {storage_cleanup["audio_dirs_at_start"]} thư mục lúc bắt đầu, {storage_cleanup["audio_dirs_at_end"]} lúc kết thúc ({"giữ file của lượt này" if args.keep_audio else f"đã xóa {storage_cleanup['removed_dirs']} thư mục audio và artifact của {storage_cleanup['meetings']} meeting lượt này tạo"}).
 Kết nối nằm rảnh từ lúc đăng nhập tới lúc upload: p50 {summary["idle_before_upload"]["p50_s"]} s, max {summary["idle_before_upload"]["max_s"]} s; {summary["idle_before_upload"]["over_uvicorn_keepalive_5s"]}/{summary["idle_before_upload"]["n"]} quá 5 s (timeout keep-alive mặc định của uvicorn). Lỗi upload chi tiết: `summary.json`, khóa `create_error_detail`.
 
 ## Phía server (`/metrics`, hiệu giữa lúc thả barrier và lúc mọi client xong)
@@ -1016,6 +1049,12 @@ Kết nối nằm rảnh từ lúc đăng nhập tới lúc upload: p50 {summary
 """
     (out / "summary.md").write_text(md)
     print(md)
+    # Thư mục tạm của lượt (WAV mẫu, /metrics, storage temp). Trước 11-23 không xóa, nên mỗi lượt
+    # để lại một thư mục trong /tmp. --keep-audio với storage temp thì giữ để xem file.
+    if args.keep_audio and args.storage == "temp":
+        print(f"Giữ file của lượt đo trong {storage}", file=sys.stderr)
+    else:
+        shutil.rmtree(tmp, ignore_errors=True)
     return 0 if summary["verdict"] == "PASS" else 1
 
 

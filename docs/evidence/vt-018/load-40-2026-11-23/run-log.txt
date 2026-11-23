@@ -1,0 +1,13 @@
+temp-1 12:45:18 load=4.57 5.11 3.96 real_audio_dirs=22950
+temp-1 exit=0 12:45:38 load=3.63 4.86 3.90
+real-2 12:45:53 load=3.12 4.69 3.86 real_audio_dirs=22950
+real-2 exit=0 12:46:13 load=2.65 4.48 3.81
+real-3 12:46:28 load=2.06 4.26 3.75 real_audio_dirs=22950
+real-3 exit=0 12:46:48 load=1.84 4.06 3.69
+temp-4 12:47:03 load=1.50 3.88 3.64 real_audio_dirs=22950
+temp-4 exit=0 12:47:23 load=2.33 3.92 3.65
+temp-5 12:47:38 load=1.96 3.76 3.61 real_audio_dirs=22950
+temp-5 exit=0 12:47:58 load=2.56 3.79 3.62
+real-6 12:48:13 load=2.13 3.63 3.57 real_audio_dirs=22950
+real-6 exit=0 12:48:34 load=2.21 3.56 3.55
+DONE

@@ -1,6 +1,6 @@
 # Kế hoạch còn lại
 
-> Cập nhật 2026-11-19. Trạng thái yêu cầu đọc từ `main` tại `006fd8c` (sau #67 và #66). Nhóm trưởng cập nhật file này mỗi khi phân công.
+> Cập nhật 2026-11-23. Trạng thái yêu cầu đọc từ `main` tại `5c29101` (sau #69 và #70). Nhóm trưởng cập nhật file này mỗi khi phân công.
 
 ## Tiếp tục vào ngày sau
 
@@ -62,7 +62,7 @@ Commit của C trong các đợt này ghi thêm mã bài, ví dụ `(BE-17, VT-0
 
 ## Yêu cầu repo phải đáp ứng
 
-Hiện trạng đọc từ `main` tại `006fd8c` ngày 2026-11-19 (từ 11-12 chỉ sửa lỗi; sau hạn nộp 11-14, chỉ sửa lỗi, thêm test và bằng chứng). ✓ đã có · ◐ một phần · ✗ chưa có. Số đo tải: một máy, pipeline fake; chi tiết và giới hạn ở [`docs/evidence/README.md`](../docs/evidence/README.md). Bảng theo code ngày 11-06 (`53f753b`) đã thay bằng bảng này; lịch sử xem git.
+Hiện trạng đọc từ `main` tại `5c29101` ngày 2026-11-23 (từ 11-12 chỉ sửa lỗi; sau hạn nộp 11-14, chỉ sửa lỗi, thêm test và bằng chứng). ✓ đã có · ◐ một phần · ✗ chưa có. Số đo tải: một máy, pipeline fake; chi tiết và giới hạn ở [`docs/evidence/README.md`](../docs/evidence/README.md). Bảng theo code ngày 11-06 (`53f753b`) đã thay bằng bảng này; lịch sử xem git.
 
 ### RE-018
 
@@ -77,7 +77,7 @@ Hiện trạng đọc từ `main` tại `006fd8c` ngày 2026-11-19 (từ 11-12 c
 | Runbook truy nguyên nhân, có thời gian đo thật | ✓ Diễn tập 2 sự cố trên Compose đo thời gian thật tại `docs/backend/runbook-drill-2026-11-10.md`, bổ sung runbook `docs/backend/BE-19.md` | BE-19 | B | 5 |
 | Lưu 14 ngày chạy thật | ✓ Worker gọi `run_retention_cleanup`; `backend/tests/api/test_retention.py`; test giữ tài liệu khớp cấu hình | BE-14 | B, C | 1, 4 |
 | 239 người dùng đồng thời | Xem bảng tải bên dưới | AI-19 | C | 3–5 |
-| Phản hồi change request trong 20 giờ | ◐ `docs/evidence/pr-response-times.md` (sinh lại 11-19): từ 11-06, 10/36 PR có phản hồi của người khác, 7/10 trong 20 giờ; 26 PR merge khi chưa có phản hồi. Đợt 11: B review #66 sau 31,4 giờ (quá hạn); A không review #67. Review chéo Đợt 9: A review #61 sau 4,4 giờ; B review #64 sau khoảng 1 giờ; B không review #60 (phản hồi đầu tiên là của C sau 20,2 giờ). #56, #57 chờ 44 giờ | | A, B, C | 9, 10 |
+| Phản hồi change request trong 20 giờ | ◐ `docs/evidence/pr-response-times.md` (sinh lại 11-23): từ 11-06, 12/39 PR có phản hồi của người khác, 8/12 trong 20 giờ; 27 PR merge khi chưa có phản hồi. Đợt 12: B approve #69 sau 8,0 giờ; A review #70 sau 63,3 giờ (quá hạn, finding đúng). Đợt 11: B review #66 sau 31,4 giờ (quá hạn); A không review #67. Review chéo Đợt 9: A review #61 sau 4,4 giờ; B review #64 sau khoảng 1 giờ; B không review #60 (phản hồi đầu tiên là của C sau 20,2 giờ). #56, #57 chờ 44 giờ | | A, B, C | 9, 10 |
 
 ### AD-018
 
@@ -117,10 +117,10 @@ Hiện trạng đọc từ `main` tại `006fd8c` ngày 2026-11-19 (từ 11-12 c
 
 | Mốc | Cấu hình | Kết quả | Trạng thái |
 |---|---|---|---|
-| VT-018: 40 đồng thời, p95 ≤ 1,5 s | 1 process API | 11-19 trên `006fd8c`, có 4 lượt tìm kiếm mỗi client: 6/6 đạt, p95 upload 0,38 đến 0,49 s (`docs/evidence/vt-018/load-40-2026-11-19/README.md`). 11-17 trên `1dc6b5c`: 6/6 đạt, p95 upload 0,41 đến 0,55 s (`docs/evidence/vt-018/load-40-2026-11-17/README.md`). 11-16 trên `3ed9c0d`: 12/12 đạt, p95 upload 0,38 đến 0,64 s; thư mục đầy/rỗng xen kẽ, đổi thứ tự giữa các vòng: thứ tự không phải lý do, thư mục đầy trung bình chậm hơn 0,08 s ở 4/6 vòng (`docs/evidence/vt-018/load-40-2026-11-16/README.md`). 11-15 trên `115c905`: 16/16 đạt, p95 upload 0,34 đến 0,73 s; xen kẽ `synchronous_commit` bật/tắt và thư mục lưu đầy/rỗng/RAM: fsync khi commit và ghi đĩa không giải thích được mức chậm; thư mục lưu đầy (18.080 thư mục con) chậm hơn khoảng 0,13 s (`docs/evidence/vt-018/load-40-2026-11-15/README.md`). 11-13 trên `a75853d`: 12/12 đạt, p95 upload 0,36 đến 0,87 s; xen kẽ ffprobe thật và giả, ffprobe không giải thích được mức chậm (`docs/evidence/vt-018/load-40-2026-11-13/README.md`). 11-12 trên `d9c2d50`: 5/6, 1 lượt 1,56 s; hai mức quanh 0,5 s và 1,4 đến 1,6 s. 11-11: 6/6. Gộp 7 ngày 63/64 | ◐ đạt 63/64 lượt, 1 lượt không đạt chưa rõ nguyên nhân |
+| VT-018: 40 đồng thời, p95 ≤ 1,5 s | 1 process API | 11-23 trên `5c29101`, có tìm kiếm, thư mục lưu trống và thật xen kẽ: 6/6 đạt, p95 upload 0,39 đến 0,66 s (`docs/evidence/vt-018/load-40-2026-11-23/README.md`). 11-19 trên `006fd8c`, có 4 lượt tìm kiếm mỗi client: 6/6 đạt, p95 upload 0,38 đến 0,49 s (`docs/evidence/vt-018/load-40-2026-11-19/README.md`). 11-17 trên `1dc6b5c`: 6/6 đạt, p95 upload 0,41 đến 0,55 s (`docs/evidence/vt-018/load-40-2026-11-17/README.md`). 11-16 trên `3ed9c0d`: 12/12 đạt, p95 upload 0,38 đến 0,64 s; thư mục đầy/rỗng xen kẽ, đổi thứ tự giữa các vòng: thứ tự không phải lý do, thư mục đầy trung bình chậm hơn 0,08 s ở 4/6 vòng (`docs/evidence/vt-018/load-40-2026-11-16/README.md`). 11-15 trên `115c905`: 16/16 đạt, p95 upload 0,34 đến 0,73 s; xen kẽ `synchronous_commit` bật/tắt và thư mục lưu đầy/rỗng/RAM: fsync khi commit và ghi đĩa không giải thích được mức chậm; thư mục lưu đầy (18.080 thư mục con) chậm hơn khoảng 0,13 s (`docs/evidence/vt-018/load-40-2026-11-15/README.md`). 11-13 trên `a75853d`: 12/12 đạt, p95 upload 0,36 đến 0,87 s; xen kẽ ffprobe thật và giả, ffprobe không giải thích được mức chậm (`docs/evidence/vt-018/load-40-2026-11-13/README.md`). 11-12 trên `d9c2d50`: 5/6, 1 lượt 1,56 s; hai mức quanh 0,5 s và 1,4 đến 1,6 s. 11-11: 6/6. Gộp 8 ngày 69/70 | ◐ đạt 69/70 lượt, 1 lượt không đạt chưa rõ nguyên nhân |
 | RE-018: 239 đồng thời (không có mục tiêu độ trễ) | 1 process API | 239/239 upload, 0 lỗi, 3 lượt; p95 upload 3,03 đến 3,25 s | ✓ chịu được |
 | AD-018: 247 đồng thời, p95 ≤ 2,0 s | 1 process API (mặc định) | 11-19 trên `006fd8c`, có tìm kiếm: 2,28 đến 3,02 s, 3/3 trên mốc (`docs/evidence/load-247/search-2026-11-19/README.md`). 11-17 trên `1dc6b5c`: 2,12 đến 2,29 s, 3/3 trên mốc (`docs/evidence/load-247/api-log-2026-11-17/README.md`). 11-16 trên `3ed9c0d`: 2,32 đến 3,24 s, 3/3 trên mốc; process uvicorn dùng 1,10 đến 1,15 CPU (trần của một process Python có GIL), event loop 0,28 đến 0,32 (`docs/evidence/load-247/event-loop-2026-11-16/README.md`). 11-15 trên `115c905`: p95 upload 2,09 đến 2,75 s, 6/6 lượt trên mốc; ghim máy sinh tải sang nhân riêng không đổi kết quả (`docs/evidence/load-247/pinned-2026-11-15/README.md`). 11-11: 3,16 đến 3,79 s, 3/3 trên mốc (11-10: 14/14) | ✗ |
-| AD-018: 247 đồng thời, p95 ≤ 2,0 s | 2 process API | 11-19 trên `006fd8c`, có tìm kiếm: 2/3 đạt (1,48 và 1,70 s; 1 lượt 2,52 s). 11-17 trên `1dc6b5c`: 3/3 đạt, 1,38 đến 1,41 s. 11-16 trên `3ed9c0d`: 3/3 đạt, p95 upload 1,50 đến 1,60 s; mỗi process khoảng 1,0 CPU. Đạt ở hai ngày khi không có tìm kiếm, chưa đo trên Compose | ◐ đạt ở 2 ngày, 2/3 khi có tìm kiếm |
+| AD-018: 247 đồng thời, p95 ≤ 2,0 s | 2 process API | 11-23 trên `5c29101`, thư mục lưu trống, xen kẽ ABBA ABBA: không tìm kiếm 3/4 đạt (1,38 đến 2,01 s), có tìm kiếm 4/4 đạt (1,61 đến 1,89 s); chênh trung bình khoảng 0,1 s, nhỏ hơn dao động (`docs/evidence/load-247/search-ab-2026-11-23/README.md`). 11-19 trên `006fd8c`, có tìm kiếm: 2/3 đạt (1,48 và 1,70 s; 1 lượt 2,52 s). 11-17 trên `1dc6b5c`: 3/3 đạt, 1,38 đến 1,41 s. 11-16 trên `3ed9c0d`: 3/3 đạt, p95 upload 1,50 đến 1,60 s; mỗi process khoảng 1,0 CPU. Đạt ở hai ngày khi không có tìm kiếm, chưa đo trên Compose | ◐ đạt ở 2 ngày, 2/3 khi có tìm kiếm (11-19), 7/8 khi xen kẽ (11-23) |
 | AD-018: 247 đồng thời, p95 ≤ 2,0 s | 4 process API, `API_MAX_INFLIGHT=20` | 11-19 trên `006fd8c`, có tìm kiếm: 3/3 đạt, 1,10 đến 1,15 s. 11-17 trên `1dc6b5c`: 3/3 đạt, 1,01 đến 1,11 s. 11-16 trên `3ed9c0d`: 3/3 đạt, 1,04 đến 1,39 s. 11-15 trên `115c905`: 9/9 lượt đạt, p95 upload 1,00 đến 1,37 s. A/B với app 11-11 (`1f9d1ca`): 1,05 đến 1,18 s, nên chênh với 11-11 không do code. 11-11: 2,30 đến 2,60 s, 15/15 lượt trên mốc. 11-10: 10/12 đạt | ◐ đạt ở 11-10, 11-15, 11-16, 11-17 và 11-19, không đạt ở 11-11; nguyên nhân chênh giữa các ngày chưa rõ |
 
 0 lỗi ở 21 lượt 247 client ngày 11-11 (5.187 upload). Phía server 4 process: thời gian nằm trong xử lý upload, không ở hàng đợi admission (95 đến 97 % request vào trong ≤ 1,5 s). Phía server 1 process: 2/3 lượt có ≥ 99,6 % upload ≤ 2,0 s, trong khi client chỉ thấy 49 đến 58 %, nên phần chậm nằm trước middleware (một event loop). Ngày 11-15 kiểm phần "máy sinh tải": nó chỉ dùng 0,27 đến 0,71 CPU, và ghim nó sang nhân riêng không đổi kết quả, nên phần chậm không ở máy sinh tải. 0 lỗi ở 18 lượt 247 client ngày 11-15 (4.446 upload).
@@ -287,3 +287,22 @@ Bắt đầu sau khi #67 và #66 vào `main` (`006fd8c`). Lỗi mới C thấy k
 | C | Harness có `--search` (tìm `%`, `_`, `100%`, tiêu đề dưới tải, đếm kết quả sai); 247 client (1, 2, 4 process) và 40 client có tìm kiếm trên `main` sau #67, #66, kèm lượt đối chứng trước #67; bản đồ bằng chứng, ROADMAP, thời gian phản hồi PR |
 
 Hai PR của A và B không phụ thuộc nhau; việc 3 của A dựa vào hành vi API mà việc 4 của B khóa bằng test.
+
+**Kết quả:** #69 (A, `9a87355`) và #70 (B, `5c29101`), CI 12/12 và 15/15. C chạy lại #70 trên PostgreSQL 16: 515 passed, 0 skipped, `backend/appdata` thật không đổi. B approve #69 sau 8,0 giờ. A review #70 sau 63,3 giờ, quá hạn, nhưng finding P2 đúng: preflight socket `AF_INET` mới trong `conftest.py` trả False với URL `[::1]`, và C tái hiện được. Điểm này chỉ nằm ở phần chuẩn bị test, nên C merge và giao sửa cho B (Đợt 13, việc 1).
+
+### Đợt 13 (giao ngày 2026-11-23: `tasks/2026-11-23/`, sau hạn nộp, mỗi người 5 commit)
+
+Bắt đầu sau khi #69 và #70 vào `main` (`5c29101`). Lỗi mới C thấy khi soạn việc:
+- Nút "Xóa bộ lọc" vẫn gửi từ khóa cũ thêm 300 ms.
+- Lúc đang tải hoặc lỗi, tiêu đề ghi "0 cuộc họp".
+- Sang trang thì thanh phân trang biến mất trong lúc tải (danh sách không giữ dữ liệu cũ).
+- Worker dự phòng ghi artifact vào `./appdata` tương đối (`runner.py` dòng 273).
+- N+1 ở `GET /meetings`, để từ 11-19, giờ giao B.
+
+| Member | Việc |
+|---|---|
+| A | "Xóa bộ lọc" bỏ từ khóa cũ ngay; ẩn số đếm khi đang tải hoặc lỗi; thanh phân trang giữ nguyên khi sang trang; E2E trên API thật cho trang 2 bị xóa hết và bộ lọc trạng thái rỗng |
+| B | Preflight Postgres nhận IPv6; N+1 ở `GET /meetings` (test ngân sách truy vấn rồi sửa); xóa cuộc họp theo đúng `STORAGE_DIR`; worker dự phòng theo `STORAGE_DIR` |
+| C | Harness ghi vào thư mục lưu trống mỗi lượt qua `STORAGE_DIR`, xóa thư mục tạm; 247 client trên 2 process, có và không có tìm kiếm xen kẽ; 40 client, thư mục trống và thật xen kẽ; bản đồ bằng chứng, ROADMAP, thời gian phản hồi PR |
+
+Hai PR không phụ thuộc nhau. Sau khi B sửa N+1, C đo lại 247 client có tìm kiếm.
