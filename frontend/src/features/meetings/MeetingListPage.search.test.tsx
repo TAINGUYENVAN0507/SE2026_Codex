@@ -198,3 +198,157 @@ it('FE-04: đổi trạng thái từ trang 2 về trang 1 và giữ từ khóa t
   expect(requests.at(-1)?.searchParams.get('status')).toBe('ready')
   expect(requests.at(-1)?.searchParams.get('q')).toBe('nhóm')
 })
+
+it('FE-04: dán 250 ký tự chỉ gửi 200 ký tự và danh sách vẫn hiện', async () => {
+  const queries: string[] = []
+  server.use(
+    http.get('*/api/v1/meetings', ({ request }) => {
+      const q = new URL(request.url).searchParams.get('q')
+      if (q) queries.push(q)
+      if (q && q.length > 200)
+        return HttpResponse.json(
+          {
+            error: {
+              code: 'VALIDATION_ERROR',
+              message: 'Từ khóa quá dài',
+              details: null,
+              request_id: null,
+            },
+          },
+          { status: 422 },
+        )
+      return HttpResponse.json(list([item]))
+    }),
+  )
+  const user = userEvent.setup()
+  renderPage()
+  await screen.findByText(item.title)
+  const input = screen.getByRole('textbox', { name: 'Tìm cuộc họp' })
+  await user.click(input)
+  await user.paste('x'.repeat(250))
+  await waitFor(() => expect(queries.length).toBeGreaterThan(0))
+  expect(queries).toEqual(['x'.repeat(200)])
+  expect(input).toHaveValue('x'.repeat(200))
+  expect(input).toHaveAttribute('maxlength', '200')
+  expect(await screen.findByText('Hiển thị 1 trên 1 cuộc họp')).toBeVisible()
+  expect(screen.getByText(item.title)).toBeVisible()
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+})
+
+it.each([
+  { initialTotal: 11, remainingTotal: 10, initialPage: 2, lastPage: 1 },
+  { initialTotal: 25, remainingTotal: 15, initialPage: 3, lastPage: 2 },
+])(
+  'FE-04: trang $initialPage rỗng sau poll quay về trang $lastPage',
+  async ({ initialTotal, remainingTotal, initialPage, lastPage }) => {
+    const items = Array.from({ length: initialTotal }, (_, index) => ({
+      ...item,
+      id: `00000000-0000-4000-8000-${String(index + 1).padStart(12, '0')}`,
+      title: `Cuộc họp ${index + 1}`,
+      status: 'processing',
+    }))
+    const requests: number[] = []
+    let currentPageRequests = 0
+    let removed = false
+    server.use(
+      http.get('*/api/v1/meetings', ({ request }) => {
+        const page = Number(new URL(request.url).searchParams.get('page'))
+        requests.push(page)
+        if (page === initialPage) {
+          currentPageRequests++
+          if (currentPageRequests > 1) removed = true
+        }
+        const available = items.slice(
+          0,
+          removed ? remainingTotal : initialTotal,
+        )
+        return HttpResponse.json({
+          items: available.slice((page - 1) * 10, page * 10).map((meeting) => ({
+            ...meeting,
+            status: removed ? 'ready' : 'processing',
+          })),
+          total: available.length,
+          page,
+          page_size: 10,
+        })
+      }),
+    )
+    vi.useFakeTimers()
+    const view = renderPage()
+    await act(() => vi.advanceTimersByTimeAsync(100))
+    expect(
+      screen.getByText(`Hiển thị 10 trên ${initialTotal} cuộc họp`),
+    ).toBeVisible()
+    for (let page = 2; page <= initialPage; page++) {
+      fireEvent.click(screen.getByRole('button', { name: 'Trang sau' }))
+      await act(() => vi.advanceTimersByTimeAsync(100))
+    }
+    expect(screen.getByText(`Cuộc họp ${initialTotal}`)).toBeVisible()
+    await act(() => vi.advanceTimersByTimeAsync(5000))
+    await act(() => vi.advanceTimersByTimeAsync(100))
+    const expectedCount = remainingTotal - (lastPage - 1) * 10
+    expect(currentPageRequests).toBe(2)
+    expect(
+      screen.getByText(
+        `Hiển thị ${expectedCount} trên ${remainingTotal} cuộc họp`,
+      ),
+    ).toBeVisible()
+    expect(view.container.querySelectorAll('.meeting-row')).toHaveLength(
+      expectedCount,
+    )
+    expect(requests).toEqual([
+      ...Array.from({ length: initialPage }, (_, index) => index + 1),
+      initialPage,
+      lastPage,
+    ])
+    expect(
+      screen.queryByRole('heading', { name: 'Chưa có cuộc họp' }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByText(`Hiển thị 0 trên ${remainingTotal} cuộc họp`),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByText(`Cuộc họp ${initialTotal}`),
+    ).not.toBeInTheDocument()
+  },
+)
+
+it('FE-04: bộ lọc rỗng báo không có cuộc họp ở trạng thái này và xóa lọc được', async () => {
+  const requests: URL[] = []
+  server.use(
+    http.get('*/api/v1/meetings', ({ request }) => {
+      const url = new URL(request.url)
+      requests.push(url)
+      return HttpResponse.json(
+        list(url.searchParams.get('status') === 'failed' ? [] : [item]),
+      )
+    }),
+  )
+  const user = userEvent.setup()
+  renderPage()
+  await screen.findByText(item.title)
+  await user.click(screen.getByRole('button', { name: /Có lỗi/ }))
+  expect(
+    await screen.findByRole('heading', {
+      name: 'Không có cuộc họp ở trạng thái này',
+    }),
+  ).toBeVisible()
+  expect(
+    screen.queryByRole('heading', { name: 'Chưa có cuộc họp' }),
+  ).not.toBeInTheDocument()
+  expect(
+    screen.queryByText('Tạo cuộc họp mới để bắt đầu.'),
+  ).not.toBeInTheDocument()
+  expect(requests.at(-1)?.searchParams.get('status')).toBe('failed')
+  await user.click(screen.getByRole('button', { name: 'Xóa bộ lọc' }))
+  expect(await screen.findByText(item.title)).toBeVisible()
+  expect(screen.getByRole('button', { name: /^Tất cả/ })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
+  expect(
+    screen.queryByRole('heading', {
+      name: 'Không có cuộc họp ở trạng thái này',
+    }),
+  ).not.toBeInTheDocument()
+})

@@ -1,0 +1,9 @@
+$ npm.cmd run format:check
+
+> vietnamese-meeting-minutes-frontend@0.0.0 format:check
+> prettier --check .
+
+Checking formatting...
+All matched files use Prettier code style!
+
+EXIT=0

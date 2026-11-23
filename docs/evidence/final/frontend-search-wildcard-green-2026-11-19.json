@@ -1,0 +1,163 @@
+{
+  "head": "3a899b30b7ab5280923118223661539fb0192833",
+  "runs": [
+    {
+      "head": "3a899b30b7ab5280923118223661539fb0192833",
+      "command": [
+        "node",
+        "node_modules/@playwright/test/cli.js",
+        "test",
+        "--config",
+        "playwright.evidence.config.ts",
+        "--grep",
+        "literal characters",
+        "--retries=0"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 57.26,
+      "finished_at_utc": "2026-11-19T06:22:33.554116+00:00",
+      "database": "meeting_day12_r1_e2e",
+      "result": {
+        "results": [
+          {
+            "q": "%",
+            "total": 1,
+            "ids": [
+              "e8853912-71a6-4618-a8a5-58860bf96ba3"
+            ],
+            "displayed": 1
+          },
+          {
+            "q": "_",
+            "total": 1,
+            "ids": [
+              "63753300-e179-4653-9727-6af1de21e038"
+            ],
+            "displayed": 1
+          },
+          {
+            "q": "100%",
+            "total": 1,
+            "ids": [
+              "e8853912-71a6-4618-a8a5-58860bf96ba3"
+            ],
+            "displayed": 1
+          }
+        ],
+        "pageErrors": [],
+        "retries": 0,
+        "syntheticOnly": true,
+        "apiInterception": false
+      },
+      "result_file": "frontend-search-wildcard-result-r1-2026-11-19.json"
+    },
+    {
+      "head": "3a899b30b7ab5280923118223661539fb0192833",
+      "command": [
+        "node",
+        "node_modules/@playwright/test/cli.js",
+        "test",
+        "--config",
+        "playwright.evidence.config.ts",
+        "--grep",
+        "literal characters",
+        "--retries=0"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 16.37,
+      "finished_at_utc": "2026-11-19T06:22:50.461515+00:00",
+      "database": "meeting_day12_r2_e2e",
+      "result": {
+        "results": [
+          {
+            "q": "%",
+            "total": 1,
+            "ids": [
+              "fa019f35-e5d5-436d-aab5-f504d4401e8c"
+            ],
+            "displayed": 1
+          },
+          {
+            "q": "_",
+            "total": 1,
+            "ids": [
+              "2a3bd4f6-2a82-4850-be70-247a9600bbf4"
+            ],
+            "displayed": 1
+          },
+          {
+            "q": "100%",
+            "total": 1,
+            "ids": [
+              "fa019f35-e5d5-436d-aab5-f504d4401e8c"
+            ],
+            "displayed": 1
+          }
+        ],
+        "pageErrors": [],
+        "retries": 0,
+        "syntheticOnly": true,
+        "apiInterception": false
+      },
+      "result_file": "frontend-search-wildcard-result-r2-2026-11-19.json"
+    },
+    {
+      "head": "3a899b30b7ab5280923118223661539fb0192833",
+      "command": [
+        "node",
+        "node_modules/@playwright/test/cli.js",
+        "test",
+        "--config",
+        "playwright.evidence.config.ts",
+        "--grep",
+        "literal characters",
+        "--retries=0"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 13.88,
+      "finished_at_utc": "2026-11-19T06:23:04.866163+00:00",
+      "database": "meeting_day12_r3_e2e",
+      "result": {
+        "results": [
+          {
+            "q": "%",
+            "total": 1,
+            "ids": [
+              "ae17b19f-b64d-4daa-b0b3-cf4026810d74"
+            ],
+            "displayed": 1
+          },
+          {
+            "q": "_",
+            "total": 1,
+            "ids": [
+              "984086a7-c0a0-4c4c-bab6-96dc03d54ef3"
+            ],
+            "displayed": 1
+          },
+          {
+            "q": "100%",
+            "total": 1,
+            "ids": [
+              "ae17b19f-b64d-4daa-b0b3-cf4026810d74"
+            ],
+            "displayed": 1
+          }
+        ],
+        "pageErrors": [],
+        "retries": 0,
+        "syntheticOnly": true,
+        "apiInterception": false
+      },
+      "result_file": "frontend-search-wildcard-result-r3-2026-11-19.json"
+    }
+  ],
+  "source_sha256": {
+    "frontend/e2e/evidence/search-wildcard.spec.ts": "f4b1bfbffaf892f42c93b8b20ff72c76100e182fde14dd0da901621e32ce83dd",
+    "frontend/playwright.evidence.config.ts": "0ae58256faf1ba370998b70bfd600ca26f7f205626eefe8015ef04f51d082a48",
+    "backend/app/api/v1/meetings.py": "da2d832518c401c465ea8b96501dc2b61afc7382a4c19d14109634023be1c0a2"
+  }
+}

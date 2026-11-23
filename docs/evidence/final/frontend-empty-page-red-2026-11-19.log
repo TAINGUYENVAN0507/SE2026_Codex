@@ -1,0 +1,295 @@
+$ node node_modules/vitest/vitest.mjs run MeetingListPage.search -t sau poll
+
+ RUN  v5.0.5 D:/Project/CNPM/SE2026_Codex/frontend
+
+ ❯ src/features/meetings/MeetingListPage.search.test.tsx (6 tests | 1 failed | 5 skipped) 195ms
+   × FE-04: trang 2 rỗng sau poll quay về trang cuối có dữ liệu 192ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/features/meetings/MeetingListPage.search.test.tsx > FE-04: trang 2 rỗng sau poll quay về trang cuối có dữ liệu
+TestingLibraryElementError: Unable to find an element with the text: Hiển thị 10 trên 10 cuộc họp. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<header[39m
+      [33mclass[39m=[32m"topbar"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"top-left"[39m
+      [36m>[39m
+        [36m<a[39m
+          [33maria-label[39m=[32m"Biên bản, về danh sách cuộc họp"[39m
+          [33mclass[39m=[32m"brand"[39m
+          [33mdata-discover[39m=[32m"true"[39m
+          [33mhref[39m=[32m"/meetings"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"brand-mark"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33mfill[39m=[32m"currentColor"[39m
+              [33mheight[39m=[32m"23"[39m
+              [33mviewBox[39m=[32m"0 0 256 256"[39m
+              [33mwidth[39m=[32m"23"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M56,96v64a8,8,0,0,1-16,0V96a8,8,0,0,1,16,0ZM88,24a8,8,0,0,0-8,8V224a8,8,0,0,0,16,0V32A8,8,0,0,0,88,24Zm40,32a8,8,0,0,0-8,8V192a8,8,0,0,0,16,0V64A8,8,0,0,0,128,56Zm40,32a8,8,0,0,0-8,8v64a8,8,0,0,0,16,0V96A8,8,0,0,0,168,88Zm40-16a8,8,0,0,0-8,8v96a8,8,0,0,0,16,0V80A8,8,0,0,0,208,72Z"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0mBiên bản[0m
+          [36m</span>[39m
+        [36m</a>[39m
+        [36m<nav[39m
+          [33maria-label[39m=[32m"Điều hướng chính"[39m
+        [36m>[39m
+          [36m<a[39m
+            [33mclass[39m=[32m"nav-item"[39m
+            [33mdata-discover[39m=[32m"true"[39m
+            [33mhref[39m=[32m"/meetings"[39m
+          [36m>[39m
+            [0mCuộc họp[0m
+          [36m</a>[39m
+        [36m</nav>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"top-right"[39m
+      [36m>[39m
+        [36m<a[39m
+          [33maria-label[39m=[32m"Cài đặt tài khoản"[39m
+          [33mclass[39m=[32m"icon-button settings-link"[39m
+          [33mdata-discover[39m=[32m"true"[39m
+          [33mhref[39m=[32m"/settings"[39m
+          [33mtitle[39m=[32m"Cài đặt tài khoản"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33mfill[39m=[32m"currentColor"[39m
+            [33mheight[39m=[32m"20"[39m
+            [33mviewBox[39m=[32m"0 0 256 256"[39m
+            [33mwidth[39m=[32m"20"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M128,80a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160Zm109.94-52.79a8,8,0,0,0-3.89-5.4l-29.83-17-.12-33.62a8,8,0,0,0-2.83-6.08,111.91,111.91,0,0,0-36.72-20.67,8,8,0,0,0-6.46.59L128,41.85,97.88,25a8,8,0,0,0-6.47-.6A112.1,112.1,0,0,0,54.73,45.15a8,8,0,0,0-2.83,6.07l-.15,33.65-29.83,17a8,8,0,0,0-3.89,5.4,106.47,106.47,0,0,0,0,41.56,8,8,0,0,0,3.89,5.4l29.83,17,.12,33.62a8,8,0,0,0,2.83,6.08,111.91,111.91,0,0,0,36.72,20.67,8,8,0,0,0,6.46-.59L128,214.15,158.12,231a7.91,7.91,0,0,0,3.9,1,8.09,8.09,0,0,0,2.57-.42,112.1,112.1,0,0,0,36.68-20.73,8,8,0,0,0,2.83-6.07l.15-33.65,29.83-17a8,8,0,0,0,3.89-5.4A106.47,106.47,0,0,0,237.94,107.21Zm-15,34.91-28.57,16.25a8,8,0,0,0-3,3c-.58,1-1.19,2.06-1.81,3.06a7.94,7.94,0,0,0-1.22,4.21l-.15,32.25a95.89,95.89,0,0,1-25.37,14.3L134,199.13a8,8,0,0,0-3.91-1h-.19c-1.21,0-2.43,0-3.64,0a8.08,8.08,0,0,0-4.1,1l-28.84,16.1A96,96,0,0,1,67.88,201l-.11-32.2a8,8,0,0,0-1.22-4.22c-.62-1-1.23-2-1.8-3.06a8.09,8.09,0,0,0-3-3.06l-28.6-16.29a90.49,90.49,0,0,1,0-28.26L61.67,97.63a8,8,0,0,0,3-3c.58-1,1.19-2.06,1.81-3.06a7.94,7.94,0,0,0,1.22-4.21l.15-32.25a95.89,95.89,0,0,1,25.37-14.3L122,56.87a8,8,0,0,0,4.1,1c1.21,0,2.43,0,3.64,0a8.08,8.08,0,0,0,4.1-1l28.84-16.1A96,96,0,0,1,188.12,55l.11,32.2a8,8,0,0,0,1.22,4.22c.62,1,1.23,2,1.8,3.06a8.09,8.09,0,0,0,3,3.06l28.6,16.29A90.49,90.49,0,0,1,222.9,142.12Z"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+        [36m</a>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"avatar dark"[39m
+        [36m>[39m
+          [0mVA[0m
+        [36m</span>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"profile-name"[39m
+        [36m>[39m
+          [0mNguyễn Văn A[0m
+        [36m</span>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"button quiet small"[39m
+        [36m>[39m
+          [0mĐăng xuất[0m
+        [36m</button>[39m
+      [36m</div>[39m
+    [36m</header>[39m
+    [36m<main[39m
+      [33mclass[39m=[32m"list-page"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"page-heading"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"title-line"[39m
+        [36m>[39m
+          [36m<h1>[39m
+            [0mCuộc họp[0m
+          [36m</h1>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"total-count"[39m
+          [36m>[39m
+            [0m10[0m
+            [0m cuộc họp[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<a[39m
+          [33mclass[39m=[32m"button primary"[39m
+          [33mdata-discover[39m=[32m"true"[39m
+          [33mhref[39m=[32m"/meetings/new"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33mfill[39m=[32m"currentColor"[39m
+            [33mheight[39m=[32m"1em"[39m
+            [33mviewBox[39m=[32m"0 0 256 256"[39m
+            [33mwidth[39m=[32m"1em"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M224,128a8,8,0,0,1-8,8H136v80a8,8,0,0,1-16,0V136H40a8,8,0,0,1,0-16h80V40a8,8,0,0,1,16,0v80h80A8,8,0,0,1,224,128Z"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0mCuộc họp mới[0m
+        [36m</a>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"list-toolbar"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33maria-label[39m=[32m"Lọc trạng thái"[39m
+          [33mclass[39m=[32m"filter-tabs"[39m
+          [33mrole[39m=[32m"group"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-pressed[39m=[32m"true"[39m
+            [33mclass[39m=[32m"selected"[39m
+          [36m>[39m
+            [0mTất cả[0m
+            [36m<span>[39m
+              [0m10[0m
+            [36m</span>[39m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-pressed[39m=[32m"false"[39m
+            [33mclass[39m=[32m""[39m
+          [36m>[39m
+            [0mHoàn thành[0m
+            [36m<span />[39m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-pressed[39m=[32m"false"[39m
+            [33mclass[39m=[32m""[39m
+          [36m>[39m
+            [0mĐang xử lý[0m
+            [36m<span />[39m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-pressed[39m=[32m"false"[39m
+            [33mclass[39m=[32m""[39m
+          [36m>[39m
+            [0mChờ xử lý[0m
+            [36m<span />[39m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-pressed[39m=[32m"false"[39m
+            [33mclass[39m=[32m""[39m
+          [36m>[39m
+            [0mMột phần[0m
+            [36m<span />[39m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-pressed[39m=[32m"false"[39m
+            [33mclass[39m=[32m""[39m
+          [36m>[39m
+            [0mCó lỗi[0m
+            [36m<span />[39m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<label[39m
+          [33mclass[39m=[32m"search-input"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33mfill[39m=[32m"currentColor"[39m
+            [33mheight[39m=[32m"1em"[39m
+            [33mviewBox[39m=[32m"0 0 256 256"[39m
+            [33mwidth[39m=[32m"1em"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [36m<input[39m
+            [33maria-label[39m=[32m"Tìm cuộc họp"[39m
+            [33mmaxlength[39m=[32m"200"[39m
+            [33mplaceholder[39m=[32m"Tìm theo tiêu đề cuộc họp…"[39m
+            [33mvalue[39m=[32m""[39m
+          [36m/>[39m
+        [36m</label>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"meeting-table"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33maria-hidden[39m=[32m"true"[39m
+          [33mclass[39m=[32m"table-head"[39m
+        [36m>[39m
+          [36m<span>[39m
+            [0mTIÊU ĐỀ CUỘC HỌP[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0mNGÀY TẠO[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0mTHỜI LƯỢNG[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0mNGƯỜI NÓI[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0mTRẠNG THÁI[0m
+          [36m</span>[39m
+          [36m<span />[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"empty-state"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33mfill[39m=[32m"currentColor"[39m
+            [33mheight[39m=[32m"28"[39m
+            [33mviewBox[39m=[32m"0 0 256 256"[39m
+            [33mwidth[39m=[32m"28"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [36m<h2>[39m
+            [0mChưa có cuộc họp[0m
+          [36m</h2>[39m
+          [36m<p>[39m
+            [0mTạo cuộc họp mới để bắt đầu.[0m
+          [36m</p>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"button secondary"[39m
+          [36m>[39m
+            [0mXóa bộ lọc[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<p[39m
+        [33mclass[39m=[32m"list-footer"[39m
+      [36m>[39m
+        [0mHiển thị [0m
+        [0m0[0m
+        [0m trên [0m
+        [0m10[0m
+        [0m cuộc họp[0m
+      [36m</p>[39m
+    [36m</main>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/features/meetings/MeetingListPage.search.test.tsx:285:17
+    283|   await act(() => vi.advanceTimersByTimeAsync(100))
+    284|   expect(secondPageRequests).toBe(2)
+    285|   expect(screen.getByText('Hiển thị 10 trên 10 cuộc họp')).toBeVisible…
+       |                 ^
+    286|   expect(view.container.querySelectorAll('.meeting-row')).toHaveLength…
+    287|   expect(requests).toEqual([1, 2, 2, 1])
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 5 skipped (6)
+   Start at  13:26:43
+   Duration  1.65s (environment 55%, import 18%, tests 13%, setup 10%, transform 4%)
+
+
+EXIT=1

@@ -15,7 +15,7 @@ Log ghi **UTF-8**.
 
 ## Việc
 
-### 1. [ ] E2E trên API thật: tìm bằng `%` và `_` chỉ ra tiêu đề chứa đúng ký tự đó (FE-04, BE-05)
+### 1. [x] E2E trên API thật: tìm bằng `%` và `_` chỉ ra tiêu đề chứa đúng ký tự đó (FE-04, BE-05)
 - **Lý do:** từ #64 ô tìm gửi `q` lên API. `meetings.py:145` ghép `q` vào `ilike(f"%{q}%")` mà không escape, nên `%` và `_` là ký tự đại diện: gõ `%` ra mọi cuộc họp, gõ `_` ra mọi tiêu đề có từ 1 ký tự trở lên. Trước #64 lỗi này không lộ vì lọc ở trình duyệt.
 - **Làm:** tạo 3 cuộc họp qua API thật (PostgreSQL) với tiêu đề `Giảm 100% chi phí`, `Họp_nhóm`, `Họp nhóm`. Gõ `%` phải ra đúng 1, gõ `_` phải ra đúng 1 (không phải 2), gõ `100%` ra 1. Test đỏ trên `main` hiện tại; log đỏ `docs/evidence/final/frontend-search-wildcard-red-2026-11-17.log`.
 - Test xanh sau khi PR của B vào `main`; ghi rõ thứ tự trong PR.
@@ -93,3 +93,13 @@ Bằng chứng UTF-8 trong docs/evidence/final:
   PR backend của B. Ghi rõ E2E wildcard đang chờ bản sửa backend và lượt xanh
   trên mã đã tích hợp. Việc 1 tiếp tục để chưa tick. PR chuẩn bị ở dạng Draft
   theo rules/git-workflow.md vì phần kiểm E2E vẫn đang thực hiện.
+
+
+## Bổ sung ngày 19/11 — hoàn tất việc 1
+
+PR #67 và #66 đã merge. A tự chạy E2E wildcard **3/3 lượt đạt** trên main
+3a899b3, mỗi lượt một database PostgreSQL 16 e2e mới, retries=0. %, _ và 100%
+trả đúng 1 mục; 0 pageerror. Bằng chứng frontend-search-wildcard-green-2026-11-19.log,
+JSON cùng tên và ba wildcard-result r1/r2/r3 trong docs/evidence/final/.
+Hash commit đóng việc: `7e52573ef6e05ca6de8a1b9b956804b701527934` (việc 1 của A ngày 19/11).
+Các phần trạng thái chờ phía trên là ghi nhận tại thời điểm 17/11.
