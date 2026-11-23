@@ -606,3 +606,78 @@ def test_get_meeting_detail_partial_status_reports_failed_summary(
     assert data["status"] == "partial"
     assert data["artifacts"]["transcript"] == "ready"
     assert data["artifacts"]["summary"] == "failed"
+
+
+def test_meeting_list_past_last_page_returns_no_items_with_right_total(
+    client_a: TestClient,
+    test_db: Session,
+    user_a: User,
+) -> None:
+    """Kiểm tra trang vượt quá trang cuối, page=0, page_size > 100 và kết hợp q (BE-05).
+
+    - 11 cuộc họp, page_size=10:
+      page=3 -> 200, items: [], total: 11
+    - page=0 -> 422
+    - page_size=101 -> 422
+    - Kết hợp q: trang quá trang cuối vẫn trả đúng total của q.
+    """
+    meetings: list[Meeting] = []
+    # 6 cuộc họp chứa "Chiến lược"
+    for i in range(6):
+        meetings.append(
+            Meeting(
+                id=str(uuid.uuid4()),
+                owner_id=user_a.id,
+                title=f"Họp Chiến lược Phát triển Đợt {i + 1}",
+                source="upload",
+                status="ready",
+                version=1,
+            )
+        )
+    # 5 cuộc họp khác
+    for i in range(5):
+        meetings.append(
+            Meeting(
+                id=str(uuid.uuid4()),
+                owner_id=user_a.id,
+                title=f"Đồng bộ Hạ tầng Kỹ thuật Số {i + 1}",
+                source="upload",
+                status="ready",
+                version=1,
+            )
+        )
+    test_db.add_all(meetings)
+    test_db.commit()
+
+    # 1. 11 cuộc họp, page_size=10 -> page=3 trả 200, items: [], total: 11
+    res_page3 = client_a.get("/api/v1/meetings?page=3&page_size=10")
+    assert res_page3.status_code == 200
+    data_page3 = res_page3.json()
+    assert data_page3["items"] == []
+    assert data_page3["total"] == 11
+    assert data_page3["page"] == 3
+    assert data_page3["page_size"] == 10
+
+    # 2. Ràng buộc tham số: page=0 -> 422, page_size=101 -> 422, page_size=0 -> 422
+    res_p0 = client_a.get("/api/v1/meetings?page=0")
+    assert res_p0.status_code == 422
+    err_p0 = res_p0.json()
+    assert err_p0["error"]["code"] == "VALIDATION_ERROR"
+
+    res_ps101 = client_a.get("/api/v1/meetings?page_size=101")
+    assert res_ps101.status_code == 422
+    err_ps101 = res_ps101.json()
+    assert err_ps101["error"]["code"] == "VALIDATION_ERROR"
+
+    res_ps0 = client_a.get("/api/v1/meetings?page_size=0")
+    assert res_ps0.status_code == 422
+
+    # 3. Kết hợp q: có 6 cuộc họp khớp "Chiến lược"
+    # Với page_size=5, trang cuối là 2 (5 + 1). Gọi page=3 (quá trang cuối):
+    res_q_page3 = client_a.get("/api/v1/meetings?q=Chiến lược&page=3&page_size=5")
+    assert res_q_page3.status_code == 200
+    data_q_page3 = res_q_page3.json()
+    assert data_q_page3["items"] == []
+    assert data_q_page3["total"] == 6
+    assert data_q_page3["page"] == 3
+    assert data_q_page3["page_size"] == 5
