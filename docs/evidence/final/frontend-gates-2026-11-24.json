@@ -1,0 +1,184 @@
+{
+  "assignment_date": "2026-11-24",
+  "executed_date_local": "2026-11-24",
+  "timezone": "Asia/Ho_Chi_Minh",
+  "recorded_at_utc": "2026-11-24T12:33:00.814819+00:00",
+  "implementation_head": "60cefea24367649f74b0a9964f40da12f2e347fd",
+  "checks": [
+    {
+      "label": "final-gen-api",
+      "head": "7754883459b6e35390a11cb19869665492ff6654",
+      "command": [
+        "npm.cmd",
+        "run",
+        "gen:api"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 8.89,
+      "finished_at_utc": "2026-11-24T12:28:16.499454+00:00"
+    },
+    {
+      "label": "final-lint",
+      "head": "7754883459b6e35390a11cb19869665492ff6654",
+      "command": [
+        "npm.cmd",
+        "run",
+        "lint"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 6.38,
+      "finished_at_utc": "2026-11-24T12:28:23.470282+00:00"
+    },
+    {
+      "label": "final-format-pass",
+      "head": "60cefea24367649f74b0a9964f40da12f2e347fd",
+      "command": [
+        "npm.cmd",
+        "run",
+        "format:check"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 2.8,
+      "finished_at_utc": "2026-11-24T12:30:07.313663+00:00"
+    },
+    {
+      "label": "final-types",
+      "head": "60cefea24367649f74b0a9964f40da12f2e347fd",
+      "command": [
+        "npm.cmd",
+        "run",
+        "typecheck"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 4.59,
+      "finished_at_utc": "2026-11-24T12:30:12.060836+00:00"
+    },
+    {
+      "label": "final-tests",
+      "head": "60cefea24367649f74b0a9964f40da12f2e347fd",
+      "command": [
+        "npm.cmd",
+        "test"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 38.22,
+      "finished_at_utc": "2026-11-24T12:30:50.409725+00:00"
+    },
+    {
+      "label": "final-coverage",
+      "head": "60cefea24367649f74b0a9964f40da12f2e347fd",
+      "command": [
+        "npm.cmd",
+        "run",
+        "test:coverage"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 46.06,
+      "finished_at_utc": "2026-11-24T12:31:36.650861+00:00"
+    },
+    {
+      "label": "final-build",
+      "head": "60cefea24367649f74b0a9964f40da12f2e347fd",
+      "command": [
+        "npm.cmd",
+        "run",
+        "build"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 5.67,
+      "finished_at_utc": "2026-11-24T12:31:42.508078+00:00"
+    }
+  ],
+  "unit": {
+    "files": 55,
+    "passed": 330,
+    "failed": 0,
+    "skipped": 0
+  },
+  "coverage": {
+    "lines": {
+      "total": 1438,
+      "covered": 1263,
+      "skipped": 0,
+      "pct": 87.83
+    },
+    "statements": {
+      "total": 1604,
+      "covered": 1372,
+      "skipped": 0,
+      "pct": 85.53
+    },
+    "functions": {
+      "total": 508,
+      "covered": 419,
+      "skipped": 0,
+      "pct": 82.48
+    },
+    "branches": {
+      "total": 1456,
+      "covered": 1205,
+      "skipped": 0,
+      "pct": 82.76
+    },
+    "branchesTrue": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 100
+    }
+  },
+  "thresholds": {
+    "lines": 84.53,
+    "branches": 79.11
+  },
+  "rename_e2e": {
+    "runs": 3,
+    "passed": 3,
+    "retries": 0,
+    "pageErrors": 0,
+    "evidence": "frontend-rename-e2e-2026-11-24.json"
+  },
+  "empty_page_smoke": {
+    "runs": 1,
+    "passed": 1,
+    "retries": 0,
+    "pageErrors": 0,
+    "evidence": "frontend-empty-page-smoke-2026-11-24.json"
+  },
+  "source_sha256": {
+    "frontend/e2e/evidence/rename.spec.ts": "424fd9b7e792792638a74776abb005aa09985a7a50661aff8f38b405796faf93",
+    "frontend/playwright.evidence.config.ts": "7c53edc953ca5eb6b1cbf84fb8f8a2a1db969c7536cf2510487b5040864d9309",
+    "frontend/src/api/client.ts": "2806054e63ac69e54f23e29220dcf7fd1754dfbc265fcd3bc46ce427268b57c9",
+    "frontend/src/features/meetings/MeetingListPage.search.test.tsx": "a8de7b574f4052d9574091404a97943ec12c15e4c09d4f6694671d374631f91e",
+    "frontend/src/features/meetings/MeetingRename.test.tsx": "1c1a5c663134bb8e42b92b2c9e547c25366943fcbb8532c4c9c122196309cdb8",
+    "frontend/src/features/meetings/SegmentEditing.test.tsx": "4424a0e9f2c88524cb79a946d68949d50ad2ebed34893a9d9e60c1111b9e94b9",
+    "frontend/src/features/meetings/Transcript.tsx": "51e543b7ef2dcac328c86deed472426676e76119d04006ecb1badd15854a94b7",
+    "frontend/src/features/meetings/limits.ts": "cad62356fdf9b605f4d729f713833a20d34c76551ce1b241fdcf3bb7f4c845b7",
+    "frontend/src/index.css": "18b19f466676fbff861aa85ec04d28c67fde35885fc8e2a95dd207b0af358ecf",
+    "frontend/src/mocks/handlers.ts": "40fdd24adfeb008a3009f680c6a0e43f869a5225edf1a9a86cc2a46f81735624",
+    "frontend/src/pages/MeetingDetailPage.tsx": "5d9292fdad927f42746c62d851830580151f541064b4a121247a94c91381c431",
+    "frontend/src/pages/MeetingListPage.tsx": "6003582e974e9c61653f3deac2305f72639780111269a8189e0b985ae4c01177"
+  },
+  "format_note": "Lượt đầu format phát hiện CRLF ở working copy của hai file; Prettier đã ghi LF. Git tree 7754883 và 60cefea giống hệt, hash tree ghi trong smoke JSON. Lượt format cuối đạt.",
+  "github_ci": "Chưa chạy cho đợt 14 vì chưa push.",
+  "review_b": "Không có PR mở khi kiểm GitHub khoảng 19:29 +07 ngày 24/11.",
+  "documentation_format_check": {
+    "head": "60cefea24367649f74b0a9964f40da12f2e347fd",
+    "command": [
+      "npm.cmd",
+      "run",
+      "format:check"
+    ],
+    "cwd": "frontend",
+    "exit_code": 0,
+    "duration_sec": 2.57,
+    "finished_at_utc": "2026-11-24T12:33:03.488972+00:00"
+  }
+}

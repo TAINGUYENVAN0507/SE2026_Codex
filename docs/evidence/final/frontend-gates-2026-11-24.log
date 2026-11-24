@@ -1,0 +1,122 @@
+{"head": "7754883459b6e35390a11cb19869665492ff6654", "command": ["npm.cmd", "run", "gen:api"], "cwd": "frontend", "exit_code": 0, "duration_sec": 8.89, "finished_at_utc": "2026-11-24T12:28:16.499454+00:00"}
+$ npm.cmd run gen:api
+
+> vietnamese-meeting-minutes-frontend@0.0.0 gen:api
+> openapi-typescript ../contracts/openapi.json -o src/api/schema.d.ts && prettier --write src/api/schema.d.ts
+
+✨ openapi-typescript 7.13.0
+🚀 ../contracts/openapi.json → src/api/schema.d.ts [131.6ms]
+src/api/schema.d.ts 404ms
+
+EXIT=0
+
+{"head": "7754883459b6e35390a11cb19869665492ff6654", "command": ["npm.cmd", "run", "lint"], "cwd": "frontend", "exit_code": 0, "duration_sec": 6.38, "finished_at_utc": "2026-11-24T12:28:23.470282+00:00"}
+$ npm.cmd run lint
+
+> vietnamese-meeting-minutes-frontend@0.0.0 lint
+> eslint . && oxlint .
+
+
+EXIT=0
+
+{"head": "60cefea24367649f74b0a9964f40da12f2e347fd", "command": ["npm.cmd", "run", "format:check"], "cwd": "frontend", "exit_code": 0, "duration_sec": 2.8, "finished_at_utc": "2026-11-24T12:30:07.313663+00:00"}
+$ npm.cmd run format:check
+
+> vietnamese-meeting-minutes-frontend@0.0.0 format:check
+> prettier --check .
+
+Checking formatting...
+All matched files use Prettier code style!
+
+EXIT=0
+
+{"head": "60cefea24367649f74b0a9964f40da12f2e347fd", "command": ["npm.cmd", "run", "typecheck"], "cwd": "frontend", "exit_code": 0, "duration_sec": 4.59, "finished_at_utc": "2026-11-24T12:30:12.060836+00:00"}
+$ npm.cmd run typecheck
+
+> vietnamese-meeting-minutes-frontend@0.0.0 typecheck
+> tsc -b --pretty false
+
+
+EXIT=0
+
+{"head": "60cefea24367649f74b0a9964f40da12f2e347fd", "command": ["npm.cmd", "test"], "cwd": "frontend", "exit_code": 0, "duration_sec": 38.22, "finished_at_utc": "2026-11-24T12:30:50.409725+00:00"}
+$ npm.cmd test
+
+> vietnamese-meeting-minutes-frontend@0.0.0 test
+> vitest run
+
+
+ RUN  v5.0.5 D:/Project/CNPM/SE2026_Codex/frontend
+
+
+ Test Files  55 passed (55)
+      Tests  330 passed (330)
+   Start at  19:30:12
+   Duration  37.33s (environment 53%, tests 25%, import 11%, setup 10%, transform 1%)
+
+Environment  jsdom was created 55 times · 73.30s total, 53% of tracked time
+             create it once per worker with pool: 'vmThreads' (keeps per-file isolation) or isolate: false (shares it across files)
+             learn more: https://vitest.dev/guide/improving-performance#test-environments
+
+
+EXIT=0
+
+{"head": "60cefea24367649f74b0a9964f40da12f2e347fd", "command": ["npm.cmd", "run", "test:coverage"], "cwd": "frontend", "exit_code": 0, "duration_sec": 46.06, "finished_at_utc": "2026-11-24T12:31:36.650861+00:00"}
+$ npm.cmd run test:coverage
+
+> vietnamese-meeting-minutes-frontend@0.0.0 test:coverage
+> vitest run --coverage
+
+
+ RUN  v5.0.5 D:/Project/CNPM/SE2026_Codex/frontend
+      Coverage enabled with v8
+
+
+ Test Files  55 passed (55)
+      Tests  330 passed (330)
+   Start at  19:30:52
+   Duration  43.68s (environment 48%, tests 26%, setup 11%, import 11%, transform 3%, worker 2%)
+
+Environment  jsdom was created 55 times · 75.04s total, 48% of tracked time
+             create it once per worker with pool: 'vmThreads' (keeps per-file isolation) or isolate: false (shares it across files)
+             learn more: https://vitest.dev/guide/improving-performance#test-environments
+
+ % Coverage report from v8
+
+=============================== Coverage summary ===============================
+Statements   : 85.53% ( 1372/1604 )
+Branches     : 82.76% ( 1205/1456 )
+Functions    : 82.48% ( 419/508 )
+Lines        : 87.83% ( 1263/1438 )
+================================================================================
+
+EXIT=0
+
+{"head": "60cefea24367649f74b0a9964f40da12f2e347fd", "command": ["npm.cmd", "run", "build"], "cwd": "frontend", "exit_code": 0, "duration_sec": 5.67, "finished_at_utc": "2026-11-24T12:31:42.508078+00:00"}
+$ npm.cmd run build
+
+> vietnamese-meeting-minutes-frontend@0.0.0 build
+> tsc -b && vite build
+
+vite v8.3.4 building client environment for production...
+transforming...
+✓ 189 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.76 kB │ gzip:   0.43 kB
+dist/assets/index-DgSHrS1i.css   44.01 kB │ gzip:   9.86 kB
+dist/assets/index-D2Jezbkp.js   483.48 kB │ gzip: 144.86 kB
+
+✓ built in 423ms
+
+EXIT=0
+
+$ npm.cmd run format:check
+
+> vietnamese-meeting-minutes-frontend@0.0.0 format:check
+> prettier --check .
+
+Checking formatting...
+All matched files use Prettier code style!
+
+EXIT=0
