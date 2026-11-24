@@ -13,6 +13,11 @@ export function useMeetingsQuery({
   return useQuery({
     queryKey: ['meetings', page, status, q],
     queryFn: () => listMeetings(page, status, q),
+    // FE-04: giữ dữ liệu khi đổi trang, không mang kết quả của bộ lọc/từ khóa cũ sang.
+    placeholderData: (previousData, previousQuery) =>
+      previousQuery?.queryKey[2] === status && previousQuery?.queryKey[3] === q
+        ? previousData
+        : undefined,
     refetchInterval: (query) =>
       query.state.data?.items.some(
         (meeting) =>

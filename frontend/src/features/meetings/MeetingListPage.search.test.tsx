@@ -451,3 +451,42 @@ it.each(['loading', 'error'] as const)(
     }
   },
 )
+
+it('FE-04: thanh phân trang còn hiện khi trang 2 đang tải 500 ms', async () => {
+  const items = Array.from({ length: 11 }, (_, index) => ({
+    ...item,
+    id: `00000000-0000-4000-8000-${String(index + 1).padStart(12, '0')}`,
+    title: `Trang trễ ${index + 1}`,
+  }))
+  server.use(
+    http.get('*/api/v1/meetings', async ({ request }) => {
+      const page = Number(new URL(request.url).searchParams.get('page'))
+      if (page === 2)
+        await new Promise<void>((resolve) => setTimeout(resolve, 500))
+      return HttpResponse.json({
+        ...list(items.slice((page - 1) * 10, page * 10), 11),
+        page,
+      })
+    }),
+  )
+  vi.useFakeTimers()
+  renderPage()
+  await act(() => vi.advanceTimersByTimeAsync(100))
+  expect(screen.getByText('Trang trễ 1')).toBeVisible()
+  fireEvent.click(screen.getByRole('button', { name: 'Trang sau' }))
+  expect(
+    screen.getByRole('navigation', { name: 'Phân trang cuộc họp' }),
+  ).toBeVisible()
+  expect(screen.getByRole('button', { name: 'Trang trước' })).toBeEnabled()
+  expect(screen.getByText('Trang 2')).toBeVisible()
+  await act(() => vi.advanceTimersByTimeAsync(100))
+  expect(
+    screen.getByRole('navigation', { name: 'Phân trang cuộc họp' }),
+  ).toBeVisible()
+  expect(screen.queryByText('Trang trễ 11')).not.toBeInTheDocument()
+  await act(() => vi.advanceTimersByTimeAsync(500))
+  await act(() => vi.advanceTimersByTimeAsync(10))
+  expect(screen.getByText('Trang trễ 11')).toBeVisible()
+  expect(screen.getByText('Hiển thị 1 trên 11 cuộc họp')).toBeVisible()
+  expect(screen.getByRole('button', { name: 'Trang trước' })).toBeEnabled()
+})

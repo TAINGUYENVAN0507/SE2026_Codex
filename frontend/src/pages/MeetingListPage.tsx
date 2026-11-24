@@ -51,7 +51,12 @@ export function MeetingListPage() {
     ),
   )
   // FE-04: dữ liệu có thể bị xóa ở tab khác; chỉnh trang trước khi hiện empty state.
-  if (meetingsQuery.isSuccess && !meetings.length && page > lastPage) {
+  if (
+    meetingsQuery.isSuccess &&
+    !meetingsQuery.isPlaceholderData &&
+    !meetings.length &&
+    page > lastPage
+  ) {
     setPage(lastPage)
   }
   return (
