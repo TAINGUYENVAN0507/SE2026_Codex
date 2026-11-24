@@ -452,7 +452,7 @@ it.each(['loading', 'error'] as const)(
   },
 )
 
-it('FE-04: thanh phân trang còn hiện khi trang 2 đang tải 500 ms', async () => {
+it('FE-04: thanh phân trang còn và dòng cũ bị khóa khi trang 2 đang tải 500 ms', async () => {
   const items = Array.from({ length: 11 }, (_, index) => ({
     ...item,
     id: `00000000-0000-4000-8000-${String(index + 1).padStart(12, '0')}`,
@@ -470,7 +470,7 @@ it('FE-04: thanh phân trang còn hiện khi trang 2 đang tải 500 ms', async 
     }),
   )
   vi.useFakeTimers()
-  renderPage()
+  const view = renderPage()
   await act(() => vi.advanceTimersByTimeAsync(100))
   expect(screen.getByText('Trang trễ 1')).toBeVisible()
   fireEvent.click(screen.getByRole('button', { name: 'Trang sau' }))
@@ -478,6 +478,17 @@ it('FE-04: thanh phân trang còn hiện khi trang 2 đang tải 500 ms', async 
     screen.getByRole('navigation', { name: 'Phân trang cuộc họp' }),
   ).toBeVisible()
   expect(screen.getByRole('button', { name: 'Trang trước' })).toBeEnabled()
+  expect(screen.getByText('Trang 2')).toBeVisible()
+  expect(view.container.querySelector('.meeting-table')).toHaveAttribute(
+    'aria-busy',
+    'true',
+  )
+  expect(screen.getByText('Đang tải trang 2…')).toBeVisible()
+  expect(view.container.querySelectorAll('a.meeting-row')).toHaveLength(0)
+  expect(
+    view.container.querySelectorAll('.meeting-row[aria-disabled="true"]'),
+  ).toHaveLength(10)
+  fireEvent.click(screen.getByText('Trang trễ 1'))
   expect(screen.getByText('Trang 2')).toBeVisible()
   await act(() => vi.advanceTimersByTimeAsync(100))
   expect(
@@ -487,6 +498,18 @@ it('FE-04: thanh phân trang còn hiện khi trang 2 đang tải 500 ms', async 
   await act(() => vi.advanceTimersByTimeAsync(500))
   await act(() => vi.advanceTimersByTimeAsync(10))
   expect(screen.getByText('Trang trễ 11')).toBeVisible()
+  expect(view.container.querySelector('.meeting-table')).toHaveAttribute(
+    'aria-busy',
+    'false',
+  )
+  expect(screen.queryByText('Đang tải trang 2…')).not.toBeInTheDocument()
+  expect(
+    view.container.querySelectorAll('.meeting-row[aria-disabled="true"]'),
+  ).toHaveLength(0)
+  expect(view.container.querySelector('a.meeting-row')).toHaveAttribute(
+    'href',
+    '/meetings/00000000-0000-4000-8000-000000000011',
+  )
   expect(screen.getByText('Hiển thị 1 trên 11 cuộc họp')).toBeVisible()
   expect(screen.getByRole('button', { name: 'Trang trước' })).toBeEnabled()
 })

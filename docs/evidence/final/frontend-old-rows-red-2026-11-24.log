@@ -1,0 +1,34 @@
+$ node node_modules/vitest/vitest.mjs run src/features/meetings/MeetingListPage.search.test.tsx -t dòng cũ bị khóa
+
+ RUN  v5.0.5 D:/Project/CNPM/SE2026_Codex/frontend
+
+ ❯ src/features/meetings/MeetingListPage.search.test.tsx (12 tests | 1 failed | 11 skipped) 234ms
+   × FE-04: thanh phân trang còn và dòng cũ bị khóa khi trang 2 đang tải 500 ms 230ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/features/meetings/MeetingListPage.search.test.tsx > FE-04: thanh phân trang còn và dòng cũ bị khóa khi trang 2 đang tải 500 ms
+Error: expect(element).toHaveAttribute("aria-busy", "true") // element.getAttribute("aria-busy") === "true"
+
+Expected the element to have attribute:
+  aria-busy="true"
+Received:
+  null
+ ❯ src/features/meetings/MeetingListPage.search.test.tsx:482:58
+    480|   expect(screen.getByRole('button', { name: 'Trang trước' })).toBeEnab…
+    481|   expect(screen.getByText('Trang 2')).toBeVisible()
+    482|   expect(view.container.querySelector('.meeting-table')).toHaveAttribu…
+       |                                                          ^
+    483|   expect(screen.getByText('Đang tải trang 2…')).toBeVisible()
+    484|   expect(view.container.querySelectorAll('a.meeting-row')).toHaveLengt…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 skipped (12)
+   Start at  19:26:07
+   Duration  2.50s (environment 56%, import 19%, tests 10%, setup 10%, transform 4%)
+
+
+EXIT=1

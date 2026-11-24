@@ -3185,3 +3185,16 @@ mark {
   line-height: 1.5;
   text-align: left;
 }
+
+/* FE-04: dòng của trang cũ chỉ để tham chiếu trong lúc tải trang mới. */
+.meeting-row[aria-disabled='true'] {
+  opacity: 0.55;
+  pointer-events: none;
+}
+.list-loading {
+  margin: 0;
+  padding: 12px 16px;
+  color: var(--ink);
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+}

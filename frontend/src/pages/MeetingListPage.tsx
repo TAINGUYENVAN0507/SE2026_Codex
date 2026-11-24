@@ -109,7 +109,15 @@ export function MeetingListPage() {
             />
           </label>
         </div>
-        <div className="meeting-table">
+        {meetingsQuery.isPlaceholderData && (
+          <p className="list-loading" role="status">
+            Đang tải trang {page}…
+          </p>
+        )}
+        <div
+          className="meeting-table"
+          aria-busy={meetingsQuery.isPlaceholderData}
+        >
           <div className="table-head" aria-hidden="true">
             <span>TIÊU ĐỀ CUỘC HỌP</span>
             <span>NGÀY TẠO</span>
@@ -137,50 +145,61 @@ export function MeetingListPage() {
               </button>
             </div>
           )}
-          {meetings.map((m) => (
-            <Link key={m.id} className="meeting-row" to={`/meetings/${m.id}`}>
-              <span className="meeting-name">
-                {m.status === 'failed' ? (
-                  <WarningCircleIcon className="error-color" />
-                ) : m.status === 'processing' ? (
-                  <SpinnerGapIcon className="accent-color" />
-                ) : (
-                  <FileTextIcon />
-                )}
-                <strong>{m.title}</strong>
-              </span>
-              <span className="meeting-date">
-                {formatDate(m.meeting_date || m.created_at.slice(0, 10))}
-                <small>
-                  {new Date(m.created_at).toLocaleTimeString('vi-VN', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </small>
-              </span>
-              <span className="meeting-duration mono">
-                {m.duration_sec == null
-                  ? '—'
-                  : `${Math.floor(m.duration_sec / 60)} phút`}
-              </span>
-              <span className="speaker-avatars">
-                {m.num_speakers_hint ?? <span className="muted">—</span>}
-              </span>
-              <span className={`status-label ${m.status}`}>
-                <i />
-                {
+          {meetings.map((m) => {
+            const content = (
+              <>
+                <span className="meeting-name">
+                  {m.status === 'failed' ? (
+                    <WarningCircleIcon className="error-color" />
+                  ) : m.status === 'processing' ? (
+                    <SpinnerGapIcon className="accent-color" />
+                  ) : (
+                    <FileTextIcon />
+                  )}
+                  <strong>{m.title}</strong>
+                </span>
+                <span className="meeting-date">
+                  {formatDate(m.meeting_date || m.created_at.slice(0, 10))}
+                  <small>
+                    {new Date(m.created_at).toLocaleTimeString('vi-VN', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </small>
+                </span>
+                <span className="meeting-duration mono">
+                  {m.duration_sec == null
+                    ? '—'
+                    : `${Math.floor(m.duration_sec / 60)} phút`}
+                </span>
+                <span className="speaker-avatars">
+                  {m.num_speakers_hint ?? <span className="muted">—</span>}
+                </span>
+                <span className={`status-label ${m.status}`}>
+                  <i />
                   {
-                    ready: 'Đã hoàn thành',
-                    processing: 'Đang tạo tóm tắt',
-                    failed: 'Lỗi âm thanh',
-                    queued: 'Chờ xử lý',
-                    partial: 'Hoàn thành một phần',
-                  }[m.status]
-                }
-              </span>
-              <ArrowUpRightIcon className="row-arrow" />
-            </Link>
-          ))}
+                    {
+                      ready: 'Đã hoàn thành',
+                      processing: 'Đang tạo tóm tắt',
+                      failed: 'Lỗi âm thanh',
+                      queued: 'Chờ xử lý',
+                      partial: 'Hoàn thành một phần',
+                    }[m.status]
+                  }
+                </span>
+                <ArrowUpRightIcon className="row-arrow" />
+              </>
+            )
+            return meetingsQuery.isPlaceholderData ? (
+              <div key={m.id} className="meeting-row" aria-disabled="true">
+                {content}
+              </div>
+            ) : (
+              <Link key={m.id} className="meeting-row" to={`/meetings/${m.id}`}>
+                {content}
+              </Link>
+            )
+          })}
           {meetingsQuery.isSuccess && !meetings.length && (
             <div className="empty-state">
               <MagnifyingGlassIcon size={28} />
