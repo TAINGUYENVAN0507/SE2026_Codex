@@ -1,0 +1,12 @@
+$ node node_modules/vitest/vitest.mjs run src/features/meetings/MeetingListPage.search.test.tsx
+
+ RUN  v5.0.5 D:/Project/CNPM/SE2026_Codex/frontend
+
+
+ Test Files  1 passed (1)
+      Tests  12 passed (12)
+   Start at  09:36:20
+   Duration  3.72s (tests 61%, environment 25%, import 8%, setup 4%, transform 1%)
+
+
+EXIT=0

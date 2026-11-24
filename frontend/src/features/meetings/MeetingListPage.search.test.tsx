@@ -352,3 +352,141 @@ it('FE-04: bộ lọc rỗng báo không có cuộc họp ở trạng thái này
     }),
   ).not.toBeInTheDocument()
 })
+
+it('FE-04: xóa bộ lọc không gửi lại từ khóa cũ trong lúc chờ debounce', async () => {
+  const requests: URL[] = []
+  server.use(
+    http.get('*/api/v1/meetings', ({ request }) => {
+      const url = new URL(request.url)
+      requests.push(url)
+      return HttpResponse.json(
+        list(
+          url.searchParams.has('q') || url.searchParams.has('status')
+            ? []
+            : [item],
+        ),
+      )
+    }),
+  )
+  vi.useFakeTimers()
+  renderPage()
+  await act(() => vi.advanceTimersByTimeAsync(100))
+  fireEvent.click(screen.getByRole('button', { name: /Có lỗi/ }))
+  await act(() => vi.advanceTimersByTimeAsync(100))
+  const input = screen.getByRole('textbox', { name: 'Tìm cuộc họp' })
+  fireEvent.change(input, { target: { value: 'không khớp' } })
+  await act(() => vi.advanceTimersByTimeAsync(300))
+  await act(() => vi.advanceTimersByTimeAsync(100))
+  expect(
+    screen.getByRole('heading', { name: 'Không tìm thấy cuộc họp' }),
+  ).toBeVisible()
+  expect(requests.at(-1)?.searchParams.get('q')).toBe('không khớp')
+  const beforeClear = requests.length
+  fireEvent.click(screen.getByRole('button', { name: 'Xóa bộ lọc' }))
+  await act(() => vi.advanceTimersByTimeAsync(10))
+  const firstRequest = requests[beforeClear]
+  expect(firstRequest).toBeDefined()
+  expect(firstRequest.searchParams.has('q')).toBe(false)
+  expect(firstRequest.searchParams.has('status')).toBe(false)
+  expect(input).toHaveValue('')
+  await act(() => vi.advanceTimersByTimeAsync(1000))
+  expect(
+    requests.slice(beforeClear).every((url) => !url.searchParams.has('q')),
+  ).toBe(true)
+  expect(screen.getByText(item.title)).toBeVisible()
+  expect(
+    screen.queryByRole('heading', { name: 'Không tìm thấy cuộc họp' }),
+  ).not.toBeInTheDocument()
+})
+
+it.each(['loading', 'error'] as const)(
+  'FE-04: không khẳng định có 0 cuộc họp khi danh sách đang %s',
+  async (state) => {
+    server.use(
+      http.get('*/api/v1/meetings', async () => {
+        await new Promise<void>((resolve) => setTimeout(resolve, 500))
+        return state === 'error'
+          ? HttpResponse.json(
+              {
+                error: {
+                  code: 'INTERNAL_ERROR',
+                  message: 'Lỗi tổng hợp',
+                  details: null,
+                  request_id: null,
+                },
+              },
+              { status: 500 },
+            )
+          : HttpResponse.json(list([]))
+      }),
+    )
+    vi.useFakeTimers()
+    const view = renderPage()
+    await act(() => vi.advanceTimersByTimeAsync(state === 'error' ? 600 : 100))
+    await act(() => vi.advanceTimersByTimeAsync(10))
+    if (state === 'error') {
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'Không tải được cuộc họp',
+      )
+      expect(screen.getByRole('button', { name: 'Thử lại' })).toBeVisible()
+    } else {
+      expect(
+        screen.getByRole('status', { name: 'Đang tải danh sách cuộc họp…' }),
+      ).toBeVisible()
+    }
+    expect(screen.queryByText('0 cuộc họp')).not.toBeInTheDocument()
+    expect(
+      screen.queryByText('Hiển thị 0 trên 0 cuộc họp'),
+    ).not.toBeInTheDocument()
+    expect(view.container.querySelector('.total-count')).not.toBeInTheDocument()
+    expect(view.container.querySelector('.list-footer')).not.toBeInTheDocument()
+    if (state === 'loading') {
+      await act(() => vi.advanceTimersByTimeAsync(500))
+      await act(() => vi.advanceTimersByTimeAsync(10))
+      expect(
+        screen.getByRole('heading', { name: 'Chưa có cuộc họp' }),
+      ).toBeVisible()
+      expect(screen.getByText('0 cuộc họp')).toBeVisible()
+      expect(screen.getByText('Hiển thị 0 trên 0 cuộc họp')).toBeVisible()
+    }
+  },
+)
+
+it('FE-04: thanh phân trang còn hiện khi trang 2 đang tải 500 ms', async () => {
+  const items = Array.from({ length: 11 }, (_, index) => ({
+    ...item,
+    id: `00000000-0000-4000-8000-${String(index + 1).padStart(12, '0')}`,
+    title: `Trang trễ ${index + 1}`,
+  }))
+  server.use(
+    http.get('*/api/v1/meetings', async ({ request }) => {
+      const page = Number(new URL(request.url).searchParams.get('page'))
+      if (page === 2)
+        await new Promise<void>((resolve) => setTimeout(resolve, 500))
+      return HttpResponse.json({
+        ...list(items.slice((page - 1) * 10, page * 10), 11),
+        page,
+      })
+    }),
+  )
+  vi.useFakeTimers()
+  renderPage()
+  await act(() => vi.advanceTimersByTimeAsync(100))
+  expect(screen.getByText('Trang trễ 1')).toBeVisible()
+  fireEvent.click(screen.getByRole('button', { name: 'Trang sau' }))
+  expect(
+    screen.getByRole('navigation', { name: 'Phân trang cuộc họp' }),
+  ).toBeVisible()
+  expect(screen.getByRole('button', { name: 'Trang trước' })).toBeEnabled()
+  expect(screen.getByText('Trang 2')).toBeVisible()
+  await act(() => vi.advanceTimersByTimeAsync(100))
+  expect(
+    screen.getByRole('navigation', { name: 'Phân trang cuộc họp' }),
+  ).toBeVisible()
+  expect(screen.queryByText('Trang trễ 11')).not.toBeInTheDocument()
+  await act(() => vi.advanceTimersByTimeAsync(500))
+  await act(() => vi.advanceTimersByTimeAsync(10))
+  expect(screen.getByText('Trang trễ 11')).toBeVisible()
+  expect(screen.getByText('Hiển thị 1 trên 11 cuộc họp')).toBeVisible()
+  expect(screen.getByRole('button', { name: 'Trang trước' })).toBeEnabled()
+})
