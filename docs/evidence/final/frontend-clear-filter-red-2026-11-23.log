@@ -1,0 +1,36 @@
+$ node node_modules/vitest/vitest.mjs run src/features/meetings/MeetingListPage.search.test.tsx -t xóa bộ lọc không gửi
+
+ RUN  v5.0.5 D:/Project/CNPM/SE2026_Codex/frontend
+
+ ❯ src/features/meetings/MeetingListPage.search.test.tsx (9 tests | 1 failed | 8 skipped) 231ms
+   × FE-04: xóa bộ lọc không gửi lại từ khóa cũ trong lúc chờ debounce 227ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/features/meetings/MeetingListPage.search.test.tsx > FE-04: xóa bộ lọc không gửi lại từ khóa cũ trong lúc chờ debounce
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ src/features/meetings/MeetingListPage.search.test.tsx:384:46
+    382|   const firstRequest = requests[beforeClear]
+    383|   expect(firstRequest).toBeDefined()
+    384|   expect(firstRequest.searchParams.has('q')).toBe(false)
+       |                                              ^
+    385|   expect(firstRequest.searchParams.has('status')).toBe(false)
+    386|   expect(input).toHaveValue('')
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 8 skipped (9)
+   Start at  09:30:19
+   Duration  4.39s (environment 58%, import 17%, tests 11%, setup 9%, transform 4%)
+
+
+EXIT=1

@@ -193,6 +193,7 @@ export function MeetingListPage() {
                 className="button secondary"
                 onClick={() => {
                   setQuery('')
+                  setSearch('')
                   setFilter('all')
                   setPage(1)
                 }}

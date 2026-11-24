@@ -352,3 +352,49 @@ it('FE-04: bộ lọc rỗng báo không có cuộc họp ở trạng thái này
     }),
   ).not.toBeInTheDocument()
 })
+
+it('FE-04: xóa bộ lọc không gửi lại từ khóa cũ trong lúc chờ debounce', async () => {
+  const requests: URL[] = []
+  server.use(
+    http.get('*/api/v1/meetings', ({ request }) => {
+      const url = new URL(request.url)
+      requests.push(url)
+      return HttpResponse.json(
+        list(
+          url.searchParams.has('q') || url.searchParams.has('status')
+            ? []
+            : [item],
+        ),
+      )
+    }),
+  )
+  vi.useFakeTimers()
+  renderPage()
+  await act(() => vi.advanceTimersByTimeAsync(100))
+  fireEvent.click(screen.getByRole('button', { name: /Có lỗi/ }))
+  await act(() => vi.advanceTimersByTimeAsync(100))
+  const input = screen.getByRole('textbox', { name: 'Tìm cuộc họp' })
+  fireEvent.change(input, { target: { value: 'không khớp' } })
+  await act(() => vi.advanceTimersByTimeAsync(300))
+  await act(() => vi.advanceTimersByTimeAsync(100))
+  expect(
+    screen.getByRole('heading', { name: 'Không tìm thấy cuộc họp' }),
+  ).toBeVisible()
+  expect(requests.at(-1)?.searchParams.get('q')).toBe('không khớp')
+  const beforeClear = requests.length
+  fireEvent.click(screen.getByRole('button', { name: 'Xóa bộ lọc' }))
+  await act(() => vi.advanceTimersByTimeAsync(10))
+  const firstRequest = requests[beforeClear]
+  expect(firstRequest).toBeDefined()
+  expect(firstRequest.searchParams.has('q')).toBe(false)
+  expect(firstRequest.searchParams.has('status')).toBe(false)
+  expect(input).toHaveValue('')
+  await act(() => vi.advanceTimersByTimeAsync(1000))
+  expect(
+    requests.slice(beforeClear).every((url) => !url.searchParams.has('q')),
+  ).toBe(true)
+  expect(screen.getByText(item.title)).toBeVisible()
+  expect(
+    screen.queryByRole('heading', { name: 'Không tìm thấy cuộc họp' }),
+  ).not.toBeInTheDocument()
+})
