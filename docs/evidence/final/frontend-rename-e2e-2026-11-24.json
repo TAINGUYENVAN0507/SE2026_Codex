@@ -1,0 +1,115 @@
+{
+  "head": "e60996fc0ab66d8827523c97b186af52740b0d44",
+  "runs": [
+    {
+      "head": "e60996fc0ab66d8827523c97b186af52740b0d44",
+      "command": [
+        "node",
+        "node_modules/@playwright/test/cli.js",
+        "test",
+        "--config",
+        "playwright.evidence.config.ts",
+        "--grep",
+        "real API keeps a renamed meeting",
+        "--retries=0"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 30.74,
+      "finished_at_utc": "2026-11-24T12:22:32.354939+00:00",
+      "database": "meeting_day14_r1_e2e",
+      "result": {
+        "beforeVersion": 1,
+        "afterVersion": 2,
+        "reloadedTitle": true,
+        "apiTitle": true,
+        "searchTotal": 1,
+        "searchCorrectId": true,
+        "cleanedMeeting": true,
+        "cleanedUser": true,
+        "retries": 0,
+        "syntheticOnly": true,
+        "apiInterception": false,
+        "pageErrors": []
+      }
+    },
+    {
+      "head": "e60996fc0ab66d8827523c97b186af52740b0d44",
+      "command": [
+        "node",
+        "node_modules/@playwright/test/cli.js",
+        "test",
+        "--config",
+        "playwright.evidence.config.ts",
+        "--grep",
+        "real API keeps a renamed meeting",
+        "--retries=0"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 18.85,
+      "finished_at_utc": "2026-11-24T12:22:51.752660+00:00",
+      "database": "meeting_day14_r2_e2e",
+      "result": {
+        "beforeVersion": 1,
+        "afterVersion": 2,
+        "reloadedTitle": true,
+        "apiTitle": true,
+        "searchTotal": 1,
+        "searchCorrectId": true,
+        "cleanedMeeting": true,
+        "cleanedUser": true,
+        "retries": 0,
+        "syntheticOnly": true,
+        "apiInterception": false,
+        "pageErrors": []
+      }
+    },
+    {
+      "head": "e60996fc0ab66d8827523c97b186af52740b0d44",
+      "command": [
+        "node",
+        "node_modules/@playwright/test/cli.js",
+        "test",
+        "--config",
+        "playwright.evidence.config.ts",
+        "--grep",
+        "real API keeps a renamed meeting",
+        "--retries=0"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 17.97,
+      "finished_at_utc": "2026-11-24T12:23:10.375454+00:00",
+      "database": "meeting_day14_r3_e2e",
+      "result": {
+        "beforeVersion": 1,
+        "afterVersion": 2,
+        "reloadedTitle": true,
+        "apiTitle": true,
+        "searchTotal": 1,
+        "searchCorrectId": true,
+        "cleanedMeeting": true,
+        "cleanedUser": true,
+        "retries": 0,
+        "syntheticOnly": true,
+        "apiInterception": false,
+        "pageErrors": []
+      }
+    }
+  ],
+  "source_sha256": {
+    "frontend/e2e/evidence/rename.spec.ts": "424fd9b7e792792638a74776abb005aa09985a7a50661aff8f38b405796faf93",
+    "frontend/playwright.evidence.config.ts": "7c53edc953ca5eb6b1cbf84fb8f8a2a1db969c7536cf2510487b5040864d9309",
+    "frontend/src/pages/MeetingListPage.tsx": "23cde35dbea84e18a5f29b16787dd00892d2e4ea37f302e400a5b29df57e7961",
+    "frontend/src/features/meetings/useMeetingsQuery.ts": "aeaa421cfa480e059d965d7705ff46bfdf865274918c816d872976da4ca4e5f3",
+    "backend/app/api/v1/meetings.py": "da2d832518c401c465ea8b96501dc2b61afc7382a4c19d14109634023be1c0a2",
+    "frontend/src/pages/MeetingDetailPage.tsx": "5d9292fdad927f42746c62d851830580151f541064b4a121247a94c91381c431",
+    "frontend/src/api/client.ts": "2806054e63ac69e54f23e29220dcf7fd1754dfbc265fcd3bc46ce427268b57c9"
+  },
+  "cleanup": {
+    "container_removed": true,
+    "label": "20261124-day14-member-a",
+    "finished_at_utc": "2026-11-24T12:23:11.323946+00:00"
+  }
+}
