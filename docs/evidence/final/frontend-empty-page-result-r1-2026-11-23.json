@@ -1,0 +1,15 @@
+{
+  "created": 11,
+  "queued": 11,
+  "page2Items": 1,
+  "emptyPageTotal": 10,
+  "returnedPage": 1,
+  "visibleRows": 10,
+  "statusEmpty": true,
+  "cleanedMeetings": 11,
+  "cleanedUser": true,
+  "retries": 0,
+  "syntheticOnly": true,
+  "apiInterception": false,
+  "pageErrors": []
+}

@@ -11,6 +11,7 @@ export default defineConfig({
     'evidence/progress.spec.ts',
     'evidence/search.spec.ts',
     'evidence/search-wildcard.spec.ts',
+    'evidence/empty-page.spec.ts',
   ],
   timeout: 180_000,
   projects: base.projects?.map((project) => ({
