@@ -77,6 +77,18 @@ export function getMeeting(id: MeetingDetail['id']): Promise<MeetingDetail> {
   )
 }
 
+export function patchMeeting(
+  id: MeetingDetail['id'],
+  patch: components['schemas']['MeetingPatch'],
+): Promise<MeetingDetail> {
+  return unwrap(
+    client.PATCH('/meetings/{meeting_id}', {
+      params: { path: { meeting_id: id } },
+      body: patch,
+    }),
+  )
+}
+
 export async function deleteMeeting(id: string): Promise<void> {
   try {
     await client.DELETE('/meetings/{meeting_id}', {

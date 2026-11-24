@@ -1,0 +1,20 @@
+$ npm.cmd test
+
+> vietnamese-meeting-minutes-frontend@0.0.0 test
+> vitest run
+
+
+ RUN  v5.0.5 D:/Project/CNPM/SE2026_Codex/frontend
+
+
+ Test Files  55 passed (55)
+      Tests  329 passed (329)
+   Start at  19:19:43
+   Duration  31.72s (environment 51%, tests 27%, import 11%, setup 9%, transform 1%)
+
+Environment  jsdom was created 55 times · 60.22s total, 51% of tracked time
+             create it once per worker with pool: 'vmThreads' (keeps per-file isolation) or isolate: false (shares it across files)
+             learn more: https://vitest.dev/guide/improving-performance#test-environments
+
+
+EXIT=0
