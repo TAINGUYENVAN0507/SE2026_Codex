@@ -1,0 +1,38 @@
+$ node node_modules/vitest/vitest.mjs run src/features/meetings/MeetingListPage.search.test.tsx -t không khẳng định
+
+ RUN  v5.0.5 D:/Project/CNPM/SE2026_Codex/frontend
+
+ ❯ src/features/meetings/MeetingListPage.search.test.tsx (11 tests | 2 failed | 9 skipped) 155ms
+   × FE-04: không khẳng định có 0 cuộc họp khi danh sách đang loading 114ms
+   × FE-04: không khẳng định có 0 cuộc họp khi danh sách đang error 38ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/features/meetings/MeetingListPage.search.test.tsx > FE-04: không khẳng định có 0 cuộc họp khi danh sách đang loading
+ FAIL  src/features/meetings/MeetingListPage.search.test.tsx > FE-04: không khẳng định có 0 cuộc họp khi danh sách đang error
+Error: expect(element).not.toBeInTheDocument()
+
+expected document not to contain element, found <span
+  class="total-count"
+>
+  0
+   cuộc họp
+</span> instead
+ ❯ src/features/meetings/MeetingListPage.search.test.tsx:424:50
+    422|       expect(screen.getByRole('status', { name: 'Đang tải danh sách cu…
+    423|     }
+    424|     expect(screen.queryByText('0 cuộc họp')).not.toBeInTheDocument()
+       |                                                  ^
+    425|     expect(screen.queryByText('Hiển thị 0 trên 0 cuộc họp')).not.toBeI…
+    426|     expect(view.container.querySelector('.total-count')).not.toBeInThe…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 9 skipped (11)
+   Start at  09:32:44
+   Duration  2.24s (environment 61%, import 18%, setup 10%, tests 7%, transform 4%)
+
+
+EXIT=1

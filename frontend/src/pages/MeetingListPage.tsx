@@ -61,9 +61,11 @@ export function MeetingListPage() {
         <div className="page-heading">
           <div className="title-line">
             <h1>Cuộc họp</h1>
-            <span className="total-count">
-              {meetingsQuery.data?.total ?? 0} cuộc họp
-            </span>
+            {meetingsQuery.isSuccess && (
+              <span className="total-count">
+                {meetingsQuery.data.total} cuộc họp
+              </span>
+            )}
           </div>
           <Link className="button primary" to="/meetings/new">
             <PlusIcon />
@@ -84,7 +86,9 @@ export function MeetingListPage() {
               >
                 {f.label}
                 <span>
-                  {f.id === filter ? (meetingsQuery.data?.total ?? 0) : ''}
+                  {f.id === filter && meetingsQuery.isSuccess
+                    ? meetingsQuery.data.total
+                    : ''}
                 </span>
               </button>
             ))}
@@ -203,10 +207,11 @@ export function MeetingListPage() {
             </div>
           )}
         </div>
-        <p className="list-footer">
-          Hiển thị {meetings.length} trên {meetingsQuery.data?.total ?? 0} cuộc
-          họp
-        </p>
+        {meetingsQuery.isSuccess && (
+          <p className="list-footer">
+            Hiển thị {meetings.length} trên {meetingsQuery.data.total} cuộc họp
+          </p>
+        )}
         {(meetingsQuery.data?.total ?? 0) >
           (meetingsQuery.data?.page_size ?? 10) && (
           <nav aria-label="Phân trang cuộc họp">

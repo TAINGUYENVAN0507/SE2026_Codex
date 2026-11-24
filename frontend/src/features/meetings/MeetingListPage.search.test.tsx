@@ -398,3 +398,56 @@ it('FE-04: xóa bộ lọc không gửi lại từ khóa cũ trong lúc chờ de
     screen.queryByRole('heading', { name: 'Không tìm thấy cuộc họp' }),
   ).not.toBeInTheDocument()
 })
+
+it.each(['loading', 'error'] as const)(
+  'FE-04: không khẳng định có 0 cuộc họp khi danh sách đang %s',
+  async (state) => {
+    server.use(
+      http.get('*/api/v1/meetings', async () => {
+        await new Promise<void>((resolve) => setTimeout(resolve, 500))
+        return state === 'error'
+          ? HttpResponse.json(
+              {
+                error: {
+                  code: 'INTERNAL_ERROR',
+                  message: 'Lỗi tổng hợp',
+                  details: null,
+                  request_id: null,
+                },
+              },
+              { status: 500 },
+            )
+          : HttpResponse.json(list([]))
+      }),
+    )
+    vi.useFakeTimers()
+    const view = renderPage()
+    await act(() => vi.advanceTimersByTimeAsync(state === 'error' ? 600 : 100))
+    await act(() => vi.advanceTimersByTimeAsync(10))
+    if (state === 'error') {
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'Không tải được cuộc họp',
+      )
+      expect(screen.getByRole('button', { name: 'Thử lại' })).toBeVisible()
+    } else {
+      expect(
+        screen.getByRole('status', { name: 'Đang tải danh sách cuộc họp…' }),
+      ).toBeVisible()
+    }
+    expect(screen.queryByText('0 cuộc họp')).not.toBeInTheDocument()
+    expect(
+      screen.queryByText('Hiển thị 0 trên 0 cuộc họp'),
+    ).not.toBeInTheDocument()
+    expect(view.container.querySelector('.total-count')).not.toBeInTheDocument()
+    expect(view.container.querySelector('.list-footer')).not.toBeInTheDocument()
+    if (state === 'loading') {
+      await act(() => vi.advanceTimersByTimeAsync(500))
+      await act(() => vi.advanceTimersByTimeAsync(10))
+      expect(
+        screen.getByRole('heading', { name: 'Chưa có cuộc họp' }),
+      ).toBeVisible()
+      expect(screen.getByText('0 cuộc họp')).toBeVisible()
+      expect(screen.getByText('Hiển thị 0 trên 0 cuộc họp')).toBeVisible()
+    }
+  },
+)
