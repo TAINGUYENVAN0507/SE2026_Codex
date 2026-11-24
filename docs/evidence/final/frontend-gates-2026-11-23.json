@@ -1,0 +1,159 @@
+{
+  "assignment_date": "2026-11-23",
+  "executed_date_local": "2026-11-24",
+  "timezone": "Asia/Ho_Chi_Minh",
+  "recorded_at_utc": "2026-11-24T02:45:01.198189+00:00",
+  "implementation_head": "f4f9ad8cf52079729c5a3a15a0bc766fb805bdc0",
+  "note": "Các gate chạy ở HEAD 4dc2105 với source chưa commit của việc 4; source đó đã vào f4f9ad8, SHA-256 bên dưới. Không chạy lại model AI.",
+  "checks": [
+    {
+      "label": "e2e-lint",
+      "head": "4dc21051eb5e1115ad67a4b3d1ae8239228b0e83",
+      "command": [
+        "npm.cmd",
+        "run",
+        "lint"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 33.7,
+      "finished_at_utc": "2026-11-24T02:39:33.659393+00:00"
+    },
+    {
+      "label": "final-format",
+      "head": "4dc21051eb5e1115ad67a4b3d1ae8239228b0e83",
+      "command": [
+        "npm.cmd",
+        "run",
+        "format:check"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 7.12,
+      "finished_at_utc": "2026-11-24T02:40:53.763113+00:00"
+    },
+    {
+      "label": "final-types",
+      "head": "4dc21051eb5e1115ad67a4b3d1ae8239228b0e83",
+      "command": [
+        "npm.cmd",
+        "run",
+        "typecheck"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 4.0,
+      "finished_at_utc": "2026-11-24T02:42:31.218909+00:00"
+    },
+    {
+      "label": "final-tests",
+      "head": "4dc21051eb5e1115ad67a4b3d1ae8239228b0e83",
+      "command": [
+        "npm.cmd",
+        "test"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 41.07,
+      "finished_at_utc": "2026-11-24T02:40:14.873229+00:00"
+    },
+    {
+      "label": "final-coverage",
+      "head": "4dc21051eb5e1115ad67a4b3d1ae8239228b0e83",
+      "command": [
+        "npm.cmd",
+        "run",
+        "test:coverage"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 59.61,
+      "finished_at_utc": "2026-11-24T02:41:53.481597+00:00"
+    },
+    {
+      "label": "final-build",
+      "head": "4dc21051eb5e1115ad67a4b3d1ae8239228b0e83",
+      "command": [
+        "npm.cmd",
+        "run",
+        "build"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 4.33,
+      "finished_at_utc": "2026-11-24T02:42:35.660512+00:00"
+    }
+  ],
+  "unit": {
+    "files": 54,
+    "passed": 323,
+    "failed": 0,
+    "skipped": 0
+  },
+  "coverage": {
+    "lines": {
+      "total": 1412,
+      "covered": 1228,
+      "skipped": 0,
+      "pct": 86.96
+    },
+    "statements": {
+      "total": 1575,
+      "covered": 1332,
+      "skipped": 0,
+      "pct": 84.57
+    },
+    "functions": {
+      "total": 503,
+      "covered": 407,
+      "skipped": 0,
+      "pct": 80.91
+    },
+    "branches": {
+      "total": 1438,
+      "covered": 1185,
+      "skipped": 0,
+      "pct": 82.4
+    },
+    "branchesTrue": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 100
+    }
+  },
+  "thresholds": {
+    "lines": 84.53,
+    "branches": 79.11
+  },
+  "e2e": {
+    "runs": 3,
+    "passed": 3,
+    "failed": 0,
+    "skipped": 0,
+    "retries": 0
+  },
+  "source_sha256": {
+    "frontend/src/pages/MeetingListPage.tsx": "23cde35dbea84e18a5f29b16787dd00892d2e4ea37f302e400a5b29df57e7961",
+    "frontend/src/features/meetings/useMeetingsQuery.ts": "aeaa421cfa480e059d965d7705ff46bfdf865274918c816d872976da4ca4e5f3",
+    "frontend/src/features/meetings/MeetingListPage.search.test.tsx": "7bac794685d02089c4c634ba64ce6f0a29e75fcb413035a5293121f4d4b89e4b",
+    "frontend/e2e/evidence/empty-page.spec.ts": "2c67f3464fa56a758049fbd7c84416683eca0c2c44dd908100d77e3d2f5603fd",
+    "frontend/playwright.evidence.config.ts": "517c7b2c99e8c00e0988321453442da44f005849fdcab3ad32cf927c157e528f",
+    "frontend/package-lock.json": "26f0c144bafd9b39d808122de0dab7f6acd7bfe274f8408e6e118503838510e5",
+    "frontend/vite.config.ts": "e33d5291ccdaaf52af83ebf8703368f9d2789db0a56c25299c48a71bdbff5ce7"
+  },
+  "github_ci": "Chưa chạy cho đợt này vì chưa push.",
+  "review_b": "Chưa có PR mở khi kiểm GitHub ngày 24/11/2026, khoảng 09:42 +07.",
+  "documentation_format_check": {
+    "head": "f4f9ad8cf52079729c5a3a15a0bc766fb805bdc0",
+    "command": [
+      "npm.cmd",
+      "run",
+      "format:check"
+    ],
+    "cwd": "frontend",
+    "exit_code": 0,
+    "duration_sec": 2.08,
+    "finished_at_utc": "2026-11-24T02:45:26.598534+00:00"
+  }
+}

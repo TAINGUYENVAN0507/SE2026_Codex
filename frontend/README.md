@@ -222,3 +222,11 @@ Chi tiết lỗi, test đỏ và sửa trong [báo cáo](../docs/evidence/final/
 Khi API tóm tắt còn trả pending nhưng cuộc họp partial, frontend hiện lại lỗi và
 nút tạo lại tóm tắt; sau retry đọc lại latest_job_id. Job queued ghi Chờ bắt đầu,
 không ghi Đang chạy. [Bằng chứng và giới hạn](../docs/evidence/final/frontend-progress-fixes-2026-11-12.md).
+
+## Danh sách cuộc họp — kiểm 24/11/2026
+
+Xóa bộ lọc bỏ từ khóa ngay, số đếm chỉ hiện khi query thành công và thanh
+phân trang được giữ khi tải trang mới. E2E API/PostgreSQL thật kiểm trang 2
+bị xóa hết và trạng thái lọc rỗng, đạt ba lượt với retries=0.
+[Hành vi, cách chạy và giới hạn](../docs/frontend/FE-04.md),
+[gate local và số đo](../docs/evidence/final/frontend-gates-2026-11-23.json).
