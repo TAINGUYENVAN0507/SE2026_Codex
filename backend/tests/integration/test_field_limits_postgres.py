@@ -179,3 +179,98 @@ def test_json_fields_past_the_limit_answer_4xx(
     method, url, body = _patch_cases(seeded)[index]
     r = client.request(method, url, json=body)
     assert 400 <= r.status_code < 500, f"{method} {url}: {r.status_code}: {r.text[:300]}"
+
+
+# 11-25 (C): các endpoint ghi còn lại. Mỗi ca cần một bản ghi có sẵn (công việc, tóm tắt).
+def _summary(db_session: Session, meeting_id: str) -> None:
+    from app.db.models.summary import Summary
+
+    db_session.add(
+        Summary(
+            id=str(uuid.uuid4()),
+            meeting_id=meeting_id,
+            status="ready",
+            content={"overview": "Tổng quan", "key_points": [], "decisions": []},
+            version=1,
+        )
+    )
+    db_session.commit()
+
+
+def _summary_body(**content) -> dict:
+    return {
+        "content": {"overview": "Tổng quan", "key_points": [], "decisions": [], **content},
+        "version": 1,
+    }
+
+
+MORE_CASE_IDS = [
+    "patch-action-item-assignee-101",
+    "patch-action-item-due-date-invalid",
+    "patch-action-item-status-21",
+    "patch-speaker-name-51",
+    "patch-segment-speaker-id-37",
+    "patch-segment-speaker-id-unknown-uuid",
+    "put-summary-overview-5001",
+    "put-summary-51-key-points",
+    "put-summary-evidence-id-unknown",
+    "login-email-300",
+    "login-password-100k",
+]
+
+
+def _more_cases(ids: dict[str, str], item_id: str) -> list[tuple[str, str, dict]]:
+    m, sp, sg = ids["meeting"], ids["speaker"], ids["segment"]
+    item = f"/api/v1/meetings/{m}/action-items/{item_id}"
+    point = {"text": "ý", "evidence_segment_ids": []}
+    return [
+        ("PATCH", item, {"assignee_name": "a" * 101, "version": 1}),
+        ("PATCH", item, {"due_date": "2026-13-01", "version": 1}),
+        ("PATCH", item, {"status": "a" * 21, "version": 1}),
+        ("PATCH", f"/api/v1/meetings/{m}/speakers/{sp}", {"display_name": "a" * 51, "version": 1}),
+        ("PATCH", f"/api/v1/meetings/{m}/segments/{sg}", {"speaker_id": "a" * 37, "version": 1}),
+        (
+            "PATCH",
+            f"/api/v1/meetings/{m}/segments/{sg}",
+            {"speaker_id": str(uuid.uuid4()), "version": 1},
+        ),
+        ("PUT", f"/api/v1/meetings/{m}/summary", _summary_body(overview="a" * 5001)),
+        ("PUT", f"/api/v1/meetings/{m}/summary", _summary_body(key_points=[point] * 51)),
+        (
+            "PUT",
+            f"/api/v1/meetings/{m}/summary",
+            _summary_body(key_points=[{"text": "ý", "evidence_segment_ids": [str(uuid.uuid4())]}]),
+        ),
+        ("POST", "/api/v1/auth/login", {"email": "a" * 290 + "@example.com", "password": "x"}),
+        ("POST", "/api/v1/auth/login", {"email": "khong@example.com", "password": "x" * 100_000}),
+    ]
+
+
+EVIDENCE_B_2026_11_25 = (
+    "PUT summary nhận evidence_segment_ids không thuộc cuộc họp (trả 200); giao B ngày 11-25, "
+    "việc 4 (tasks/2026-11-25/member-b.md)"
+)
+MORE_PARAMS = [
+    pytest.param(
+        i,
+        id=name,
+        marks=pytest.mark.xfail(strict=True, raises=AssertionError, reason=EVIDENCE_B_2026_11_25)
+        if name == "put-summary-evidence-id-unknown"
+        else (),
+    )
+    for i, name in enumerate(MORE_CASE_IDS)
+]
+
+
+@pytest.mark.parametrize("index", MORE_PARAMS)
+def test_more_write_endpoints_past_the_limit_answer_4xx(
+    client: TestClient, db_session: Session, seeded: dict[str, str], index: int
+) -> None:
+    _summary(db_session, seeded["meeting"])
+    created = client.post(
+        f"/api/v1/meetings/{seeded['meeting']}/action-items", json={"description": "việc"}
+    )
+    assert created.status_code == 201, created.text[:300]
+    method, url, body = _more_cases(seeded, created.json()["id"])[index]
+    r = client.request(method, url, json=body)
+    assert 400 <= r.status_code < 500, f"{method} {url}: {r.status_code}: {r.text[:300]}"
