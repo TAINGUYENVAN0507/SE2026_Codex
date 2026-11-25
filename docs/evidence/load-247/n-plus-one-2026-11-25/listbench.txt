@@ -1,0 +1,8 @@
+# GET /api/v1/meetings, 300 request tuần tự sau 20 request khởi động, 1 client, cùng DB load247 (247 cuộc họp
+# của lượt before-8). Mỗi số: (median ms, p95 ms, số mục trả về). 2 vòng, mỗi vòng chạy bản trước rồi bản sau.
+round 1
+before b35e06f: {'list': (12.12, 52.76, 10), 'q_title': (11.83, 14.4, 10), 'q_wildcard': (5.83, 7.83, 0)}
+after main:     {'list': (8.48, 25.18, 10), 'q_title': (8.96, 28.22, 10), 'q_wildcard': (6.85, 18.58, 0)}
+round 2
+before b35e06f: {'list': (16.81, 65.45, 10), 'q_title': (40.55, 59.29, 10), 'q_wildcard': (13.41, 17.16, 0)}
+after main:     {'list': (17.57, 27.56, 10), 'q_title': (20.69, 27.51, 10), 'q_wildcard': (13.61, 20.39, 0)}

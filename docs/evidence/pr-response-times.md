@@ -1,23 +1,23 @@
 # Thời gian phản hồi PR
 
-Sinh bằng `python3 scripts/pr_response_times.py` lúc 2026-11-24 10:59 UTC, từ GitHub API của `TAINGUYENVAN0507/SE2026_Codex`.
+Sinh bằng `python3 scripts/pr_response_times.py` lúc 2026-11-25 07:33 UTC, từ GitHub API của `TAINGUYENVAN0507/SE2026_Codex`.
 
 Phản hồi = review hoặc comment đầu tiên của tài khoản **không phải** tác giả. Tự review, tự merge không tính.
 Review ghi bằng file trong repo (`docs/*/reviews/`) không thấy được từ API: ghi ở cột cuối, không tính vào tóm tắt.
 
 ## Từ khi áp dụng quy định review trong 18 giờ (2026-11-06)
 
-- PR có phản hồi từ người khác: 13/41.
-- Trong số đó, phản hồi trong 18 giờ (AD-018): 9/13; trong 20 giờ (RE-018): 9/13.
+- PR có phản hồi từ người khác: 15/44.
+- Trong số đó, phản hồi trong 18 giờ (AD-018): 11/15; trong 20 giờ (RE-018): 11/15.
 - Trung vị thời gian tới phản hồi đầu tiên: 8.0 giờ; lâu nhất: 63.3 giờ.
-- Merge khi chưa có phản hồi của người khác: #32, #33, #34, #35, #36, #37, #38, #39, #40, #43, #47, #48, #49, #50, #51, #52, #53, #54, #55, #56, #57, #58, #59, #62, #63, #65, #68, #71.
+- Merge khi chưa có phản hồi của người khác: #32, #33, #34, #35, #36, #37, #38, #39, #40, #43, #47, #48, #49, #50, #51, #52, #53, #54, #55, #56, #57, #58, #59, #62, #63, #65, #68, #71, #73.
 
 ## Toàn bộ PR
 
-- PR có phản hồi từ người khác: 13/72.
-- Trong số đó, phản hồi trong 18 giờ (AD-018): 9/13; trong 20 giờ (RE-018): 9/13.
+- PR có phản hồi từ người khác: 15/75.
+- Trong số đó, phản hồi trong 18 giờ (AD-018): 11/15; trong 20 giờ (RE-018): 11/15.
 - Trung vị thời gian tới phản hồi đầu tiên: 8.0 giờ; lâu nhất: 63.3 giờ.
-- Merge khi chưa có phản hồi của người khác: #1, #2, #3, #4, #5, #6, #7, #8, #9, #10, #11, #12, #13, #14, #15, #16, #17, #18, #19, #20, #21, #22, #23, #24, #25, #26, #27, #28, #29, #30, #31, #32, #33, #34, #35, #36, #37, #38, #39, #40, #43, #47, #48, #49, #50, #51, #52, #53, #54, #55, #56, #57, #58, #59, #62, #63, #65, #68, #71.
+- Merge khi chưa có phản hồi của người khác: #1, #2, #3, #4, #5, #6, #7, #8, #9, #10, #11, #12, #13, #14, #15, #16, #17, #18, #19, #20, #21, #22, #23, #24, #25, #26, #27, #28, #29, #30, #31, #32, #33, #34, #35, #36, #37, #38, #39, #40, #43, #47, #48, #49, #50, #51, #52, #53, #54, #55, #56, #57, #58, #59, #62, #63, #65, #68, #71, #73.
 
 ## Từng PR (giờ UTC)
 
@@ -95,3 +95,6 @@ Review ghi bằng file trong repo (`docs/*/reviews/`) không thấy được t�
 | #70 | B (`minhquangha`) | 2026-11-19 14:46 | 63.3 giờ, review commented, A (`mactuongmvt`) | merge sau 86.8 giờ, bởi C (`TAINGUYENVAN0507`) |  |
 | #71 | C (`TAINGUYENVAN0507`) | 2026-11-23 05:54 | không có | merge sau 9.7 giờ, bởi C (`TAINGUYENVAN0507`) **merge trước khi có phản hồi** |  |
 | #72 | A (`mactuongmvt`) | 2026-11-24 02:50 | 8.0 giờ, review commented, C (`TAINGUYENVAN0507`) | merge sau 8.0 giờ, bởi C (`TAINGUYENVAN0507`) |  |
+| #73 | C (`TAINGUYENVAN0507`) | 2026-11-24 11:14 | không có | merge sau 0.1 giờ, bởi C (`TAINGUYENVAN0507`) **merge trước khi có phản hồi** |  |
+| #74 | A (`mactuongmvt`) | 2026-11-24 12:37 | 12.4 giờ, review commented, B (`minhquangha`) | merge sau 18.9 giờ, bởi C (`TAINGUYENVAN0507`) |  |
+| #75 | B (`minhquangha`) | 2026-11-25 00:58 | 0.5 giờ, review commented, A (`mactuongmvt`) | merge sau 6.5 giờ, bởi C (`TAINGUYENVAN0507`) |  |
