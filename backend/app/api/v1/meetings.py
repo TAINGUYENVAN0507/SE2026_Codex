@@ -60,19 +60,24 @@ logger = logging.getLogger("backend.api.meetings")
 
 __all__ = ["probe_audio", "router", "serialize_action_item"]
 
+_UNSET_JOB = object()
+
 
 def serialize_meeting_summary(
-    meeting: Meeting, db: Session, latest_job: Job | None = None
+    meeting: Meeting, db: Session, latest_job: Job | None | object = _UNSET_JOB
 ) -> MeetingOut:
     """Chuyển đổi một thực thể Meeting trong DB sang schema MeetingOut."""
-    if latest_job is None:
-        latest_job = (
+    resolved_job: Job | None
+    if latest_job is _UNSET_JOB:
+        resolved_job = (
             db.execute(
                 select(Job).where(Job.meeting_id == meeting.id).order_by(Job.created_at.desc())
             )
             .scalars()
             .first()
         )
+    else:
+        resolved_job = latest_job if isinstance(latest_job, Job) else None
 
     clean_ext = (
         meeting.audio_path.rsplit(".", 1)[-1].lower()
@@ -114,7 +119,7 @@ def serialize_meeting_summary(
             "summary": summary_status,
         },
         warnings=[],
-        latest_job_id=latest_job.id if latest_job else None,
+        latest_job_id=resolved_job.id if resolved_job else None,
         created_at=meeting.created_at,
         updated_at=meeting.updated_at,
         version=meeting.version,
@@ -161,7 +166,37 @@ def list_meetings(
         .all()
     )
 
-    items = [serialize_meeting_summary(m, db) for m in meetings]
+    latest_jobs_by_meeting: dict[str, Job] = {}
+    if meetings:
+        meeting_ids = [m.id for m in meetings]
+        ranked_jobs = (
+            select(
+                Job.id.label("job_id"),
+                func.row_number()
+                .over(
+                    partition_by=Job.meeting_id,
+                    order_by=(Job.created_at.desc(), Job.id.desc()),
+                )
+                .label("rn"),
+            )
+            .where(Job.meeting_id.in_(meeting_ids))
+            .subquery()
+        )
+        latest_jobs = (
+            db.execute(
+                select(Job)
+                .join(ranked_jobs, Job.id == ranked_jobs.c.job_id)
+                .where(ranked_jobs.c.rn == 1)
+            )
+            .scalars()
+            .all()
+        )
+        latest_jobs_by_meeting = {job.meeting_id: job for job in latest_jobs}
+
+    items = [
+        serialize_meeting_summary(m, db, latest_job=latest_jobs_by_meeting.get(m.id))
+        for m in meetings
+    ]
     return MeetingListOut(
         items=items,
         page=page,
