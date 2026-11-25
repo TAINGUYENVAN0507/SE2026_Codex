@@ -40,7 +40,7 @@ Log ghi **UTF-8**: `uv run pytest ... 2>&1 | Out-File -Encoding utf8 <file>`.
   - Cuộc họp khác trong cùng `tmp_path` còn nguyên.
 - Test đỏ trước nếu sai; nếu đúng thì ghi "không có lỗi" và giữ test.
 - **Message:** `test(backend): deleting a meeting removes its files from STORAGE_DIR and nothing else (BE-16, AD-018)`
-- **Commit:** chuyển sang 11-24
+- **Commit:** xong ở 11-25
 
 ### 4. [ ] Worker dự phòng ghi artifact vào `appdata` tương đối theo thư mục đang chạy (BE-16)
 - **Lỗi:** `backend/app/worker/runner.py` dòng 273 có `getattr(storage, "base_dir", Path("appdata"))`. Nếu storage không có `base_dir`, artifact rơi vào `./appdata` của thư mục đang chạy, không theo `STORAGE_DIR`.
