@@ -37,6 +37,11 @@ export function NewMeetingPage() {
   const [date, setDate] = useState(() => new Date().toLocaleDateString('en-CA'))
   const [consent, setConsent] = useState(false)
   const [error, setError] = useState('')
+  const [dateError, setDateError] = useState<{
+    message: string
+    invalid: boolean
+  } | null>(null)
+  const advancedOptions = useRef<HTMLDetailsElement>(null)
   const [retryUpload, setRetryUpload] = useState(false)
   const [dragging, setDragging] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -48,7 +53,10 @@ export function NewMeetingPage() {
   const picker = useRef<HTMLInputElement>(null)
   const alive = useRef(true)
   const url = useObjectUrl(file)
-  const idempotencyKey = useIdempotencyKey(file ?? null)
+  const idempotencyKey = useIdempotencyKey(
+    file ?? null,
+    JSON.stringify({ title: title.trim(), date, source: mode }),
+  )
   const record = useRecorder((recordedFile, seconds) => {
     choose(recordedFile)
     setDuration(seconds)
@@ -101,6 +109,7 @@ export function NewMeetingPage() {
       return
     }
     setError('')
+    setDateError(null)
     setRetryUpload(false)
     setProgress(0)
     setUploadStatus('Đang tải bản ghi lên máy chủ…')
@@ -162,9 +171,32 @@ export function NewMeetingPage() {
           ? 'Đã hủy tải lên. Bản ghi vẫn ở trên máy, bạn có thể thử lại.'
           : '',
       )
-      if (cause instanceof ApiError && cause.code !== 'UPLOAD_CANCELLED')
-        setError(cause.message)
-      else if (!(cause instanceof ApiError))
+      if (cause instanceof ApiError && cause.code !== 'UPLOAD_CANCELLED') {
+        const dateRejected =
+          Array.isArray(cause.details) &&
+          cause.details.some(
+            (item) =>
+              typeof item === 'object' &&
+              item !== null &&
+              'loc' in item &&
+              Array.isArray(item.loc) &&
+              item.loc.includes('meeting_date'),
+          )
+        if (
+          cause.status === 422 &&
+          cause.code === 'VALIDATION_ERROR' &&
+          (dateRejected || cause.details === null)
+        ) {
+          // Lỗi nghiệp vụ ngày không hợp lệ có thể không trả vị trí trường.
+          setDateError({
+            invalid: dateRejected,
+            message: dateRejected
+              ? 'Ngày họp chưa hợp lệ. Hãy chọn lại ngày rồi thử lại.'
+              : 'Thông tin chưa hợp lệ. Hãy kiểm tra ngày họp và tiêu đề rồi thử lại.',
+          })
+          if (advancedOptions.current) advancedOptions.current.open = true
+        } else setError(cause.message)
+      } else if (!(cause instanceof ApiError))
         setError('Không thể tải file lên. Hãy thử lại.')
       if (mode === 'record') record.cancelUpload()
     } finally {
@@ -374,27 +406,47 @@ export function NewMeetingPage() {
               <input
                 disabled={uploading}
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={(e) => {
+                  setTitle(e.target.value)
+                  setDateError((current) => (current?.invalid ? current : null))
+                }}
                 placeholder="Ví dụ: Họp kế hoạch sprint 42"
                 required
                 maxLength={200}
               />
             </label>
-            <details className="advanced-options">
+            <details className="advanced-options" ref={advancedOptions}>
               <summary>
                 Tùy chọn cuộc họp
                 <CaretDownIcon size={16} />
               </summary>
               <div className="advanced-fields">
                 <label className="field">
-                  <span>Ngày họp</span>
+                  <span id="meeting-date-label">Ngày họp</span>
                   <input
                     type="date"
+                    aria-labelledby="meeting-date-label"
+                    aria-invalid={dateError?.invalid ?? false}
+                    aria-describedby={
+                      dateError ? 'meeting-date-error' : undefined
+                    }
                     disabled={uploading}
                     value={date}
-                    onChange={(e) => setDate(e.target.value)}
+                    onChange={(e) => {
+                      setDate(e.target.value)
+                      setDateError(null)
+                    }}
                     required
                   />
+                  {dateError && (
+                    <span
+                      id="meeting-date-error"
+                      className="form-error"
+                      role="alert"
+                    >
+                      {dateError.message}
+                    </span>
+                  )}
                 </label>
                 <div className="field">
                   <span>Số người nói dự kiến</span>

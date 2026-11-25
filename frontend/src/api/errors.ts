@@ -14,7 +14,7 @@ export type ApiErrorCode =
   | 'UNKNOWN_ERROR'
   | (string & {})
 
-export type ApiErrorDetails = Record<string, unknown> | null
+export type ApiErrorDetails = Record<string, unknown> | unknown[] | null
 
 const messages: Record<string, string> = {
   AUDIO_EXPIRED: 'Audio đã hết hạn lưu trữ. Bạn vẫn có thể đọc transcript.',
@@ -145,7 +145,7 @@ export async function parseApiError(response: Response): Promise<ApiError> {
     return new ApiError(
       code,
       messages[code] ?? messages.UNKNOWN_ERROR,
-      isRecord(details) ? details : null,
+      isRecord(details) || Array.isArray(details) ? details : null,
       typeof requestId === 'string' ? requestId : null,
       response.status,
       retryAfterMs(response.headers.get('Retry-After')),

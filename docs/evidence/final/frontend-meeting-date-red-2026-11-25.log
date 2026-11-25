@@ -1,0 +1,142 @@
+Hồi quy đỏ trước sửa ngày họp — 25/11/2026
+
+$ npm.cmd test -- src/pages/MeetingDateRejected.test.tsx
+
+> vietnamese-meeting-minutes-frontend@0.0.0 test
+> vitest run src/pages/MeetingDateRejected.test.tsx
+
+
+ RUN  v5.0.5 D:/Project/CNPM/SE2026_Codex/frontend
+
+ ❯ src/pages/MeetingDateRejected.test.tsx (2 tests | 2 failed) 898ms
+   × FE-05: 422 ngày họp (chi tiết trường: true) giữ file/tên và đổi key sau sửa ngày 636ms
+   × FE-05: 422 ngày họp (chi tiết trường: false) giữ file/tên và đổi key sau sửa ngày 251ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/MeetingDateRejected.test.tsx > FE-05: 422 ngày họp (chi tiết trường: true) giữ file/tên và đổi key sau sửa ngày
+Error: expect(element).toHaveTextContent()
+
+Expected element to have text content:
+  Ngày họp chưa hợp lệ. Hãy chọn lại ngày rồi thử lại.
+Received:
+  Thông tin chưa hợp lệ. Hãy kiểm tra rồi thử lại.
+ ❯ src/pages/MeetingDateRejected.test.tsx:117:19
+    115|       : 'Thông tin chưa hợp lệ. Hãy kiểm tra ngày họp và tiêu đề rồi t…
+    116|     const alert = await screen.findByRole('alert')
+    117|     expect(alert).toHaveTextContent(message)
+       |                   ^
+    118|     const date = screen.getByLabelText('Ngày họp')
+    119|     expect(date).toHaveAccessibleDescription(message)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/pages/MeetingDateRejected.test.tsx > FE-05: 422 ngày họp (chi tiết trường: false) giữ file/tên và đổi key sau sửa ngày
+Error: expect(element).toHaveTextContent()
+
+Expected element to have text content:
+  Thông tin chưa hợp lệ. Hãy kiểm tra ngày họp và tiêu đề rồi thử lại.
+Received:
+  Thông tin chưa hợp lệ. Hãy kiểm tra rồi thử lại.
+ ❯ src/pages/MeetingDateRejected.test.tsx:117:19
+    115|       : 'Thông tin chưa hợp lệ. Hãy kiểm tra ngày họp và tiêu đề rồi t…
+    116|     const alert = await screen.findByRole('alert')
+    117|     expect(alert).toHaveTextContent(message)
+       |                   ^
+    118|     const date = screen.getByLabelText('Ngày họp')
+    119|     expect(date).toHaveAccessibleDescription(message)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed (2)
+   Start at  16:37:05
+   Duration  5.26s (environment 44%, import 25%, tests 18%, setup 8%, transform 5%)
+
+
+EXIT=1
+
+$ npm.cmd test -- src/api/errors.test.ts
+
+> vietnamese-meeting-minutes-frontend@0.0.0 test
+> vitest run src/api/errors.test.ts
+
+
+ RUN  v5.0.5 D:/Project/CNPM/SE2026_Codex/frontend
+
+ ❯ src/api/errors.test.ts (6 tests | 1 failed) 39ms
+   × giữ danh sách vị trí lỗi 422 để form gắn lỗi đúng trường, không lộ message máy chủ 13ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/api/errors.test.ts > giữ danh sách vị trí lỗi 422 để form gắn lỗi đúng trường, không lộ message máy chủ
+AssertionError: expected null to deeply equal [ { loc: [ 'body', …(1) ], …(2) } ]
+
+- Expected:
+[
+  {
+    "loc": [
+      "body",
+      "meeting_date",
+    ],
+    "msg": "CANARY_RAW",
+    "type": "string_pattern_mismatch",
+  },
+]
+
++ Received:
+null
+
+ ❯ src/api/errors.test.ts:89:25
+     87|     ),
+     88|   )
+     89|   expect(error.details).toEqual(details)
+       |                         ^
+     90|   expect(error.message).not.toContain('CANARY_RAW')
+     91|   expect(error.status).toBe(422)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 5 passed (6)
+   Start at  16:38:11
+   Duration  4.21s (environment 70%, setup 17%, import 7%, transform 4%, tests 1%)
+
+
+EXIT=1
+
+$ npm.cmd test -- src/features/audio/useIdempotencyKey.test.ts
+
+> vietnamese-meeting-minutes-frontend@0.0.0 test
+> vitest run src/features/audio/useIdempotencyKey.test.ts
+
+
+ RUN  v5.0.5 D:/Project/CNPM/SE2026_Codex/frontend
+
+ ❯ src/features/audio/useIdempotencyKey.test.ts (4 tests | 1 failed) 55ms
+   × đổi key khi sửa metadata nhưng giữ key nếu thử lại cùng nội dung 14ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/features/audio/useIdempotencyKey.test.ts > đổi key khi sửa metadata nhưng giữ key nếu thử lại cùng nội dung
+AssertionError: expected 'ceb6dba9-dee8-49b8-b329-f27d2f5dcae8' not to be 'ceb6dba9-dee8-49b8-b329-f27d2f5dcae8' // Object.is equality
+ ❯ src/features/audio/useIdempotencyKey.test.ts:69:30
+     67|     }),
+     68|   })
+     69|   expect(result.current).not.toBe(original)
+       |                              ^
+     70|   const changed = result.current
+     71|   rerender({
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 3 passed (4)
+   Start at  16:38:46
+   Duration  4.53s (environment 78%, setup 15%, transform 4%, import 2%, tests 1%)
+
+
+EXIT=1
