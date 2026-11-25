@@ -578,3 +578,72 @@ def test_rt14_regenerate_summary_from_edited_transcript(
     assert summary.ai_content["overview"] != user_edited_overview
     # Trạng thái thể hiện is_edited = True
     assert summary.content != summary.ai_content
+
+
+def test_worker_fallback_artifacts_use_storage_dir_not_relative_appdata(
+    test_db: Session,
+    sample_user: User,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Khi storage không có base_dir, worker ghi artifacts vào STORAGE_DIR chứ không ./appdata."""
+    from app.core.config import get_settings
+
+    isolated_cwd = tmp_path / "cwd"
+    isolated_cwd.mkdir()
+    monkeypatch.chdir(isolated_cwd)
+
+    storage_root = tmp_path / "custom_storage"
+    storage_root.mkdir()
+    monkeypatch.setenv("STORAGE_DIR", str(storage_root))
+    get_settings.cache_clear()
+
+    class _FakeStorageNoBaseDir:
+        def get_audio_path(self, meeting_id: str, extension: str) -> Path:
+            audio_dir = storage_root / "audio" / meeting_id
+            audio_dir.mkdir(parents=True, exist_ok=True)
+            audio_file = audio_dir / f"original.{extension.lstrip('.')}"
+            if not audio_file.exists():
+                audio_file.write_bytes(b"RIFF....WAVEfmt ....")
+            return audio_file
+
+        def save_upload(self, meeting_id: str, extension: str, stream):
+            raise NotImplementedError
+
+        def delete_meeting_files(self, meeting_id: str) -> None:
+            return None
+
+    fake_storage = _FakeStorageNoBaseDir()
+    assert not hasattr(fake_storage, "base_dir")
+
+    meeting_id = str(uuid.uuid4())
+    fake_storage.get_audio_path(meeting_id, "wav")
+    meeting = Meeting(
+        id=meeting_id,
+        owner_id=sample_user.id,
+        title="Cuộc họp kiểm tra STORAGE_DIR fallback",
+        source="upload",
+        status="queued",
+        duration_sec=60.0,
+        audio_path=f"audio/{meeting_id}/original.wav",
+        audio_sha256="fakehash",
+        version=1,
+    )
+    test_db.add(meeting)
+    job = enqueue_job(test_db, meeting_id=meeting.id)
+    test_db.commit()
+
+    try:
+        ran = run_worker_once(
+            test_db,
+            storage=fake_storage,
+            worker_id="fallback-worker",
+            backend="fake",
+        )
+        assert ran is True
+        expected_workdir = storage_root / "artifacts" / meeting.id / job.id
+        assert (expected_workdir / "job.json").is_file()
+        assert (expected_workdir / "summary.json").is_file()
+        assert not (isolated_cwd / "appdata").exists()
+    finally:
+        get_settings.cache_clear()

@@ -15,7 +15,7 @@ from fastapi import (
     status,
 )
 from fastapi import Path as FastApiPath
-from sqlalchemy import case, func, select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
 from app.api.deps import CurrentUser, get_current_user
@@ -24,29 +24,36 @@ from app.api.v1.action_items import serialize_action_item
 from app.api.v1.audio import router as audio_router
 from app.api.v1.edits import router as edits_router
 from app.api.v1.export import router as export_router
-from app.api.v1.jobs import meeting_jobs_router, serialize_job
+from app.api.v1.jobs import meeting_jobs_router
 from app.api.v1.segments import router as segments_router
 from app.api.v1.speakers import router as speakers_router
 from app.api.v1.summary import router as summary_router
 from app.api.v1.transcript import router as transcript_router
 from app.core.errors import APIError
-from app.db.models.job import Job
+from app.core.validators import (
+    validate_idempotency_key,
+    validate_iso_date,
+    validate_meeting_title,
+)
 from app.db.models.meeting import Meeting
-from app.db.models.transcript import Segment, Speaker
 from app.db.session import get_db
 from app.schemas.common import ErrorResponse
 from app.schemas.meeting import (
     MeetingCreateOut,
     MeetingDetailOut,
     MeetingListOut,
-    MeetingOut,
     MeetingPatch,
     MeetingSource,
     MeetingStatus,
-    SpeakerOut,
 )
 from app.services.audit import record_edit
 from app.services.erasure import erase_meeting
+from app.services.meetings.queries import (
+    escape_like_wildcards,
+    load_latest_jobs_by_meeting,
+    serialize_meeting_detail,
+    serialize_meeting_summary,
+)
 from app.services.meetings.upload import handle_meeting_upload, probe_audio
 from app.services.storage import Storage, get_storage
 
@@ -58,72 +65,7 @@ router = APIRouter(
 
 logger = logging.getLogger("backend.api.meetings")
 
-__all__ = ["probe_audio", "router", "serialize_action_item"]
-
-
-def serialize_meeting_summary(
-    meeting: Meeting, db: Session, latest_job: Job | None = None
-) -> MeetingOut:
-    """Chuyển đổi một thực thể Meeting trong DB sang schema MeetingOut."""
-    if latest_job is None:
-        latest_job = (
-            db.execute(
-                select(Job).where(Job.meeting_id == meeting.id).order_by(Job.created_at.desc())
-            )
-            .scalars()
-            .first()
-        )
-
-    clean_ext = (
-        meeting.audio_path.rsplit(".", 1)[-1].lower()
-        if meeting.audio_path and "." in meeting.audio_path
-        else "wav"
-    )
-    mime_type = "audio/mpeg" if clean_ext == "mp3" else f"audio/{clean_ext}"
-
-    transcript_status = "pending"
-    diarization_status = "pending"
-    summary_status = "pending"
-    if meeting.status in ("ready", "partial"):
-        transcript_status = "ready"
-        diarization_status = "ok"
-        summary_status = "failed" if meeting.status == "partial" else "ready"
-    elif meeting.status == "failed":
-        transcript_status = "failed"
-        diarization_status = "failed"
-        summary_status = "failed"
-
-    return MeetingOut(
-        id=meeting.id,
-        title=meeting.title,
-        source=meeting.source,  # type: ignore[arg-type]
-        status=meeting.status,  # type: ignore[arg-type]
-        language="vi",
-        meeting_date=meeting.meeting_date,
-        duration_sec=meeting.duration_sec,
-        num_speakers_hint=meeting.num_speakers_hint,
-        audio={
-            "available": meeting.audio_path is not None,
-            "mime_type": mime_type,
-            "size_bytes": 0,
-            "retention_until": meeting.retention_until,
-        },
-        artifacts={
-            "transcript": transcript_status,
-            "diarization": diarization_status,
-            "summary": summary_status,
-        },
-        warnings=[],
-        latest_job_id=latest_job.id if latest_job else None,
-        created_at=meeting.created_at,
-        updated_at=meeting.updated_at,
-        version=meeting.version,
-    )
-
-
-def escape_like_wildcards(text: str) -> str:
-    """Escape các ký tự đặc biệt của LIKE/ILIKE: \\, %, _."""
-    return text.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+__all__ = ["probe_audio", "router", "serialize_action_item", "serialize_meeting_summary"]
 
 
 @router.get(
@@ -161,7 +103,12 @@ def list_meetings(
         .all()
     )
 
-    items = [serialize_meeting_summary(m, db) for m in meetings]
+    latest_jobs_by_meeting = load_latest_jobs_by_meeting(db, [m.id for m in meetings])
+
+    items = [
+        serialize_meeting_summary(m, db, latest_job=latest_jobs_by_meeting.get(m.id))
+        for m in meetings
+    ]
     return MeetingListOut(
         items=items,
         page=page,
@@ -189,7 +136,9 @@ def create_meeting(
     current_user: CurrentUser,
     db: Annotated[Session, Depends(get_db)],
     storage: Annotated[Storage, Depends(get_storage)],
-    title: Annotated[str | None, Form(description="Tiêu đề cuộc họp tùy chọn")] = None,
+    title: Annotated[
+        str | None, Form(description="Tiêu đề cuộc họp tùy chọn (1-200 ký tự)")
+    ] = None,
     source: Annotated[
         MeetingSource, Form(description="Nguồn âm thanh: upload hoặc recording")
     ] = "upload",
@@ -197,20 +146,20 @@ def create_meeting(
         int | None, Form(ge=1, le=10, description="Gợi ý số lượng người nói (1-10)")
     ] = None,
     meeting_date: Annotated[
-        str | None, Form(description="Ngày diễn ra cuộc họp YYYY-MM-DD")
+        str | None,
+        Form(
+            pattern=r"^\d{4}-\d{2}-\d{2}$",
+            description="Ngày diễn ra cuộc họp YYYY-MM-DD",
+        ),
     ] = None,
     consent_confirmed: Annotated[
         bool, Form(description="Xác nhận người tham gia đã đồng ý ghi âm")
     ] = False,
-    idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
+    idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key", max_length=100)] = None,
 ) -> MeetingCreateOut:
     """Tải lên file âm thanh và khởi tạo cuộc họp kèm job xử lý."""
-    if not idempotency_key or not idempotency_key.strip():
-        raise APIError(
-            code="IDEMPOTENCY_KEY_REQUIRED",
-            message="Header Idempotency-Key là bắt buộc khi tạo cuộc họp.",
-            status_code=status.HTTP_400_BAD_REQUEST,
-        )
+    cleaned_key = validate_idempotency_key(idempotency_key, required=True)
+    assert cleaned_key is not None
 
     if not consent_confirmed:
         raise APIError(
@@ -219,16 +168,19 @@ def create_meeting(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         )
 
+    cleaned_title = validate_meeting_title(title) if title is not None else None
+    cleaned_meeting_date = validate_iso_date(meeting_date, "Ngày diễn ra cuộc họp")
+
     result, is_replayed, replay_code = handle_meeting_upload(
         db=db,
         storage=storage,
         file=file,
         user_id=current_user.id,
-        idempotency_key=idempotency_key.strip(),
-        title=title,
+        idempotency_key=cleaned_key,
+        title=cleaned_title,
         source=source,
         num_speakers=num_speakers,
-        meeting_date=meeting_date,
+        meeting_date=cleaned_meeting_date,
     )
 
     if is_replayed:
@@ -237,56 +189,6 @@ def create_meeting(
             response.status_code = replay_code
 
     return result
-
-
-def serialize_meeting_detail(meeting: Meeting, db: Session) -> MeetingDetailOut:
-    """Tạo đối tượng MeetingDetailOut từ model Meeting."""
-    latest_job = (
-        db.execute(select(Job).where(Job.meeting_id == meeting.id).order_by(Job.created_at.desc()))
-        .scalars()
-        .first()
-    )
-
-    duration_expr = case(
-        (Segment.end_sec > Segment.start_sec, Segment.end_sec - Segment.start_sec),
-        else_=0.0,
-    )
-    speaker_rows = db.execute(
-        select(
-            Speaker,
-            func.count(Segment.id).label("segment_count"),
-            func.coalesce(func.sum(duration_expr), 0.0).label("speaking_time"),
-        )
-        .outerjoin(Segment, Segment.speaker_id == Speaker.id)
-        .where(Speaker.meeting_id == meeting.id)
-        .group_by(Speaker.id, Speaker.created_at)
-        .order_by(Speaker.created_at.asc())
-    ).all()
-
-    speakers_out = [
-        SpeakerOut(
-            id=spk.id,
-            meeting_id=spk.meeting_id,
-            label=spk.label,
-            default_name=spk.default_name,
-            display_name=spk.display_name,
-            is_edited=spk.display_name != spk.default_name,
-            color_index=idx % 10,
-            segment_count=int(seg_count),
-            speaking_time_sec=round(float(spk_time), 2),
-            version=spk.version,
-        )
-        for idx, (spk, seg_count, spk_time) in enumerate(speaker_rows)
-    ]
-
-    job_out = serialize_job(latest_job) if latest_job else None
-
-    meeting_summary = serialize_meeting_summary(meeting, db, latest_job=latest_job)
-    return MeetingDetailOut(
-        **meeting_summary.model_dump(),
-        latest_job=job_out,
-        speakers=speakers_out,
-    )
 
 
 @router.get(
@@ -360,26 +262,7 @@ def patch_meeting(
     fields_set = payload.model_fields_set
     new_title = meeting.title
     if "title" in fields_set:
-        if payload.title is None:
-            raise APIError(
-                code="VALIDATION_ERROR",
-                message="Tiêu đề cuộc họp không được để trống.",
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            )
-        cleaned_title = payload.title.strip()
-        if not cleaned_title:
-            raise APIError(
-                code="VALIDATION_ERROR",
-                message="Tiêu đề cuộc họp không được để trống.",
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            )
-        if len(cleaned_title) > 200:
-            raise APIError(
-                code="VALIDATION_ERROR",
-                message="Tiêu đề cuộc họp không được vượt quá 200 ký tự.",
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            )
-        new_title = cleaned_title
+        new_title = validate_meeting_title(payload.title)
 
     # Kiểm tra no-op (không đổi giá trị)
     if new_title == meeting.title:

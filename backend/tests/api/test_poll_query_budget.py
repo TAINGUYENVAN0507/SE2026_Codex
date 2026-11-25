@@ -243,3 +243,111 @@ def test_get_meeting_detail_query_budget_and_no_n_plus_one(
         )
     finally:
         event.remove(engine, "before_cursor_execute", before_cursor_execute)
+
+
+def _seed_meeting_with_jobs(
+    test_db: Session,
+    owner_id: str,
+    title: str,
+    job_count: int = 2,
+) -> tuple[Meeting, Job]:
+    """Tạo một meeting kèm nhiều job để kiểm tra N+1 trên GET /meetings."""
+    from datetime import UTC, datetime, timedelta
+
+    base_time = datetime(2026, 11, 20, 10, 0, 0, tzinfo=UTC)
+    meeting = Meeting(
+        id=str(uuid.uuid4()),
+        owner_id=owner_id,
+        title=title,
+        source="upload",
+        status="ready",
+        duration_sec=60.0,
+        created_at=base_time,
+        updated_at=base_time,
+    )
+    test_db.add(meeting)
+    latest_job: Job | None = None
+    for idx in range(job_count):
+        job = Job(
+            id=str(uuid.uuid4()),
+            meeting_id=meeting.id,
+            status="succeeded",
+            stage="summarize",
+            progress=1.0,
+            created_at=base_time + timedelta(minutes=idx),
+        )
+        test_db.add(job)
+        latest_job = job
+    assert latest_job is not None
+    return meeting, latest_job
+
+
+def test_list_meetings_query_budget_and_no_n_plus_one(
+    client_with_db: TestClient,
+    test_db: Session,
+    auth_headers_and_user: tuple[dict[str, str], User],
+) -> None:
+    """GET /meetings với 1 và 10 mục (có và không có q) phải cùng số query và <= 4."""
+    cookies, user = auth_headers_and_user
+    client_with_db.cookies.update(cookies)
+    engine = test_db.bind
+
+    queries: list[str] = []
+
+    def before_cursor_execute(conn, cursor, statement, parameters, context, executemany):
+        queries.append(statement)
+
+    # 1 mục khớp từ khóa tìm kiếm
+    first_meeting, first_latest_job = _seed_meeting_with_jobs(
+        test_db, user.id, "Cuộc họp ngân sách 0", job_count=2
+    )
+    test_db.commit()
+
+    event.listen(engine, "before_cursor_execute", before_cursor_execute)
+    try:
+        queries.clear()
+        res_1_all = client_with_db.get("/api/v1/meetings?page=1&page_size=10")
+        assert res_1_all.status_code == 200
+        count_1_all = len(queries)
+        assert res_1_all.json()["items"][0]["id"] == first_meeting.id
+        assert res_1_all.json()["items"][0]["latest_job_id"] == first_latest_job.id
+
+        queries.clear()
+        res_1_q = client_with_db.get("/api/v1/meetings?page=1&page_size=10&q=ngân sách")
+        assert res_1_q.status_code == 200
+        count_1_q = len(queries)
+
+        # Thêm 9 mục nữa (tổng 10 mục đều khớp q)
+        expected_latest: dict[str, str] = {first_meeting.id: first_latest_job.id}
+        for i in range(1, 10):
+            m, latest = _seed_meeting_with_jobs(
+                test_db, user.id, f"Cuộc họp ngân sách {i}", job_count=2
+            )
+            expected_latest[m.id] = latest.id
+        test_db.commit()
+
+        queries.clear()
+        res_10_all = client_with_db.get("/api/v1/meetings?page=1&page_size=10")
+        assert res_10_all.status_code == 200
+        assert len(res_10_all.json()["items"]) == 10
+        count_10_all = len(queries)
+
+        queries.clear()
+        res_10_q = client_with_db.get("/api/v1/meetings?page=1&page_size=10&q=ngân sách")
+        assert res_10_q.status_code == 200
+        assert len(res_10_q.json()["items"]) == 10
+        count_10_q = len(queries)
+
+        for item in res_10_all.json()["items"]:
+            assert item["latest_job_id"] == expected_latest[item["id"]]
+
+        assert count_1_all <= 4, f"1 mục (không q) tốn {count_1_all} truy vấn (> 4)"
+        assert count_1_q <= 4, f"1 mục (có q) tốn {count_1_q} truy vấn (> 4)"
+        assert count_10_all == count_1_all, (
+            f"Phát hiện N+1 khi không có q: 1 mục={count_1_all}, 10 mục={count_10_all}"
+        )
+        assert count_10_q == count_1_q, (
+            f"Phát hiện N+1 khi có q: 1 mục={count_1_q}, 10 mục={count_10_q}"
+        )
+    finally:
+        event.remove(engine, "before_cursor_execute", before_cursor_execute)

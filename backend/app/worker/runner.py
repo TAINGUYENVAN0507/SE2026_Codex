@@ -269,8 +269,10 @@ def process_job(
         if fallback.is_file():
             audio_file = fallback
 
+    settings = get_settings()
+
     # Thư mục workdir chứa artifacts
-    base_storage_dir = getattr(storage, "base_dir", Path("appdata"))
+    base_storage_dir = getattr(storage, "base_dir", None) or settings.STORAGE_DIR
     workdir = Path(base_storage_dir) / "artifacts" / meeting.id / job.id
     workdir.mkdir(parents=True, exist_ok=True)
 
@@ -299,7 +301,6 @@ def process_job(
         max_attempts=job.max_attempts,
     )
 
-    settings = get_settings()
     pipeline_env = dict(env or {})
     if "PIPELINE_MAX_DURATION_SEC" not in pipeline_env:
         pipeline_env["PIPELINE_MAX_DURATION_SEC"] = str(settings.MAX_DURATION_SEC)

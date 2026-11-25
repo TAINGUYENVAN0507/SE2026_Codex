@@ -1,0 +1,84 @@
+﻿=== TRUOC KHI SUA (main + 4 xfailed) ===
+============================= test session starts =============================
+platform win32 -- Python 3.12.13, pytest-9.1.1, pluggy-1.7.0 -- D:\kicuoi\SE2026_Codex\backend\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: D:\kicuoi\SE2026_Codex\backend
+configfile: pyproject.toml
+plugins: anyio-4.15.1, cov-7.1.0
+collecting ... collected 11 items
+
+tests/integration/test_field_limits_postgres.py::test_create_meeting_fields_past_the_limit_answer_4xx[create-title-200-ok] PASSED [  9%]
+tests/integration/test_field_limits_postgres.py::test_create_meeting_fields_past_the_limit_answer_4xx[create-title-201] XFAIL [ 18%]
+tests/integration/test_field_limits_postgres.py::test_create_meeting_fields_past_the_limit_answer_4xx[create-meeting-date-13-chars] XFAIL [ 27%]
+tests/integration/test_field_limits_postgres.py::test_create_meeting_fields_past_the_limit_answer_4xx[create-idempotency-key-101] XFAIL [ 36%]
+tests/integration/test_field_limits_postgres.py::test_json_fields_past_the_limit_answer_4xx[patch-meeting-title-201] PASSED [ 45%]
+tests/integration/test_field_limits_postgres.py::test_json_fields_past_the_limit_answer_4xx[patch-speaker-name-101] PASSED [ 54%]
+tests/integration/test_field_limits_postgres.py::test_json_fields_past_the_limit_answer_4xx[patch-segment-text-5001] PASSED [ 63%]
+tests/integration/test_field_limits_postgres.py::test_json_fields_past_the_limit_answer_4xx[action-item-assignee-101] PASSED [ 72%]
+tests/integration/test_field_limits_postgres.py::test_json_fields_past_the_limit_answer_4xx[action-item-status-21] PASSED [ 81%]
+tests/integration/test_field_limits_postgres.py::test_json_fields_past_the_limit_answer_4xx[action-item-due-date-13-chars] XFAIL [ 90%]
+tests/integration/test_field_limits_postgres.py::test_json_fields_past_the_limit_answer_4xx[action-item-speaker-id-37] PASSED [100%]
+
+============================== warnings summary ===============================
+.venv\Lib\site-packages\fastapi\testclient.py:1
+  D:\kicuoi\SE2026_Codex\backend\.venv\Lib\site-packages\fastapi\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/integration/test_field_limits_postgres.py::test_json_fields_past_the_limit_answer_4xx[action-item-status-21]
+  D:\kicuoi\SE2026_Codex\backend\app\api\v1\action_items.py:110: StarletteDeprecationWarning: 'HTTP_422_UNPROCESSABLE_ENTITY' is deprecated. Use 'HTTP_422_UNPROCESSABLE_CONTENT' instead.
+    item_status = validate_status(payload.status)
+
+tests/integration/test_field_limits_postgres.py::test_json_fields_past_the_limit_answer_4xx[action-item-speaker-id-37]
+  D:\kicuoi\SE2026_Codex\backend\app\api\v1\action_items.py:111: StarletteDeprecationWarning: 'HTTP_422_UNPROCESSABLE_ENTITY' is deprecated. Use 'HTTP_422_UNPROCESSABLE_CONTENT' instead.
+    speaker_id, assignee_name = validate_assignee_speaker(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+XFAIL tests/integration/test_field_limits_postgres.py::test_create_meeting_fields_past_the_limit_answer_4xx[create-title-201] - 500 trên Postgres; giao B ngày 11-24, việc 3 (tasks/2026-11-24/member-b.md)
+XFAIL tests/integration/test_field_limits_postgres.py::test_create_meeting_fields_past_the_limit_answer_4xx[create-meeting-date-13-chars] - 500 trên Postgres; giao B ngày 11-24, việc 3 (tasks/2026-11-24/member-b.md)
+XFAIL tests/integration/test_field_limits_postgres.py::test_create_meeting_fields_past_the_limit_answer_4xx[create-idempotency-key-101] - 500 trên Postgres; giao B ngày 11-24, việc 3 (tasks/2026-11-24/member-b.md)
+XFAIL tests/integration/test_field_limits_postgres.py::test_json_fields_past_the_limit_answer_4xx[action-item-due-date-13-chars] - 500 trên Postgres; giao B ngày 11-24, việc 3 (tasks/2026-11-24/member-b.md)
+================== 7 passed, 4 xfailed, 3 warnings in 6.91s ===================
+
+
+=== SAU KHI SUA (0 xfailed) ===
+============================= test session starts =============================
+platform win32 -- Python 3.12.13, pytest-9.1.1, pluggy-1.7.0 -- D:\kicuoi\SE2026_Codex\backend\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: D:\kicuoi\SE2026_Codex\backend
+configfile: pyproject.toml
+plugins: anyio-4.15.1, cov-7.1.0
+collecting ... collected 16 items
+
+tests/integration/test_field_limits_postgres.py::test_create_meeting_fields_past_the_limit_answer_4xx[create-title-200-ok] PASSED [  6%]
+tests/integration/test_field_limits_postgres.py::test_create_meeting_fields_past_the_limit_answer_4xx[create-title-200-stripped-ok] PASSED [ 12%]
+tests/integration/test_field_limits_postgres.py::test_create_meeting_fields_past_the_limit_answer_4xx[create-title-whitespace-only] PASSED [ 18%]
+tests/integration/test_field_limits_postgres.py::test_create_meeting_fields_past_the_limit_answer_4xx[create-title-201] PASSED [ 25%]
+tests/integration/test_field_limits_postgres.py::test_create_meeting_fields_past_the_limit_answer_4xx[create-meeting-date-13-chars] PASSED [ 31%]
+tests/integration/test_field_limits_postgres.py::test_create_meeting_fields_past_the_limit_answer_4xx[create-meeting-date-invalid-cal] PASSED [ 37%]
+tests/integration/test_field_limits_postgres.py::test_create_meeting_fields_past_the_limit_answer_4xx[create-idempotency-key-100-ok] PASSED [ 43%]
+tests/integration/test_field_limits_postgres.py::test_create_meeting_fields_past_the_limit_answer_4xx[create-idempotency-key-101] PASSED [ 50%]
+tests/integration/test_field_limits_postgres.py::test_json_fields_past_the_limit_answer_4xx[patch-meeting-title-201] PASSED [ 56%]
+tests/integration/test_field_limits_postgres.py::test_json_fields_past_the_limit_answer_4xx[patch-speaker-name-101] PASSED [ 62%]
+tests/integration/test_field_limits_postgres.py::test_json_fields_past_the_limit_answer_4xx[patch-segment-text-5001] PASSED [ 68%]
+tests/integration/test_field_limits_postgres.py::test_json_fields_past_the_limit_answer_4xx[action-item-assignee-101] PASSED [ 75%]
+tests/integration/test_field_limits_postgres.py::test_json_fields_past_the_limit_answer_4xx[action-item-status-21] PASSED [ 81%]
+tests/integration/test_field_limits_postgres.py::test_json_fields_past_the_limit_answer_4xx[action-item-due-date-13-chars] PASSED [ 87%]
+tests/integration/test_field_limits_postgres.py::test_json_fields_past_the_limit_answer_4xx[action-item-due-date-invalid-cal] PASSED [ 93%]
+tests/integration/test_field_limits_postgres.py::test_json_fields_past_the_limit_answer_4xx[action-item-speaker-id-37] PASSED [100%]
+
+============================== warnings summary ===============================
+.venv\Lib\site-packages\fastapi\testclient.py:1
+  D:\kicuoi\SE2026_Codex\backend\.venv\Lib\site-packages\fastapi\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/integration/test_field_limits_postgres.py::test_json_fields_past_the_limit_answer_4xx[action-item-status-21]
+  D:\kicuoi\SE2026_Codex\backend\app\api\v1\action_items.py:110: StarletteDeprecationWarning: 'HTTP_422_UNPROCESSABLE_ENTITY' is deprecated. Use 'HTTP_422_UNPROCESSABLE_CONTENT' instead.
+    item_status = validate_status(payload.status)
+
+tests/integration/test_field_limits_postgres.py::test_json_fields_past_the_limit_answer_4xx[action-item-speaker-id-37]
+  D:\kicuoi\SE2026_Codex\backend\app\api\v1\action_items.py:111: StarletteDeprecationWarning: 'HTTP_422_UNPROCESSABLE_ENTITY' is deprecated. Use 'HTTP_422_UNPROCESSABLE_CONTENT' instead.
+    speaker_id, assignee_name = validate_assignee_speaker(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================= 16 passed, 3 warnings in 9.78s ========================

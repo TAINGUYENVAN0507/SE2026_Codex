@@ -26,11 +26,6 @@ from app.main import create_app
 from app.services.storage import get_storage
 from app.services.storage.local import LocalStorage
 
-B_2026_11_24 = "500 trên Postgres; giao B ngày 11-24, việc 3 (tasks/2026-11-24/member-b.md)"
-# raises=AssertionError: chỉ lỗi ở dòng assert status mới được tính là xfail; lỗi ở fixture
-# (ví dụ dữ liệu mẫu sai) vẫn làm test đỏ, không bị nuốt thành "500 như mong đợi".
-XFAIL_B = pytest.mark.xfail(strict=True, raises=AssertionError, reason=B_2026_11_24)
-
 
 def _wav() -> bytes:
     buf = io.BytesIO()
@@ -112,39 +107,24 @@ def _create(c: TestClient, *, key: str | None = None, **form: str):
 
 CREATE_CASES = [
     pytest.param({"title": "a" * 200}, None, 201, id="create-title-200-ok"),
-    pytest.param(
-        {"title": "a" * 201},
-        None,
-        None,
-        id="create-title-201",
-        marks=XFAIL_B,
-    ),
-    pytest.param(
-        {"meeting_date": "2026-11-24T09"},
-        None,
-        None,
-        id="create-meeting-date-13-chars",
-        marks=XFAIL_B,
-    ),
-    pytest.param(
-        {},
-        "k" * 101,
-        None,
-        id="create-idempotency-key-101",
-        marks=XFAIL_B,
-    ),
+    pytest.param({"title": f"  {'a' * 200}  "}, None, 201, id="create-title-200-stripped-ok"),
+    pytest.param({"title": "   "}, None, 422, id="create-title-whitespace-only"),
+    pytest.param({"title": "a" * 201}, None, 422, id="create-title-201"),
+    pytest.param({"meeting_date": "2026-11-24T09"}, None, 422, id="create-meeting-date-13-chars"),
+    pytest.param({"meeting_date": "2026-02-30"}, None, 422, id="create-meeting-date-invalid-cal"),
+    pytest.param({}, "k" * 100, 201, id="create-idempotency-key-100-ok"),
+    pytest.param({}, "k" * 101, 422, id="create-idempotency-key-101"),
 ]
 
 
 @pytest.mark.parametrize(("form", "key", "expected"), CREATE_CASES)
 def test_create_meeting_fields_past_the_limit_answer_4xx(
-    client: TestClient, form: dict, key: str | None, expected: int | None
+    client: TestClient, form: dict, key: str | None, expected: int
 ) -> None:
     r = _create(client, key=key, **form)
-    if expected is not None:
-        assert r.status_code == expected, r.text[:300]
-    else:
-        assert 400 <= r.status_code < 500, f"{r.status_code}: {r.text[:300]}"
+    assert r.status_code == expected, f"{r.status_code}: {r.text[:300]}"
+    if key and len(key) > 100:
+        assert r.json()["error"]["code"] == "IDEMPOTENCY_KEY_TOO_LONG"
 
 
 def _patch_cases(ids: dict[str, str]) -> list[tuple[str, str, dict]]:
@@ -167,6 +147,11 @@ def _patch_cases(ids: dict[str, str]) -> list[tuple[str, str, dict]]:
         (
             "POST",
             f"/api/v1/meetings/{m}/action-items",
+            {"description": "việc", "due_date": "2026-02-30"},
+        ),
+        (
+            "POST",
+            f"/api/v1/meetings/{m}/action-items",
             {"description": "việc", "assignee_speaker_id": "a" * 37},
         ),
     ]
@@ -179,14 +164,12 @@ JSON_CASE_IDS = [
     "action-item-assignee-101",
     "action-item-status-21",
     "action-item-due-date-13-chars",
+    "action-item-due-date-invalid-cal",
     "action-item-speaker-id-37",
 ]
 
 
-JSON_PARAMS = [
-    pytest.param(i, id=name, marks=XFAIL_B if name == "action-item-due-date-13-chars" else ())
-    for i, name in enumerate(JSON_CASE_IDS)
-]
+JSON_PARAMS = [pytest.param(i, id=name) for i, name in enumerate(JSON_CASE_IDS)]
 
 
 @pytest.mark.parametrize("index", JSON_PARAMS)

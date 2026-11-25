@@ -124,7 +124,9 @@ def handle_meeting_upload(
         now = datetime.now(UTC)
         retention_until = now + timedelta(days=settings.AUDIO_RETENTION_DAYS)
         meeting_title = (
-            title.strip() if title and title.strip() else (file.filename or "Cuộc họp mới")
+            title.strip()
+            if title and title.strip()
+            else ((file.filename or "Cuộc họp mới").strip()[:200] or "Cuộc họp mới")
         )
 
         meeting = Meeting(
