@@ -246,20 +246,7 @@ def _more_cases(ids: dict[str, str], item_id: str) -> list[tuple[str, str, dict]
     ]
 
 
-EVIDENCE_B_2026_11_25 = (
-    "PUT summary nhận evidence_segment_ids không thuộc cuộc họp (trả 200); giao B ngày 11-25, "
-    "việc 4 (tasks/2026-11-25/member-b.md)"
-)
-MORE_PARAMS = [
-    pytest.param(
-        i,
-        id=name,
-        marks=pytest.mark.xfail(strict=True, raises=AssertionError, reason=EVIDENCE_B_2026_11_25)
-        if name == "put-summary-evidence-id-unknown"
-        else (),
-    )
-    for i, name in enumerate(MORE_CASE_IDS)
-]
+MORE_PARAMS = [pytest.param(i, id=name) for i, name in enumerate(MORE_CASE_IDS)]
 
 
 @pytest.mark.parametrize("index", MORE_PARAMS)
@@ -274,3 +261,66 @@ def test_more_write_endpoints_past_the_limit_answer_4xx(
     method, url, body = _more_cases(seeded, created.json()["id"])[index]
     r = client.request(method, url, json=body)
     assert 400 <= r.status_code < 500, f"{method} {url}: {r.status_code}: {r.text[:300]}"
+    if MORE_CASE_IDS[index] == "put-summary-evidence-id-unknown":
+        assert r.status_code == 422
+        assert r.json()["error"]["code"] == "EVIDENCE_SEGMENT_NOT_IN_MEETING"
+
+
+def test_put_summary_rejects_evidence_from_other_meeting_and_accepts_same_meeting(
+    client: TestClient, db_session: Session, seeded: dict[str, str]
+) -> None:
+    """PUT /summary phải từ chối segment của cuộc họp khác (cả key_points và decisions)."""
+    _summary(db_session, seeded["meeting"])
+
+    other_meeting = Meeting(
+        id=str(uuid.uuid4()),
+        owner_id=seeded["user"],
+        title="Cuộc họp khác",
+        source="upload",
+        status="ready",
+        version=1,
+    )
+    other_segment = Segment(
+        id=str(uuid.uuid4()),
+        meeting_id=other_meeting.id,
+        idx=0,
+        start_sec=0.0,
+        end_sec=1.0,
+        text="đoạn của cuộc họp khác",
+        ai_text="đoạn của cuộc họp khác",
+        version=1,
+    )
+    db_session.add(other_meeting)
+    db_session.commit()
+    db_session.add(other_segment)
+    db_session.commit()
+
+    url = f"/api/v1/meetings/{seeded['meeting']}/summary"
+
+    # Segment thuộc cuộc họp khác trong key_points -> 422 EVIDENCE_SEGMENT_NOT_IN_MEETING
+    r_kp = client.put(
+        url,
+        json=_summary_body(key_points=[{"text": "ý", "evidence_segment_ids": [other_segment.id]}]),
+    )
+    assert r_kp.status_code == 422, r_kp.text[:300]
+    assert r_kp.json()["error"]["code"] == "EVIDENCE_SEGMENT_NOT_IN_MEETING"
+
+    # Segment thuộc cuộc họp khác trong decisions -> 422 EVIDENCE_SEGMENT_NOT_IN_MEETING
+    r_dec = client.put(
+        url,
+        json=_summary_body(
+            decisions=[{"text": "chốt", "evidence_segment_ids": [other_segment.id]}]
+        ),
+    )
+    assert r_dec.status_code == 422, r_dec.text[:300]
+    assert r_dec.json()["error"]["code"] == "EVIDENCE_SEGMENT_NOT_IN_MEETING"
+
+    # Segment thuộc chính cuộc họp -> 200 OK
+    r_ok = client.put(
+        url,
+        json=_summary_body(
+            key_points=[{"text": "ý đúng", "evidence_segment_ids": [seeded["segment"]]}],
+            decisions=[{"text": "chốt đúng", "evidence_segment_ids": [seeded["segment"]]}],
+        ),
+    )
+    assert r_ok.status_code == 200, r_ok.text[:300]

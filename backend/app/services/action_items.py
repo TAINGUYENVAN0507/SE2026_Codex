@@ -122,15 +122,19 @@ def validate_evidence_segments(
     db: Session,
     meeting_id: str,
     segment_ids: list[str],
+    *,
+    error_code: str = "VALIDATION_ERROR",
+    message: str = "Một số đoạn thoại bằng chứng không tồn tại trong cuộc họp.",
 ) -> list[str]:
     """Xác thực danh sách đoạn thoại bằng chứng thuộc cuộc họp."""
     if not segment_ids:
         return []
 
+    unique_ids = list(dict.fromkeys(segment_ids))
     existing = (
         db.execute(
             select(Segment.id).where(
-                Segment.id.in_(segment_ids),
+                Segment.id.in_(unique_ids),
                 Segment.meeting_id == meeting_id,
             )
         )
@@ -138,12 +142,12 @@ def validate_evidence_segments(
         .all()
     )
     existing_set = set(existing)
-    invalid = [sid for sid in segment_ids if sid not in existing_set]
+    invalid = [sid for sid in unique_ids if sid not in existing_set]
     if invalid:
         raise APIError(
-            code="VALIDATION_ERROR",
-            message="Một số đoạn thoại bằng chứng không tồn tại trong cuộc họp.",
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            code=error_code,
+            message=message,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             details={"invalid_segment_ids": invalid},
         )
     return segment_ids

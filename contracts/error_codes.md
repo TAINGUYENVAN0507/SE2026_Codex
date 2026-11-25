@@ -40,6 +40,7 @@ Mọi mã lỗi tuân thủ quy ước:
 | `TEXT_EMPTY` | 422 | Nội dung đoạn thoại chỉnh sửa bị để trống | Nội dung đoạn thoại không được để trống. |
 | `TEXT_TOO_LONG` | 422 | Nội dung đoạn văn bản vượt quá độ dài ký tự tối đa quy định | Nội dung vượt quá độ dài tối đa cho phép. |
 | `SPEAKER_NOT_IN_MEETING` | 422 | Người nói được gán không nằm trong danh sách người nói của cuộc họp | Người nói không thuộc cuộc họp này. |
+| `EVIDENCE_SEGMENT_NOT_IN_MEETING` | 422 | Đoạn thoại dẫn chứng trong tóm tắt không tồn tại hoặc thuộc cuộc họp khác | Đoạn thoại dẫn chứng không thuộc cuộc họp này. |
 | `SPEAKER_NAME_DUPLICATE` | 422 | Tên hiển thị người nói bị trùng lặp với người nói khác trong cuộc họp | Tên người nói bị trùng với người nói khác trong cuộc họp. |
 | `INTERNAL_SERVER_ERROR` | 500 | Lỗi nội bộ không lường trước phía server | Đã xảy ra lỗi nội bộ hệ thống. Vui lòng thử lại sau. |
 | `HTTP_ERROR` | 500 | Lỗi HTTP không xác định | Đã xảy ra lỗi khi xử lý yêu cầu. |
