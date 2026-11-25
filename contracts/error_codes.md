@@ -15,6 +15,7 @@ Mọi mã lỗi tuân thủ quy ước:
 |---|---|---|---|
 | `BAD_REQUEST` | 400 | Yêu cầu không hợp lệ hoặc sai cấu trúc cú pháp | Yêu cầu không hợp lệ. |
 | `IDEMPOTENCY_KEY_REQUIRED` | 400 | Thiếu header `Idempotency-Key` bắt buộc khi tạo cuộc họp hoặc job | Header Idempotency-Key là bắt buộc khi thực hiện thao tác này. |
+| `IDEMPOTENCY_KEY_TOO_LONG` | 422 | Header `Idempotency-Key` vượt quá độ dài tối đa 100 ký tự | Khóa Idempotency-Key không được vượt quá 100 ký tự. |
 | `UNAUTHENTICATED` | 401 | Người dùng chưa đăng nhập hoặc session đã hết hạn | Phiên đăng nhập đã hết hạn hoặc bạn chưa đăng nhập. |
 | `INVALID_CREDENTIALS` | 401 | Email hoặc mật khẩu đăng nhập không chính xác | Email hoặc mật khẩu không chính xác. |
 | `FORBIDDEN` | 403 | Không có quyền truy cập hoặc thực hiện thao tác trên tài nguyên này | Bạn không có quyền thực hiện hành động này. |

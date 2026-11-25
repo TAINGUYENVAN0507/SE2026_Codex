@@ -21,6 +21,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import CurrentUser, get_current_user
 from app.core.errors import APIError
+from app.core.validators import validate_idempotency_key
 from app.db.models.edit_event import EditEvent
 from app.db.models.job import Job
 from app.db.models.meeting import Meeting
@@ -126,9 +127,11 @@ def retry_meeting_job(
     current_user: CurrentUser,
     db: Annotated[Session, Depends(get_db)],
     response: Response,
-    idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
+    idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key", max_length=100)] = None,
 ) -> JobOut:
     """Chạy lại tiến trình xử lý từ một stage nhất định (hoặc chạy lại toàn bộ)."""
+    cleaned_idem_key = validate_idempotency_key(idempotency_key, required=False)
+
     meeting = db.execute(select(Meeting).where(Meeting.id == meeting_id)).scalar_one_or_none()
     if not meeting or meeting.owner_id != current_user.id:
         raise APIError(
@@ -140,13 +143,13 @@ def retry_meeting_job(
     # 1. Kiểm tra tính idempotent nếu có Idempotency-Key
     idempotency_service = None
     idem_res = None
-    if idempotency_key and idempotency_key.strip():
+    if cleaned_idem_key:
         idempotency_service = IdempotencyService()
         endpoint_str = f"/api/v1/meetings/{meeting_id}/jobs"
         idem_res = idempotency_service.check_or_start(
             session=db,
             user_id=current_user.id,
-            key=idempotency_key.strip(),
+            key=cleaned_idem_key,
             endpoint=endpoint_str,
         )
         if idem_res.is_replayed:

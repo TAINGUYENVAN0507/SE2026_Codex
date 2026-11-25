@@ -665,7 +665,7 @@ export interface components {
       file: string
       /**
        * Title
-       * @description Tiêu đề cuộc họp tùy chọn
+       * @description Tiêu đề cuộc họp tùy chọn (1-200 ký tự)
        */
       title?: string | null
       /**

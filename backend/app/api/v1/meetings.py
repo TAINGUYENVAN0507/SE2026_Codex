@@ -30,6 +30,11 @@ from app.api.v1.speakers import router as speakers_router
 from app.api.v1.summary import router as summary_router
 from app.api.v1.transcript import router as transcript_router
 from app.core.errors import APIError
+from app.core.validators import (
+    validate_idempotency_key,
+    validate_iso_date,
+    validate_meeting_title,
+)
 from app.db.models.job import Job
 from app.db.models.meeting import Meeting
 from app.db.models.transcript import Segment, Speaker
@@ -224,7 +229,9 @@ def create_meeting(
     current_user: CurrentUser,
     db: Annotated[Session, Depends(get_db)],
     storage: Annotated[Storage, Depends(get_storage)],
-    title: Annotated[str | None, Form(description="Tiêu đề cuộc họp tùy chọn")] = None,
+    title: Annotated[
+        str | None, Form(description="Tiêu đề cuộc họp tùy chọn (1-200 ký tự)")
+    ] = None,
     source: Annotated[
         MeetingSource, Form(description="Nguồn âm thanh: upload hoặc recording")
     ] = "upload",
@@ -232,20 +239,22 @@ def create_meeting(
         int | None, Form(ge=1, le=10, description="Gợi ý số lượng người nói (1-10)")
     ] = None,
     meeting_date: Annotated[
-        str | None, Form(description="Ngày diễn ra cuộc họp YYYY-MM-DD")
+        str | None,
+        Form(
+            pattern=r"^\d{4}-\d{2}-\d{2}$",
+            description="Ngày diễn ra cuộc họp YYYY-MM-DD",
+        ),
     ] = None,
     consent_confirmed: Annotated[
         bool, Form(description="Xác nhận người tham gia đã đồng ý ghi âm")
     ] = False,
-    idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
+    idempotency_key: Annotated[
+        str | None, Header(alias="Idempotency-Key", max_length=100)
+    ] = None,
 ) -> MeetingCreateOut:
     """Tải lên file âm thanh và khởi tạo cuộc họp kèm job xử lý."""
-    if not idempotency_key or not idempotency_key.strip():
-        raise APIError(
-            code="IDEMPOTENCY_KEY_REQUIRED",
-            message="Header Idempotency-Key là bắt buộc khi tạo cuộc họp.",
-            status_code=status.HTTP_400_BAD_REQUEST,
-        )
+    cleaned_key = validate_idempotency_key(idempotency_key, required=True)
+    assert cleaned_key is not None
 
     if not consent_confirmed:
         raise APIError(
@@ -254,16 +263,19 @@ def create_meeting(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         )
 
+    cleaned_title = validate_meeting_title(title) if title is not None else None
+    cleaned_meeting_date = validate_iso_date(meeting_date, "Ngày diễn ra cuộc họp")
+
     result, is_replayed, replay_code = handle_meeting_upload(
         db=db,
         storage=storage,
         file=file,
         user_id=current_user.id,
-        idempotency_key=idempotency_key.strip(),
-        title=title,
+        idempotency_key=cleaned_key,
+        title=cleaned_title,
         source=source,
         num_speakers=num_speakers,
-        meeting_date=meeting_date,
+        meeting_date=cleaned_meeting_date,
     )
 
     if is_replayed:
@@ -395,26 +407,7 @@ def patch_meeting(
     fields_set = payload.model_fields_set
     new_title = meeting.title
     if "title" in fields_set:
-        if payload.title is None:
-            raise APIError(
-                code="VALIDATION_ERROR",
-                message="Tiêu đề cuộc họp không được để trống.",
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            )
-        cleaned_title = payload.title.strip()
-        if not cleaned_title:
-            raise APIError(
-                code="VALIDATION_ERROR",
-                message="Tiêu đề cuộc họp không được để trống.",
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            )
-        if len(cleaned_title) > 200:
-            raise APIError(
-                code="VALIDATION_ERROR",
-                message="Tiêu đề cuộc họp không được vượt quá 200 ký tự.",
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            )
-        new_title = cleaned_title
+        new_title = validate_meeting_title(payload.title)
 
     # Kiểm tra no-op (không đổi giá trị)
     if new_title == meeting.title:

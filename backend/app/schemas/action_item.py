@@ -3,7 +3,9 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from app.core.validators import parse_iso_date
 
 ActionItemSource = Literal["ai", "user"]
 
@@ -80,8 +82,18 @@ class ActionItemCreate(BaseModel):
         default=None, max_length=100, description="Tên người được giao việc"
     )
     assignee_speaker_id: str | None = Field(default=None, description="UUID speaker tương ứng")
-    due_date: str | None = Field(default=None, description="Hạn hoàn thành định dạng YYYY-MM-DD")
+    due_date: str | None = Field(
+        default=None,
+        pattern=r"^\d{4}-\d{2}-\d{2}$",
+        description="Hạn hoàn thành định dạng YYYY-MM-DD",
+    )
     status: str = Field(default="open", description="Trạng thái khởi tạo (mặc định 'open')")
+
+    @field_validator("due_date")
+    @classmethod
+    def check_due_date(cls, v: str | None) -> str | None:
+        """Kiểm tra due_date đúng định dạng YYYY-MM-DD và hợp lệ trên lịch."""
+        return parse_iso_date(v)
 
     model_config = ConfigDict(extra="forbid")
 
@@ -99,8 +111,18 @@ class ActionItemPatch(BaseModel):
         default=None, max_length=100, description="Tên người được giao việc"
     )
     assignee_speaker_id: str | None = Field(default=None, description="UUID speaker tương ứng")
-    due_date: str | None = Field(default=None, description="Hạn hoàn thành định dạng YYYY-MM-DD")
+    due_date: str | None = Field(
+        default=None,
+        pattern=r"^\d{4}-\d{2}-\d{2}$",
+        description="Hạn hoàn thành định dạng YYYY-MM-DD",
+    )
     status: str | None = Field(default=None, description="Trạng thái công việc mới")
     version: int = Field(..., ge=1, description="Phiên bản hiện tại của item ở client")
+
+    @field_validator("due_date")
+    @classmethod
+    def check_due_date(cls, v: str | None) -> str | None:
+        """Kiểm tra due_date đúng định dạng YYYY-MM-DD và hợp lệ trên lịch."""
+        return parse_iso_date(v)
 
     model_config = ConfigDict(extra="forbid")

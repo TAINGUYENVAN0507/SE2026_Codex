@@ -58,6 +58,8 @@ const messages: Record<string, string> = {
 
   BAD_REQUEST: 'Yêu cầu không hợp lệ. Hãy kiểm tra thông tin rồi thử lại.',
   IDEMPOTENCY_KEY_REQUIRED: 'Thiếu khóa chống gửi trùng. Hãy thử lại.',
+  IDEMPOTENCY_KEY_TOO_LONG:
+    'Khóa chống gửi trùng vượt quá 100 ký tự. Hãy thử lại.',
   CONFLICT: 'Yêu cầu xung đột với dữ liệu hiện tại. Hãy thử lại.',
   FILE_TOO_LARGE: 'File audio vượt quá dung lượng cho phép.',
   UNSUPPORTED_MEDIA_TYPE: 'Định dạng file audio chưa được hỗ trợ.',

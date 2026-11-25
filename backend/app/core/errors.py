@@ -4,6 +4,7 @@ import uuid
 from typing import Any
 
 from fastapi import FastAPI, Request, status
+from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import TimeoutError as PoolTimeoutError
@@ -106,15 +107,20 @@ async def validation_exception_handler(
 ) -> JSONResponse:
     """Xử lý lỗi 422 validation của FastAPI."""
     request_id = get_request_id(request)
-    # Lọc danh sách lỗi để an toàn và nhất quán
-    details = exc.errors()
+    # Lọc danh sách lỗi để an toàn và nhất quán (jsonable_encoder xử lý ctx ValueError từ validator)
+    details = jsonable_encoder(exc.errors())
 
     code = "VALIDATION_ERROR"
     message = "Dữ liệu yêu cầu không hợp lệ."
 
     for err in details:
         loc = err.get("loc", ())
+        loc_lower = {str(part).lower() for part in loc}
         err_type = str(err.get("type", ""))
+        if "idempotency-key" in loc_lower and "too_long" in err_type:
+            code = "IDEMPOTENCY_KEY_TOO_LONG"
+            message = "Header Idempotency-Key không được vượt quá 100 ký tự."
+            break
         if "text" in loc:
             if "too_short" in err_type or "empty" in err_type or "missing" in err_type:
                 code = "TEXT_EMPTY"
