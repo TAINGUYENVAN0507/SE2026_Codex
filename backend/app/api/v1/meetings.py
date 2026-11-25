@@ -15,7 +15,7 @@ from fastapi import (
     status,
 )
 from fastapi import Path as FastApiPath
-from sqlalchemy import case, func, select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
 from app.api.deps import CurrentUser, get_current_user
@@ -24,7 +24,7 @@ from app.api.v1.action_items import serialize_action_item
 from app.api.v1.audio import router as audio_router
 from app.api.v1.edits import router as edits_router
 from app.api.v1.export import router as export_router
-from app.api.v1.jobs import meeting_jobs_router, serialize_job
+from app.api.v1.jobs import meeting_jobs_router
 from app.api.v1.segments import router as segments_router
 from app.api.v1.speakers import router as speakers_router
 from app.api.v1.summary import router as summary_router
@@ -35,23 +35,25 @@ from app.core.validators import (
     validate_iso_date,
     validate_meeting_title,
 )
-from app.db.models.job import Job
 from app.db.models.meeting import Meeting
-from app.db.models.transcript import Segment, Speaker
 from app.db.session import get_db
 from app.schemas.common import ErrorResponse
 from app.schemas.meeting import (
     MeetingCreateOut,
     MeetingDetailOut,
     MeetingListOut,
-    MeetingOut,
     MeetingPatch,
     MeetingSource,
     MeetingStatus,
-    SpeakerOut,
 )
 from app.services.audit import record_edit
 from app.services.erasure import erase_meeting
+from app.services.meetings.queries import (
+    escape_like_wildcards,
+    load_latest_jobs_by_meeting,
+    serialize_meeting_detail,
+    serialize_meeting_summary,
+)
 from app.services.meetings.upload import handle_meeting_upload, probe_audio
 from app.services.storage import Storage, get_storage
 
@@ -63,77 +65,7 @@ router = APIRouter(
 
 logger = logging.getLogger("backend.api.meetings")
 
-__all__ = ["probe_audio", "router", "serialize_action_item"]
-
-_UNSET_JOB = object()
-
-
-def serialize_meeting_summary(
-    meeting: Meeting, db: Session, latest_job: Job | None | object = _UNSET_JOB
-) -> MeetingOut:
-    """Chuyển đổi một thực thể Meeting trong DB sang schema MeetingOut."""
-    resolved_job: Job | None
-    if latest_job is _UNSET_JOB:
-        resolved_job = (
-            db.execute(
-                select(Job).where(Job.meeting_id == meeting.id).order_by(Job.created_at.desc())
-            )
-            .scalars()
-            .first()
-        )
-    else:
-        resolved_job = latest_job if isinstance(latest_job, Job) else None
-
-    clean_ext = (
-        meeting.audio_path.rsplit(".", 1)[-1].lower()
-        if meeting.audio_path and "." in meeting.audio_path
-        else "wav"
-    )
-    mime_type = "audio/mpeg" if clean_ext == "mp3" else f"audio/{clean_ext}"
-
-    transcript_status = "pending"
-    diarization_status = "pending"
-    summary_status = "pending"
-    if meeting.status in ("ready", "partial"):
-        transcript_status = "ready"
-        diarization_status = "ok"
-        summary_status = "failed" if meeting.status == "partial" else "ready"
-    elif meeting.status == "failed":
-        transcript_status = "failed"
-        diarization_status = "failed"
-        summary_status = "failed"
-
-    return MeetingOut(
-        id=meeting.id,
-        title=meeting.title,
-        source=meeting.source,  # type: ignore[arg-type]
-        status=meeting.status,  # type: ignore[arg-type]
-        language="vi",
-        meeting_date=meeting.meeting_date,
-        duration_sec=meeting.duration_sec,
-        num_speakers_hint=meeting.num_speakers_hint,
-        audio={
-            "available": meeting.audio_path is not None,
-            "mime_type": mime_type,
-            "size_bytes": 0,
-            "retention_until": meeting.retention_until,
-        },
-        artifacts={
-            "transcript": transcript_status,
-            "diarization": diarization_status,
-            "summary": summary_status,
-        },
-        warnings=[],
-        latest_job_id=resolved_job.id if resolved_job else None,
-        created_at=meeting.created_at,
-        updated_at=meeting.updated_at,
-        version=meeting.version,
-    )
-
-
-def escape_like_wildcards(text: str) -> str:
-    """Escape các ký tự đặc biệt của LIKE/ILIKE: \\, %, _."""
-    return text.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+__all__ = ["probe_audio", "router", "serialize_action_item", "serialize_meeting_summary"]
 
 
 @router.get(
@@ -171,32 +103,7 @@ def list_meetings(
         .all()
     )
 
-    latest_jobs_by_meeting: dict[str, Job] = {}
-    if meetings:
-        meeting_ids = [m.id for m in meetings]
-        ranked_jobs = (
-            select(
-                Job.id.label("job_id"),
-                func.row_number()
-                .over(
-                    partition_by=Job.meeting_id,
-                    order_by=(Job.created_at.desc(), Job.id.desc()),
-                )
-                .label("rn"),
-            )
-            .where(Job.meeting_id.in_(meeting_ids))
-            .subquery()
-        )
-        latest_jobs = (
-            db.execute(
-                select(Job)
-                .join(ranked_jobs, Job.id == ranked_jobs.c.job_id)
-                .where(ranked_jobs.c.rn == 1)
-            )
-            .scalars()
-            .all()
-        )
-        latest_jobs_by_meeting = {job.meeting_id: job for job in latest_jobs}
+    latest_jobs_by_meeting = load_latest_jobs_by_meeting(db, [m.id for m in meetings])
 
     items = [
         serialize_meeting_summary(m, db, latest_job=latest_jobs_by_meeting.get(m.id))
@@ -248,9 +155,7 @@ def create_meeting(
     consent_confirmed: Annotated[
         bool, Form(description="Xác nhận người tham gia đã đồng ý ghi âm")
     ] = False,
-    idempotency_key: Annotated[
-        str | None, Header(alias="Idempotency-Key", max_length=100)
-    ] = None,
+    idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key", max_length=100)] = None,
 ) -> MeetingCreateOut:
     """Tải lên file âm thanh và khởi tạo cuộc họp kèm job xử lý."""
     cleaned_key = validate_idempotency_key(idempotency_key, required=True)
@@ -284,56 +189,6 @@ def create_meeting(
             response.status_code = replay_code
 
     return result
-
-
-def serialize_meeting_detail(meeting: Meeting, db: Session) -> MeetingDetailOut:
-    """Tạo đối tượng MeetingDetailOut từ model Meeting."""
-    latest_job = (
-        db.execute(select(Job).where(Job.meeting_id == meeting.id).order_by(Job.created_at.desc()))
-        .scalars()
-        .first()
-    )
-
-    duration_expr = case(
-        (Segment.end_sec > Segment.start_sec, Segment.end_sec - Segment.start_sec),
-        else_=0.0,
-    )
-    speaker_rows = db.execute(
-        select(
-            Speaker,
-            func.count(Segment.id).label("segment_count"),
-            func.coalesce(func.sum(duration_expr), 0.0).label("speaking_time"),
-        )
-        .outerjoin(Segment, Segment.speaker_id == Speaker.id)
-        .where(Speaker.meeting_id == meeting.id)
-        .group_by(Speaker.id, Speaker.created_at)
-        .order_by(Speaker.created_at.asc())
-    ).all()
-
-    speakers_out = [
-        SpeakerOut(
-            id=spk.id,
-            meeting_id=spk.meeting_id,
-            label=spk.label,
-            default_name=spk.default_name,
-            display_name=spk.display_name,
-            is_edited=spk.display_name != spk.default_name,
-            color_index=idx % 10,
-            segment_count=int(seg_count),
-            speaking_time_sec=round(float(spk_time), 2),
-            version=spk.version,
-        )
-        for idx, (spk, seg_count, spk_time) in enumerate(speaker_rows)
-    ]
-
-    job_out = serialize_job(latest_job) if latest_job else None
-
-    meeting_summary = serialize_meeting_summary(meeting, db, latest_job=latest_job)
-    return MeetingDetailOut(
-        **meeting_summary.model_dump(),
-        latest_job=job_out,
-        speakers=speakers_out,
-    )
 
 
 @router.get(
