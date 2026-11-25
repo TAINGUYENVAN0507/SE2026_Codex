@@ -9,11 +9,21 @@ from app.db.models.transcript import Segment, Speaker
 from app.schemas.meeting import MeetingDetailOut, MeetingOut, SpeakerOut
 
 _UNSET_JOB = object()
+LATEST_JOB_ORDER_BY = (Job.created_at.desc(), Job.id.desc())
 
 
 def escape_like_wildcards(text: str) -> str:
     """Escape các ký tự đặc biệt của LIKE/ILIKE: \\, %, _."""
     return text.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+
+def get_latest_job_for_meeting(db: Session, meeting_id: str) -> Job | None:
+    """Lấy job mới nhất của một cuộc họp theo thứ tự nhất quán toàn hệ thống."""
+    return (
+        db.execute(select(Job).where(Job.meeting_id == meeting_id).order_by(*LATEST_JOB_ORDER_BY))
+        .scalars()
+        .first()
+    )
 
 
 def load_latest_jobs_by_meeting(db: Session, meeting_ids: list[str]) -> dict[str, Job]:
@@ -27,7 +37,7 @@ def load_latest_jobs_by_meeting(db: Session, meeting_ids: list[str]) -> dict[str
             func.row_number()
             .over(
                 partition_by=Job.meeting_id,
-                order_by=(Job.created_at.desc(), Job.id.desc()),
+                order_by=LATEST_JOB_ORDER_BY,
             )
             .label("rn"),
         )
@@ -52,13 +62,7 @@ def serialize_meeting_summary(
     """Chuyển đổi một thực thể Meeting trong DB sang schema MeetingOut."""
     resolved_job: Job | None
     if latest_job is _UNSET_JOB:
-        resolved_job = (
-            db.execute(
-                select(Job).where(Job.meeting_id == meeting.id).order_by(Job.created_at.desc())
-            )
-            .scalars()
-            .first()
-        )
+        resolved_job = get_latest_job_for_meeting(db, meeting.id)
     else:
         resolved_job = latest_job if isinstance(latest_job, Job) else None
 
@@ -113,11 +117,7 @@ def serialize_meeting_detail(meeting: Meeting, db: Session) -> MeetingDetailOut:
     """Tạo đối tượng MeetingDetailOut từ model Meeting."""
     from app.api.v1.jobs import serialize_job
 
-    latest_job = (
-        db.execute(select(Job).where(Job.meeting_id == meeting.id).order_by(Job.created_at.desc()))
-        .scalars()
-        .first()
-    )
+    latest_job = get_latest_job_for_meeting(db, meeting.id)
 
     duration_expr = case(
         (Segment.end_sec > Segment.start_sec, Segment.end_sec - Segment.start_sec),
