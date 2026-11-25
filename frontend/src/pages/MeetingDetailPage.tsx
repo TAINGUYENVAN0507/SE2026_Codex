@@ -5,9 +5,9 @@ import { ClockIcon } from '@phosphor-icons/react/dist/csr/Clock'
 import { PencilSimpleIcon } from '@phosphor-icons/react/dist/csr/PencilSimple'
 import { UsersIcon } from '@phosphor-icons/react/dist/csr/Users'
 import { Link, useParams } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { ApiError } from '../api/errors'
-import { getMeeting, type MeetingDetail } from '../api/client'
+import { getMeeting, patchMeeting, type MeetingDetail } from '../api/client'
 import { DeleteMeetingButton } from '../features/meetings/DeleteMeetingButton'
 import { RemoteAudioPlayer } from '../features/audio/RemoteAudioPlayer'
 import { AudioPlayer, type PlayerHandle } from '../features/audio/AudioPlayer'
@@ -38,6 +38,7 @@ export function MeetingDetailPage() {
 }
 
 function RemoteMeetingDetail({ meetingId }: { meetingId: string }) {
+  const queryClient = useQueryClient()
   const meetingQuery = useQuery({
     queryKey: ['meeting', meetingId],
     queryFn: () => getMeeting(meetingId),
@@ -88,6 +89,7 @@ function RemoteMeetingDetail({ meetingId }: { meetingId: string }) {
       </main>
     )
   }
+  const current = meetingQuery.data
   return (
     <RemoteMeetingContent
       key={`${meetingId}-${transcriptQuery.data.status}-${meetingQuery.data.status}`}
@@ -95,6 +97,15 @@ function RemoteMeetingDetail({ meetingId }: { meetingId: string }) {
       pending={transcriptQuery.data.status === 'pending'}
       ready={transcriptQuery.data.status === 'ready'}
       audioInfo={meetingQuery.data.audio}
+      onRename={async (title) => {
+        const saved = await patchMeeting(meetingId, {
+          title,
+          version: current.version,
+        })
+        queryClient.setQueryData(['meeting', meetingId], saved)
+        void queryClient.invalidateQueries({ queryKey: ['meetings'] })
+        return saved.title
+      }}
       jobId={
         meetingQuery.data.latest_job_id || meetingQuery.data.latest_job?.id
       }
@@ -108,7 +119,9 @@ function RemoteMeetingContent({
   ready,
   jobId,
   audioInfo,
+  onRename,
 }: {
+  onRename: (title: string) => Promise<string>
   meeting: Meeting
   pending: boolean
   ready: boolean
@@ -124,6 +137,7 @@ function RemoteMeetingContent({
       pending={pending}
       transcriptReady={ready}
       onUpdate={(transform) => setMeeting((current) => transform(current))}
+      onRename={onRename}
       remote
       jobId={jobId}
       audioInfo={audioInfo}
@@ -158,6 +172,7 @@ function Detail({
   meeting,
   file,
   onUpdate,
+  onRename,
   pending = false,
   remote = false,
   transcriptReady = meeting.status === 'ready',
@@ -166,6 +181,7 @@ function Detail({
 }: {
   meeting: Meeting
   file?: File
+  onRename?: (title: string) => Promise<string>
   onUpdate: (f: (m: Meeting) => Meeting) => void
   pending?: boolean
   remote?: boolean
@@ -183,6 +199,9 @@ function Detail({
   const [mobile, setMobile] = useState<'transcript' | NotesTab>('transcript')
   const [message, setMessage] = useState('')
   const [rename, setRename] = useState(false)
+  const [renameError, setRenameError] = useState('')
+  const [savingTitle, setSavingTitle] = useState(false)
+  const titleRequest = useRef(false)
   const [title, setTitle] = useState(meeting.title)
   const player = useRef<PlayerHandle>(null)
   const onPosition = useCallback((value: number) => setPosition(value), [])
@@ -200,6 +219,30 @@ function Detail({
   const seek = (seconds: number) => {
     player.current?.seek(seconds)
     setMobile('transcript')
+  }
+  async function saveTitle() {
+    const next = title.trim()
+    if (!next || titleRequest.current) return
+    const previous = meeting.title
+    titleRequest.current = true
+    setSavingTitle(true)
+    setRenameError('')
+    onUpdate((m) => ({ ...m, title: next }))
+    try {
+      const savedTitle = onRename ? await onRename(next) : next
+      onUpdate((m) => ({ ...m, title: savedTitle }))
+      setRename(false)
+    } catch (cause) {
+      onUpdate((m) => ({ ...m, title: previous }))
+      setRenameError(
+        cause instanceof ApiError
+          ? cause.message
+          : 'Không thể lưu tên cuộc họp. Hãy thử lại.',
+      )
+    } finally {
+      titleRequest.current = false
+      setSavingTitle(false)
+    }
   }
   return (
     <main className="detail-page">
@@ -219,10 +262,7 @@ function Detail({
                 className="rename-form"
                 onSubmit={(e) => {
                   e.preventDefault()
-                  if (title.trim()) {
-                    onUpdate((m) => ({ ...m, title: title.trim() }))
-                    setRename(false)
-                  }
+                  void saveTitle()
                 }}
               >
                 <input
@@ -230,22 +270,36 @@ function Detail({
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   maxLength={200}
+                  disabled={savingTitle}
+                  aria-invalid={!!renameError}
+                  aria-describedby={renameError ? 'rename-error' : undefined}
                   autoFocus
                   required
                   onKeyDown={(e) => {
-                    if (e.key === 'Escape') setRename(false)
+                    if (e.key === 'Escape' && !savingTitle) setRename(false)
                   }}
                 />
-                <button className="icon-button" aria-label="Lưu tên cuộc họp">
+                <button
+                  className="icon-button"
+                  aria-label="Lưu tên cuộc họp"
+                  disabled={savingTitle}
+                >
                   <CheckIcon />
                 </button>
                 <button
                   className="button quiet small"
                   type="button"
+                  disabled={savingTitle}
                   onClick={() => setRename(false)}
                 >
                   Hủy
                 </button>
+                {savingTitle && <span role="status">Đang lưu tên…</span>}
+                {renameError && (
+                  <p id="rename-error" className="form-error" role="alert">
+                    {renameError}
+                  </p>
+                )}
               </form>
             ) : (
               <div className="editable-title">
@@ -255,6 +309,7 @@ function Detail({
                   aria-label="Đổi tên cuộc họp"
                   onClick={() => {
                     setTitle(meeting.title)
+                    setRenameError('')
                     setRename(true)
                   }}
                 >

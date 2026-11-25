@@ -1,5 +1,11 @@
 import { useState } from 'react'
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import {
+  fireEvent,
+  render,
+  screen,
+  within,
+  waitFor,
+} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
@@ -199,4 +205,32 @@ describe('FE-10 segment editing', () => {
     expect(await screen.findByRole('alertdialog')).toHaveTextContent('tải lại')
     expect(selector).toHaveValue('')
   })
+})
+
+it('FE-10: dán 5001 ký tự chỉ gửi đúng 5000 ký tự trong PATCH', async () => {
+  const lengths: number[] = []
+  server.use(
+    http.patch(
+      '*/api/v1/meetings/:meetingId/segments/:segmentId',
+      async ({ request }) => {
+        const body = (await request.json()) as { text: string; version: number }
+        lengths.push(body.text.length)
+        return HttpResponse.json({
+          ...first,
+          text: body.text,
+          is_edited: true,
+          version: body.version + 1,
+        })
+      },
+    ),
+  )
+  render(<Harness />)
+  const { user, field } = await openEditor()
+  await user.clear(field)
+  await user.paste('a'.repeat(5001))
+  await user.click(screen.getByRole('button', { name: 'Lưu thay đổi' }))
+  await waitFor(() => expect(lengths).toEqual([5000]))
+  expect(field).toHaveValue('a'.repeat(5000))
+  expect(field).toHaveAttribute('maxlength', '5000')
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument()
 })

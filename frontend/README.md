@@ -230,3 +230,11 @@ phân trang được giữ khi tải trang mới. E2E API/PostgreSQL thật ki�
 bị xóa hết và trạng thái lọc rỗng, đạt ba lượt với retries=0.
 [Hành vi, cách chạy và giới hạn](../docs/frontend/FE-04.md),
 [gate local và số đo](../docs/evidence/final/frontend-gates-2026-11-23.json).
+
+## Lưu đổi tên và giới hạn transcript — 24/11/2026
+
+Tên cuộc họp thật được lưu qua PATCH có version; lỗi giữ ô sửa và khôi phục
+tên cũ. Bản demo vẫn chỉ lưu trong phiên. Ô sửa transcript giới hạn 5000 ký tự.
+Khi tải trang danh sách mới, dòng cũ được đánh dấu đang tải và không thể mở nhầm.
+Chi tiết: [FE-02](../docs/frontend/FE-02.md), [FE-10](../docs/frontend/FE-10.md),
+[FE-04](../docs/frontend/FE-04.md), [E2E](../docs/frontend/FE-17.md).

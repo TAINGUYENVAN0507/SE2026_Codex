@@ -1,0 +1,12 @@
+$ node node_modules/vitest/vitest.mjs run src/features/meetings/SegmentEditing.test.tsx src/features/meetings/BusyEdits.test.tsx src/features/meetings/TranscriptApi.test.tsx
+
+ RUN  v5.0.5 D:/Project/CNPM/SE2026_Codex/frontend
+
+
+ Test Files  3 passed (3)
+      Tests  16 passed (16)
+   Start at  19:24:36
+   Duration  4.21s (environment 44%, tests 28%, import 14%, setup 9%, transform 4%)
+
+
+EXIT=0

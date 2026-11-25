@@ -1,0 +1,53 @@
+{
+  "head": "7754883459b6e35390a11cb19869665492ff6654",
+  "runs": [
+    {
+      "head": "7754883459b6e35390a11cb19869665492ff6654",
+      "command": [
+        "node",
+        "node_modules/@playwright/test/cli.js",
+        "test",
+        "--config",
+        "playwright.evidence.config.ts",
+        "--grep",
+        "real API returns from a deleted empty page",
+        "--retries=0"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 30.02,
+      "finished_at_utc": "2026-11-24T12:29:00.764276+00:00",
+      "database": "meeting_day14_r1_e2e",
+      "result": {
+        "created": 11,
+        "queued": 11,
+        "page2Items": 1,
+        "emptyPageTotal": 10,
+        "returnedPage": 1,
+        "visibleRows": 10,
+        "statusEmpty": true,
+        "cleanedMeetings": 11,
+        "cleanedUser": true,
+        "retries": 0,
+        "syntheticOnly": true,
+        "apiInterception": false,
+        "pageErrors": []
+      }
+    }
+  ],
+  "source_sha256": {
+    "frontend/e2e/evidence/empty-page.spec.ts": "2c67f3464fa56a758049fbd7c84416683eca0c2c44dd908100d77e3d2f5603fd",
+    "frontend/playwright.evidence.config.ts": "7c53edc953ca5eb6b1cbf84fb8f8a2a1db969c7536cf2510487b5040864d9309",
+    "frontend/src/pages/MeetingListPage.tsx": "6003582e974e9c61653f3deac2305f72639780111269a8189e0b985ae4c01177",
+    "frontend/src/features/meetings/useMeetingsQuery.ts": "aeaa421cfa480e059d965d7705ff46bfdf865274918c816d872976da4ca4e5f3",
+    "backend/app/api/v1/meetings.py": "da2d832518c401c465ea8b96501dc2b61afc7382a4c19d14109634023be1c0a2"
+  },
+  "equivalent_tree_commit": "60cefea24367649f74b0a9964f40da12f2e347fd",
+  "tree_sha": "cae70c59f3b29fc2e888a0c3cff26ca408118077",
+  "note": "HEAD trong log là trước amend metadata của commit local; git tree giống hệt equivalent_tree_commit. Không sửa source để làm smoke xanh.",
+  "cleanup": {
+    "container_removed": true,
+    "label": "20261124-day14-smoke-member-a",
+    "finished_at_utc": "2026-11-24T12:29:01.575922+00:00"
+  }
+}

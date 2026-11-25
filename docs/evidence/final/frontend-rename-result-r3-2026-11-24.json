@@ -1,0 +1,14 @@
+{
+  "beforeVersion": 1,
+  "afterVersion": 2,
+  "reloadedTitle": true,
+  "apiTitle": true,
+  "searchTotal": 1,
+  "searchCorrectId": true,
+  "cleanedMeeting": true,
+  "cleanedUser": true,
+  "retries": 0,
+  "syntheticOnly": true,
+  "apiInterception": false,
+  "pageErrors": []
+}

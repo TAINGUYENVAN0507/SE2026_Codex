@@ -1,5 +1,6 @@
 import { LoadingSkeleton } from '../../components/LoadingSkeleton'
 import { Dialog } from '../../components/Dialog'
+import { TRANSCRIPT_TEXT_MAX_LENGTH } from './limits'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { MagnifyingGlassIcon } from '@phosphor-icons/react/dist/csr/MagnifyingGlass'
 import { PencilSimpleIcon } from '@phosphor-icons/react/dist/csr/PencilSimple'
@@ -97,11 +98,11 @@ export function Transcript({
   }, [active, follow, editing])
   async function save(id: string) {
     const text = draft.trim()
-    if (text.length < 1 || text.length > 5000) {
+    if (text.length < 1 || text.length > TRANSCRIPT_TEXT_MAX_LENGTH) {
       setError(
         text.length < 1
           ? 'Nội dung không được để trống.'
-          : 'Nội dung không được quá 5000 ký tự.',
+          : `Nội dung không được quá ${TRANSCRIPT_TEXT_MAX_LENGTH} ký tự.`,
       )
       return
     }
@@ -485,6 +486,7 @@ export function Transcript({
                     <textarea
                       autoFocus
                       aria-label="Chỉnh sửa transcript"
+                      maxLength={TRANSCRIPT_TEXT_MAX_LENGTH}
                       value={draft}
                       onChange={(e) => setDraft(e.target.value)}
                       onKeyDown={(e) => {

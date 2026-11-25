@@ -1,0 +1,84 @@
+$ node node_modules/vitest/vitest.mjs run src/features/meetings/SegmentEditing.test.tsx -t dán 5001
+
+ RUN  v5.0.5 D:/Project/CNPM/SE2026_Codex/frontend
+
+ ❯ src/features/meetings/SegmentEditing.test.tsx (7 tests | 1 failed | 6 skipped) 1290ms
+   × FE-10: dán 5001 ký tự chỉ gửi đúng 5000 ký tự trong PATCH 1286ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/features/meetings/SegmentEditing.test.tsx > FE-10: dán 5001 ký tự chỉ gửi đúng 5000 ký tự trong PATCH
+AssertionError: expected [] to deeply equal [ 5000 ]
+
+Ignored nodes: comments, script, style
+[36m<html>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<section[39m
+        [33maria-label[39m=[32m"Transcript"[39m
+        [33mclass[39m=[32m"transcript-panel"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"transcript-toolbar"[39m
+        [36m>[39m
+          [36m<label[39m
+            [33mclass[39m=[32m"search-input"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33mfill[39m=[32m"currentColor"[39m
+              [33mheight[39m=[32m"1em"[39m
+              [33mviewBox[39m=[32m"0 0 256 256"[39m
+              [33mwidth[39m=[32m"1em"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [36m<input[39m
+              [33maria-label[39m=[32m"Tìm trong transcript"[39m
+              [33mplaceholder[39m=[32m"Tìm trong transcript…"[39m
+              [33mvalue[39m=[32m""[39m
+            [36m/>[39m
+          [36m</label>[39m
+          [36m<label[39m
+            [33mclass[39m=[32m"follow-control"[39m
+          [36m>[39m
+            [36m<input[39m
+              [33mtype[39m=[32m"checkbox"[39m
+            [36m/>[39m
+            [0mTheo đoạn đang phát[0m
+          [36m</label>[39m
+          [36m<label[39m
+            ...
+
+- Expected
++ Received
+
+- [
+-   5000,
+- ]
++ []
+
+ ❯ src/features/meetings/SegmentEditing.test.tsx:217:39
+    215|   await user.paste('a'.repeat(5001))
+    216|   await user.click(screen.getByRole('button', { name: 'Lưu thay đổi' }…
+    217|   await waitFor(() => expect(lengths).toEqual([5000]))
+       |                                       ^
+    218|   expect(field).toHaveValue('a'.repeat(5000))
+    219|   expect(field).toHaveAttribute('maxlength', '5000')
+ ❯ runWithExpensiveErrorDiagnosticsDisabled node_modules/@testing-library/dom/dist/config.js:47:12
+ ❯ checkCallback node_modules/@testing-library/dom/dist/wait-for.js:124:77
+ ❯ Timeout.checkRealTimersCallback node_modules/@testing-library/dom/dist/wait-for.js:118:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 6 skipped (7)
+   Start at  19:24:10
+   Duration  3.76s (environment 45%, tests 36%, import 10%, setup 6%, transform 3%)
+
+
+EXIT=1
