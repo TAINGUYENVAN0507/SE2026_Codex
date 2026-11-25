@@ -1,0 +1,228 @@
+$ node node_modules/vitest/vitest.mjs run src/features/meetings/RemoteSummaryLimits.test.tsx src/features/meetings/RemoteTasks.test.tsx -t vượt giới hạn
+
+ RUN  v5.0.5 D:/Project/CNPM/SE2026_Codex/frontend
+
+ ❯ src/features/meetings/RemoteSummaryLimits.test.tsx (3 tests | 1 failed | 2 skipped) 1304ms
+   × FE-12: dán tổng quan vượt giới hạn chỉ gửi đúng 5000 ký tự 1300ms
+ ❯ src/features/meetings/RemoteTasks.test.tsx (7 tests | 2 failed | 5 skipped) 2449ms
+   × FE-13: dán vượt giới hạn khi Thêm chỉ gửi nội dung 1000 và người phụ trách 100 ký tự 1282ms
+   × FE-13: dán vượt giới hạn khi Sửa chỉ gửi nội dung 1000 và người phụ trách 100 ký tự 1163ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/features/meetings/RemoteSummaryLimits.test.tsx > FE-12: dán tổng quan vượt giới hạn chỉ gửi đúng 5000 ký tự
+AssertionError: expected [] to deeply equal [ 5000 ]
+
+Ignored nodes: comments, script, style
+[36m<html>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"notes-status"[39m
+      [36m>[39m
+        [36m<span>[39m
+          [0mBản tóm tắt · [0m
+          [0mĐã sửa[0m
+        [36m</span>[39m
+        [36m<span>[39m
+          [36m<button>[39m
+            [0mHủy[0m
+          [36m</button>[39m
+          [0m [0m
+          [36m<button>[39m
+            [0mLưu[0m
+          [36m</button>[39m
+        [36m</span>[39m
+      [36m</div>[39m
+      [36m<p[39m
+        [33mrole[39m=[32m"alert"[39m
+      [36m>[39m
+        [0mTổng quan và mỗi ý cần có nội dung hợp lệ.[0m
+      [36m</p>[39m
+      [36m<section[39m
+        [33mclass[39m=[32m"note-section"[39m
+      [36m>[39m
+        [36m<h2>[39m
+          [0mTổng quan[0m
+        [36m</h2>[39m
+        [36m<textarea[39m
+          [33maria-label[39m=[32m"Chỉnh sửa tổng quan"[39m
+          [33mclass[39m=[32m"summary-editor"[39m
+        [36m>[39m
+          [0mxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx...
+
+- Expected
++ Received
+
+- [
+-   5000,
+- ]
++ []
+
+ ❯ src/features/meetings/RemoteSummaryLimits.test.tsx:110:39
+    108|   await user.paste('x'.repeat(5001))
+    109|   await user.click(screen.getByRole('button', { name: 'Lưu', exact: tr…
+    110|   await waitFor(() => expect(lengths).toEqual([5000]))
+       |                                       ^
+    111|   expect(field).toHaveAttribute('maxlength', '5000')
+    112|   expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+ ❯ runWithExpensiveErrorDiagnosticsDisabled node_modules/@testing-library/dom/dist/config.js:47:12
+ ❯ checkCallback node_modules/@testing-library/dom/dist/wait-for.js:124:77
+ ❯ Timeout.checkRealTimersCallback node_modules/@testing-library/dom/dist/wait-for.js:118:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/features/meetings/RemoteTasks.test.tsx > FE-13: dán vượt giới hạn khi Thêm chỉ gửi nội dung 1000 và người phụ trách 100 ký tự
+AssertionError: expected [] to deeply equal [ [ 1000, 100 ] ]
+
+Ignored nodes: comments, script, style
+[36m<html>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"notes-status"[39m
+      [36m>[39m
+        [0m2[0m
+        [0m việc cần làm ·[0m
+        [0m [0m
+        [0m0[0m
+        [0m hoàn thành[0m
+      [36m</div>[39m
+      [36m<p[39m
+        [33mclass[39m=[32m"form-error"[39m
+        [33mrole[39m=[32m"alert"[39m
+      [36m>[39m
+        [0mMô tả công việc cần có từ 1 đến 1000 ký tự.[0m
+      [36m</p>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"tasks"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"task "[39m
+        [36m>[39m
+          [36m<input[39m
+            [33maria-label[39m=[32m"Hoàn thành: Hoàn thiện API upload audio và viết test idempotency"[39m
+            [33mtype[39m=[32m"checkbox"[39m
+          [36m/>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"task-body"[39m
+          [36m>[39m
+            [36m<strong>[39m
+              [0mHoàn thiện API upload audio và viết test idempotency[0m
+            [36m</strong>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"task-meta"[39m
+            [36m>[39m
+              [36m<span>[39m
+                [0mAnh Minh[0m
+              [36m</span>[39m
+              [36m<span>[39m
+                [0m16/10/2026[0m
+              [36m</span>[39m
+              [36m<span>[39m
+                [0mGốc: [0m
+                [0mthứ Sáu tuần này[0m
+              [36m</span>[39m
+              [36m<span>[39m
+                [0...
+
+- Expected
++ Received
+
+- [
+-   [
+-     1000,
+-     100,
+-   ],
+- ]
++ []
+
+ ❯ src/features/meetings/RemoteTasks.test.tsx:186:39
+    184|   await user.paste('y'.repeat(101))
+    185|   await user.click(screen.getByRole('button', { name: prefix === 'Thêm…
+    186|   await waitFor(() => expect(lengths).toEqual([[1000, 100]]))
+       |                                       ^
+    187|   expect(description).toHaveAttribute('maxlength', '1000')
+    188|   expect(assignee).toHaveAttribute('maxlength', '100')
+ ❯ runWithExpensiveErrorDiagnosticsDisabled node_modules/@testing-library/dom/dist/config.js:47:12
+ ❯ checkCallback node_modules/@testing-library/dom/dist/wait-for.js:124:77
+ ❯ Timeout.checkRealTimersCallback node_modules/@testing-library/dom/dist/wait-for.js:118:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/features/meetings/RemoteTasks.test.tsx > FE-13: dán vượt giới hạn khi Sửa chỉ gửi nội dung 1000 và người phụ trách 100 ký tự
+AssertionError: expected [] to deeply equal [ [ 1000, 100 ] ]
+
+Ignored nodes: comments, script, style
+[36m<html>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"notes-status"[39m
+      [36m>[39m
+        [0m2[0m
+        [0m việc cần làm ·[0m
+        [0m [0m
+        [0m0[0m
+        [0m hoàn thành[0m
+      [36m</div>[39m
+      [36m<p[39m
+        [33mclass[39m=[32m"form-error"[39m
+        [33mrole[39m=[32m"alert"[39m
+      [36m>[39m
+        [0mMô tả công việc cần có từ 1 đến 1000 ký tự.[0m
+      [36m</p>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"tasks"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"task "[39m
+        [36m>[39m
+          [36m<input[39m
+            [33maria-label[39m=[32m"Hoàn thành: Hoàn thiện API upload audio và viết test idempotency"[39m
+            [33mtype[39m=[32m"checkbox"[39m
+          [36m/>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"task-body"[39m
+          [36m>[39m
+            [36m<form>[39m
+              [36m<input[39m
+                [33maria-label[39m=[32m"Sửa nội dung"[39m
+                [33mplaceholder[39m=[32m"Mô tả công việc"[39m
+                [33mvalue[39m=[32m"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx...
+
+- Expected
++ Received
+
+- [
+-   [
+-     1000,
+-     100,
+-   ],
+- ]
++ []
+
+ ❯ src/features/meetings/RemoteTasks.test.tsx:186:39
+    184|   await user.paste('y'.repeat(101))
+    185|   await user.click(screen.getByRole('button', { name: prefix === 'Thêm…
+    186|   await waitFor(() => expect(lengths).toEqual([[1000, 100]]))
+       |                                       ^
+    187|   expect(description).toHaveAttribute('maxlength', '1000')
+    188|   expect(assignee).toHaveAttribute('maxlength', '100')
+ ❯ runWithExpensiveErrorDiagnosticsDisabled node_modules/@testing-library/dom/dist/config.js:47:12
+ ❯ checkCallback node_modules/@testing-library/dom/dist/wait-for.js:124:77
+ ❯ Timeout.checkRealTimersCallback node_modules/@testing-library/dom/dist/wait-for.js:118:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  2 failed (2)
+      Tests  3 failed | 7 skipped (10)
+   Start at  16:27:47
+   Duration  4.17s (tests 55%, environment 29%, import 9%, setup 5%, transform 2%)
+
+
+EXIT=1

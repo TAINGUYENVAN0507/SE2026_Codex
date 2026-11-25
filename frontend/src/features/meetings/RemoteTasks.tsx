@@ -10,6 +10,10 @@ import {
 import { ApiError } from '../../api/errors'
 import { formatDate, type Meeting } from './model'
 import { Dialog } from '../../components/Dialog'
+import {
+  TASK_DESCRIPTION_MAX_LENGTH,
+  TASK_ASSIGNEE_NAME_MAX_LENGTH,
+} from './limits'
 import { EvidenceLinks } from './EvidenceLinks'
 
 interface Draft {
@@ -50,8 +54,10 @@ export function RemoteTasks({
 
   function validate(): boolean {
     const length = draft.description.trim().length
-    if (length < 1 || length > 1000) {
-      setError('Mô tả công việc cần có từ 1 đến 1000 ký tự.')
+    if (length < 1 || length > TASK_DESCRIPTION_MAX_LENGTH) {
+      setError(
+        `Mô tả công việc cần có từ 1 đến ${TASK_DESCRIPTION_MAX_LENGTH} ký tự.`,
+      )
       return false
     }
     return true
@@ -162,6 +168,7 @@ export function RemoteTasks({
       <>
         <input
           aria-label={`${prefix} nội dung`}
+          maxLength={TASK_DESCRIPTION_MAX_LENGTH}
           placeholder="Mô tả công việc"
           value={draft.description}
           onChange={(event) =>
@@ -191,6 +198,7 @@ export function RemoteTasks({
         </select>
         <input
           aria-label={`${prefix} người phụ trách`}
+          maxLength={TASK_ASSIGNEE_NAME_MAX_LENGTH}
           placeholder="Chưa giao"
           value={draft.assigneeName}
           onChange={(event) =>

@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
@@ -86,3 +86,38 @@ it.each([
     ).toHaveLength(50)
   },
 )
+
+it('FE-12: dán tổng quan vượt giới hạn chỉ gửi đúng 5000 ký tự', async () => {
+  const lengths: number[] = []
+  server.use(
+    http.get('*/api/v1/meetings/:id/summary', () => HttpResponse.json(ready)),
+    http.put('*/api/v1/meetings/:id/summary', async ({ request }) => {
+      const body = (await request.json()) as {
+        content: typeof ready.content
+        version: number
+      }
+      lengths.push(body.content.overview.length)
+      return body.content.overview.length > 5000
+        ? HttpResponse.json(
+            { error: { code: 'VALIDATION_ERROR', message: 'Quá dài' } },
+            { status: 422 },
+          )
+        : HttpResponse.json({
+            ...ready,
+            content: body.content,
+            version: body.version + 1,
+            is_edited: true,
+          })
+    }),
+  )
+  const user = userEvent.setup()
+  renderSummary()
+  await user.click(await screen.findByRole('button', { name: 'Chỉnh sửa' }))
+  const field = screen.getByRole('textbox', { name: 'Chỉnh sửa tổng quan' })
+  await user.clear(field)
+  await user.paste('x'.repeat(5001))
+  await user.click(screen.getByRole('button', { name: 'Lưu' }))
+  await waitFor(() => expect(lengths).toEqual([5000]))
+  expect(field).toHaveAttribute('maxlength', '5000')
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+})

@@ -11,7 +11,7 @@ import type { Meeting } from './model'
 import { EvidenceLinks } from './EvidenceLinks'
 import { LoadingSkeleton } from '../../components/LoadingSkeleton'
 import { Dialog } from '../../components/Dialog'
-import { SUMMARY_ITEMS_MAX_COUNT } from './limits'
+import { SUMMARY_ITEMS_MAX_COUNT, SUMMARY_OVERVIEW_MAX_LENGTH } from './limits'
 
 type Content = NonNullable<SummaryData['content']>
 
@@ -62,7 +62,7 @@ export function RemoteSummary({
     }
     if (
       !content.overview ||
-      content.overview.length > 5000 ||
+      content.overview.length > SUMMARY_OVERVIEW_MAX_LENGTH ||
       [...(content.key_points ?? []), ...(content.decisions ?? [])].some(
         (point) => !point.text,
       )
@@ -204,6 +204,7 @@ export function RemoteSummary({
         {draft ? (
           <textarea
             aria-label="Chỉnh sửa tổng quan"
+            maxLength={SUMMARY_OVERVIEW_MAX_LENGTH}
             className="summary-editor"
             value={content.overview}
             onChange={(event) =>
