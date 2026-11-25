@@ -1,0 +1,304 @@
+{
+  "assignment_date": "2026-11-25",
+  "executed_date_local": "2026-11-25",
+  "timezone": "Asia/Ho_Chi_Minh",
+  "recorded_at_utc": "2026-11-25T09:47:19.639755+00:00",
+  "implementation_head": "8c91c6ded8abe28e4b593572a96e6f967b4b11ce",
+  "checks": [
+    {
+      "label": "meeting-date-lint-clean",
+      "head": "ac2835d4a83431937713fe8683c9216816462464",
+      "command": [
+        "npm.cmd",
+        "run",
+        "lint"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 9.14,
+      "finished_at_utc": "2026-11-25T09:42:47.251617+00:00"
+    },
+    {
+      "label": "meeting-date-types",
+      "head": "ac2835d4a83431937713fe8683c9216816462464",
+      "command": [
+        "npm.cmd",
+        "run",
+        "typecheck"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 12.1,
+      "finished_at_utc": "2026-11-25T09:42:02.137129+00:00"
+    },
+    {
+      "label": "final-tests-coverage",
+      "head": "ac2835d4a83431937713fe8683c9216816462464",
+      "command": [
+        "npm.cmd",
+        "test",
+        "--",
+        "--coverage"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 93.33,
+      "finished_at_utc": "2026-11-25T09:44:36.765529+00:00"
+    },
+    {
+      "label": "final-build",
+      "head": "ac2835d4a83431937713fe8683c9216816462464",
+      "command": [
+        "npm.cmd",
+        "run",
+        "build"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 14.8,
+      "finished_at_utc": "2026-11-25T09:43:18.437561+00:00"
+    },
+    {
+      "label": "final-format-pass",
+      "head": "ac2835d4a83431937713fe8683c9216816462464",
+      "command": [
+        "npm.cmd",
+        "run",
+        "format:check"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 3.02,
+      "finished_at_utc": "2026-11-25T09:45:13.044829+00:00"
+    },
+    {
+      "label": "final-api-drift",
+      "head": "8c91c6ded8abe28e4b593572a96e6f967b4b11ce",
+      "command": [
+        "npm.cmd",
+        "run",
+        "gen:api"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 7.98,
+      "finished_at_utc": "2026-11-25T09:46:01.448113+00:00"
+    },
+    {
+      "label": "final-format-docs",
+      "head": "8c91c6ded8abe28e4b593572a96e6f967b4b11ce",
+      "command": [
+        "npm.cmd",
+        "run",
+        "format:check"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 3.03,
+      "finished_at_utc": "2026-11-25T09:47:23.269112+00:00"
+    }
+  ],
+  "vitest": {
+    "files": 57,
+    "passed": 340,
+    "failed": 0,
+    "skipped": 0
+  },
+  "coverage": {
+    "lines": {
+      "total": 1457,
+      "covered": 1284,
+      "skipped": 0,
+      "pct": 88.12
+    },
+    "statements": {
+      "total": 1624,
+      "covered": 1394,
+      "skipped": 0,
+      "pct": 85.83
+    },
+    "functions": {
+      "total": 511,
+      "covered": 425,
+      "skipped": 0,
+      "pct": 83.17
+    },
+    "branches": {
+      "total": 1502,
+      "covered": 1247,
+      "skipped": 0,
+      "pct": 83.02
+    },
+    "branchesTrue": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 100
+    }
+  },
+  "coverage_floors": {
+    "lines": 84.53,
+    "branches": 79.11
+  },
+  "api_drift": false,
+  "e2e": {
+    "passed": 3,
+    "failed": 0,
+    "skipped": 0,
+    "retries": 0,
+    "backend": "real API + PostgreSQL 16",
+    "pipeline": "fake",
+    "browser": "Chromium desktop",
+    "container_removed": true
+  },
+  "notes": [
+    "Các lệnh lint/type/test/build chạy trên working tree có sửa lỗi ngày họp trước khi commit 8c91c6d; source snapshot cuối đi kèm.",
+    "Format lần đầu thất bại ở E2E, chỉ sửa cách xuống dòng rồi kiểm lại đạt; không thay logic test, không chạy lại model.",
+    "E2E JSON ghi SHA-256 đúng nguồn đã chạy ba lượt, trước lần định dạng cuối. Không dùng fake pipeline để kết luận chất lượng AI.",
+    "Chưa push/mở PR đợt 25/11; chưa có CI GitHub cho đợt này."
+  ],
+  "initial_format_check": {
+    "head": "ac2835d4a83431937713fe8683c9216816462464",
+    "command": [
+      "npm.cmd",
+      "run",
+      "format:check"
+    ],
+    "cwd": "frontend",
+    "exit_code": 1,
+    "duration_sec": 12.16,
+    "finished_at_utc": "2026-11-25T09:44:23.070313+00:00"
+  },
+  "source_sha256": {
+    "frontend/src/App.test.tsx": "f6289046e2a13e333a35e3aaf53fa0807ea434fd59575c20b40e833a7bc2dc3f",
+    "frontend/src/App.tsx": "67f05c2bb94180a0d11ccd359f2b25e82aa02b35d78721243602dae9262a9131",
+    "frontend/src/main.tsx": "9fb2a288434d6c4c98e1ab6c294d71ca08109fc86cc26679db3e888e1f5f8b1f",
+    "frontend/src/api/capabilities.ts": "6e262c48035aea9e5bb13c72333bfc2a7b2adede8925c9c1ef724d31c6ca21d8",
+    "frontend/src/api/client.test.ts": "73531325d18fd103716e56b70cfac3e3ea97e05f06f619006077641beab3d46c",
+    "frontend/src/api/client.ts": "2806054e63ac69e54f23e29220dcf7fd1754dfbc265fcd3bc46ce427268b57c9",
+    "frontend/src/api/errorCoverage.test.ts": "c79d9e2adc2085f5433e42b368c4330e1d635766f177eec84c43a2b94dc8d6c7",
+    "frontend/src/api/errors.test.ts": "b847c9382e74a1b5357b53d2a2d26c001e37b96d651b1a8107dee56551824507",
+    "frontend/src/api/errors.ts": "d3e5871bef0bc6d2f90a47d9eb5f7a1126c62ff3216efef8eea95a2ac4dafcdb",
+    "frontend/src/api/networkEvents.ts": "006305dc01b96aed4e3e75065fca42b3b1f244d05ccf5576d82145a6a12886b8",
+    "frontend/src/api/proxyConfig.test.ts": "b09f17feedc0c65ba5653b38ff7eccd8f726b249c9bcaf9214f42c03c0bc8290",
+    "frontend/src/api/proxyConfig.ts": "e2cefb3ccf79b91646e0f837adc7b6bf37cecc96e9d0a1ea9a7ad1f8e5e43104",
+    "frontend/src/api/retryAfter.test.ts": "d3b7c49d170a62fd30a2504a9559c8c62e0dc52cafb8412169adb48144478f2c",
+    "frontend/src/api/retryAfter.ts": "a6a94798a71accc7b9f370ec113cce15d3ff6f01e9a8f20b2c06d3a3277b95e7",
+    "frontend/src/api/schema.d.ts": "42347702b767152eb01f71ad6290d141fdb3657f41fef8126d8759f319f7cba2",
+    "frontend/src/api/sessionEvents.ts": "0b6e1b8f8cc53fa04b5b88d93cdf8bf1780d78c609d8b9bc094d4141b5b3d7b2",
+    "frontend/src/app/AppProviders.tsx": "96f9dc5c2e85f2192865cfa38800e0acddebafd2287b4c6447c2082ba5f79e04",
+    "frontend/src/app/QueryRetry.test.tsx": "5073f0d7988355d27a539805b0b9417c30a51e92af0ea18ed24900a2e9db8a8c",
+    "frontend/src/app/RequireAuth.tsx": "0f4217ced7b7f063665b3dd5ffd34af0e6d2ca0f25b2877bbdd4a630ab7e63be",
+    "frontend/src/app/safeNext.test.ts": "79045b0daea5bc04d4b1ed77b59020c19d418f086757a1793d14563797339983",
+    "frontend/src/app/safeNext.ts": "7a1ccdf160a7daa0bdd0edec342f49b9845e498b5f3370ce86e03bc672f45d15",
+    "frontend/src/app/scaffold.test.tsx": "9fc3686d71bb77fa88f76ed65bb1d92eefef0326063db5515871dccb1ae792cb",
+    "frontend/src/components/AppShell.tsx": "efebf240a4bd99640b93e84985627b5db0b15b41acead4b01d9311c3d7fe1385",
+    "frontend/src/components/Brand.tsx": "255c924cde1df657442b3d96536d3af10360a3aab33a2b1e460a009767e162b7",
+    "frontend/src/components/ConnectivityNotice.tsx": "eafed1b088672325017cdc531f416e5545dc588cf5aff5e2a0afc84bb38db4b8",
+    "frontend/src/components/Dialog.test.tsx": "f3a05f31aa0df39172740c0b0309ffcc74de9f78aa59e6eb9d1647d28e434e9b",
+    "frontend/src/components/Dialog.tsx": "761764518f2b5e6824427468895f19fdaed78e41141f34b28c7c79177a14dea5",
+    "frontend/src/components/LoadingSkeleton.test.tsx": "847e9347986520ef5a2a8b50bf860e9f2eaf29eb889ee1977c29605d4f83c374",
+    "frontend/src/components/LoadingSkeleton.tsx": "fba7912e0a28dbfec1d044669d04f47d2f70fe88419147393acb74d5f10f6bf7",
+    "frontend/src/components/PageIntro.tsx": "99888f960ac8091c83e517f3a5628b6436fc5556387fc5f11b390acd13665c13",
+    "frontend/src/components/Resilience.test.tsx": "35bb18f657178030a21196997a5251f578288d4b08ca2a45be21e349a2888518",
+    "frontend/src/components/RouteErrorBoundary.tsx": "84a7e21cc10d0b299e71d6687c3bd46d60dcde1581124a03bcdb0b71e97b9a8c",
+    "frontend/src/components/Topbar.tsx": "9169a0d5ec9a3019bdacacdd179101f1aebb6b989616815b015323263ef656f2",
+    "frontend/src/features/audio/AudioPlayer.tsx": "369b8836fdc1a4363cb2f65915a1cc74f2e73e25bde828bc5741c55a70f2da08",
+    "frontend/src/features/audio/RemoteAudioPlayer.test.tsx": "b98a9a6ea3e86e212111e493afe3f6570983f0297236d39822ce763259f9528d",
+    "frontend/src/features/audio/RemoteAudioPlayer.tsx": "277554cd2c12dc25a5e8cc102d0939f9c2555e79afb456f820e768d001bc7637",
+    "frontend/src/features/audio/uploadBusyTimer.test.ts": "dab8442401d8a05d848219ee5ffb4ba10fe662555c7cfcac9cf79a9acdb31915",
+    "frontend/src/features/audio/uploadMeeting.test.ts": "0ce39b8ce66517a0bd7177a503e3ca350b12c0b01785d430d91b33e8aac69eff",
+    "frontend/src/features/audio/uploadMeeting.ts": "da17e81e7d8b7875e31c540f9c919f427bb58f19daf2da427a53a6fd78cf3afb",
+    "frontend/src/features/audio/useIdempotencyKey.test.ts": "1054544474a5dbb898e9c17cf6ad4ab4e7db632989c0576aeb9b9d03878aacfc",
+    "frontend/src/features/audio/useIdempotencyKey.ts": "144dac264039dbb3873175342829ccc43635bd49287ad1329b8b30d9792eb776",
+    "frontend/src/features/audio/useObjectUrl.ts": "f46317b60886bc0e406f4e02dacb9bc156279d464aaed0dd0ade6fefd3b95fa0",
+    "frontend/src/features/audio/useRecorder.test.tsx": "c8f00536e6aea448359c4b320d3c1b8fb89d91d22b66a15f8ff4531919c572bb",
+    "frontend/src/features/audio/useRecorder.ts": "61b2d4f5484a68ba21c0068e15fbfded9698485de3d494d25fd7ad31bbc83626",
+    "frontend/src/features/audio/validation.test.ts": "aa71b8feabd682036c647cc8336f1231775172643c24d7da32b5abe05ca4f504",
+    "frontend/src/features/audio/validation.ts": "37a34606e1165ba46f1b090a6759adf0fb592d65c13c38db158628ee4d87a43e",
+    "frontend/src/features/auth/DeleteAccountSection.test.tsx": "b902d7d8b45f22ab8a1568f92828a53ec4afc77e73db94d17d9b940cdcddb469",
+    "frontend/src/features/auth/DeleteAccountSection.tsx": "f26dd90c6c1964bfda5f1d4acffa6179717bf3a9ce5f70bf23e5c79e48d5130b",
+    "frontend/src/features/auth/Session.test.tsx": "219e91e419fcf548e54799b32b81e16f7cb3f67c51aabbfa201a05d3e10bb96f",
+    "frontend/src/features/auth/SessionEvents.tsx": "59e81e115ce7051ec801cfaad83fef1147622fadcf778408685eb17629d18d69",
+    "frontend/src/features/auth/SessionExpiry.test.tsx": "f88358dc597dc841b55c9ea0fa9cdcfa4897477eafc15fea67f07e5bd8da70d4",
+    "frontend/src/features/auth/useEndSession.ts": "efed5dcb4e2ce06743f1afd91c9883f22e1b807b122b4a6e6dea5a8a737faca3",
+    "frontend/src/features/auth/useMe.ts": "8e6e765c304930df3bd04697563bb9fb8889d2cad542875c9a284d9ab55df68c",
+    "frontend/src/features/export/download.ts": "57397e1e01ffb664c086bd17012a16de7c0b0f53a717b6a886cb385e17b95240",
+    "frontend/src/features/export/ExportMenu.test.tsx": "bc400e570a9abb6faabfeae7ebfe9c6dec0c0561c893d2d45f200da9bd9742d8",
+    "frontend/src/features/export/ExportMenu.tsx": "3c2a756efa276583ba45bc54dcd37831061d2e9ef1d4090b315119375f446094",
+    "frontend/src/features/jobs/AbortJob.test.ts": "3ce701f0d7ac8793659ff0d1650625a2e3ab0c3273b203446633f9111c605f7d",
+    "frontend/src/features/jobs/BusyPolling.test.tsx": "6d9bfee064de8a083c025be2064b5729db4bdbd62b7188071fdf9ead834f6308",
+    "frontend/src/features/jobs/JobStatusCard.test.tsx": "ecf546c420fddbf26db7b4a37b70cb665c03792df8dbb3c5f2797fb0de1ee004",
+    "frontend/src/features/jobs/JobStatusCard.tsx": "1b0dc4b181e4cff55896d2970b4b68d70daf4f66bd6769ba17ce62d4e893c660",
+    "frontend/src/features/jobs/JobTimes.test.tsx": "2fe28d7886ec1f7fefeb1bcd23491484c5ed8c225f5cc71c4f711f595d38bef6",
+    "frontend/src/features/jobs/JobTimes.tsx": "c68741de566ad232acf60305976b287c882e73aaa69a4460be06a8961783d36c",
+    "frontend/src/features/jobs/model.ts": "d184f7111a67320090baf603cc8168e23fc1e75fd96474c11172ae42be799ad0",
+    "frontend/src/features/jobs/useJobQuery.ts": "c4c04b15b2874eae690d42b5b5d7f2b3a43fa3589daa070f0e7a6715812e27cc",
+    "frontend/src/features/meetings/apiModel.ts": "62700321172d0d17da7d728f532af7fd6df7a095cfbc3adb8439b053a1583ac5",
+    "frontend/src/features/meetings/BusyEdits.test.tsx": "ef4cbfc3eaed0d6ee80c4e0ce0fcfc0e9687bcbe3384413a15df10985b140da1",
+    "frontend/src/features/meetings/DeleteMeetingButton.test.tsx": "8adb0e01e320df235d4a308e16d0a1ee7f03de18fd215bb5a6beae16f242fa34",
+    "frontend/src/features/meetings/DeleteMeetingButton.tsx": "a07e551e48124b0211ae0e3486fe2d8f1a26d12331488d68f8bf96ddd1f14798",
+    "frontend/src/features/meetings/DemoStore.tsx": "b1d928bb2dc1dd257ba72eb11e85b8e5364f7275ad0fa44de8513c9e0dd001e3",
+    "frontend/src/features/meetings/EvidenceLinks.test.tsx": "8174df49d41bf1c724de5732347b75b2887d07846a10de6f42ed8c290632dc30",
+    "frontend/src/features/meetings/EvidenceLinks.tsx": "b14088ecddb883397eb04bbcad0cf4a618cd18ba95a46ffe4763d419344e5005",
+    "frontend/src/features/meetings/HistoryPanel.test.tsx": "31af6a253ca96423272300f47093dd6187156ce236c61e45f239964952b7ef05",
+    "frontend/src/features/meetings/HistoryPanel.tsx": "b958fedea33e7b3e275191646d07b3143fbe2536fd00b7fe356c3f605d5f173b",
+    "frontend/src/features/meetings/limits.ts": "8b3d74c6a3db916cb0f9b236668ac7c9abb8e7478e7c43dc98cf8ac1323877d6",
+    "frontend/src/features/meetings/MeetingListPage.search.test.tsx": "a8de7b574f4052d9574091404a97943ec12c15e4c09d4f6694671d374631f91e",
+    "frontend/src/features/meetings/MeetingListPage.test.tsx": "d622691c649b109987307f801bb48a9a68a91a11cc27db15e7869902e2a1513a",
+    "frontend/src/features/meetings/MeetingRename.test.tsx": "1c1a5c663134bb8e42b92b2c9e547c25366943fcbb8532c4c9c122196309cdb8",
+    "frontend/src/features/meetings/model.test.ts": "cc5297ca89c49f419c2819121db5ea30cb96949f42e87edbb5c65b5db91a6a4a",
+    "frontend/src/features/meetings/model.ts": "e51b6000d544bc97fbcb204a16f07f5a08ebaf7ad1b9c073ca3ea54fcdfa1438",
+    "frontend/src/features/meetings/NotesPanel.tsx": "1a1f1281572c2d314b15d05645cb572e49d2e81ec0b1c11d904c797711b152e2",
+    "frontend/src/features/meetings/PanelStates.test.tsx": "abe55a0d1b924e21b7206934bdb60b66d4b09fb0db07bf24feada349a80227cc",
+    "frontend/src/features/meetings/PartialSummaryRetry.test.tsx": "ed67ac11e734a8c51698b68ed3a03ed64d7c833d9d9f2f9bec38eb94d46f2c2d",
+    "frontend/src/features/meetings/PlayerSync.test.tsx": "c914c35013ec06f8c6a8161f158da0b1ca38e6976f7784064b5c2bfef6d42440",
+    "frontend/src/features/meetings/RemoteSummary.test.tsx": "dda0d4dea0e0b56dec04f39fa8bb36f2aceb43042377e6530b738bf9ef386dc8",
+    "frontend/src/features/meetings/RemoteSummary.tsx": "0f5ae0b98b44667d810311d322aa84bfeda55df29703969fc426ead6152fb8cd",
+    "frontend/src/features/meetings/RemoteSummaryLimits.test.tsx": "93c89fce757487aee7f35b1bcdd06a66a3257f076f81070039edc9f20a97e054",
+    "frontend/src/features/meetings/RemoteSummaryPartialApi.test.tsx": "58540e4222f7ff91a3f16f848787410bb848d9a7c8a36fd57e152c5eea260b1e",
+    "frontend/src/features/meetings/RemoteSummaryPolling.test.tsx": "9513a2f0e5117e647fe1e13ab5e1310954c33d5118c2dd44388eb4383a744df6",
+    "frontend/src/features/meetings/RemoteTasks.test.tsx": "f748abcf8951c756a6a7baf8bf7f13f1202cf60fc0cfedc001ed6f640db0d2b1",
+    "frontend/src/features/meetings/RemoteTasks.tsx": "b1ee495ba19d62c59c5f93b66ecfac9e08e8e69ad58d717ee69a464a2d053b5d",
+    "frontend/src/features/meetings/RenameSpeaker.test.tsx": "d6079fdd5227a6a85c1e2fd0702486c5a36d815735466b9ef98f48535e49f187",
+    "frontend/src/features/meetings/RetryDoubleClick.test.tsx": "1d6ee5a22c4c2be0ef07ed9b54bb7e24958ef8a0e525d30441ffe599102104a8",
+    "frontend/src/features/meetings/SegmentEditing.test.tsx": "4424a0e9f2c88524cb79a946d68949d50ad2ebed34893a9d9e60c1111b9e94b9",
+    "frontend/src/features/meetings/Transcript.tsx": "51e543b7ef2dcac328c86deed472426676e76119d04006ecb1badd15854a94b7",
+    "frontend/src/features/meetings/TranscriptApi.test.tsx": "9ba475644d05a84c25b98dc67dbdacc4132790abc85c24bae39134a7d8a84b2e",
+    "frontend/src/features/meetings/TranscriptEmpty.test.tsx": "bcbee0fe92cf546673c7d8aa4c4d913a7233063be8eadf02486e26704698244e",
+    "frontend/src/features/meetings/transcriptUtils.ts": "d34162cfc04d44b2df499e649715b4a1379fb7a9ee296b6b949393293c76095a",
+    "frontend/src/features/meetings/useActiveSegment.test.tsx": "ed200e2324c6e74712bfbf6f4a0614fdb66253658802f83e5d1f15dd8d930a4f",
+    "frontend/src/features/meetings/useActiveSegment.ts": "e2873b0096392863a4751f9feddbb3f1b4f8f4d361f722650d16dc118485c033",
+    "frontend/src/features/meetings/useMeetingsQuery.ts": "aeaa421cfa480e059d965d7705ff46bfdf865274918c816d872976da4ca4e5f3",
+    "frontend/src/features/meetings/useTranscriptQuery.ts": "004b68e724f5c891266b9b56d96891090a7e93cfde49712fd1b3a33fbb2b55f0",
+    "frontend/src/mocks/auth.test.ts": "b93d78a4bf0ddebf403429f25a5c66f237f357561b077a5682ca71f57842bdc1",
+    "frontend/src/mocks/auth.ts": "8e9b9bfa8e55a51d904ab29ff2bb22611daa145ef1af661f80564abf6b8f8a7d",
+    "frontend/src/mocks/browser.ts": "71696bdb32c1a6179da07af859087e80849433435e0a27db1e3c0cea8b3a4c19",
+    "frontend/src/mocks/handlers.ts": "40fdd24adfeb008a3009f680c6a0e43f869a5225edf1a9a86cc2a46f81735624",
+    "frontend/src/pages/Accessibility.test.tsx": "f2e7af1b32fce4c4d5ed0dd911980435eefc6a77213683d1b409c8646687d139",
+    "frontend/src/pages/BusyReads.test.tsx": "9fb2cd16151861f0483d4ec749eaa772db1ab096ddd7e8627a4ee808e0934972",
+    "frontend/src/pages/BusyUpload.test.tsx": "d05b96765ef594aed44e40754982a7981a8274ba9d05867ff1ff553bb6f6a5a7",
+    "frontend/src/pages/LoginPage.test.tsx": "f593d3a95eac21e5fc901241425f761f347717bb150a518e3fdb248628d549ca",
+    "frontend/src/pages/LoginPage.tsx": "ac7ef8b19fdbf510d10fb5661eb33fb2f4ee8e3db9440c39934e90659d115893",
+    "frontend/src/pages/MeetingDateRejected.test.tsx": "917ec9f1b8aa80d5d91c12fd61acef06fc52c78f32c3fbe0d7909b25fcdd5eba",
+    "frontend/src/pages/MeetingDetailPage.tsx": "5d9292fdad927f42746c62d851830580151f541064b4a121247a94c91381c431",
+    "frontend/src/pages/MeetingListPage.tsx": "6003582e974e9c61653f3deac2305f72639780111269a8189e0b985ae4c01177",
+    "frontend/src/pages/MeetingProcessingPage.test.tsx": "08ee282799e380ec85a1222930486c31d785af79f50ba9410e13abdc7aef9f75",
+    "frontend/src/pages/MeetingProcessingPage.tsx": "1ad3a1a7120f55bb909e5b14fb7b297bc4b06234362f17672398edef6441ac4a",
+    "frontend/src/pages/NewMeetingPage.test.tsx": "071207f9b7186035995075cc5b0080d66da590cdfe491b75c7dae8585d4c77b4",
+    "frontend/src/pages/NewMeetingPage.tsx": "4249405ab00c6979b4d527d21dd5904b1b0d813454c0c4274b99637a61b064de",
+    "frontend/src/pages/NotFoundPage.tsx": "715491aaf3fa94033845e75afb613c600612e03534fcdc73a441a1a5765fefb0",
+    "frontend/src/pages/PageStates.test.tsx": "8c02df8744aee02a35bae7c92c9833810fcd4e961d8c5cd42343ff4cab2cd015",
+    "frontend/src/pages/SettingsPage.tsx": "15ce139752a91754631e3fee6bb2e3a7f81f89a07c665e09ef1cb97bbd83f6a1",
+    "frontend/src/test/FetchXHR.ts": "0872a3d0b4f5a5931fb43af8d413057e1368a473228b5c343375e435f0161d59",
+    "frontend/src/test/setup.ts": "aa5ad6a6ad7a3ad436a6d511d2d4b2d4328a6c347fdebcefbe43698bcc9f82aa",
+    "frontend/e2e/flows/summary-edit.spec.ts": "1419ac366ef2daf7e3610f216c2ec9cff268bd2858dab0e62ccb9bc52b0bfb33",
+    "frontend/playwright.config.ts": "93335cc03b35f3c090ec650a20aff31de28c08512c0d6938dea68befb15bd518",
+    "contracts/openapi.json": "0c099590b1398ea8bcd53c07e3e214496f1598ce4a13ac37ea55b4edb76e3f32"
+  },
+  "review_status": {
+    "checked_at_utc": "2026-11-25T09:47:33Z",
+    "open_pr_count": 0,
+    "member_b_review": "Chờ PR ngày 11-25; chưa hoàn thành việc chung."
+  }
+}

@@ -238,3 +238,9 @@ tên cũ. Bản demo vẫn chỉ lưu trong phiên. Ô sửa transcript giới h
 Khi tải trang danh sách mới, dòng cũ được đánh dấu đang tải và không thể mở nhầm.
 Chi tiết: [FE-02](../docs/frontend/FE-02.md), [FE-10](../docs/frontend/FE-10.md),
 [FE-04](../docs/frontend/FE-04.md), [E2E](../docs/frontend/FE-17.md).
+
+## Giới hạn nhập và sửa tóm tắt — 25/11/2026
+
+Trên cuộc họp thật, tóm tắt tối đa 50 ý chính và 50 quyết định; ô tổng quan 5000 ký tự. Form thêm/sửa công việc giới hạn nội dung 1000 và tên phụ trách 100 ký tự, đồng bộ schema backend. Khi API từ chối ngày họp, lỗi nằm cạnh ô ngày và giữ file/tên; sửa metadata sinh khóa upload mới, retry cùng payload giữ khóa cũ.
+
+Chi tiết: [FE-12](../docs/frontend/FE-12.md), [FE-13](../docs/frontend/FE-13.md), [FE-05](../docs/frontend/FE-05.md). [E2E sửa tóm tắt](../docs/frontend/FE-17.md) đạt ba lượt API/PostgreSQL thật với worker fake, xác nhận nội dung sau reload và đúng một event lịch sử. [Gate local](../docs/evidence/final/frontend-gates-2026-11-25.json): 340 test/57 file, không skip; coverage lines 88.12%, branches 83.02%. Đợt này chưa push, chưa có kết quả CI PR.
