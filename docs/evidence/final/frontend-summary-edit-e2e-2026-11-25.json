@@ -1,0 +1,98 @@
+{
+  "head": "4eeba8fa08649e4b4e93c7360ab577a2059a7de5",
+  "runs": [
+    {
+      "head": "4eeba8fa08649e4b4e93c7360ab577a2059a7de5",
+      "command": [
+        "node",
+        "node_modules/@playwright/test/cli.js",
+        "test",
+        "e2e/flows/summary-edit.spec.ts",
+        "--retries=0"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 78.24,
+      "finished_at_utc": "2026-11-25T09:37:00.773832+00:00",
+      "database": "meeting_day15_r1_e2e",
+      "result": {
+        "beforeVersion": 1,
+        "afterVersion": 2,
+        "persisted": true,
+        "historyEvents": 1,
+        "cleanedMeeting": true,
+        "cleanedUser": true,
+        "retries": 0,
+        "syntheticOnly": true,
+        "apiInterception": false,
+        "pageErrors": []
+      }
+    },
+    {
+      "head": "4eeba8fa08649e4b4e93c7360ab577a2059a7de5",
+      "command": [
+        "node",
+        "node_modules/@playwright/test/cli.js",
+        "test",
+        "e2e/flows/summary-edit.spec.ts",
+        "--retries=0"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 59.5,
+      "finished_at_utc": "2026-11-25T09:38:01.385195+00:00",
+      "database": "meeting_day15_r2_e2e",
+      "result": {
+        "beforeVersion": 1,
+        "afterVersion": 2,
+        "persisted": true,
+        "historyEvents": 1,
+        "cleanedMeeting": true,
+        "cleanedUser": true,
+        "retries": 0,
+        "syntheticOnly": true,
+        "apiInterception": false,
+        "pageErrors": []
+      }
+    },
+    {
+      "head": "4eeba8fa08649e4b4e93c7360ab577a2059a7de5",
+      "command": [
+        "node",
+        "node_modules/@playwright/test/cli.js",
+        "test",
+        "e2e/flows/summary-edit.spec.ts",
+        "--retries=0"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 64.33,
+      "finished_at_utc": "2026-11-25T09:39:06.568792+00:00",
+      "database": "meeting_day15_r3_e2e",
+      "result": {
+        "beforeVersion": 1,
+        "afterVersion": 2,
+        "persisted": true,
+        "historyEvents": 1,
+        "cleanedMeeting": true,
+        "cleanedUser": true,
+        "retries": 0,
+        "syntheticOnly": true,
+        "apiInterception": false,
+        "pageErrors": []
+      }
+    }
+  ],
+  "source_sha256": {
+    "frontend/e2e/flows/summary-edit.spec.ts": "67e97ddf6898abe38b0010726953237c645a5ccee50ca0b6ea945b2a85cb294d",
+    "frontend/playwright.config.ts": "93335cc03b35f3c090ec650a20aff31de28c08512c0d6938dea68befb15bd518",
+    "frontend/src/features/meetings/RemoteSummary.tsx": "0f5ae0b98b44667d810311d322aa84bfeda55df29703969fc426ead6152fb8cd",
+    "frontend/src/features/meetings/HistoryPanel.tsx": "b958fedea33e7b3e275191646d07b3143fbe2536fd00b7fe356c3f605d5f173b",
+    "backend/app/api/v1/summary.py": "749a8a39fd679d0005c163a1d1a1fb1f9fdb77e27b9909fd27ca31845de1680b"
+  },
+  "cleanup": {
+    "container_removed": true,
+    "label": "20261125-day15-member-a",
+    "finished_at_utc": "2026-11-25T09:39:08.053668+00:00"
+  }
+}

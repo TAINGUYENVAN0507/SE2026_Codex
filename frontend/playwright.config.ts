@@ -7,6 +7,7 @@ const cases: Record<string, string[]> = {
     'flows/keyboard.spec.ts',
     'flows/upload.spec.ts',
     'flows/edit.spec.ts',
+    'flows/summary-edit.spec.ts',
     'flows/delete.spec.ts',
     'flows/export.spec.ts',
     'flows/export-evidence.spec.ts',
