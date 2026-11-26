@@ -3409,6 +3409,39 @@
         "title": "SummaryContentOut",
         "description": "Nội dung chi tiết tóm tắt cuộc họp."
       },
+      "SummaryContentUpdate": {
+        "properties": {
+          "overview": {
+            "type": "string",
+            "maxLength": 5000,
+            "minLength": 1,
+            "title": "Overview"
+          },
+          "key_points": {
+            "items": {
+              "$ref": "#/components/schemas/SummaryPointUpdate"
+            },
+            "type": "array",
+            "maxItems": 50,
+            "title": "Key Points"
+          },
+          "decisions": {
+            "items": {
+              "$ref": "#/components/schemas/SummaryPointUpdate"
+            },
+            "type": "array",
+            "maxItems": 50,
+            "title": "Decisions"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "overview"
+        ],
+        "title": "SummaryContentUpdate",
+        "description": "Nội dung gửi lên có giới hạn riêng để vẫn đọc được tóm tắt cũ."
+      },
       "SummaryOut": {
         "properties": {
           "meeting_id": {
@@ -3529,10 +3562,35 @@
         "title": "SummaryPointOut",
         "description": "Điểm chính hoặc quyết định trong tóm tắt cuộc họp kèm ID các đoạn bằng chứng."
       },
+      "SummaryPointUpdate": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Text"
+          },
+          "evidence_segment_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Evidence Segment Ids",
+            "description": "Danh sách UUID các segment làm bằng chứng trích xuất"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "title": "SummaryPointUpdate",
+        "description": "Giới hạn chữ khi lưu, không áp giới hạn này lên dữ liệu AI đã có."
+      },
       "SummaryUpdate": {
         "properties": {
           "content": {
-            "$ref": "#/components/schemas/SummaryContentOut",
+            "$ref": "#/components/schemas/SummaryContentUpdate",
             "description": "Nội dung tóm tắt mới"
           },
           "version": {

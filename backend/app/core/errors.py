@@ -124,7 +124,11 @@ async def validation_exception_handler(
         if "text" in loc:
             if "too_short" in err_type or "empty" in err_type or "missing" in err_type:
                 code = "TEXT_EMPTY"
-                message = "Nội dung đoạn thoại không được để trống."
+                message = (
+                    "Nội dung ý tóm tắt không được để trống."
+                    if "key_points" in loc or "decisions" in loc
+                    else "Nội dung đoạn thoại không được để trống."
+                )
                 break
             if "too_long" in err_type:
                 code = "TEXT_TOO_LONG"
