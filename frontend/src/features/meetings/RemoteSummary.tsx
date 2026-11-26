@@ -11,7 +11,11 @@ import type { Meeting } from './model'
 import { EvidenceLinks } from './EvidenceLinks'
 import { LoadingSkeleton } from '../../components/LoadingSkeleton'
 import { Dialog } from '../../components/Dialog'
-import { SUMMARY_ITEMS_MAX_COUNT, SUMMARY_OVERVIEW_MAX_LENGTH } from './limits'
+import {
+  SUMMARY_ITEMS_MAX_COUNT,
+  SUMMARY_OVERVIEW_MAX_LENGTH,
+  SUMMARY_POINT_TEXT_MAX_LENGTH,
+} from './limits'
 
 type Content = NonNullable<SummaryData['content']>
 
@@ -64,7 +68,8 @@ export function RemoteSummary({
       !content.overview ||
       content.overview.length > SUMMARY_OVERVIEW_MAX_LENGTH ||
       [...(content.key_points ?? []), ...(content.decisions ?? [])].some(
-        (point) => !point.text,
+        (point) =>
+          !point.text || point.text.length > SUMMARY_POINT_TEXT_MAX_LENGTH,
       )
     ) {
       setError('Tổng quan và mỗi ý cần có nội dung hợp lệ.')
@@ -224,6 +229,7 @@ export function RemoteSummary({
                 <>
                   <input
                     aria-label={`${field === 'key_points' ? 'Ý chính' : 'Quyết định'} ${index + 1}`}
+                    maxLength={SUMMARY_POINT_TEXT_MAX_LENGTH}
                     value={point.text}
                     onChange={(event) =>
                       setDraft({

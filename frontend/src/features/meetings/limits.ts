@@ -12,3 +12,6 @@ export const SUMMARY_OVERVIEW_MAX_LENGTH = 5000
 // FE-13: ActionItemCreate/ActionItemPatch, backend/app/schemas/action_item.py.
 export const TASK_DESCRIPTION_MAX_LENGTH = 1000
 export const TASK_ASSIGNEE_NAME_MAX_LENGTH = 100
+
+// FE-12: SummaryUpdate.content tại backend/app/schemas/summary.py; đầu vào 1..1000, chốt với B ngày 26/11.
+export const SUMMARY_POINT_TEXT_MAX_LENGTH = 1000
