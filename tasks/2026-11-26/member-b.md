@@ -18,7 +18,7 @@ Log ghi **UTF-8**: `uv run pytest ... 2>&1 | Out-File -Encoding utf8 <file>`.
 
 ## Việc
 
-### 1. [ ] `PUT /summary` lưu ý chính và quyết định dài tùy ý hoặc rỗng (BE-05, FE-12)
+### 1. [x] `PUT /summary` lưu ý chính và quyết định dài tùy ý hoặc rỗng (BE-05, FE-12)
 - **Lỗi (C tìm ngày 11-26):** `SummaryPointOut.text` không có giới hạn, và API không giới hạn dung lượng body JSON.
 - Trên PostgreSQL, `PUT /summary` trả **200** và lưu nguyên giá trị với:
   - ý chính hoặc quyết định dài 1001 ký tự;
@@ -33,9 +33,9 @@ Log ghi **UTF-8**: `uv run pytest ... 2>&1 | Out-File -Encoding utf8 <file>`.
   - **Mã lỗi:** `validation_exception_handler` (`app/core/errors.py`, dòng 125) gán `TEXT_EMPTY`/`TEXT_TOO_LONG` cho mọi lỗi có `"text"` trong `loc`, kèm câu "Nội dung đoạn thoại…". Với ý của tóm tắt, câu đó sai. Hoặc dùng câu đúng cho tóm tắt, hoặc dùng mã riêng và thêm mã vào `contracts/error_codes.md`.
   - **Bỏ dấu xfail** của 5 ca.
 - **Message:** `fix(backend): summary key points and decisions must hold 1 to 1000 characters on save (BE-05, FE-12)`
-- **Commit:** _chưa_
+- **Commit:** `c4f4cc8`
 
-### 2. [ ] `audio.available` vẫn là true khi file audio đã mất (BE-05, FE-19; P3 của C trên #78)
+### 2. [x] `audio.available` vẫn là true khi file audio đã mất (BE-05, FE-19; P3 của C trên #78)
 - **Lỗi:** `serialize_meeting_summary` đặt `available = meeting.audio_path is not None`. Khi `audio_path` còn mà file đã mất (không do retention), API trả `available: true, size_bytes: null`, còn `GET /meetings/{id}/audio` trả 404.
 - **Test đỏ trước:**
   - Upload vào storage tạm rồi xóa file `audio/<id>/original.*`.
@@ -43,9 +43,9 @@ Log ghi **UTF-8**: `uv run pytest ... 2>&1 | Out-File -Encoding utf8 <file>`.
   - Còn file thì vẫn trả `true` kèm số byte đúng.
 - **Sửa:** `available` lấy từ kết quả tìm file, không chỉ từ cột DB. Bỏ nhánh `hasattr(..., "get_audio_size")` không còn dùng trong `_resolve_audio_size`. Ngân sách truy vấn của `GET /meetings` không đổi.
 - **Message:** `fix(backend): meeting audio is reported unavailable when its file is gone (BE-05, FE-19)`
-- **Commit:** _chưa_
+- **Commit:** `71643ee`
 
-### 3. [ ] Ba chỗ tìm file audio theo ba cách (BE-05, BE-16)
+### 3. [x] Ba chỗ tìm file audio theo ba cách (BE-05, BE-16)
 - **Lỗi:** `GET /audio` (`app/api/v1/audio.py`, dòng 117), worker (`app/worker/runner.py`, dòng 267) và `LocalStorage.get_audio_size` đều tự tìm file, mỗi chỗ một kiểu.
   - Chỉ `get_audio_size` kiểm đường dẫn dự phòng `base_dir / audio_path` có nằm trong `base_dir`.
   - Hai chỗ kia ghép thẳng `base_dir / audio_path`.
@@ -55,9 +55,9 @@ Log ghi **UTF-8**: `uv run pytest ... 2>&1 | Out-File -Encoding utf8 <file>`.
   - `GET /audio` trả 404, `size_bytes` là `null`, worker không đọc file đó.
   - Đường dẫn bình thường vẫn chạy như cũ.
 - **Message:** `fix(backend): audio playback, the worker and audio size find the file the same way and never outside STORAGE_DIR (BE-05, BE-16)`
-- **Commit:** _chưa_
+- **Commit:** `6390a79`
 
-### 4. [ ] Tên mã HTTP 422 và 413 bị deprecated (BE-05)
+### 4. [x] Tên mã HTTP 422 và 413 bị deprecated (BE-05)
 - **Hiện trạng:** C chạy cả suite trên PostgreSQL ngày 11-26: **28 warning**.
   - 20 là `StarletteDeprecationWarning: 'HTTP_422_UNPROCESSABLE_ENTITY' is deprecated`. Trong `app` và `tests` còn 19 chỗ dùng hằng này.
   - 1 là `'HTTP_413_REQUEST_ENTITY_TOO_LARGE' is deprecated`. Còn 1 chỗ dùng hằng này.
@@ -68,16 +68,49 @@ Log ghi **UTF-8**: `uv run pytest ... 2>&1 | Out-File -Encoding utf8 <file>`.
   - Thêm `filterwarnings` trong `[tool.pytest.ini_options]` (`backend/pyproject.toml`) để hai warning này thành lỗi, tránh dùng lại.
   - Ghi số warning trước và sau. Hai loại warning của TestClient không bắt buộc sửa hôm nay.
 - **Message:** `refactor(backend): use HTTP_422_UNPROCESSABLE_CONTENT and HTTP_413_CONTENT_TOO_LARGE and fail tests on the deprecated names (BE-05)`
-- **Commit:** _chưa_
+- **Commit:** `1170d36`
 
-### 5. [ ] Tick, hash (G0)
+### 5. [x] Tick, hash (G0)
 - Ghi hash từng commit; hash của chính commit này ghi "commit này".
 - Chạy cả backend **trên Postgres** nghe cả IPv4 và IPv6. Ghi số passed, **skipped 0, xfailed 0**, và số warning.
 - Ruff check và format sạch.
 - **Message:** `docs(tasks): record 2026-11-26 member B results (G0)`
-- **Commit:** _chưa_
+- **Commit:** `commit này`
 
 ## Việc chung (không tính commit)
 
 - Review PR ngày 11-26 của A **trong 18 giờ** kể từ lúc A mở, comment trên GitHub. Ghi đúng tên hằng và tên hàm như trong code.
 - Trả lời từng điểm review (nếu có), ghi commit sửa.
+
+## Tiến độ triển khai local
+
+- Nhánh `haquang`, bắt đầu từ `9e501cb`; đã `git fetch origin` và xác nhận khớp
+  `origin/main`, không cần merge thêm.
+- Đã hoàn thành triển khai/kiểm chứng local việc 1–5 và tạo đúng 5 commit trên
+  `haquang`. Người dùng đã duyệt kế hoạch commit; tick/hash ở trên ghi kết quả local.
+  Chưa push, chưa có CI/merge PR của B.
+- Người dùng đã cho phép sinh lại `contracts/openapi.json` và
+  `frontend/src/api/schema.d.ts`; không sửa mã frontend hoặc pipeline.
+- Test tái hiện: 5 ca tóm tắt chạy `--runxfail` đều đỏ trước sửa; mất file ngoài
+  retention, player và worker dùng đường dẫn ngoài storage cũng đỏ trước sửa.
+- Test tập trung sau sửa: 42 passed; Ruff check/format đạt (175 file), OpenAPI
+  không drift, frontend typecheck đạt sau `npm ci --ignore-scripts`.
+- Toàn suite sau sửa trên Linux/PostgreSQL 16.15 (nghe IPv4 và IPv6):
+  **568 passed, 0 failed, 0 skipped, 0 xfailed, 7 warnings** (148.22 giây).
+  Baseline `9e501cb`: 554 passed, 5 xfailed, 0 skipped, 28 warnings.
+  Warning **28 → 7**: hết 20 warning tên hằng 422 và 1 warning tên hằng 413;
+  còn 6 warning cookie theo request và 1 warning TestClient/httpx.
+- Lượt suite đầu sau sửa phát hiện 3 fixture privacy/reliability thiếu audio hoặc
+  `audio_path`. Đã bổ sung dữ liệu giả để test đi vào pipeline như mục đích ban đầu,
+  giữ nguyên assertion; nhóm này đạt 7 passed trước khi chạy lại toàn suite.
+- Log UTF-8:
+  [baseline](../../docs/backend/backend-before-2026-11-26.log),
+  [sau sửa](../../docs/backend/backend-after-2026-11-26.log),
+  [test tập trung](../../docs/backend/backend-focused-2026-11-26.log).
+- Kế hoạch đủ 5 commit, file và tiêu chí kiểm tra:
+  [BE-05-2026-11-26](../../docs/backend/BE-05-2026-11-26.md).
+- Đã đọc diff PR [#80](https://github.com/TAINGUYENVAN0507/SE2026_Codex/pull/80)
+  của A tại `d6a25bd`, đối chiếu `SUMMARY_POINT_TEXT_MAX_LENGTH`,
+  hàm `save()` trong `RemoteSummary` và `checkAvailability()` trong
+  `RemoteAudioPlayer` với backend.
+  Chưa gửi review/comment lên GitHub, chưa push hoặc mở PR của B.

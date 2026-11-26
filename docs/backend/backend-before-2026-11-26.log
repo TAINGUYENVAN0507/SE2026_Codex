@@ -1,0 +1,84 @@
+........................................................................ [ 12%]
+........................................................................ [ 25%]
+........................................................................ [ 38%]
+.................................................xxxxx.................. [ 51%]
+........................................................................ [ 64%]
+........................................................................ [ 77%]
+........................................................................ [ 90%]
+.......................................................                  [100%]
+=============================== warnings summary ===============================
+../../../app/backend/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /app/backend/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/api/test_action_items.py::test_post_action_item_validation_empty_desc_422
+  /tmp/baseline/backend/app/api/v1/action_items.py:109: StarletteDeprecationWarning: 'HTTP_422_UNPROCESSABLE_ENTITY' is deprecated. Use 'HTTP_422_UNPROCESSABLE_CONTENT' instead.
+    cleaned_desc = validate_description(payload.description)
+
+tests/api/test_action_items.py::test_post_action_item_validation_invalid_status_422
+tests/integration/test_field_limits_postgres.py::test_json_fields_past_the_limit_answer_4xx[action-item-status-21]
+  /tmp/baseline/backend/app/api/v1/action_items.py:110: StarletteDeprecationWarning: 'HTTP_422_UNPROCESSABLE_ENTITY' is deprecated. Use 'HTTP_422_UNPROCESSABLE_CONTENT' instead.
+    item_status = validate_status(payload.status)
+
+tests/api/test_action_items.py::test_post_action_item_speaker_not_in_meeting_422
+tests/integration/test_field_limits_postgres.py::test_json_fields_past_the_limit_answer_4xx[action-item-speaker-id-37]
+  /tmp/baseline/backend/app/api/v1/action_items.py:111: StarletteDeprecationWarning: 'HTTP_422_UNPROCESSABLE_ENTITY' is deprecated. Use 'HTTP_422_UNPROCESSABLE_CONTENT' instead.
+    speaker_id, assignee_name = validate_assignee_speaker(
+
+tests/api/test_action_items.py::test_patch_action_item_validation_422
+  /tmp/baseline/backend/app/api/v1/action_items.py:227: StarletteDeprecationWarning: 'HTTP_422_UNPROCESSABLE_ENTITY' is deprecated. Use 'HTTP_422_UNPROCESSABLE_CONTENT' instead.
+    new_desc = validate_description(payload.description)
+
+tests/api/test_action_items.py::test_patch_action_item_validation_422
+tests/integration/test_field_limits_postgres.py::test_more_write_endpoints_past_the_limit_answer_4xx[patch-action-item-status-21]
+  /tmp/baseline/backend/app/api/v1/action_items.py:231: StarletteDeprecationWarning: 'HTTP_422_UNPROCESSABLE_ENTITY' is deprecated. Use 'HTTP_422_UNPROCESSABLE_CONTENT' instead.
+    new_status = validate_status(payload.status)
+
+tests/api/test_export_meeting.py::test_export_unsupported_format_returns_422
+tests/api/test_patch_segment.py::test_patch_segment_speaker_not_in_meeting_422
+tests/api/test_patch_speaker_and_summary.py::test_patch_speaker_duplicate_name_422
+tests/api/test_upload_meeting.py::test_upload_meeting_without_consent_422
+tests/contract/test_openapi_drift.py::test_create_meeting_missing_consent
+tests/contract/test_openapi_drift.py::test_export_meeting_unsupported_format
+tests/integration/test_field_limits_postgres.py::test_more_write_endpoints_past_the_limit_answer_4xx[patch-segment-speaker-id-37]
+tests/integration/test_field_limits_postgres.py::test_more_write_endpoints_past_the_limit_answer_4xx[patch-segment-speaker-id-unknown-uuid]
+  /app/backend/.venv/lib/python3.12/site-packages/fastapi/telemetry/_api.py:244: StarletteDeprecationWarning: 'HTTP_422_UNPROCESSABLE_ENTITY' is deprecated. Use 'HTTP_422_UNPROCESSABLE_CONTENT' instead.
+    return function(**arguments)
+
+tests/api/test_upload_meeting.py::test_upload_meeting_file_too_large_413
+  /tmp/baseline/backend/app/api/v1/meetings.py:177: StarletteDeprecationWarning: 'HTTP_413_REQUEST_ENTITY_TOO_LARGE' is deprecated. Use 'HTTP_413_CONTENT_TOO_LARGE' instead.
+    result, is_replayed, replay_code = handle_meeting_upload(
+
+tests/integration/test_ffprobe_real.py::test_real_probe_rejects_the_fake_riff_old_tests_sent
+  /tmp/baseline/backend/tests/integration/test_ffprobe_real.py:70: StarletteDeprecationWarning: 'HTTP_422_UNPROCESSABLE_ENTITY' is deprecated. Use 'HTTP_422_UNPROCESSABLE_CONTENT' instead.
+    probe_audio(file_path=path)
+
+tests/integration/test_ffprobe_real.py::test_upload_with_real_probe_rejects_fake_riff
+  /tmp/baseline/backend/app/services/meetings/upload.py:104: StarletteDeprecationWarning: 'HTTP_422_UNPROCESSABLE_ENTITY' is deprecated. Use 'HTTP_422_UNPROCESSABLE_CONTENT' instead.
+    probe_result = probe_fn(file_path=audio_file_path)
+
+tests/integration/test_m1_flow.py::test_m1_full_flow_upload_to_transcript
+tests/integration/test_m1_flow.py::test_m1_full_flow_upload_to_transcript
+tests/integration/test_m1_flow.py::test_m1_full_flow_upload_to_transcript
+tests/integration/test_m1_flow.py::test_m1_full_flow_sqlite
+tests/integration/test_m1_flow.py::test_m1_full_flow_sqlite
+tests/integration/test_m1_flow.py::test_m1_full_flow_sqlite
+  /app/backend/.venv/lib/python3.12/site-packages/starlette/testclient.py:518: DeprecationWarning: Setting per-request cookies=<...> is being deprecated, because the expected behaviour on cookie persistence is ambiguous. Set cookies directly on the client instance instead.
+    return super().request(
+
+tests/unit/test_audio_validator.py::test_ffprobe_txt_renamed_to_mp3_raises_422
+  /tmp/baseline/backend/app/services/audio_validator.py:170: StarletteDeprecationWarning: 'HTTP_422_UNPROCESSABLE_ENTITY' is deprecated. Use 'HTTP_422_UNPROCESSABLE_CONTENT' instead.
+    return probe_audio(file_path, timeout_sec=timeout_sec, ffprobe_bin=ffprobe_bin)
+
+tests/unit/test_audio_validator.py::test_ffprobe_timeout_raises_422
+  /tmp/baseline/backend/tests/unit/test_audio_validator.py:152: StarletteDeprecationWarning: 'HTTP_422_UNPROCESSABLE_ENTITY' is deprecated. Use 'HTTP_422_UNPROCESSABLE_CONTENT' instead.
+    probe_audio(sample_wav_file, timeout_sec=0.1)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+XFAIL tests/integration/test_field_limits_postgres.py::test_put_summary_point_text_outside_1_to_1000_answers_422[put-summary-key-point-text-1001] - PUT summary nhận ý chính hoặc quyết định quá 1000 ký tự hoặc rỗng, và tổng quan chỉ có khoảng trắng (trả 200); giao B ngày 11-26, việc 1 (tasks/2026-11-26/member-b.md)
+XFAIL tests/integration/test_field_limits_postgres.py::test_put_summary_point_text_outside_1_to_1000_answers_422[put-summary-decision-text-1001] - PUT summary nhận ý chính hoặc quyết định quá 1000 ký tự hoặc rỗng, và tổng quan chỉ có khoảng trắng (trả 200); giao B ngày 11-26, việc 1 (tasks/2026-11-26/member-b.md)
+XFAIL tests/integration/test_field_limits_postgres.py::test_put_summary_point_text_outside_1_to_1000_answers_422[put-summary-key-point-text-empty] - PUT summary nhận ý chính hoặc quyết định quá 1000 ký tự hoặc rỗng, và tổng quan chỉ có khoảng trắng (trả 200); giao B ngày 11-26, việc 1 (tasks/2026-11-26/member-b.md)
+XFAIL tests/integration/test_field_limits_postgres.py::test_put_summary_point_text_outside_1_to_1000_answers_422[put-summary-decision-text-blank] - PUT summary nhận ý chính hoặc quyết định quá 1000 ký tự hoặc rỗng, và tổng quan chỉ có khoảng trắng (trả 200); giao B ngày 11-26, việc 1 (tasks/2026-11-26/member-b.md)
+XFAIL tests/integration/test_field_limits_postgres.py::test_put_summary_point_text_outside_1_to_1000_answers_422[put-summary-overview-blank] - PUT summary nhận ý chính hoặc quyết định quá 1000 ký tự hoặc rỗng, và tổng quan chỉ có khoảng trắng (trả 200); giao B ngày 11-26, việc 1 (tasks/2026-11-26/member-b.md)
+554 passed, 5 xfailed, 28 warnings in 155.47s (0:02:35)
