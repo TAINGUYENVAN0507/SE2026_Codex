@@ -66,10 +66,7 @@ def _resolve_audio_size(
     if not meeting.audio_path:
         return None
     active_storage = storage if storage is not None else get_storage()
-    if hasattr(active_storage, "get_audio_size"):
-        return active_storage.get_audio_size(meeting.id, clean_ext, meeting.audio_path)
-    candidate = active_storage.get_audio_path(meeting.id, clean_ext)
-    return candidate.stat().st_size if candidate.is_file() else None
+    return active_storage.get_audio_size(meeting.id, clean_ext, meeting.audio_path)
 
 
 def serialize_meeting_summary(
@@ -116,7 +113,7 @@ def serialize_meeting_summary(
         duration_sec=meeting.duration_sec,
         num_speakers_hint=meeting.num_speakers_hint,
         audio={
-            "available": meeting.audio_path is not None,
+            "available": size_bytes is not None,
             "mime_type": mime_type,
             "size_bytes": size_bytes,
             "retention_until": meeting.retention_until,

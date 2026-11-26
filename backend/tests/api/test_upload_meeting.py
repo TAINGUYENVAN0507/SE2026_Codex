@@ -393,3 +393,27 @@ def test_meeting_audio_reports_real_size_and_null_when_removed(
     assert after_res.status_code == 200
     assert after_res.json()["audio"]["available"] is False
     assert after_res.json()["audio"]["size_bytes"] is None
+
+
+def test_audio_missing_without_retention_is_unavailable(
+    client: TestClient, test_db: Session, test_storage: LocalStorage
+) -> None:
+    """File bị mất ngoài retention phải được báo giống nhau trên detail, list và player."""
+    response = client.post(
+        "/api/v1/meetings",
+        data={"consent_confirmed": "true"},
+        files={"file": ("missing.wav", b"RIFF" + b"\x01" * 1230, "audio/wav")},
+        headers={"Idempotency-Key": str(uuid.uuid4())},
+    )
+    assert response.status_code == 201
+    meeting_id = response.json()["meeting"]["id"]
+    test_storage.get_audio_path(meeting_id, "wav").unlink()
+    assert test_db.get(Meeting, meeting_id).audio_path is not None
+
+    detail = client.get(f"/api/v1/meetings/{meeting_id}")
+    listing = client.get("/api/v1/meetings")
+    assert detail.status_code == listing.status_code == 200
+    for audio in (detail.json()["audio"], listing.json()["items"][0]["audio"]):
+        assert audio["available"] is False
+        assert audio["size_bytes"] is None
+    assert client.get(f"/api/v1/meetings/{meeting_id}/audio").status_code == 404
