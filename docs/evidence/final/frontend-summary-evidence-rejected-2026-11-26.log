@@ -1,0 +1,16 @@
+$ npm.cmd test -- src/features/meetings/RemoteSummaryEvidenceError.test.tsx
+
+> vietnamese-meeting-minutes-frontend@0.0.0 test
+> vitest run src/features/meetings/RemoteSummaryEvidenceError.test.tsx
+
+
+ RUN  v5.0.5 D:/Project/CNPM/SE2026_Codex/frontend
+
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  12:39:46
+   Duration  3.39s (environment 48%, tests 29%, import 11%, setup 9%, transform 3%)
+
+
+EXIT=0
