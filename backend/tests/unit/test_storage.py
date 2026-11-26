@@ -5,6 +5,7 @@ import io
 import shutil
 import tempfile
 import uuid
+from pathlib import Path
 
 import pytest
 
@@ -106,3 +107,33 @@ def test_delete_meeting_files(temp_storage):
     storage.delete_meeting_files(meeting_id)
     assert not target_file.exists()
     assert not storage.get_audio_dir(meeting_id).exists()
+
+
+def test_resolve_audio_uses_canonical_then_safe_fallback(tmp_path: Path) -> None:
+    """File gốc được ưu tiên; đường dẫn dự phòng trong storage vẫn dùng được."""
+    storage = LocalStorage(base_dir=tmp_path)
+    meeting_id = str(uuid.uuid4())
+    fallback = tmp_path / "legacy.wav"
+    fallback.write_bytes(b"legacy")
+    storage.save_upload(meeting_id, "wav", b"original")
+    canonical = storage.get_audio_path(meeting_id, "wav")
+    assert storage.resolve_audio_file(meeting_id, "legacy.wav") == canonical
+    assert storage.get_audio_size(meeting_id, "wav", "legacy.wav") == 8
+    canonical.unlink()
+    assert storage.resolve_audio_file(meeting_id, "legacy.wav") == fallback
+    assert storage.get_audio_size(meeting_id, "wav", "legacy.wav") == 6
+    fallback.unlink()
+    assert storage.resolve_audio_file(meeting_id, "legacy.wav") is None
+    assert storage.resolve_audio_file(meeting_id, None) is None
+
+
+@pytest.mark.parametrize("absolute", [False, True])
+def test_resolve_audio_rejects_paths_outside_storage(tmp_path: Path, absolute: bool) -> None:
+    """Cả đường dẫn tuyệt đối lẫn ../ đều không được đọc file ngoài storage."""
+    storage = LocalStorage(base_dir=tmp_path / "storage")
+    outside = tmp_path / "outside.wav"
+    outside.write_bytes(b"outside")
+    audio_path = str(outside) if absolute else "../outside.wav"
+    meeting_id = str(uuid.uuid4())
+    assert storage.resolve_audio_file(meeting_id, audio_path) is None
+    assert storage.get_audio_size(meeting_id, "wav", audio_path) is None

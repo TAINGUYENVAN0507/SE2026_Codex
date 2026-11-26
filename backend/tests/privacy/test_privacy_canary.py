@@ -463,6 +463,10 @@ def test_privacy_canary_worker_internal_failure_does_not_log_error_data(
     test_db.add(job)
     test_db.commit()
 
+    # Audio hợp lệ trong storage để worker đi vào đúng nhánh pipeline ném lỗi có canary.
+    meeting.audio_path = test_storage.save_upload(meeting.id, "wav", b"RIFF").path
+    test_db.commit()
+
     # Giả lập pipeline run_job ném PermanentPipelineError với thông điệp chứa canary
     def failing_run_job(*args, **kwargs):
         raise PermanentPipelineError(

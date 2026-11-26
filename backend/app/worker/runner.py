@@ -258,16 +258,19 @@ def process_job(
     pipeline_backend = backend if backend is not None else os.getenv("PIPELINE_BACKEND")
 
     # Xác định đường dẫn audio gốc
-    clean_ext = (
-        meeting.audio_path.rsplit(".", 1)[-1].lower()
-        if meeting.audio_path and "." in meeting.audio_path
-        else "wav"
-    )
-    audio_file = storage.get_audio_path(meeting.id, clean_ext)
-    if not audio_file.is_file() and hasattr(storage, "base_dir") and meeting.audio_path:
-        fallback = Path(storage.base_dir) / meeting.audio_path
-        if fallback.is_file():
-            audio_file = fallback
+    audio_file = storage.resolve_audio_file(meeting.id, meeting.audio_path)
+    if audio_file is None and job.from_stage != Stage.SUMMARIZE.value:
+        fail_job(
+            db,
+            job,
+            error_code="AUDIO_INVALID",
+            error_message="Không tìm thấy tệp âm thanh hợp lệ trong storage.",
+            now=get_now(),
+        )
+        meeting.status = "failed"
+        meeting.updated_at = get_now()
+        db.commit()
+        return job
 
     settings = get_settings()
 
@@ -291,7 +294,8 @@ def process_job(
     spec = JobSpec(
         meeting_id=meeting.id,
         job_id=job.id,
-        audio_path=str(audio_file.resolve()),
+        # Chạy lại summarize chỉ dùng transcript; không cần audio đã bị retention xóa.
+        audio_path=str((audio_file or workdir / "audio-unavailable.wav").resolve()),
         from_stage=from_stage_val,
         transcript_override_path=transcript_override_path,
         num_speakers_hint=meeting.num_speakers_hint,

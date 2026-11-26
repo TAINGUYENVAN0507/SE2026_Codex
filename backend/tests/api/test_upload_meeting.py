@@ -417,3 +417,31 @@ def test_audio_missing_without_retention_is_unavailable(
         assert audio["available"] is False
         assert audio["size_bytes"] is None
     assert client.get(f"/api/v1/meetings/{meeting_id}/audio").status_code == 404
+
+
+def test_audio_outside_storage_is_unavailable(
+    client: TestClient, test_db: Session, test_storage: LocalStorage, tmp_path: Path
+) -> None:
+    """List/detail không được báo dung lượng hoặc có audio ở ngoài storage."""
+    response = client.post(
+        "/api/v1/meetings",
+        data={"consent_confirmed": "true"},
+        files={"file": ("outside.wav", b"RIFF" + b"\x01" * 1230, "audio/wav")},
+        headers={"Idempotency-Key": str(uuid.uuid4())},
+    )
+    assert response.status_code == 201
+    meeting_id = response.json()["meeting"]["id"]
+    outside = tmp_path / "outside.wav"
+    outside.write_bytes(b"outside")
+    storage = LocalStorage(base_dir=tmp_path / "isolated")
+    client.app.dependency_overrides[get_storage] = lambda: storage
+    meeting = test_db.get(Meeting, meeting_id)
+    meeting.audio_path = "../outside.wav"
+    test_db.commit()
+    detail = client.get(f"/api/v1/meetings/{meeting_id}")
+    listing = client.get("/api/v1/meetings")
+    assert detail.status_code == listing.status_code == 200
+    for audio in (detail.json()["audio"], listing.json()["items"][0]["audio"]):
+        assert audio["available"] is False
+        assert audio["size_bytes"] is None
+    assert client.get(f"/api/v1/meetings/{meeting_id}/audio").status_code == 404

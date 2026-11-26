@@ -52,6 +52,10 @@ class Storage(Protocol):
         """Lấy đường dẫn đầy đủ tới file audio gốc."""
         ...
 
+    def resolve_audio_file(self, meeting_id: str, audio_path: str | None) -> Path | None:
+        """Tìm tệp audio tồn tại và nằm trong thư mục storage."""
+        ...
+
     def get_audio_size(
         self,
         meeting_id: str,

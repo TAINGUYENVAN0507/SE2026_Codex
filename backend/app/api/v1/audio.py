@@ -113,13 +113,9 @@ def get_meeting_audio(
     clean_ext = (
         meeting.audio_path.rsplit(".", 1)[-1].lower() if "." in meeting.audio_path else "wav"
     )
-    audio_path = storage.get_audio_path(meeting_id=meeting.id, extension=clean_ext)
-    if not audio_path.is_file() and hasattr(storage, "base_dir"):
-        fallback_path = Path(storage.base_dir) / meeting.audio_path
-        if fallback_path.is_file():
-            audio_path = fallback_path
+    audio_path = storage.resolve_audio_file(meeting.id, meeting.audio_path)
 
-    if not audio_path.is_file():
+    if audio_path is None:
         if retention_ts is not None and now_utc >= retention_ts:
             raise APIError(
                 code="AUDIO_EXPIRED",
