@@ -95,20 +95,20 @@ def patch_meeting_segment(
             raise APIError(
                 code="TEXT_EMPTY",
                 message="Nội dung đoạn thoại không được để trống.",
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             )
         cleaned = payload.text.strip()
         if not cleaned:
             raise APIError(
                 code="TEXT_EMPTY",
                 message="Nội dung đoạn thoại không được để trống.",
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             )
         if len(cleaned) > 5000:
             raise APIError(
                 code="TEXT_TOO_LONG",
                 message="Nội dung vượt quá độ dài tối đa cho phép.",
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             )
         new_text = cleaned
 
@@ -125,7 +125,7 @@ def patch_meeting_segment(
                 raise APIError(
                     code="SPEAKER_NOT_IN_MEETING",
                     message="Người nói không thuộc cuộc họp này.",
-                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 )
             new_speaker_id = spk.id
         else:

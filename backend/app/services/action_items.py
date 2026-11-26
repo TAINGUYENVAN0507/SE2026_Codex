@@ -61,20 +61,20 @@ def validate_description(description: str | None) -> str:
         raise APIError(
             code="VALIDATION_ERROR",
             message="Mô tả công việc không được để trống.",
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         )
     cleaned = description.strip()
     if not cleaned:
         raise APIError(
             code="VALIDATION_ERROR",
             message="Mô tả công việc không được để trống.",
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         )
     if len(cleaned) > 1000:
         raise APIError(
             code="VALIDATION_ERROR",
             message="Mô tả công việc không được vượt quá 1000 ký tự.",
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         )
     return cleaned
 
@@ -86,7 +86,7 @@ def validate_status(item_status: str | None) -> str:
         raise APIError(
             code="VALIDATION_ERROR",
             message="Trạng thái công việc chỉ có thể là 'open' hoặc 'done'.",
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         )
     return st
 
@@ -111,7 +111,7 @@ def validate_assignee_speaker(
         raise APIError(
             code="SPEAKER_NOT_IN_MEETING",
             message="Người nói không thuộc cuộc họp này.",
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         )
 
     resolved_name = assignee_name if assignee_name else spk.display_name

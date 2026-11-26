@@ -130,7 +130,7 @@ def patch_meeting_speaker(
         raise APIError(
             code="VALIDATION_ERROR",
             message="Tên người nói không được để trống.",
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         )
 
     # Nếu cùng tên hiển thị -> No-op update: không tăng version, không ghi edit_events
@@ -150,7 +150,7 @@ def patch_meeting_speaker(
             raise APIError(
                 code="SPEAKER_NAME_DUPLICATE",
                 message="Tên người nói bị trùng với người nói khác trong cuộc họp.",
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             )
 
     before_state = {"display_name": speaker.display_name}

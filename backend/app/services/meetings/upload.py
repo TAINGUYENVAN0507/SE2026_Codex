@@ -90,7 +90,7 @@ def handle_meeting_upload(
         raise APIError(
             code="FILE_TOO_LARGE",
             message="Dung lượng tệp âm thanh vượt quá giới hạn cho phép.",
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            status_code=status.HTTP_413_CONTENT_TOO_LARGE,
         ) from exc
     except Exception:
         if idem_res.record_id:
@@ -116,7 +116,7 @@ def handle_meeting_upload(
         raise APIError(
             code="AUDIO_INVALID",
             message="Tệp âm thanh bị lỗi hoặc định dạng không được hỗ trợ.",
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         ) from exc
 
     try:

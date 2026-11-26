@@ -101,7 +101,7 @@ def probe_audio(
         raise APIError(
             code="AUDIO_INVALID",
             message="Quá thời gian kiểm tra tệp âm thanh bằng ffprobe.",
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         ) from exc
     except FileNotFoundError as exc:
         raise APIError(
@@ -114,7 +114,7 @@ def probe_audio(
         raise APIError(
             code="AUDIO_INVALID",
             message="Tệp âm thanh bị lỗi hoặc không thể giải mã.",
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         )
 
     try:
@@ -123,7 +123,7 @@ def probe_audio(
         raise APIError(
             code="AUDIO_INVALID",
             message="Kết quả phân tích từ ffprobe không đúng cấu trúc JSON.",
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         ) from exc
 
     streams = data.get("streams", [])
@@ -132,7 +132,7 @@ def probe_audio(
         raise APIError(
             code="AUDIO_INVALID",
             message="Tệp tải lên không chứa luồng âm thanh (audio stream) hợp lệ.",
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         )
 
     audio = audio_streams[0]
