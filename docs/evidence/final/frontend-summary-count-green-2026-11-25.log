@@ -1,0 +1,12 @@
+$ node node_modules/vitest/vitest.mjs run src/features/meetings/RemoteSummaryLimits.test.tsx src/features/meetings/RemoteSummary.test.tsx src/features/meetings/BusyEdits.test.tsx
+
+ RUN  v5.0.5 D:/Project/CNPM/SE2026_Codex/frontend
+
+
+ Test Files  3 passed (3)
+      Tests  13 passed (13)
+   Start at  16:25:48
+   Duration  5.04s (environment 55%, tests 21%, import 13%, setup 6%, transform 5%)
+
+
+EXIT=0

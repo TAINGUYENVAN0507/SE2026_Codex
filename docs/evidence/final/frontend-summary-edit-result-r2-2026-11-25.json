@@ -1,0 +1,12 @@
+{
+  "beforeVersion": 1,
+  "afterVersion": 2,
+  "persisted": true,
+  "historyEvents": 1,
+  "cleanedMeeting": true,
+  "cleanedUser": true,
+  "retries": 0,
+  "syntheticOnly": true,
+  "apiInterception": false,
+  "pageErrors": []
+}

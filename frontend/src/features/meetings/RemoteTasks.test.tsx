@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
@@ -160,3 +160,58 @@ describe('FE-13 action item CRUD', () => {
     expect(description).toHaveValue('Bản nháp cần giữ')
   })
 })
+
+it.each(['Thêm', 'Sửa'] as const)(
+  'FE-13: dán vượt giới hạn khi %s chỉ gửi nội dung 1000 và người phụ trách 100 ký tự',
+  async (prefix) => {
+    const lengths: number[][] = []
+    const save = async ({ request }: { request: Request }) => {
+      const body = (await request.json()) as {
+        description: string
+        assignee_name: string
+      }
+      lengths.push([body.description.length, body.assignee_name.length])
+      return body.description.length > 1000 || body.assignee_name.length > 100
+        ? HttpResponse.json(
+            { error: { code: 'VALIDATION_ERROR', message: 'Quá dài' } },
+            { status: 422 },
+          )
+        : HttpResponse.json(
+            { ...itemFixture.items[0], ...body },
+            { status: prefix === 'Thêm' ? 201 : 200 },
+          )
+    }
+    server.use(
+      http.post('*/api/v1/meetings/:id/action-items', save),
+      http.patch('*/api/v1/meetings/:id/action-items/:item', save),
+    )
+    const user = userEvent.setup()
+    renderTasks()
+    await screen.findByText(itemFixture.items[0].description)
+    if (prefix === 'Sửa')
+      await user.click(
+        screen.getByRole('button', {
+          name: `Sửa công việc ${itemFixture.items[0].id}`,
+        }),
+      )
+    const description = screen.getByRole('textbox', {
+      name: `${prefix} nội dung`,
+    })
+    const assignee = screen.getByRole('textbox', {
+      name: `${prefix} người phụ trách`,
+    })
+    await user.clear(description)
+    await user.paste('x'.repeat(1001))
+    await user.clear(assignee)
+    await user.paste('y'.repeat(101))
+    await user.click(
+      screen.getByRole('button', {
+        name: prefix === 'Thêm' ? 'Thêm công việc' : 'Lưu công việc',
+      }),
+    )
+    await waitFor(() => expect(lengths).toEqual([[1000, 100]]))
+    expect(description).toHaveAttribute('maxlength', '1000')
+    expect(assignee).toHaveAttribute('maxlength', '100')
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  },
+)

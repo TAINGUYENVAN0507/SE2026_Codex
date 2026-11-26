@@ -1,0 +1,34 @@
+$ node node_modules/vitest/vitest.mjs run src/features/meetings/RemoteSummaryLimits.test.tsx
+
+ RUN  v5.0.5 D:/Project/CNPM/SE2026_Codex/frontend
+
+ ❯ src/features/meetings/RemoteSummaryLimits.test.tsx (2 tests | 2 failed) 625ms
+   × FE-12: dừng ở 50 ý chính, xóa còn 49 thì thêm được 503ms
+   × FE-12: dừng ở 50 quyết định, xóa còn 49 thì thêm được 118ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/features/meetings/RemoteSummaryLimits.test.tsx > FE-12: dừng ở 50 ý chính, xóa còn 49 thì thêm được
+ FAIL  src/features/meetings/RemoteSummaryLimits.test.tsx > FE-12: dừng ở 50 quyết định, xóa còn 49 thì thêm được
+Error: expect(element).toBeDisabled()
+
+Received element is not disabled:
+  <button />
+ ❯ src/features/meetings/RemoteSummaryLimits.test.tsx:41:15
+     39|   await user.click(await screen.findByRole('button', { name: 'Chỉnh sử…
+     40|   const add = screen.getByRole('button', { name: `Thêm ${label}` })
+     41|   expect(add).toBeDisabled()
+       |               ^
+     42|   expect(screen.getByText(new RegExp(`Đã đạt giới hạn 50 ${label}`))).…
+     43|   await user.click(add)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed (2)
+   Start at  16:23:43
+   Duration  42.43s (environment 59%, setup 19%, import 19%, transform 2%, tests 1%)
+
+
+EXIT=1

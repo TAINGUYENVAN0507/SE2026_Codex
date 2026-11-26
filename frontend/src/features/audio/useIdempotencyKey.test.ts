@@ -43,3 +43,37 @@ describe('useIdempotencyKey', () => {
     expect(result.current).toBeNull()
   })
 })
+
+it('đổi key khi sửa metadata nhưng giữ key nếu thử lại cùng nội dung', () => {
+  const file = new File(['synthetic'], 'date.wav')
+  const { result, rerender } = renderHook(
+    ({ metadata }) => useIdempotencyKey(file, metadata),
+    {
+      initialProps: {
+        metadata: JSON.stringify({
+          title: 'Họp',
+          date: '2026-11-24',
+          source: 'upload',
+        }),
+      },
+    },
+  )
+  const original = result.current
+  rerender({
+    metadata: JSON.stringify({
+      title: 'Họp',
+      date: '2026-11-25',
+      source: 'upload',
+    }),
+  })
+  expect(result.current).not.toBe(original)
+  const changed = result.current
+  rerender({
+    metadata: JSON.stringify({
+      title: 'Họp',
+      date: '2026-11-25',
+      source: 'upload',
+    }),
+  })
+  expect(result.current).toBe(changed)
+})

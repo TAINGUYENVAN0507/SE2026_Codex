@@ -11,6 +11,7 @@ import type { Meeting } from './model'
 import { EvidenceLinks } from './EvidenceLinks'
 import { LoadingSkeleton } from '../../components/LoadingSkeleton'
 import { Dialog } from '../../components/Dialog'
+import { SUMMARY_ITEMS_MAX_COUNT, SUMMARY_OVERVIEW_MAX_LENGTH } from './limits'
 
 type Content = NonNullable<SummaryData['content']>
 
@@ -61,7 +62,7 @@ export function RemoteSummary({
     }
     if (
       !content.overview ||
-      content.overview.length > 5000 ||
+      content.overview.length > SUMMARY_OVERVIEW_MAX_LENGTH ||
       [...(content.key_points ?? []), ...(content.decisions ?? [])].some(
         (point) => !point.text,
       )
@@ -203,6 +204,7 @@ export function RemoteSummary({
         {draft ? (
           <textarea
             aria-label="Chỉnh sửa tổng quan"
+            maxLength={SUMMARY_OVERVIEW_MAX_LENGTH}
             className="summary-editor"
             value={content.overview}
             onChange={(event) =>
@@ -261,19 +263,47 @@ export function RemoteSummary({
             </div>
           ))}
           {draft && (
-            <button
-              onClick={() =>
-                setDraft({
-                  ...draft,
-                  [field]: [
-                    ...(draft[field] ?? []),
-                    { text: '', evidence_segment_ids: [] },
-                  ],
-                })
-              }
-            >
-              Thêm {field === 'key_points' ? 'ý chính' : 'quyết định'}
-            </button>
+            <>
+              <button
+                disabled={
+                  (draft[field] ?? []).length >= SUMMARY_ITEMS_MAX_COUNT
+                }
+                aria-describedby={
+                  (draft[field] ?? []).length >= SUMMARY_ITEMS_MAX_COUNT
+                    ? `summary-${field}-limit`
+                    : undefined
+                }
+                onClick={() =>
+                  setDraft((current) => {
+                    if (
+                      !current ||
+                      (current[field] ?? []).length >= SUMMARY_ITEMS_MAX_COUNT
+                    )
+                      return current
+                    return {
+                      ...current,
+                      [field]: [
+                        ...(current[field] ?? []),
+                        { text: '', evidence_segment_ids: [] },
+                      ],
+                    }
+                  })
+                }
+              >
+                Thêm {field === 'key_points' ? 'ý chính' : 'quyết định'}
+              </button>
+              {(draft[field] ?? []).length >= SUMMARY_ITEMS_MAX_COUNT && (
+                <p
+                  id={`summary-${field}-limit`}
+                  className="muted"
+                  role="status"
+                >
+                  Đã đạt giới hạn {SUMMARY_ITEMS_MAX_COUNT}{' '}
+                  {field === 'key_points' ? 'ý chính' : 'quyết định'}. Xóa bớt
+                  mục để thêm mới.
+                </p>
+              )}
+            </>
           )}
         </section>
       ))}

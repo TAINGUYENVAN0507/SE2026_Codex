@@ -64,3 +64,29 @@ describe('API errors', () => {
     expect(error.message).not.toContain('CANARY_TRANSCRIPT')
   })
 })
+
+it('giữ danh sách vị trí lỗi 422 để form gắn lỗi đúng trường, không lộ message máy chủ', async () => {
+  const details = [
+    {
+      loc: ['body', 'meeting_date'],
+      type: 'string_pattern_mismatch',
+      msg: 'CANARY_RAW',
+    },
+  ]
+  const error = await parseApiError(
+    new Response(
+      JSON.stringify({
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'CANARY_RAW',
+          details,
+          request_id: null,
+        },
+      }),
+      { status: 422 },
+    ),
+  )
+  expect(error.details).toEqual(details)
+  expect(error.message).not.toContain('CANARY_RAW')
+  expect(error.status).toBe(422)
+})
