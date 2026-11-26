@@ -1,0 +1,185 @@
+{
+  "assignment_date": "2026-11-26",
+  "executed_date_local": "2026-11-26",
+  "timezone": "Asia/Ho_Chi_Minh",
+  "recorded_at_utc": "2026-11-26T05:47:59.160838+00:00",
+  "implementation_head": "ff5b033d24b70c2fcc60a5e9135dc46577e0f730",
+  "base_main": "9e501cbbbd95afb295476d00e5801fe2f5b74f97",
+  "checks": [
+    {
+      "label": "final-lint",
+      "head": "f4321233380295a313bee2b28b19c63f3de6506d",
+      "command": [
+        "npm.cmd",
+        "run",
+        "lint"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 17.23,
+      "finished_at_utc": "2026-11-26T05:41:08.983112+00:00"
+    },
+    {
+      "label": "final-format",
+      "head": "f4321233380295a313bee2b28b19c63f3de6506d",
+      "command": [
+        "npm.cmd",
+        "run",
+        "format:check"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 8.17,
+      "finished_at_utc": "2026-11-26T05:41:17.728063+00:00"
+    },
+    {
+      "label": "final-types",
+      "head": "ff5b033d24b70c2fcc60a5e9135dc46577e0f730",
+      "command": [
+        "npm.cmd",
+        "run",
+        "typecheck"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 4.69,
+      "finished_at_utc": "2026-11-26T05:45:35.363479+00:00"
+    },
+    {
+      "label": "final-tests-coverage",
+      "head": "f4321233380295a313bee2b28b19c63f3de6506d",
+      "command": [
+        "npm.cmd",
+        "test",
+        "--",
+        "--coverage"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 81.58,
+      "finished_at_utc": "2026-11-26T05:42:13.917677+00:00"
+    },
+    {
+      "label": "final-api-generation",
+      "head": "f4321233380295a313bee2b28b19c63f3de6506d",
+      "command": [
+        "npm.cmd",
+        "run",
+        "gen:api"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 7.92,
+      "finished_at_utc": "2026-11-26T05:43:20.139315+00:00"
+    },
+    {
+      "label": "final-build",
+      "head": "f4321233380295a313bee2b28b19c63f3de6506d",
+      "command": [
+        "npm.cmd",
+        "run",
+        "build"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 6.02,
+      "finished_at_utc": "2026-11-26T05:43:26.349565+00:00"
+    },
+    {
+      "label": "final-format-readme",
+      "head": "ff5b033d24b70c2fcc60a5e9135dc46577e0f730",
+      "command": [
+        "npm.cmd",
+        "run",
+        "format:check"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 2.06,
+      "finished_at_utc": "2026-11-26T05:47:08.718751+00:00"
+    }
+  ],
+  "vitest": {
+    "files": 58,
+    "passed": 352,
+    "failed": 0,
+    "skipped": 0
+  },
+  "coverage": {
+    "lines": {
+      "total": 1464,
+      "covered": 1293,
+      "skipped": 0,
+      "pct": 88.31
+    },
+    "statements": {
+      "total": 1632,
+      "covered": 1404,
+      "skipped": 0,
+      "pct": 86.02
+    },
+    "functions": {
+      "total": 512,
+      "covered": 426,
+      "skipped": 0,
+      "pct": 83.2
+    },
+    "branches": {
+      "total": 1519,
+      "covered": 1266,
+      "skipped": 0,
+      "pct": 83.34
+    },
+    "branchesTrue": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 100
+    }
+  },
+  "coverage_floors": {
+    "lines": 84.53,
+    "branches": 79.11
+  },
+  "api_drift": false,
+  "e2e": {
+    "passed": 3,
+    "failed": 0,
+    "skipped": 0,
+    "retries": 0,
+    "browser": "Chromium desktop",
+    "api": "real API + PostgreSQL 16",
+    "pipeline": "fake worker enabled",
+    "manual_worker_env_set": false,
+    "before_sec": 0,
+    "after_sec": 6,
+    "segment_range_sec": [
+      6,
+      11.2
+    ],
+    "audio_duration_sec": 60,
+    "container_removed": true
+  },
+  "review_status": {
+    "checked_at_utc": "2026-11-26T05:44:06Z",
+    "open_pr_count": 0,
+    "member_b": "Chờ PR ngày 11-26; #78 đã merge, chưa có review của A.",
+    "pr77": "Đã đọc phản hồi B/C; hai P3 không bắt buộc sửa hôm nay. Chưa đăng trả lời trong lượt local."
+  },
+  "notes": [
+    "Không có lỗi ở việc 4: test 422 dẫn chứng đạt ngay, không sửa handler; commit dùng test(frontend).",
+    "Helper E2E dừng do mã hóa console sau lượt 1 đã đạt và đã cleanup; đổi stdout UTF-8, tiếp tục lượt 2,3 mà không sửa nguồn/chạy lại lượt 1.",
+    "Không thay đổi backend/contract. available từ file thật và giới hạn đầu vào API thuộc B, không coi là đã hoàn tất qua test frontend.",
+    "Chưa push/mở PR/CI GitHub cho đợt ngày 26/11."
+  ],
+  "source_sha256": {
+    "frontend/e2e/flows/evidence-seek.spec.ts": "253ce5a9640ca29a2c190e9a19599d21c57be25f1a272a21e9733266f768294f",
+    "frontend/playwright.config.ts": "2f47b28716a7414a9bf65095f14e3992338be4189a46d60425b7d568037c49d4",
+    "frontend/src/features/audio/RemoteAudioPlayer.test.tsx": "20a6e61fc65c7bb6559e95ae3625479292c37b24bbb7894947c9b8ed208c12d7",
+    "frontend/src/features/audio/RemoteAudioPlayer.tsx": "1012cc4c960ae8fac012ea1bda3c759b7ce08d042a20f0f9a076f0d6704bb82e",
+    "frontend/src/features/meetings/RemoteSummary.tsx": "2e1cd39ff70a275e92ce51735357d93eef75efc27321d6a6b8c5ad394896c10b",
+    "frontend/src/features/meetings/RemoteSummaryEvidenceError.test.tsx": "1570ca3a8faa62ebb1385828d838cd83e43fccc89747fb016402fc15a9b85085",
+    "frontend/src/features/meetings/RemoteSummaryLimits.test.tsx": "eb2c851558f3d9db747527ee5a40302ca1433742f5a17129850589e404ea9415",
+    "frontend/src/features/meetings/limits.ts": "203f60c497e4888128c6a7b3d149e835d7fb33217cf5978863460031c4da4425"
+  }
+}

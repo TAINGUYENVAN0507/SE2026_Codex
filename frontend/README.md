@@ -244,3 +244,9 @@ Chi tiết: [FE-02](../docs/frontend/FE-02.md), [FE-10](../docs/frontend/FE-10.m
 Trên cuộc họp thật, tóm tắt tối đa 50 ý chính và 50 quyết định; ô tổng quan 5000 ký tự. Form thêm/sửa công việc giới hạn nội dung 1000 và tên phụ trách 100 ký tự, đồng bộ schema backend. Khi API từ chối ngày họp, lỗi nằm cạnh ô ngày và giữ file/tên; sửa metadata sinh khóa upload mới, retry cùng payload giữ khóa cũ.
 
 Chi tiết: [FE-12](../docs/frontend/FE-12.md), [FE-13](../docs/frontend/FE-13.md), [FE-05](../docs/frontend/FE-05.md). [E2E sửa tóm tắt](../docs/frontend/FE-17.md) đạt ba lượt API/PostgreSQL thật với worker fake, xác nhận nội dung sau reload và đúng một event lịch sử. [Gate local](../docs/evidence/final/frontend-gates-2026-11-25.json): 340 test/57 file, không skip; coverage lines 88.12%, branches 83.02%. Đợt này chưa push, chưa có kết quả CI PR.
+
+## Từng ý tóm tắt, audio và dẫn chứng — 26/11/2026
+
+Mỗi ý chính/quyết định giới hạn 1000 ký tự khi nhập và lưu; dữ liệu dài đã lưu vẫn đọc đầy đủ. Player phân biệt mất file với hết hạn, dựa trên retention lúc mở và probe 404/410. Editor giữ nháp và cho lưu lại khi API từ chối dẫn chứng. Chi tiết: [FE-12](../docs/frontend/FE-12.md), [FE-19](../docs/frontend/FE-19.md), [FE-18](../docs/frontend/FE-18.md).
+
+[E2E bấm dẫn chứng](../docs/frontend/FE-17.md) đạt ba lượt API/PostgreSQL thật với worker fake: audio từ 0 tới 6 giây, trong đoạn 6–11,2 lấy từ API, không tự phát. [Gate local](../docs/evidence/final/frontend-gates-2026-11-26.json): 352 test/58 file, không skip; coverage lines 88.31%, branches 83.34%. Đợt này chưa push, chưa có kết quả CI PR. Các thay đổi API về giới hạn chữ và available vẫn thuộc task B.
