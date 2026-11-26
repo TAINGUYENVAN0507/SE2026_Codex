@@ -1,0 +1,16 @@
+$ npm.cmd test -- src/features/audio/RemoteAudioPlayer.test.tsx
+
+> vietnamese-meeting-minutes-frontend@0.0.0 test
+> vitest run src/features/audio/RemoteAudioPlayer.test.tsx
+
+
+ RUN  v5.0.5 D:/Project/CNPM/SE2026_Codex/frontend
+
+
+ Test Files  1 passed (1)
+      Tests  8 passed (8)
+   Start at  12:35:54
+   Duration  1.58s (environment 55%, tests 20%, import 11%, setup 10%, transform 3%)
+
+
+EXIT=0

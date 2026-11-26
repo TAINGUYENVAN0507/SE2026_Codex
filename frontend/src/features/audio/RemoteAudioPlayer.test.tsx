@@ -16,22 +16,28 @@ import type { PlayerHandle } from './AudioPlayer'
 
 const server = setupServer()
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
-beforeEach(() =>
-  vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(() => {}),
-)
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(new Date('2026-11-26T12:00:00Z'))
+  vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(() => {})
+})
 afterEach(() => {
   cleanup()
   server.resetHandlers()
   vi.restoreAllMocks()
+  vi.useRealTimers()
 })
 afterAll(() => server.close())
-function setup(available = true) {
+function setup(
+  available = true,
+  retentionUntil: string | null = '2026-11-20T12:00:00Z',
+) {
   const handle = createRef<PlayerHandle>()
   const view = render(
     <>
       <RemoteAudioPlayer
         meetingId="test"
-        audioInfo={{ available, retention_until: '2026-11-20T12:00:00Z' }}
+        audioInfo={{ available, retention_until: retentionUntil }}
         duration={120}
         onPosition={vi.fn()}
         onFile={vi.fn()}
@@ -95,3 +101,48 @@ it('seeks server audio to the evidence timestamp', () => {
   act(() => handle.current!.seek(18.5))
   expect(container.querySelector('audio')!.currentTime).toBe(18.5)
 })
+
+it.each(['2026-12-20T12:00:00Z', null])(
+  'FE-19: unavailable chưa hết hạn (%s) báo mất file, vẫn giữ transcript',
+  (retention) => {
+    const { container } = setup(false, retention)
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Không tìm thấy file audio',
+    )
+    expect(
+      screen.queryByText('Audio đã hết hạn lưu trữ'),
+    ).not.toBeInTheDocument()
+    expect(container.querySelector('audio')).toBeNull()
+    expect(screen.getByText('Transcript vẫn đọc được')).toBeVisible()
+  },
+)
+
+it.each(['AUDIO_NOT_FOUND', 'NOT_FOUND'])(
+  'FE-19: probe 404 %s báo mất file thay cho lỗi phát chung',
+  async (code) => {
+    server.use(
+      http.get('*/api/v1/meetings/test/audio', ({ request }) => {
+        expect(request.headers.get('Range')).toBe('bytes=0-0')
+        return HttpResponse.json(
+          {
+            error: {
+              code,
+              message: 'CANARY_RAW_AUDIO',
+              details: null,
+              request_id: null,
+            },
+          },
+          { status: 404 },
+        )
+      }),
+    )
+    const { container } = setup(true, '2026-12-20T12:00:00Z')
+    fireEvent.error(container.querySelector('audio')!)
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'Không tìm thấy file audio',
+    )
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(screen.getByText('Transcript vẫn đọc được')).toBeVisible()
+    expect(screen.queryByText('CANARY_RAW_AUDIO')).not.toBeInTheDocument()
+  },
+)

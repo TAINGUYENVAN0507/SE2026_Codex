@@ -7,6 +7,7 @@ import {
 } from 'react'
 import { AudioPlayer, type PlayerHandle } from './AudioPlayer'
 import type { MeetingDetail } from '../../api/client'
+import { parseApiError } from '../../api/errors'
 
 type Props = Omit<
   ComponentProps<typeof AudioPlayer>,
@@ -21,11 +22,15 @@ export const RemoteAudioPlayer = forwardRef<PlayerHandle, Props>(
     { meetingId, audioInfo, preview = false, ...props },
     ref,
   ) {
-    const [expired, setExpired] = useState(false)
+    const [unavailable, setUnavailable] = useState<
+      'expired' | 'missing' | null
+    >(null)
+    // Chụp mốc lúc mở player; trong phiên phát, probe 410 xác nhận hết hạn từ server.
+    const [openedAt] = useState(() => Date.now())
     const probe = useRef<AbortController | null>(null)
     useEffect(() => () => probe.current?.abort(), [])
     const src = `/api/v1/meetings/${encodeURIComponent(meetingId)}/audio`
-    async function checkExpiration() {
+    async function checkAvailability() {
       probe.current?.abort()
       const controller = new AbortController()
       probe.current = controller
@@ -35,16 +40,35 @@ export const RemoteAudioPlayer = forwardRef<PlayerHandle, Props>(
           credentials: 'include',
           signal: controller.signal,
         })
-        if (response.status === 410 && !controller.signal.aborted)
-          setExpired(true)
-        await response.body?.cancel()
+        if (response.status === 404) {
+          const error = await parseApiError(response)
+          // API hiện trả NOT_FOUND cho file mất; nhận cả mã chuyên biệt khi có.
+          if (
+            !controller.signal.aborted &&
+            ['AUDIO_NOT_FOUND', 'NOT_FOUND'].includes(error.code)
+          )
+            setUnavailable('missing')
+        } else {
+          if (response.status === 410 && !controller.signal.aborted)
+            setUnavailable('expired')
+          await response.body?.cancel()
+        }
       } catch {
-        /* AudioPlayer đã hiện lỗi phát; chỉ thay bằng hết hạn khi server xác nhận 410. */
+        /* Giữ lỗi phát chung nếu probe không xác nhận được mất file/hết hạn. */
       }
     }
     const retention = audioInfo.retention_until
       ? new Date(audioInfo.retention_until)
       : null
+    const reason =
+      unavailable ??
+      (!audioInfo.available
+        ? retention &&
+          Number.isFinite(retention.getTime()) &&
+          retention.getTime() <= openedAt
+          ? 'expired'
+          : 'missing'
+        : null)
     const metadata =
       retention && Number.isFinite(retention.getTime()) ? (
         <p className="audio-retention">
@@ -60,9 +84,13 @@ export const RemoteAudioPlayer = forwardRef<PlayerHandle, Props>(
       ) : null
     return (
       <>
-        {!audioInfo.available || expired ? (
+        {reason ? (
           <section className="audio-expired" aria-label="Player audio cuộc họp">
-            <p role="status">Audio đã hết hạn lưu trữ</p>
+            <p role="status">
+              {reason === 'expired'
+                ? 'Audio đã hết hạn lưu trữ'
+                : 'Không tìm thấy file audio'}
+            </p>
             <p>Transcript và nội dung cuộc họp vẫn có thể đọc được.</p>
             {metadata}
           </section>
@@ -71,7 +99,7 @@ export const RemoteAudioPlayer = forwardRef<PlayerHandle, Props>(
             {...props}
             src={preview ? undefined : src}
             metadata={metadata}
-            onPlaybackError={() => void checkExpiration()}
+            onPlaybackError={() => void checkAvailability()}
             ref={ref}
           />
         )}
