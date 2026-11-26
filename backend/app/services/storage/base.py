@@ -52,6 +52,15 @@ class Storage(Protocol):
         """Lấy đường dẫn đầy đủ tới file audio gốc."""
         ...
 
+    def get_audio_size(
+        self,
+        meeting_id: str,
+        extension: str,
+        relative_path: str | None = None,
+    ) -> int | None:
+        """Lấy dung lượng tệp audio (bytes) qua metadata mà không mở file."""
+        ...
+
     def delete_meeting_files(self, meeting_id: str) -> None:
         """Xóa toàn bộ các tệp liên quan đến cuộc họp."""
         ...

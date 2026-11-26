@@ -30,6 +30,7 @@ from app.db.session import get_db
 from app.schemas.common import ErrorResponse
 from app.schemas.job import JobErrorOut, JobOut, JobRetryCreate
 from app.services.idempotency import IdempotencyService
+from app.services.meetings.queries import get_latest_job_for_meeting
 
 logger = logging.getLogger("app.jobs")
 
@@ -179,11 +180,7 @@ def retry_meeting_job(
         )
 
     # 3. Job gần nhất đã thành công mà gửi lại cùng yêu cầu thì 409 JOB_ALREADY_SUCCEEDED
-    latest_job = (
-        db.execute(select(Job).where(Job.meeting_id == meeting.id).order_by(Job.created_at.desc()))
-        .scalars()
-        .first()
-    )
+    latest_job = get_latest_job_for_meeting(db, meeting.id)
     if (
         latest_job
         and latest_job.status == "succeeded"

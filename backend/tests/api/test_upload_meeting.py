@@ -17,6 +17,7 @@ from app.db.base import Base
 from app.db.models.idempotency import IdempotencyKey
 from app.db.models.job import Job
 from app.db.models.meeting import Meeting
+from app.db.models.transcript import Segment, Speaker
 from app.db.models.user import User
 from app.db.session import get_db
 from app.main import create_app
@@ -39,7 +40,14 @@ def test_db() -> Generator[Session, None, None]:
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
-    tables = [User.__table__, Meeting.__table__, Job.__table__, IdempotencyKey.__table__]
+    tables = [
+        User.__table__,
+        Meeting.__table__,
+        Job.__table__,
+        IdempotencyKey.__table__,
+        Speaker.__table__,
+        Segment.__table__,
+    ]
     Base.metadata.create_all(bind=engine, tables=tables)
     session_factory = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     session = session_factory()
@@ -330,3 +338,58 @@ def test_upload_meeting_query_count_budget(
         assert query_count <= 6, f"Số lượng truy vấn thực tế là {query_count}, vượt ngưỡng 6"
     finally:
         event.remove(engine, "before_cursor_execute", before_cursor_execute)
+
+
+def test_meeting_audio_reports_real_size_and_null_when_removed(
+    client: TestClient,
+    test_db: Session,
+    test_storage: LocalStorage,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """GET /meetings/{id} và /meetings trả size_bytes thật, hoặc null + available=False khi mất."""
+    from datetime import UTC, datetime, timedelta
+
+    from app.services.retention import run_retention_cleanup
+
+    payload_bytes = b"RIFF" + b"\x01" * 1230
+    expected_size = len(payload_bytes)
+    files = {"file": ("size_check.wav", io.BytesIO(payload_bytes), "audio/wav")}
+    data = {"consent_confirmed": "true", "title": "Kiểm tra size_bytes"}
+    headers = {"Idempotency-Key": str(uuid.uuid4())}
+
+    create_res = client.post("/api/v1/meetings", data=data, files=files, headers=headers)
+    assert create_res.status_code == 201
+    meeting_id = create_res.json()["meeting"]["id"]
+    assert create_res.json()["meeting"]["audio"]["size_bytes"] == expected_size
+
+    # Kiểm tra lấy kích thước qua storage mà không mở file
+    def _fail_open(*_args, **_kwargs):
+        raise AssertionError("Không được mở tệp audio để tính size_bytes")
+
+    with monkeypatch.context() as mp:
+        mp.setattr("builtins.open", _fail_open)
+
+        detail_res = client.get(f"/api/v1/meetings/{meeting_id}")
+        assert detail_res.status_code == 200
+        assert detail_res.json()["audio"]["available"] is True
+        assert detail_res.json()["audio"]["size_bytes"] == expected_size
+
+        list_res = client.get("/api/v1/meetings?page=1&page_size=10")
+        assert list_res.status_code == 200
+        assert list_res.json()["items"][0]["audio"]["available"] is True
+        assert list_res.json()["items"][0]["audio"]["size_bytes"] == expected_size
+
+    # Sau khi hết hạn lưu và dọn dẹp: audio.available=False và audio.size_bytes=None
+    meeting_row = test_db.get(Meeting, meeting_id)
+    assert meeting_row is not None
+    job_row = test_db.execute(select(Job).where(Job.meeting_id == meeting_id)).scalar_one()
+    job_row.status = "succeeded"
+    meeting_row.retention_until = datetime.now(UTC) - timedelta(days=1)
+    test_db.commit()
+
+    run_retention_cleanup(test_db, storage=test_storage, now=datetime.now(UTC))
+
+    after_res = client.get(f"/api/v1/meetings/{meeting_id}")
+    assert after_res.status_code == 200
+    assert after_res.json()["audio"]["available"] is False
+    assert after_res.json()["audio"]["size_bytes"] is None

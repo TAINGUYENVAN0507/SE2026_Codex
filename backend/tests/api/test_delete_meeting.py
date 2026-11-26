@@ -631,3 +631,99 @@ def test_erasure_replay_idempotency_key_creates_new_meeting(
     meeting_id_2 = res2.json()["meeting"]["id"]
     assert meeting_id_2 != meeting_id_1
     assert res2.json()["meeting"]["title"] == "Cuộc họp lần 2 sau khi xóa"
+
+
+def test_delete_meeting_removes_files_only_from_configured_storage_dir(
+    test_db: Session,
+    users: dict[str, User],
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """DELETE /meetings/{id} xóa đúng audio và artifacts trong STORAGE_DIR, giữ cuộc họp khác."""
+    from app.core.config import get_settings
+    from app.services.storage import get_storage
+    from tests.conftest import snapshot_directory_entries
+
+    custom_storage = tmp_path / "configured_storage"
+    custom_storage.mkdir(parents=True)
+
+    real_appdata = Path(__file__).resolve().parents[2] / "appdata"
+    real_audio_before = snapshot_directory_entries(real_appdata / "audio")
+    real_artifacts_before = snapshot_directory_entries(real_appdata / "artifacts")
+
+    monkeypatch.setenv("STORAGE_DIR", str(custom_storage))
+    get_settings.cache_clear()
+    get_storage.cache_clear()
+
+    def _mock_probe(file_path, timeout_sec=10.0, ffprobe_bin=None):
+        return AudioProbeResult(
+            duration_sec=30.0,
+            format_name="wav",
+            sample_rate=16000,
+            channels=1,
+        )
+
+    monkeypatch.setattr("app.api.v1.meetings.probe_audio", _mock_probe)
+
+    owner = users["a"]
+    app = create_app()
+    app.dependency_overrides[get_db] = lambda: test_db
+    app.dependency_overrides[get_current_user] = lambda: owner
+    token = create_access_token(owner.id)
+    client = TestClient(app, cookies={"session_token": token})
+
+    try:
+        wav_bytes = (
+            b"RIFF$\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x80>\x00\x00\x00}"
+            b"\x00\x00\x02\x00\x10\x00data\x00\x00\x00\x00"
+        )
+        res_1 = client.post(
+            "/api/v1/meetings",
+            data={"title": "Cuộc họp bị xóa", "consent_confirmed": "true"},
+            files={"file": ("one.wav", io.BytesIO(wav_bytes), "audio/wav")},
+            headers={"Idempotency-Key": f"del-storage-1-{uuid.uuid4()}"},
+        )
+        assert res_1.status_code == 201, res_1.text
+        m1 = res_1.json()["meeting"]["id"]
+        j1 = res_1.json()["job"]["id"]
+
+        res_2 = client.post(
+            "/api/v1/meetings",
+            data={"title": "Cuộc họp giữ nguyên", "consent_confirmed": "true"},
+            files={"file": ("two.wav", io.BytesIO(wav_bytes), "audio/wav")},
+            headers={"Idempotency-Key": f"del-storage-2-{uuid.uuid4()}"},
+        )
+        assert res_2.status_code == 201, res_2.text
+        m2 = res_2.json()["meeting"]["id"]
+        j2 = res_2.json()["job"]["id"]
+
+        # Tạo thêm thư mục artifacts/<id>/<job_id>/ cho cả hai cuộc họp trong STORAGE_DIR
+        art_1 = custom_storage / "artifacts" / m1 / j1
+        art_2 = custom_storage / "artifacts" / m2 / j2
+        art_1.mkdir(parents=True, exist_ok=True)
+        art_2.mkdir(parents=True, exist_ok=True)
+        (art_1 / "summary.json").write_text("{}", encoding="utf-8")
+        (art_2 / "summary.json").write_text("{}", encoding="utf-8")
+
+        assert (custom_storage / "audio" / m1 / "original.wav").is_file()
+        assert (custom_storage / "audio" / m2 / "original.wav").is_file()
+
+        del_res = client.delete(f"/api/v1/meetings/{m1}")
+        assert del_res.status_code == 204
+
+        # File của m1 trong custom_storage phải bị xóa hết
+        assert not (custom_storage / "audio" / m1).exists()
+        assert not (custom_storage / "artifacts" / m1).exists()
+
+        # File của m2 trong cùng custom_storage phải còn nguyên vẹn
+        assert (custom_storage / "audio" / m2 / "original.wav").is_file()
+        assert (art_2 / "summary.json").is_file()
+
+        # backend/appdata thật không bị chạm tới
+        assert snapshot_directory_entries(real_appdata / "audio") == real_audio_before
+        assert snapshot_directory_entries(real_appdata / "artifacts") == real_artifacts_before
+    finally:
+        app.dependency_overrides.clear()
+        monkeypatch.undo()
+        get_settings.cache_clear()
+        get_storage.cache_clear()

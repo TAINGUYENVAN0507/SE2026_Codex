@@ -26,6 +26,7 @@ from app.schemas.summary import (
     SummaryOut,
     SummaryUpdate,
 )
+from app.services.action_items import validate_evidence_segments
 from app.services.audit import record_edit
 
 router = APIRouter()
@@ -153,6 +154,19 @@ def update_meeting_summary(
                 "current": {"meeting_id": meeting.id, "version": summary.version},
             },
         )
+
+    evidence_ids = [
+        seg_id
+        for point in (*payload.content.key_points, *payload.content.decisions)
+        for seg_id in point.evidence_segment_ids
+    ]
+    validate_evidence_segments(
+        db,
+        meeting.id,
+        evidence_ids,
+        error_code="EVIDENCE_SEGMENT_NOT_IN_MEETING",
+        message="Đoạn thoại dẫn chứng không thuộc cuộc họp này.",
+    )
 
     new_content = payload.content.model_dump()
     is_edited_now = summary.ai_content is not None and new_content != summary.ai_content

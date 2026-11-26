@@ -48,6 +48,8 @@ const messages: Record<string, string> = {
   SERVICE_UNAVAILABLE: 'Máy chủ đang bận. Vui lòng thử lại sau.',
   SPEAKER_NOT_IN_MEETING:
     'Người nói không thuộc cuộc họp này. Hãy chọn lại người nói.',
+  EVIDENCE_SEGMENT_NOT_IN_MEETING:
+    'Đoạn thoại dẫn chứng không thuộc cuộc họp này. Hãy kiểm tra lại.',
   STAGE_CRASHED: 'Một bước xử lý bị dừng đột ngột. Hãy thử xử lý lại.',
   STAGE_NOT_IMPLEMENTED: 'Bước xử lý này hiện chưa được hỗ trợ.',
   STAGE_TIMEOUT: 'Một bước xử lý quá thời gian cho phép. Hãy thử xử lý lại.',

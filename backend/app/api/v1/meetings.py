@@ -77,6 +77,7 @@ __all__ = ["probe_audio", "router", "serialize_action_item", "serialize_meeting_
 def list_meetings(
     current_user: CurrentUser,
     db: Annotated[Session, Depends(get_db)],
+    storage: Annotated[Storage, Depends(get_storage)],
     page: Annotated[int, Query(ge=1, description="Số thứ tự trang (bắt đầu từ 1)")] = 1,
     page_size: Annotated[int, Query(ge=1, le=100, description="Số lượng mục trên mỗi trang")] = 10,
     status_filter: Annotated[
@@ -106,7 +107,9 @@ def list_meetings(
     latest_jobs_by_meeting = load_latest_jobs_by_meeting(db, [m.id for m in meetings])
 
     items = [
-        serialize_meeting_summary(m, db, latest_job=latest_jobs_by_meeting.get(m.id))
+        serialize_meeting_summary(
+            m, db, latest_job=latest_jobs_by_meeting.get(m.id), storage=storage
+        )
         for m in meetings
     ]
     return MeetingListOut(
@@ -204,6 +207,7 @@ def get_meeting(
     meeting_id: Annotated[str, FastApiPath(description="UUID của cuộc họp cần lấy thông tin")],
     current_user: CurrentUser,
     db: Annotated[Session, Depends(get_db)],
+    storage: Annotated[Storage, Depends(get_storage)],
 ) -> MeetingDetailOut:
     """Trả về chi tiết cuộc họp từ cơ sở dữ liệu."""
     meeting = db.execute(select(Meeting).where(Meeting.id == meeting_id)).scalar_one_or_none()
@@ -213,7 +217,7 @@ def get_meeting(
             message="Không tìm thấy cuộc họp được yêu cầu.",
             status_code=status.HTTP_404_NOT_FOUND,
         )
-    return serialize_meeting_detail(meeting, db)
+    return serialize_meeting_detail(meeting, db, storage=storage)
 
 
 @router.patch(
@@ -235,6 +239,7 @@ def patch_meeting(
     payload: MeetingPatch,
     current_user: CurrentUser,
     db: Annotated[Session, Depends(get_db)],
+    storage: Annotated[Storage, Depends(get_storage)],
     request: Request,
 ) -> MeetingDetailOut:
     """Chỉnh sửa tiêu đề cuộc họp có kiểm tra optimistic locking nguyên tử."""
@@ -266,7 +271,7 @@ def patch_meeting(
 
     # Kiểm tra no-op (không đổi giá trị)
     if new_title == meeting.title:
-        return serialize_meeting_detail(meeting, db)
+        return serialize_meeting_detail(meeting, db, storage=storage)
 
     old_title = meeting.title
     now = datetime.now(UTC)
@@ -318,7 +323,7 @@ def patch_meeting(
     )
     db.commit()
     db.refresh(meeting)
-    return serialize_meeting_detail(meeting, db)
+    return serialize_meeting_detail(meeting, db, storage=storage)
 
 
 @router.delete(

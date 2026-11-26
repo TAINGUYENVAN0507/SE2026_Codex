@@ -55,6 +55,22 @@ class LocalStorage(Storage):
         clean_ext = self._sanitize_extension(extension)
         return self.get_audio_dir(meeting_id) / f"original.{clean_ext}"
 
+    def get_audio_size(
+        self,
+        meeting_id: str,
+        extension: str,
+        relative_path: str | None = None,
+    ) -> int | None:
+        """Trả về kích thước tệp audio (bytes) bằng stat mà không mở file, hoặc None."""
+        candidate = self.get_audio_path(meeting_id, extension)
+        if candidate.is_file():
+            return candidate.stat().st_size
+        if relative_path:
+            fallback = (self.base_dir / relative_path).resolve()
+            if fallback.is_relative_to(self.base_dir) and fallback.is_file():
+                return fallback.stat().st_size
+        return None
+
     def save_upload(
         self,
         meeting_id: str,

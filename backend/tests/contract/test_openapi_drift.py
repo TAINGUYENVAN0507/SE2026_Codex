@@ -708,7 +708,7 @@ def test_put_summary_success() -> None:
                 "key_points": [
                     {
                         "text": "Đã thống nhất hoàn thiện upload audio.",
-                        "evidence_segment_ids": ["5b1e7c2a-b2c3-4d4e-8f9a-0b1c2d3e4f5a"],
+                        "evidence_segment_ids": ["seg-m1-uuid"],
                     }
                 ],
                 "decisions": [],
