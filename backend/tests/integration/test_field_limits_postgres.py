@@ -324,3 +324,94 @@ def test_put_summary_rejects_evidence_from_other_meeting_and_accepts_same_meetin
         ),
     )
     assert r_ok.status_code == 200, r_ok.text[:300]
+
+
+# Chữ của từng ý chính và quyết định (C, 2026-11-26). `SummaryPointOut.text` chưa có giới hạn,
+# và API không giới hạn dung lượng body JSON, nên `PUT /summary` lưu một ý dài tùy ý. Giới hạn
+# cần đặt là 1..1000 ký tự sau khi bỏ khoảng trắng hai đầu; frontend dùng cùng số. Tổng quan
+# chỉ có khoảng trắng cũng đang được lưu.
+SUMMARY_POINT_TEXT_MAX = 1000
+POINT_B_2026_11_26 = (
+    "PUT summary nhận ý chính hoặc quyết định quá 1000 ký tự hoặc rỗng, và tổng quan chỉ có "
+    "khoảng trắng (trả 200); giao B ngày 11-26, việc 1 (tasks/2026-11-26/member-b.md)"
+)
+POINT_CASES = {
+    "put-summary-key-point-text-1001": {
+        "key_points": [{"text": "a" * (SUMMARY_POINT_TEXT_MAX + 1), "evidence_segment_ids": []}]
+    },
+    "put-summary-decision-text-1001": {
+        "decisions": [{"text": "a" * (SUMMARY_POINT_TEXT_MAX + 1), "evidence_segment_ids": []}]
+    },
+    "put-summary-key-point-text-empty": {"key_points": [{"text": "", "evidence_segment_ids": []}]},
+    "put-summary-decision-text-blank": {"decisions": [{"text": "   ", "evidence_segment_ids": []}]},
+    "put-summary-overview-blank": {"overview": "   "},
+}
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        pytest.param(
+            name,
+            id=name,
+            marks=pytest.mark.xfail(strict=True, raises=AssertionError, reason=POINT_B_2026_11_26),
+        )
+        for name in POINT_CASES
+    ],
+)
+def test_put_summary_point_text_outside_1_to_1000_answers_422(
+    client: TestClient, db_session: Session, seeded: dict[str, str], name: str
+) -> None:
+    _summary(db_session, seeded["meeting"])
+    r = client.put(
+        f"/api/v1/meetings/{seeded['meeting']}/summary", json=_summary_body(**POINT_CASES[name])
+    )
+    assert r.status_code == 422, f"{name}: {r.status_code}: {r.text[:200]}"
+
+
+def test_put_summary_point_text_at_1000_is_saved(
+    client: TestClient, db_session: Session, seeded: dict[str, str]
+) -> None:
+    """Đúng 1000 ký tự thì vẫn lưu được (biên trên của giới hạn trên)."""
+    _summary(db_session, seeded["meeting"])
+    text = "a" * SUMMARY_POINT_TEXT_MAX
+    r = client.put(
+        f"/api/v1/meetings/{seeded['meeting']}/summary",
+        json=_summary_body(
+            key_points=[{"text": text, "evidence_segment_ids": []}],
+            decisions=[{"text": text, "evidence_segment_ids": []}],
+        ),
+    )
+    assert r.status_code == 200, r.text[:300]
+    assert r.json()["content"]["key_points"][0]["text"] == text
+
+
+def test_get_summary_still_answers_200_for_stored_points_longer_than_the_input_limit(
+    client: TestClient, db_session: Session, seeded: dict[str, str]
+) -> None:
+    """Giới hạn mới chỉ áp cho dữ liệu gửi lên. Tóm tắt đã lưu từ trước (hoặc do AI sinh) có ý
+    dài hơn 1000 ký tự thì `GET /summary` và `GET /meetings/{id}` vẫn phải trả 200, không 500.
+    `SummaryContentOut` dùng cho cả đầu vào và đầu ra, nên đặt `max_length` thẳng vào đó sẽ làm
+    test này đỏ."""
+    from app.db.models.summary import Summary
+
+    long_text = "b" * (SUMMARY_POINT_TEXT_MAX * 5)
+    db_session.add(
+        Summary(
+            id=str(uuid.uuid4()),
+            meeting_id=seeded["meeting"],
+            status="ready",
+            content={
+                "overview": "Tổng quan",
+                "key_points": [{"text": long_text, "evidence_segment_ids": []}],
+                "decisions": [{"text": long_text, "evidence_segment_ids": []}],
+            },
+            version=1,
+        )
+    )
+    db_session.commit()
+
+    r = client.get(f"/api/v1/meetings/{seeded['meeting']}/summary")
+    assert r.status_code == 200, r.text[:300]
+    assert r.json()["content"]["key_points"][0]["text"] == long_text
+    assert client.get(f"/api/v1/meetings/{seeded['meeting']}").status_code == 200

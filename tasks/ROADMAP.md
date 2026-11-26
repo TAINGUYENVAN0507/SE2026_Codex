@@ -346,3 +346,26 @@ Bắt đầu từ `main` `70b527a`. Lỗi mới C thấy khi soạn việc:
 | A | Tóm tắt dừng ở 50 ý chính và 50 quyết định; giới hạn độ dài của công việc và tổng quan trên cuộc họp thật; E2E sửa tóm tắt trên API thật; ngày họp bị API từ chối |
 | B | Thứ tự job mới nhất dùng chung (P2 của A); `size_bytes` thật; xóa file theo `STORAGE_DIR` (chuyển từ 11-23); dẫn chứng của tóm tắt phải thuộc cuộc họp. Đúng 5 commit |
 | C | Test giới hạn cho các endpoint ghi còn lại; 247 client trước/sau N+1 xen kẽ, kèm đo riêng `GET /meetings`; 40 client; bản đồ bằng chứng, ROADMAP, thời gian phản hồi PR |
+
+**Kết quả (Đợt 15):**
+- #77 (A, `db8072b`): tóm tắt dừng ở 50 mục, `maxLength` cho công việc và tổng quan trên cuộc họp thật, E2E sửa tóm tắt trên API thật, báo lỗi ngày họp bị API từ chối. Đúng 5 commit. B review sau 2,7 giờ, nhưng ghi sai tên hai hằng.
+- #78 (B, `3dd5ae0`): thứ tự job mới nhất dùng chung, `size_bytes` thật, test xóa theo `STORAGE_DIR`, dẫn chứng tóm tắt phải thuộc cuộc họp. Đúng 5 commit. A không review; C review sau 13,0 giờ.
+- C gộp hai PR với `main` rồi chạy lại trước khi merge:
+  - Backend trên PostgreSQL 16: 551 passed, 0 xfailed. 1 skipped vì Postgres nghe IPv4; mở thêm `::1` thì test đó đạt.
+  - Frontend: 341 passed, 0 skipped.
+  - E2E sửa tóm tắt: 1 passed.
+- 247 client ở 2 process: lượt chậm hơn của "sau #75" ngày 11-25 không lặp lại (`docs/evidence/load-247/three-way-2026-11-26/README.md`).
+
+### Đợt 16 (giao ngày 2026-11-26: `tasks/2026-11-26/`, sau hạn nộp, mỗi người 5 commit)
+
+Bắt đầu từ `main` `db8072b`. Lỗi mới C thấy khi review và soạn việc:
+- **`PUT /summary` lưu ý chính và quyết định dài tùy ý hoặc rỗng, và tổng quan chỉ có khoảng trắng.** `SummaryPointOut.text` không có giới hạn, API không giới hạn body JSON. C bắt bằng 5 ca `xfail` strict trên PostgreSQL, cùng một ca bảo vệ: tóm tắt đã lưu dài hơn vẫn phải đọc được (`SummaryContentOut` dùng cho cả đầu vào và đầu ra).
+- **`audio.available` vẫn là true khi file đã mất**, còn `GET /audio` trả 404 (P3 trên #78). Player của frontend khi đó lại báo "hết hạn".
+- **Ba chỗ tìm file audio theo ba cách**; hai chỗ không kiểm đường dẫn nằm trong `STORAGE_DIR`.
+- **28 warning khi chạy backend**, 21 là tên mã HTTP đã deprecated.
+
+| Member | Việc |
+|---|---|
+| A | Ô chữ của mỗi ý chính và quyết định dừng ở 1000 ký tự; player phân biệt mất file và hết hạn; E2E bấm dẫn chứng thì audio tua tới segment trên API thật; editor khi API từ chối dẫn chứng |
+| B | Ý của tóm tắt 1 đến 1000 ký tự khi lưu (bỏ 5 `xfail`); `available` false khi file mất; một hàm tìm file audio dùng chung, không ra ngoài `STORAGE_DIR`; đổi tên mã 422 và 413 deprecated. Đúng 5 commit |
+| C | Test chữ của ý trong tóm tắt trên PostgreSQL; 247 client ba bản xen kẽ (trước #75, sau #75, sau #78); 40 client kèm thử giả thuyết DB mới; bản đồ bằng chứng, ROADMAP, thời gian phản hồi PR |
