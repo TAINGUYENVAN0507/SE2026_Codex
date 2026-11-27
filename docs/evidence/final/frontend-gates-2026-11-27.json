@@ -1,0 +1,196 @@
+{
+  "assignment_date": "2026-11-27",
+  "executed_date_local": "2026-11-27",
+  "timezone": "Asia/Ho_Chi_Minh",
+  "recorded_at_utc": "2026-11-27T13:52:24.412821+00:00",
+  "implementation_head": "27ce5188b7b0c4e959019784f01a3e28d2f9625f",
+  "base_main": "6d3e2c41aafdb96b07358e1e04e22f3aebc4480a",
+  "checks": [
+    {
+      "label": "feature-lint",
+      "head": "15cdd339ce4650c5c21c0a2fa639903894bfa746",
+      "command": [
+        "npm.cmd",
+        "run",
+        "lint"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 5.81,
+      "finished_at_utc": "2026-11-27T13:43:17.092157+00:00"
+    },
+    {
+      "label": "feature-types",
+      "head": "15cdd339ce4650c5c21c0a2fa639903894bfa746",
+      "command": [
+        "npm.cmd",
+        "run",
+        "typecheck"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 4.49,
+      "finished_at_utc": "2026-11-27T13:43:21.681074+00:00"
+    },
+    {
+      "label": "final-tests-coverage",
+      "head": "15cdd339ce4650c5c21c0a2fa639903894bfa746",
+      "command": [
+        "npm.cmd",
+        "test",
+        "--",
+        "--coverage"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 52.5,
+      "finished_at_utc": "2026-11-27T13:44:57.230890+00:00"
+    },
+    {
+      "label": "final-format",
+      "head": "15cdd339ce4650c5c21c0a2fa639903894bfa746",
+      "command": [
+        "npm.cmd",
+        "run",
+        "format:check"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 4.83,
+      "finished_at_utc": "2026-11-27T13:45:02.213602+00:00"
+    },
+    {
+      "label": "final-api-generation",
+      "head": "15cdd339ce4650c5c21c0a2fa639903894bfa746",
+      "command": [
+        "npm.cmd",
+        "run",
+        "gen:api"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 6.22,
+      "finished_at_utc": "2026-11-27T13:47:45.832218+00:00"
+    },
+    {
+      "label": "final-build",
+      "head": "15cdd339ce4650c5c21c0a2fa639903894bfa746",
+      "command": [
+        "npm.cmd",
+        "run",
+        "build"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 5.67,
+      "finished_at_utc": "2026-11-27T13:47:51.657618+00:00"
+    },
+    {
+      "label": "final-format-readme",
+      "head": "27ce5188b7b0c4e959019784f01a3e28d2f9625f",
+      "command": [
+        "npm.cmd",
+        "run",
+        "format:check"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 2.14,
+      "finished_at_utc": "2026-11-27T13:52:26.887608+00:00"
+    }
+  ],
+  "vitest": {
+    "files": 59,
+    "passed": 363,
+    "failed": 0,
+    "skipped": 0
+  },
+  "coverage": {
+    "lines": {
+      "total": 1468,
+      "covered": 1297,
+      "skipped": 0,
+      "pct": 88.35
+    },
+    "statements": {
+      "total": 1636,
+      "covered": 1408,
+      "skipped": 0,
+      "pct": 86.06
+    },
+    "functions": {
+      "total": 512,
+      "covered": 426,
+      "skipped": 0,
+      "pct": 83.2
+    },
+    "branches": {
+      "total": 1527,
+      "covered": 1275,
+      "skipped": 0,
+      "pct": 83.49
+    },
+    "branchesTrue": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 100
+    }
+  },
+  "coverage_floors": {
+    "lines": 84.53,
+    "branches": 79.11
+  },
+  "api_drift": false,
+  "e2e": {
+    "upload_and_retention_passed": 3,
+    "missing_audio_runs_passed": 3,
+    "failed_final": 0,
+    "skipped": 0,
+    "retries": 0,
+    "browser": "Chromium desktop",
+    "api": "real API/PostgreSQL 16",
+    "pipeline": "fake worker enabled",
+    "manual_worker_env_set": false,
+    "storage_removed": true,
+    "container_removed": true,
+    "appdata_audio_dirs_before_after": [
+      144,
+      144
+    ],
+    "appdata_artifact_dirs_before_after": [
+      155,
+      155
+    ]
+  },
+  "review": {
+    "pr77_reply_url": "https://github.com/TAINGUYENVAN0507/SE2026_Codex/pull/77#issuecomment-7219357584",
+    "reply_verified": true,
+    "member_b_checked_at_utc": "2026-11-27T13:51:03Z",
+    "open_pr_count": 0,
+    "member_b_review": "Chờ PR ngày 11-27; #81 hôm qua chưa được A review, đã merge."
+  },
+  "notes": [
+    "Giữ log đỏ baseline storage và login, cùng lỗi chuyển tiếp hook/cleanup Windows/guard retention; không tính các lượt đó thành passed.",
+    "Ca lỗi collection sau thêm reporter vẫn dọn storage; lượt cuối upload/retention 3 passed và missing 3/3 passed.",
+    "SHA-256 tính từ bytes nguồn trên working tree Windows; Git có thể chuẩn hóa line endings.",
+    "Fixture Python đã ruff check/format --check sạch sau thay guard; không sửa backend.",
+    "Chưa push/mở PR/CI GitHub cho đợt này."
+  ],
+  "source_sha256": {
+    "frontend/e2e/expire_audio.py": "192f1cff8805ec82b63f65bead79989ef00e063a9b38de0bb4238e0cc663c0b4",
+    "frontend/e2e/flows/missing-audio.spec.ts": "781c8c79a772e54a22e2b12b3b11d998736f84651dbb63d863dce04d3c317e76",
+    "frontend/e2e/flows/upload.spec.ts": "c11cb8d153cfc4283e95916d9a2189b1a286cd69db6133b465ccdb1fa6c53f45",
+    "frontend/e2e/stack.mjs": "678d936b3fefc6ed71cdf71420a58e04ef9023bc392c0716d1ba20d2ac8b59da",
+    "frontend/e2e/storage-reporter.mjs": "be34fe38d4240197ae267d14a615f3d9f1c5e53514b21b46b18f5e0a0151920c",
+    "frontend/e2e/storage.d.mts": "bf3da22a6e52bf2237f6f7545fe42a0ce3ff0868681442176e60812cc0f016a2",
+    "frontend/e2e/storage.mjs": "841de624be3af1b665146c249faa9a9033b7cefc220a1e78060061d06f9200e7",
+    "frontend/playwright.config.ts": "51441a6a7faf5530ddbd029f247ba0bacaedc80c219f787267aad6edfef03486",
+    "frontend/src/features/audio/useIdempotencyKey.test.ts": "f3d882dec68c69c49e01104c2c5e44353fb9f0a7d93ce3bba0b9147bb6a3b0d1",
+    "frontend/src/features/audio/useIdempotencyKey.ts": "d84758d67590fe3125415fd6ad6c16fd2bce13e71f170bd2af6ea5eddaac08b4",
+    "frontend/src/pages/LoginPage.test.tsx": "56b8e9845030c593571d4aa53f68ae76a39ca54b1bb85de4d20da2d14875eb7f",
+    "frontend/src/pages/LoginPage.tsx": "c82ded675fb2d3f009a603c2b8bd39d5198b17d8ea66469cd471749df2f6dd12",
+    "frontend/src/test/e2eStorage.test.ts": "f2b59a6f0a8cdab4e310955a83dc077dc0e3964ac8e0c3706e6a7f11b41a6f17"
+  },
+  "log_normalization": "Trailing whitespace trimmed in the transition log before publishing; no test output values changed."
+}

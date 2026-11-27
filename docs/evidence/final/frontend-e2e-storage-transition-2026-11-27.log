@@ -118,7 +118,7 @@ storage-upload-helpers — phần cuối log gốc
   ok 3 [chromium] › e2e\flows\upload.spec.ts:31:1 › RT-11: reload khi đang xử lý, tiếp tục job cũ và không tạo thêm job (22.3s)
 
 
-  1) [chromium] › e2e\flows\retention.spec.ts:6:1 › FE-19: cleanup xóa audio/artifacts hết hạn thật, transcript vẫn đọc được 
+  1) [chromium] › e2e\flows\retention.spec.ts:6:1 › FE-19: cleanup xóa audio/artifacts hết hạn thật, transcript vẫn đọc được
 
     Error: Command failed: D:/KLTN/data/se-qa-tools/Scripts/uv.exe run --no-sync python D:\Project\CNPM\SE2026_Codex\frontend\e2e\expire_audio.py a4cc8ba5-08d1-411b-a19b-1d9818039732
     Traceback (most recent call last):
@@ -144,7 +144,7 @@ storage-upload-helpers — phần cuối log gốc
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
   1 failed
-    [chromium] › e2e\flows\retention.spec.ts:6:1 › FE-19: cleanup xóa audio/artifacts hết hạn thật, transcript vẫn đọc được 
+    [chromium] › e2e\flows\retention.spec.ts:6:1 › FE-19: cleanup xóa audio/artifacts hết hạn thật, transcript vẫn đọc được
   2 passed (1.4m)
 
 EXIT=1

@@ -1,0 +1,103 @@
+Gate frontend — 27/11/2026 (Asia/Ho_Chi_Minh)
+Metadata ghi HEAD lúc chạy; các lệnh cuối kiểm working tree có source của việc 2/3/4 trước khi commit. SHA-256 source cuối đi kèm JSON.
+
+feature-lint
+$ npm.cmd run lint
+
+> vietnamese-meeting-minutes-frontend@0.0.0 lint
+> eslint . && oxlint .
+
+
+EXIT=0
+
+feature-types
+$ npm.cmd run typecheck
+
+> vietnamese-meeting-minutes-frontend@0.0.0 typecheck
+> tsc -b --pretty false
+
+
+EXIT=0
+
+final-tests-coverage
+$ npm.cmd test -- --coverage
+
+> vietnamese-meeting-minutes-frontend@0.0.0 test
+> vitest run --coverage
+
+
+ RUN  v5.0.5 D:/Project/CNPM/SE2026_Codex/frontend
+      Coverage enabled with v8
+
+
+ Test Files  59 passed (59)
+      Tests  363 passed (363)
+   Start at  20:44:07
+   Duration  49.64s (environment 42%, tests 35%, import 10%, setup 8%, transform 3%, worker 2%)
+
+Environment  jsdom was created 59 times · 75.51s total, 42% of tracked time
+             create it once per worker with pool: 'vmThreads' (keeps per-file isolation) or isolate: false (shares it across files)
+             learn more: https://vitest.dev/guide/improving-performance#test-environments
+
+ % Coverage report from v8
+
+=============================== Coverage summary ===============================
+Statements   : 86.06% ( 1408/1636 )
+Branches     : 83.49% ( 1275/1527 )
+Functions    : 83.2% ( 426/512 )
+Lines        : 88.35% ( 1297/1468 )
+================================================================================
+
+EXIT=0
+
+final-format
+$ npm.cmd run format:check
+
+> vietnamese-meeting-minutes-frontend@0.0.0 format:check
+> prettier --check .
+
+Checking formatting...
+All matched files use Prettier code style!
+
+EXIT=0
+
+final-api-generation
+$ npm.cmd run gen:api
+
+> vietnamese-meeting-minutes-frontend@0.0.0 gen:api
+> openapi-typescript ../contracts/openapi.json -o src/api/schema.d.ts && prettier --write src/api/schema.d.ts
+
+✨ openapi-typescript 7.13.0
+🚀 ../contracts/openapi.json → src/api/schema.d.ts [127.7ms]
+src/api/schema.d.ts 160ms
+
+EXIT=0
+
+final-build
+$ npm.cmd run build
+
+> vietnamese-meeting-minutes-frontend@0.0.0 build
+> tsc -b && vite build
+
+vite v8.3.4 building client environment for production...
+transforming...
+✓ 189 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.76 kB │ gzip:   0.44 kB
+dist/assets/index-DgSHrS1i.css   44.01 kB │ gzip:   9.86 kB
+dist/assets/index-C36l9yux.js   485.57 kB │ gzip: 145.55 kB
+
+✓ built in 384ms
+
+EXIT=0
+
+$ npm.cmd run format:check
+
+> vietnamese-meeting-minutes-frontend@0.0.0 format:check
+> prettier --check .
+
+Checking formatting...
+All matched files use Prettier code style!
+
+EXIT=0

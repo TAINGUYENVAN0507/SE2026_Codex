@@ -250,3 +250,11 @@ Chi tiết: [FE-12](../docs/frontend/FE-12.md), [FE-13](../docs/frontend/FE-13.m
 Mỗi ý chính/quyết định giới hạn 1000 ký tự khi nhập và lưu; dữ liệu dài đã lưu vẫn đọc đầy đủ. Player phân biệt mất file với hết hạn, dựa trên retention lúc mở và probe 404/410. Editor giữ nháp và cho lưu lại khi API từ chối dẫn chứng. Chi tiết: [FE-12](../docs/frontend/FE-12.md), [FE-19](../docs/frontend/FE-19.md), [FE-18](../docs/frontend/FE-18.md).
 
 [E2E bấm dẫn chứng](../docs/frontend/FE-17.md) đạt ba lượt API/PostgreSQL thật với worker fake: audio từ 0 tới 6 giây, trong đoạn 6–11,2 lấy từ API, không tự phát. [Gate local](../docs/evidence/final/frontend-gates-2026-11-26.json): 352 test/58 file, không skip; coverage lines 88.31%, branches 83.34%. Đợt này chưa push, chưa có kết quả CI PR. Các thay đổi API về giới hạn chữ và available vẫn thuộc task B.
+
+## Storage E2E và đăng nhập khi bận — 27/11/2026
+
+Stack E2E tự tạo storage tạm riêng, xuất E2E_STORAGE_DIR cho spec và đồng bộ STORAGE_DIR cho API/worker/helper, không ghi vào backend/appdata phát triển. Stack dọn sau khi dừng tiến trình; reporter onExit là fallback khi Windows dừng cứng. Có kiểm đường dẫn thật/token/PID trước xóa. Không cần đặt STORAGE_DIR bằng tay. Chi tiết và lệnh kiểm: [FE-17](../docs/frontend/FE-17.md).
+
+[E2E audio mất file](../docs/frontend/FE-19.md) đạt 3 lượt API/PostgreSQL thật, worker fake bật: player báo mất file, API trả 404, transcript còn nguyên. Upload và retention cũng đạt 3 test; storage tạm đã dọn và thư mục phát triển 144/155 không đổi.
+
+[Login 503](../docs/frontend/FE-03.md) báo máy chủ bận và giữ email/mật khẩu để bấm lại, chỉ lỗi sai thông tin đăng nhập xóa mật khẩu; thành công vẫn xóa trước chuyển trang. [Hook key](../docs/frontend/FE-05.md) memo primitive theo file/payload. [Gate local](../docs/evidence/final/frontend-gates-2026-11-27.json): 363 test/59 file, không skip; coverage lines 88.35%, branches 83.49%, build/lint/type/format đạt. Đợt này chưa push, chưa có CI PR.
