@@ -1,0 +1,189 @@
+{
+  "cases": {
+    "baseline": {
+      "head": "6d3e2c41aafdb96b07358e1e04e22f3aebc4480a",
+      "runs": [
+        {
+          "head": "6d3e2c41aafdb96b07358e1e04e22f3aebc4480a",
+          "exit_code": 0,
+          "database": "meeting_day17_baseline_r1_e2e",
+          "appdata_before": {
+            "audio": 144,
+            "artifacts": 155
+          },
+          "appdata_after": {
+            "audio": 144,
+            "artifacts": 155
+          },
+          "appdata_unchanged": true,
+          "inherited_storage_counts": {
+            "audio": 2,
+            "artifacts": 2
+          },
+          "temporary_storage_removed": true,
+          "manual_worker_env_set": false,
+          "isolation_assertion_passed": false
+        }
+      ]
+    },
+    "first_hook_failure": {
+      "head": "6d3e2c41aafdb96b07358e1e04e22f3aebc4480a",
+      "runs": [
+        {
+          "head": "6d3e2c41aafdb96b07358e1e04e22f3aebc4480a",
+          "exit_code": 1,
+          "database": "meeting_day17_upload_r1_e2e",
+          "appdata_before": {
+            "audio": 144,
+            "artifacts": 155
+          },
+          "appdata_after": {
+            "audio": 144,
+            "artifacts": 155
+          },
+          "appdata_unchanged": true,
+          "inherited_storage_counts": {
+            "audio": 0,
+            "artifacts": 0
+          },
+          "temporary_storage_removed": false,
+          "manual_worker_env_set": false,
+          "isolation_assertion_passed": false
+        }
+      ]
+    },
+    "failure_cleanup_verified": {
+      "head": "6d3e2c41aafdb96b07358e1e04e22f3aebc4480a",
+      "runs": [
+        {
+          "head": "6d3e2c41aafdb96b07358e1e04e22f3aebc4480a",
+          "exit_code": 1,
+          "database": "meeting_day17_upload_r1_e2e",
+          "appdata_before": {
+            "audio": 144,
+            "artifacts": 155
+          },
+          "appdata_after": {
+            "audio": 144,
+            "artifacts": 155
+          },
+          "appdata_unchanged": true,
+          "inherited_storage_counts": {
+            "audio": 0,
+            "artifacts": 0
+          },
+          "temporary_storage_removed": true,
+          "manual_worker_env_set": false,
+          "isolation_assertion_passed": false
+        }
+      ]
+    },
+    "upload_verified": {
+      "head": "6d3e2c41aafdb96b07358e1e04e22f3aebc4480a",
+      "runs": [
+        {
+          "head": "6d3e2c41aafdb96b07358e1e04e22f3aebc4480a",
+          "exit_code": 0,
+          "database": "meeting_day17_upload_r1_e2e",
+          "appdata_before": {
+            "audio": 144,
+            "artifacts": 155
+          },
+          "appdata_after": {
+            "audio": 144,
+            "artifacts": 155
+          },
+          "appdata_unchanged": true,
+          "inherited_storage_counts": {
+            "audio": 0,
+            "artifacts": 0
+          },
+          "temporary_storage_removed": true,
+          "manual_worker_env_set": false,
+          "storage_observed_by_spec": {
+            "browser": "chromium",
+            "storageExists": true,
+            "audio": 2,
+            "artifacts": 2
+          },
+          "isolation_assertion_passed": true
+        }
+      ]
+    },
+    "retention_guard_failure": {
+      "head": "6d3e2c41aafdb96b07358e1e04e22f3aebc4480a",
+      "runs": [
+        {
+          "head": "6d3e2c41aafdb96b07358e1e04e22f3aebc4480a",
+          "exit_code": 1,
+          "database": "meeting_day17_upload_r1_e2e",
+          "appdata_before": {
+            "audio": 144,
+            "artifacts": 155
+          },
+          "appdata_after": {
+            "audio": 144,
+            "artifacts": 155
+          },
+          "appdata_unchanged": true,
+          "inherited_storage_counts": {
+            "audio": 0,
+            "artifacts": 0
+          },
+          "temporary_storage_removed": true,
+          "manual_worker_env_set": false,
+          "isolation_assertion_passed": false
+        }
+      ]
+    },
+    "final_upload_and_retention": {
+      "head": "6d3e2c41aafdb96b07358e1e04e22f3aebc4480a",
+      "runs": [
+        {
+          "head": "6d3e2c41aafdb96b07358e1e04e22f3aebc4480a",
+          "exit_code": 0,
+          "database": "meeting_day17_upload_r1_e2e",
+          "appdata_before": {
+            "audio": 144,
+            "artifacts": 155
+          },
+          "appdata_after": {
+            "audio": 144,
+            "artifacts": 155
+          },
+          "appdata_unchanged": true,
+          "inherited_storage_counts": {
+            "audio": 0,
+            "artifacts": 0
+          },
+          "temporary_storage_removed": true,
+          "manual_worker_env_set": false,
+          "storage_observed_by_spec": {
+            "browser": "chromium",
+            "storageExists": true,
+            "audio": 2,
+            "artifacts": 2
+          },
+          "isolation_assertion_passed": true
+        }
+      ]
+    }
+  },
+  "source_sha256": {
+    "frontend/e2e/storage.mjs": "841de624be3af1b665146c249faa9a9033b7cefc220a1e78060061d06f9200e7",
+    "frontend/e2e/storage-reporter.mjs": "be34fe38d4240197ae267d14a615f3d9f1c5e53514b21b46b18f5e0a0151920c",
+    "frontend/e2e/storage.d.mts": "bf3da22a6e52bf2237f6f7545fe42a0ce3ff0868681442176e60812cc0f016a2",
+    "frontend/e2e/stack.mjs": "678d936b3fefc6ed71cdf71420a58e04ef9023bc392c0716d1ba20d2ac8b59da",
+    "frontend/e2e/expire_audio.py": "192f1cff8805ec82b63f65bead79989ef00e063a9b38de0bb4238e0cc663c0b4",
+    "frontend/e2e/flows/upload.spec.ts": "c11cb8d153cfc4283e95916d9a2189b1a286cd69db6133b465ccdb1fa6c53f45",
+    "frontend/playwright.config.ts": "de267cda8ff64ce3ce7fe92354bb62ffd8eed451d60faf51e7d33d2b4fc3ac03",
+    "frontend/src/test/e2eStorage.test.ts": "f2b59a6f0a8cdab4e310955a83dc077dc0e3964ac8e0c3706e6a7f11b41a6f17"
+  },
+  "notes": [
+    "Baseline dùng canary STORAGE_DIR để tái hiện ghi nhầm mà không ghi vào appdata phát triển.",
+    "Một hook afterAll sai cú pháp đã lộ cleanup Windows không chạy khi taskkill. Đã sửa hook và thêm reporter onExit sau teardown; ca lỗi trước collection sau sửa vẫn dọn hết storage.",
+    "Thư mục rỗng còn lại ở lượt hook lỗi đầu đã được xác minh chỉ có marker rồi dọn không đệ quy.",
+    "Fixture retention cũ khóa vào backend/appdata; đã chuyển sang E2E_STORAGE_DIR và kiểm token. Lượt cuối upload+retention 3 passed, 0 skipped; appdata 144/155 trước/sau không đổi.",
+    "6 test storage đạt; lint/typecheck đạt, Ruff của fixture Python sạch. Không sửa backend."
+  ]
+}

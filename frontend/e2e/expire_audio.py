@@ -4,6 +4,7 @@ import json
 import os
 import subprocess
 import sys
+import tempfile
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from urllib.parse import urlparse
@@ -17,7 +18,7 @@ from sqlalchemy import select
 
 
 def main() -> None:
-    """Chỉ tác động meeting tổng hợp trong database E2E và appdata của stack test."""
+    """Chỉ tác động meeting tổng hợp trong database E2E và storage riêng của stack test."""
     database = os.environ.get("E2E_DATABASE_URL", "")
     if "e2e" not in urlparse(database).path.lower() or database != os.environ.get(
         "DATABASE_URL"
@@ -26,13 +27,22 @@ def main() -> None:
     meeting_id = str(UUID(sys.argv[1]))
     backend = Path(__file__).resolve().parents[2] / "backend"
     storage = get_storage()
-    root = (backend / "appdata").resolve()
-    if storage.base_dir.resolve() != root:
+    expected = os.environ.get("E2E_STORAGE_DIR", "")
+    if not expected:
+        raise RuntimeError("Thiếu E2E_STORAGE_DIR riêng của stack.")
+    root = Path(expected).resolve(strict=True)
+    owner = json.loads((root / ".se-e2e-owner").read_text(encoding="utf-8"))
+    if (
+        root.parent != Path(tempfile.gettempdir()).resolve()
+        or not root.name.startswith("se-e2e-storage-")
+        or owner.get("token") != os.environ.get("E2E_STORAGE_OWNER")
+        or storage.base_dir.resolve() != root
+    ):
         raise RuntimeError("Storage không khớp thư mục QA dự kiến.")
     audio_dir = storage.get_audio_dir(meeting_id).resolve()
     artifacts_dir = (root / "artifacts" / meeting_id).resolve()
     if not audio_dir.is_relative_to(root) or not artifacts_dir.is_relative_to(root):
-        raise RuntimeError("Đường dẫn cleanup nằm ngoài appdata.")
+        raise RuntimeError("Đường dẫn cleanup nằm ngoài storage E2E.")
 
     session_factory = get_session_factory()
     with session_factory() as db:
@@ -71,7 +81,7 @@ def main() -> None:
             key = str(UUID(item.id))
             targets = [storage.get_audio_dir(key), root / "artifacts" / key]
             if any(not target.resolve().is_relative_to(root) for target in targets):
-                raise RuntimeError("Đường dẫn ứng viên cleanup nằm ngoài appdata QA.")
+                raise RuntimeError("Đường dẫn ứng viên cleanup nằm ngoài storage QA.")
         subprocess.run(
             [sys.executable, "-m", "app.scripts.cleanup"],
             cwd=backend,

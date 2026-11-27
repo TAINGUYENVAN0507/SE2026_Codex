@@ -1,4 +1,6 @@
 import { test, expect } from '../fixtures.js'
+import { readdir, writeFile } from 'node:fs/promises'
+import path from 'node:path'
 import { uploadMeeting, expectReady } from '../meeting.js'
 
 test('Upload có consent qua đủ sáu stage tới ready', async ({ page }) => {
@@ -59,4 +61,28 @@ test('RT-11: reload khi đang xử lý, tiếp tục job cũ và không tạo th
   expect((await persisted.json()).latest_job_id).toBe(job.id)
   expect(meetingPosts).toBe(1)
   expect(jobPosts).toBe(0)
+})
+
+// Đọc trước khi stack dừng; harness kiểm thư mục này đã được xóa sau khi Playwright thoát.
+test.afterAll(async ({ browserName }, info) => {
+  const storage = process.env.E2E_STORAGE_DIR
+  expect(storage).toBeTruthy()
+  if (!storage) throw new Error('Thiếu E2E_STORAGE_DIR của stack.')
+  const directories = async (name: string) =>
+    (await readdir(path.join(storage, name), { withFileTypes: true })).filter(
+      (entry) => entry.isDirectory(),
+    ).length
+  const result = {
+    browser: browserName,
+    storageExists: true,
+    audio: await directories('audio'),
+    artifacts: await directories('artifacts'),
+  }
+  expect(result.audio).toBeGreaterThan(0)
+  expect(result.artifacts).toBeGreaterThan(0)
+  await writeFile(
+    info.outputPath('upload-storage-result.json'),
+    JSON.stringify(result, null, 2) + '\n',
+    'utf8',
+  )
 })
