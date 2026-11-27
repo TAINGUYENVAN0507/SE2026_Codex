@@ -30,6 +30,7 @@ Mọi mã lỗi tuân thủ quy ước:
 | `TRANSCRIPT_NOT_READY` | 409 | Transcript chưa hoàn tất xử lý để chỉnh sửa hoặc xuất biên bản | Transcript chưa sẵn sàng để thực hiện thao tác này. |
 | `REQUEST_IN_PROGRESS` | 409 | Yêu cầu với cùng Idempotency-Key đang được xử lý trong transaction khác | Yêu cầu đang được xử lý, vui lòng chờ trong giây lát. |
 | `AUDIO_EXPIRED` | 410 | Tệp âm thanh đã bị xóa theo chính sách lưu trữ (retention policy) | Tệp âm thanh đã hết hạn lưu trữ và đã được dọn dẹp. |
+| `AUDIO_NOT_FOUND` | 404 | Cuộc họp tồn tại nhưng không có tệp âm thanh hoặc tệp đã mất | Không tìm thấy tệp âm thanh của cuộc họp. |
 | `FILE_TOO_LARGE` | 413 | Dung lượng tệp tải lên vượt quá giới hạn tối đa cho phép | Dung lượng tệp âm thanh vượt quá giới hạn cho phép. |
 | `UNSUPPORTED_MEDIA_TYPE` | 415 | Định dạng Content-Type hoặc MIME type không được hỗ trợ | Định dạng tệp không được hỗ trợ. |
 | `RANGE_NOT_SATISFIABLE` | 416 | Khoảng byte yêu cầu trong header Range không hợp lệ hoặc vượt quá kích thước tệp | Khoảng dữ liệu yêu cầu không hợp lệ. |

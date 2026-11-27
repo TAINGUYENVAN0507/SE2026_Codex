@@ -323,3 +323,28 @@ def test_stream_audio_non_existent_meeting_404(client_a: TestClient) -> None:
     assert resp.status_code == 404
     body = resp.json()
     assert body["error"]["code"] == "NOT_FOUND"
+
+
+def test_stream_audio_missing_file_404(
+    client_a: TestClient, dummy_audio_meeting: tuple[Meeting, bytes], mock_storage: Storage
+) -> None:
+    """Cuộc họp còn tồn tại nhưng tệp audio mất có mã lỗi riêng."""
+    meeting, _ = dummy_audio_meeting
+    audio_path = mock_storage.resolve_audio_file(meeting.id, meeting.audio_path)
+    assert audio_path is not None
+    audio_path.unlink()
+    response = client_a.get(f"/api/v1/meetings/{meeting.id}/audio")
+    assert response.status_code == 404
+    assert response.json()["error"]["code"] == "AUDIO_NOT_FOUND"
+
+
+def test_stream_audio_without_path_404(
+    client_a: TestClient, dummy_audio_meeting: tuple[Meeting, bytes], test_db: Session
+) -> None:
+    """Cuộc họp không có đường dẫn audio có mã lỗi riêng."""
+    meeting, _ = dummy_audio_meeting
+    meeting.audio_path = None
+    test_db.commit()
+    response = client_a.get(f"/api/v1/meetings/{meeting.id}/audio")
+    assert response.status_code == 404
+    assert response.json()["error"]["code"] == "AUDIO_NOT_FOUND"

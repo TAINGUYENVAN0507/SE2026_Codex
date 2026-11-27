@@ -18,6 +18,7 @@ export type ApiErrorDetails = Record<string, unknown> | unknown[] | null
 
 const messages: Record<string, string> = {
   AUDIO_EXPIRED: 'Audio đã hết hạn lưu trữ. Bạn vẫn có thể đọc transcript.',
+  AUDIO_NOT_FOUND: 'Không tìm thấy tệp audio của cuộc họp.',
   DIARIZATION_FAILED:
     'Chưa phân biệt được người nói. Hãy kiểm tra và đặt tên người nói trong transcript.',
   FORBIDDEN: 'Bạn không có quyền thực hiện thao tác này.',
