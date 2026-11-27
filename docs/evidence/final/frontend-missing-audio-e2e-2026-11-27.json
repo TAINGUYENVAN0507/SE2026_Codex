@@ -1,0 +1,128 @@
+{
+  "head": "15cdd339ce4650c5c21c0a2fa639903894bfa746",
+  "runs": [
+    {
+      "head": "15cdd339ce4650c5c21c0a2fa639903894bfa746",
+      "exit_code": 0,
+      "database": "meeting_day17_missing_r1_e2e",
+      "appdata_before": {
+        "audio": 144,
+        "artifacts": 155
+      },
+      "appdata_after": {
+        "audio": 144,
+        "artifacts": 155
+      },
+      "appdata_unchanged": true,
+      "inherited_storage_counts": {
+        "audio": 0,
+        "artifacts": 0
+      },
+      "temporary_storage_removed": true,
+      "manual_worker_env_set": false,
+      "test": {
+        "removedFiles": 1,
+        "apiStatus": 404,
+        "errorCode": "NOT_FOUND",
+        "metadataUnavailable": true,
+        "retentionFuture": true,
+        "transcriptPreserved": true,
+        "missingNotice": true,
+        "cleanedMeeting": true,
+        "cleanedUser": true,
+        "retries": 0,
+        "syntheticOnly": true,
+        "apiInterception": false,
+        "pageErrors": []
+      },
+      "isolation_assertion_passed": true
+    },
+    {
+      "head": "15cdd339ce4650c5c21c0a2fa639903894bfa746",
+      "exit_code": 0,
+      "database": "meeting_day17_missing_r2_e2e",
+      "appdata_before": {
+        "audio": 144,
+        "artifacts": 155
+      },
+      "appdata_after": {
+        "audio": 144,
+        "artifacts": 155
+      },
+      "appdata_unchanged": true,
+      "inherited_storage_counts": {
+        "audio": 0,
+        "artifacts": 0
+      },
+      "temporary_storage_removed": true,
+      "manual_worker_env_set": false,
+      "test": {
+        "removedFiles": 1,
+        "apiStatus": 404,
+        "errorCode": "NOT_FOUND",
+        "metadataUnavailable": true,
+        "retentionFuture": true,
+        "transcriptPreserved": true,
+        "missingNotice": true,
+        "cleanedMeeting": true,
+        "cleanedUser": true,
+        "retries": 0,
+        "syntheticOnly": true,
+        "apiInterception": false,
+        "pageErrors": []
+      },
+      "isolation_assertion_passed": true
+    },
+    {
+      "head": "15cdd339ce4650c5c21c0a2fa639903894bfa746",
+      "exit_code": 0,
+      "database": "meeting_day17_missing_r3_e2e",
+      "appdata_before": {
+        "audio": 144,
+        "artifacts": 155
+      },
+      "appdata_after": {
+        "audio": 144,
+        "artifacts": 155
+      },
+      "appdata_unchanged": true,
+      "inherited_storage_counts": {
+        "audio": 0,
+        "artifacts": 0
+      },
+      "temporary_storage_removed": true,
+      "manual_worker_env_set": false,
+      "test": {
+        "removedFiles": 1,
+        "apiStatus": 404,
+        "errorCode": "NOT_FOUND",
+        "metadataUnavailable": true,
+        "retentionFuture": true,
+        "transcriptPreserved": true,
+        "missingNotice": true,
+        "cleanedMeeting": true,
+        "cleanedUser": true,
+        "retries": 0,
+        "syntheticOnly": true,
+        "apiInterception": false,
+        "pageErrors": []
+      },
+      "isolation_assertion_passed": true
+    }
+  ],
+  "cleanup": {
+    "container_removed": true,
+    "label": "20261127-day17-member-a",
+    "finished_at_utc": "2026-11-27T13:46:05.502005+00:00"
+  },
+  "source_sha256": {
+    "frontend/e2e/flows/missing-audio.spec.ts": "781c8c79a772e54a22e2b12b3b11d998736f84651dbb63d863dce04d3c317e76",
+    "frontend/playwright.config.ts": "51441a6a7faf5530ddbd029f247ba0bacaedc80c219f787267aad6edfef03486",
+    "frontend/e2e/stack.mjs": "678d936b3fefc6ed71cdf71420a58e04ef9023bc392c0716d1ba20d2ac8b59da",
+    "frontend/e2e/storage.mjs": "841de624be3af1b665146c249faa9a9033b7cefc220a1e78060061d06f9200e7",
+    "frontend/e2e/storage-reporter.mjs": "be34fe38d4240197ae267d14a615f3d9f1c5e53514b21b46b18f5e0a0151920c",
+    "frontend/src/features/audio/RemoteAudioPlayer.tsx": "1012cc4c960ae8fac012ea1bda3c759b7ce08d042a20f0f9a076f0d6704bb82e",
+    "backend/app/api/v1/audio.py": "f60eb79cec632438458735c999bc3f3e1beb3f4e69a74026208e46a2ffe60faa",
+    "backend/app/services/meetings/queries.py": "cee7a2848230e6ee01d3dfaaa2aa6b26ba2e46670124cb31ad039387643a699e"
+  }
+}
