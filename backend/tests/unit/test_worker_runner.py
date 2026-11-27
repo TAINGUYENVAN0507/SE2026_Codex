@@ -136,6 +136,31 @@ def test_worker_rejects_audio_outside_storage(
     assert job.error_code == "AUDIO_INVALID"
 
 
+def test_worker_reports_expired_audio_after_retention(
+    test_db: Session,
+    sample_meeting_with_audio: Meeting,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Audio đã hết hạn và bị xóa phải báo AUDIO_EXPIRED."""
+    meeting = sample_meeting_with_audio
+    meeting.retention_until = datetime(2026, 1, 1, tzinfo=UTC)
+    enqueue_job(test_db, meeting_id=meeting.id)
+    test_db.commit()
+    pipeline = MagicMock()
+    monkeypatch.setattr("app.worker.runner.run_job", pipeline)
+    assert run_worker_once(
+        test_db,
+        storage=LocalStorage(base_dir=tmp_path / "empty"),
+        worker_id="expired-worker",
+        backend="fake",
+        now=datetime(2026, 1, 2, tzinfo=UTC),
+    )
+    pipeline.assert_not_called()
+    job = test_db.execute(select(Job).where(Job.meeting_id == meeting.id)).scalar_one()
+    assert job.error_code == "AUDIO_EXPIRED"
+
+
 def test_worker_run_queued_job_to_succeeded(
     test_db: Session,
     sample_meeting_with_audio: Meeting,
