@@ -1,0 +1,16 @@
+$ npm.cmd test -- src/features/meetings/RemoteSummaryLimits.test.tsx src/features/meetings/RemoteSummary.test.tsx src/features/meetings/BusyEdits.test.tsx
+
+> vietnamese-meeting-minutes-frontend@0.0.0 test
+> vitest run src/features/meetings/RemoteSummaryLimits.test.tsx src/features/meetings/RemoteSummary.test.tsx src/features/meetings/BusyEdits.test.tsx
+
+
+ RUN  v5.0.5 D:/Project/CNPM/SE2026_Codex/frontend
+
+
+ Test Files  3 passed (3)
+      Tests  20 passed (20)
+   Start at  12:32:43
+   Duration  3.85s (tests 40%, environment 33%, import 13%, setup 7%, transform 6%)
+
+
+EXIT=0

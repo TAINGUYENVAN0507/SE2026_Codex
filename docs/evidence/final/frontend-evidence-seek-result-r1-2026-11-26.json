@@ -1,0 +1,13 @@
+{
+  "segmentStart": 6,
+  "segmentEnd": 11.2,
+  "audioDuration": 60,
+  "before": 0,
+  "after": 6,
+  "cleanedMeeting": true,
+  "cleanedUser": true,
+  "retries": 0,
+  "syntheticOnly": true,
+  "apiInterception": false,
+  "pageErrors": []
+}

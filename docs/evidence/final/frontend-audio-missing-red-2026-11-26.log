@@ -1,0 +1,107 @@
+$ npm.cmd test -- src/features/audio/RemoteAudioPlayer.test.tsx
+
+> vietnamese-meeting-minutes-frontend@0.0.0 test
+> vitest run src/features/audio/RemoteAudioPlayer.test.tsx
+
+
+ RUN  v5.0.5 D:/Project/CNPM/SE2026_Codex/frontend
+
+ ❯ src/features/audio/RemoteAudioPlayer.test.tsx (8 tests | 4 failed) 2283ms
+   × FE-19: unavailable chưa hết hạn (2026-12-20T12:00:00Z) báo mất file, vẫn giữ transcript 4ms
+   × FE-19: unavailable chưa hết hạn (null) báo mất file, vẫn giữ transcript 2ms
+   × FE-19: probe 404 AUDIO_NOT_FOUND báo mất file thay cho lỗi phát chung 1024ms
+   × FE-19: probe 404 NOT_FOUND báo mất file thay cho lỗi phát chung 1024ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/features/audio/RemoteAudioPlayer.test.tsx > FE-19: unavailable chưa hết hạn (2026-12-20T12:00:00Z) báo mất file, vẫn giữ transcript
+ FAIL  src/features/audio/RemoteAudioPlayer.test.tsx > FE-19: unavailable chưa hết hạn (null) báo mất file, vẫn giữ transcript
+Error: expect(element).toHaveTextContent()
+
+Expected element to have text content:
+  Không tìm thấy file audio
+Received:
+  Audio đã hết hạn lưu trữ
+ ❯ src/features/audio/RemoteAudioPlayer.test.tsx:109:40
+    107|   (retention) => {
+    108|     const { container } = setup(false, retention)
+    109|     expect(screen.getByRole('status')).toHaveTextContent(
+       |                                        ^
+    110|       'Không tìm thấy file audio',
+    111|     )
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/features/audio/RemoteAudioPlayer.test.tsx > FE-19: probe 404 AUDIO_NOT_FOUND báo mất file thay cho lỗi phát chung
+ FAIL  src/features/audio/RemoteAudioPlayer.test.tsx > FE-19: probe 404 NOT_FOUND báo mất file thay cho lỗi phát chung
+TestingLibraryElementError: Unable to find role="status"
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<section[39m
+      [33maria-keyshortcuts[39m=[32m"Space ArrowLeft ArrowRight"[39m
+      [33maria-label[39m=[32m"Player audio cuộc họp"[39m
+      [33mclass[39m=[32m"audio-region"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"audio-player"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"audio-caption"[39m
+        [36m>[39m
+          [36m<span>[39m
+            [36m<svg[39m
+              [33mfill[39m=[32m"currentColor"[39m
+              [33mheight[39m=[32m"17"[39m
+              [33mviewBox[39m=[32m"0 0 256 256"[39m
+              [33mwidth[39m=[32m"17"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M56,96v64a8,8,0,0,1-16,0V96a8,8,0,0,1,16,0ZM88,24a8,8,0,0,0-8,8V224a8,8,0,0,0,16,0V32A8,8,0,0,0,88,24Zm40,32a8,8,0,0,0-8,8V192a8,8,0,0,0,16,0V64A8,8,0...
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<section[39m
+      [33maria-keyshortcuts[39m=[32m"Space ArrowLeft ArrowRight"[39m
+      [33maria-label[39m=[32m"Player audio cuộc họp"[39m
+      [33mclass[39m=[32m"audio-region"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"audio-player"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"audio-caption"[39m
+        [36m>[39m
+          [36m<span>[39m
+            [36m<svg[39m
+              [33mfill[39m=[32m"currentColor"[39m
+              [33mheight[39m=[32m"17"[39m
+              [33mviewBox[39m=[32m"0 0 256 256"[39m
+              [33mwidth[39m=[32m"17"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M56,96v64a8,8,0,0,1-16,0V96a8,8,0,0,1,16,0ZM88,24a8,8,0,0,0-8,8V224a8,8,0,0,0,16,0V32A8,8,0,0,0,88,24Zm40,32a8,8,0,0,0-8,8V192a8,8,0,0,0,16,0V64A8,8,0...
+ ❯ waitForWrapper node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/features/audio/RemoteAudioPlayer.test.tsx:141:25
+    139|     const { container } = setup(true, '2026-12-20T12:00:00Z')
+    140|     fireEvent.error(container.querySelector('audio')!)
+    141|     expect(await screen.findByRole('status')).toHaveTextContent(
+       |                         ^
+    142|       'Không tìm thấy file audio',
+    143|     )
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 4 passed (8)
+   Start at  12:32:14
+   Duration  3.86s (tests 61%, environment 23%, import 9%, setup 4%, transform 3%)
+
+
+EXIT=1

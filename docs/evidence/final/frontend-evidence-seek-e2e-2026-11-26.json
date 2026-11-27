@@ -1,0 +1,104 @@
+{
+  "head": "f4321233380295a313bee2b28b19c63f3de6506d",
+  "runs": [
+    {
+      "head": "f4321233380295a313bee2b28b19c63f3de6506d",
+      "command": [
+        "node",
+        "node_modules/@playwright/test/cli.js",
+        "test",
+        "e2e/flows/evidence-seek.spec.ts",
+        "--retries=0"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 49.85,
+      "finished_at_utc": "2026-11-26T05:39:37.527600+00:00",
+      "database": "meeting_day16_r1_e2e",
+      "result": {
+        "segmentStart": 6,
+        "segmentEnd": 11.2,
+        "audioDuration": 60,
+        "before": 0,
+        "after": 6,
+        "cleanedMeeting": true,
+        "cleanedUser": true,
+        "retries": 0,
+        "syntheticOnly": true,
+        "apiInterception": false,
+        "pageErrors": []
+      }
+    },
+    {
+      "head": "f4321233380295a313bee2b28b19c63f3de6506d",
+      "command": [
+        "node",
+        "node_modules/@playwright/test/cli.js",
+        "test",
+        "e2e/flows/evidence-seek.spec.ts",
+        "--retries=0"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 44.32,
+      "finished_at_utc": "2026-11-26T05:41:07.170762+00:00",
+      "database": "meeting_day16_r2_e2e",
+      "result": {
+        "segmentStart": 6,
+        "segmentEnd": 11.2,
+        "audioDuration": 60,
+        "before": 0,
+        "after": 6,
+        "cleanedMeeting": true,
+        "cleanedUser": true,
+        "retries": 0,
+        "syntheticOnly": true,
+        "apiInterception": false,
+        "pageErrors": []
+      }
+    },
+    {
+      "head": "f4321233380295a313bee2b28b19c63f3de6506d",
+      "command": [
+        "node",
+        "node_modules/@playwright/test/cli.js",
+        "test",
+        "e2e/flows/evidence-seek.spec.ts",
+        "--retries=0"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 65.99,
+      "finished_at_utc": "2026-11-26T05:42:14.957331+00:00",
+      "database": "meeting_day16_r3_e2e",
+      "result": {
+        "segmentStart": 6,
+        "segmentEnd": 11.2,
+        "audioDuration": 60,
+        "before": 0,
+        "after": 6,
+        "cleanedMeeting": true,
+        "cleanedUser": true,
+        "retries": 0,
+        "syntheticOnly": true,
+        "apiInterception": false,
+        "pageErrors": []
+      }
+    }
+  ],
+  "source_sha256": {
+    "frontend/e2e/flows/evidence-seek.spec.ts": "253ce5a9640ca29a2c190e9a19599d21c57be25f1a272a21e9733266f768294f",
+    "frontend/playwright.config.ts": "2f47b28716a7414a9bf65095f14e3992338be4189a46d60425b7d568037c49d4",
+    "frontend/src/features/audio/RemoteAudioPlayer.tsx": "1012cc4c960ae8fac012ea1bda3c759b7ce08d042a20f0f9a076f0d6704bb82e",
+    "frontend/src/features/meetings/EvidenceLinks.tsx": "b14088ecddb883397eb04bbcad0cf4a618cd18ba95a46ffe4763d419344e5005",
+    "frontend/src/features/audio/AudioPlayer.tsx": "369b8836fdc1a4363cb2f65915a1cc74f2e73e25bde828bc5741c55a70f2da08",
+    "frontend/src/pages/MeetingDetailPage.tsx": "5d9292fdad927f42746c62d851830580151f541064b4a121247a94c91381c431",
+    "backend/app/api/v1/summary.py": "7de01174e99ab6833fe3926ea692d26749d92a271cac899605b55b56c99ec1cd"
+  },
+  "cleanup": {
+    "container_removed": true,
+    "label": "20261126-day16-member-a",
+    "finished_at_utc": "2026-11-26T05:42:15.982578+00:00"
+  },
+  "orchestration_note": "Lượt 1 Playwright đạt và đã ghi kết quả/dọn dữ liệu. Helper sau đó dừng do console Windows cp1252 không in được tiếng Việt; finally đã xóa container. Chuyển stdout UTF-8 và tiếp tục lượt 2,3 trên container mới; không sửa nguồn frontend hay chạy lại lượt 1."
+}

@@ -121,3 +121,83 @@ it('FE-12: dán tổng quan vượt giới hạn chỉ gửi đúng 5000 ký t�
   expect(field).toHaveAttribute('maxlength', '5000')
   expect(screen.queryByRole('alert')).not.toBeInTheDocument()
 })
+
+it.each([
+  { field: 'key_points', input: 'Ý chính', pasted: 1001 },
+  { field: 'decisions', input: 'Quyết định', pasted: 1001 },
+  { field: 'key_points', input: 'Ý chính', pasted: 1000 },
+  { field: 'decisions', input: 'Quyết định', pasted: 1000 },
+] as const)(
+  'FE-12: $input dán $pasted ký tự chỉ lưu đúng 1000',
+  async ({ field, input, pasted }) => {
+    const texts: string[] = []
+    server.use(
+      http.get('*/api/v1/meetings/:id/summary', () => HttpResponse.json(ready)),
+      http.put('*/api/v1/meetings/:id/summary', async ({ request }) => {
+        const body = (await request.json()) as {
+          content: typeof ready.content
+          version: number
+        }
+        texts.push(body.content[field][0].text)
+        return body.content[field][0].text.length > 1000
+          ? HttpResponse.json(
+              { error: { code: 'VALIDATION_ERROR', message: 'Quá dài' } },
+              { status: 422 },
+            )
+          : HttpResponse.json({
+              ...ready,
+              content: body.content,
+              version: body.version + 1,
+            })
+      }),
+    )
+    const user = userEvent.setup()
+    renderSummary()
+    await user.click(await screen.findByRole('button', { name: 'Chỉnh sửa' }))
+    const item = screen.getByRole('textbox', { name: `${input} 1` })
+    await user.clear(item)
+    await user.paste('x'.repeat(pasted))
+    await user.click(screen.getByRole('button', { name: 'Lưu' }))
+    await waitFor(() => expect(texts).toEqual(['x'.repeat(1000)]))
+    expect(
+      await screen.findByRole('button', { name: 'Chỉnh sửa' }),
+    ).toBeEnabled()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  },
+)
+
+it.each(['key_points', 'decisions'] as const)(
+  'FE-12: đọc được ý dài đã lưu (%s), chặn gửi cho đến khi rút còn 1000',
+  async (field) => {
+    let requests = 0
+    server.use(
+      http.get('*/api/v1/meetings/:id/summary', () =>
+        HttpResponse.json({
+          ...ready,
+          content: {
+            ...ready.content,
+            [field]: [{ text: 'x'.repeat(1001), evidence_segment_ids: [] }],
+          },
+        }),
+      ),
+      http.put('*/api/v1/meetings/:id/summary', () => {
+        requests++
+        return HttpResponse.json(ready)
+      }),
+    )
+    const user = userEvent.setup()
+    renderSummary()
+    expect(await screen.findByText('x'.repeat(1001))).toBeVisible()
+    await user.click(screen.getByRole('button', { name: 'Chỉnh sửa' }))
+    await user.click(screen.getByRole('button', { name: 'Lưu' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Tổng quan và mỗi ý cần có nội dung hợp lệ.',
+    )
+    expect(requests).toBe(0)
+    expect(
+      screen.getByRole('textbox', {
+        name: `${field === 'key_points' ? 'Ý chính' : 'Quyết định'} 1`,
+      }),
+    ).toHaveValue('x'.repeat(1001))
+  },
+)
