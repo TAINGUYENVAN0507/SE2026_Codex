@@ -1,0 +1,35 @@
+Hợp đồng useIdempotencyKey trước/sau refactor — 27/11/2026
+
+$ npm.cmd test -- src/features/audio/useIdempotencyKey.test.ts
+
+> vietnamese-meeting-minutes-frontend@0.0.0 test
+> vitest run src/features/audio/useIdempotencyKey.test.ts
+
+
+ RUN  v5.0.5 D:/Project/CNPM/SE2026_Codex/frontend
+
+
+ Test Files  1 passed (1)
+      Tests  6 passed (6)
+   Start at  20:42:35
+   Duration  1.74s (environment 81%, setup 12%, transform 3%, import 2%, tests 1%)
+
+
+EXIT=0
+
+$ npm.cmd test -- src/features/audio/useIdempotencyKey.test.ts src/pages/LoginPage.test.tsx src/pages/NewMeetingPage.test.tsx src/pages/BusyUpload.test.tsx
+
+> vietnamese-meeting-minutes-frontend@0.0.0 test
+> vitest run src/features/audio/useIdempotencyKey.test.ts src/pages/LoginPage.test.tsx src/pages/NewMeetingPage.test.tsx src/pages/BusyUpload.test.tsx
+
+
+ RUN  v5.0.5 D:/Project/CNPM/SE2026_Codex/frontend
+
+
+ Test Files  4 passed (4)
+      Tests  28 passed (28)
+   Start at  20:43:03
+   Duration  7.35s (tests 51%, environment 32%, import 7%, setup 6%, transform 4%)
+
+
+EXIT=0
