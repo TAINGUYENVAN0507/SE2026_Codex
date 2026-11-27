@@ -410,3 +410,52 @@ def test_get_summary_still_answers_200_for_stored_points_longer_than_the_input_l
     assert r.status_code == 200, r.text[:300]
     assert r.json()["content"]["key_points"][0]["text"] == long_text
     assert client.get(f"/api/v1/meetings/{seeded['meeting']}").status_code == 200
+
+
+# Danh sách dẫn chứng của mỗi ý (C, 2026-11-27). `evidence_segment_ids` không giới hạn số phần tử
+# hay độ dài mỗi id. `validate_evidence_segments` đưa cả danh sách vào một `IN (...)`, mà
+# PostgreSQL chỉ nhận tối đa 65535 tham số trong một câu lệnh.
+EVIDENCE_B_2026_11_27 = (
+    "PUT summary với 70000 id dẫn chứng làm PostgreSQL vượt 65535 tham số (trả 500); "
+    "giao B ngày 11-27, việc 1 (tasks/2026-11-27/member-b.md)"
+)
+
+
+@pytest.mark.xfail(strict=True, raises=AssertionError, reason=EVIDENCE_B_2026_11_27)
+def test_put_summary_with_70000_evidence_ids_answers_4xx(
+    client: TestClient, db_session: Session, seeded: dict[str, str]
+) -> None:
+    _summary(db_session, seeded["meeting"])
+    ids = [str(uuid.uuid4()) for _ in range(70_000)]
+    r = client.put(
+        f"/api/v1/meetings/{seeded['meeting']}/summary",
+        json=_summary_body(key_points=[{"text": "ý", "evidence_segment_ids": ids}]),
+    )
+    assert 400 <= r.status_code < 500, f"{r.status_code}: {r.text[:200]}"
+
+
+def test_put_summary_with_a_10000_character_evidence_id_answers_4xx(
+    client: TestClient, db_session: Session, seeded: dict[str, str]
+) -> None:
+    """Id dài hơn cột `segments.id` không làm PostgreSQL lỗi: không khớp segment nào nên 422."""
+    _summary(db_session, seeded["meeting"])
+    r = client.put(
+        f"/api/v1/meetings/{seeded['meeting']}/summary",
+        json=_summary_body(key_points=[{"text": "ý", "evidence_segment_ids": ["a" * 10_000]}]),
+    )
+    assert r.status_code == 422, f"{r.status_code}: {r.text[:200]}"
+    assert r.json()["error"]["code"] == "EVIDENCE_SEGMENT_NOT_IN_MEETING"
+
+
+def test_put_summary_with_a_repeated_evidence_id(
+    client: TestClient, db_session: Session, seeded: dict[str, str]
+) -> None:
+    """Ghi lại hành vi hiện tại: id lặp được nhận và lưu nguyên, kể cả bản lặp."""
+    _summary(db_session, seeded["meeting"])
+    seg = seeded["segment"]
+    r = client.put(
+        f"/api/v1/meetings/{seeded['meeting']}/summary",
+        json=_summary_body(key_points=[{"text": "ý", "evidence_segment_ids": [seg, seg, seg]}]),
+    )
+    assert r.status_code == 200, f"{r.status_code}: {r.text[:200]}"
+    assert r.json()["content"]["key_points"][0]["evidence_segment_ids"] == [seg, seg, seg]

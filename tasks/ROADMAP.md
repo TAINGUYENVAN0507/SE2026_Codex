@@ -369,3 +369,26 @@ Bắt đầu từ `main` `db8072b`. Lỗi mới C thấy khi review và soạn v
 | A | Ô chữ của mỗi ý chính và quyết định dừng ở 1000 ký tự; player phân biệt mất file và hết hạn; E2E bấm dẫn chứng thì audio tua tới segment trên API thật; editor khi API từ chối dẫn chứng |
 | B | Ý của tóm tắt 1 đến 1000 ký tự khi lưu (bỏ 5 `xfail`); `available` false khi file mất; một hàm tìm file audio dùng chung, không ra ngoài `STORAGE_DIR`; đổi tên mã 422 và 413 deprecated. Đúng 5 commit |
 | C | Test chữ của ý trong tóm tắt trên PostgreSQL; 247 client ba bản xen kẽ (trước #75, sau #75, sau #78); 40 client kèm thử giả thuyết DB mới; bản đồ bằng chứng, ROADMAP, thời gian phản hồi PR |
+
+**Kết quả (Đợt 16):**
+- #80 (A, `4259a4f`): mỗi ý tóm tắt dừng ở 1000 ký tự, player phân biệt mất file và hết hạn, E2E bấm dẫn chứng trên API thật, editor giữ bản nháp khi API từ chối dẫn chứng. Đúng 5 commit. B không review; C review sau 20,9 giờ.
+- #81 (B, `6c84724`): ý tóm tắt 1 đến 1000 ký tự khi lưu (5 xfail của C đã bỏ), `available` theo file thật, `resolve_audio_file` dùng chung và không ra ngoài `STORAGE_DIR`, đổi tên mã 422 và 413. Đúng 5 commit. A không review; C review sau 12,4 giờ.
+- C gộp hai PR với `main` rồi chạy lại trước khi merge:
+  - Backend trên PostgreSQL 16: 568 passed, 0 skipped, 0 xfailed, 7 warning (trước 28).
+  - Frontend: 352 passed.
+  - E2E `evidence-seek` và `summary-edit`: mỗi spec 1 passed.
+- 247 client ngày 11-27: máy đo đang bận, 2 process 0/8 ở cả hai bản; 4 process 2/2.
+
+### Đợt 17 (giao ngày 2026-11-27: `tasks/2026-11-27/`, sau hạn nộp, mỗi người 5 commit)
+
+Bắt đầu từ `main` `4259a4f`. Lỗi mới C thấy khi review và soạn việc:
+- **`PUT /summary` với 70.000 id dẫn chứng trả 500** vì vượt 65.535 tham số của PostgreSQL. Id lặp được lưu nguyên. C bắt bằng `xfail` strict.
+- **Stack E2E ghi audio vào `backend/appdata` thật** vì không đặt `STORAGE_DIR`.
+- **Đăng nhập khi API trả 503 báo lỗi chung và xóa mật khẩu.**
+- Worker báo `AUDIO_INVALID` cả khi audio hết hạn; `GET /audio` dùng chung `NOT_FOUND` cho file mất và cuộc họp không có (P3 trên #81).
+
+| Member | Việc |
+|---|---|
+| A | Stack E2E dùng `STORAGE_DIR` tạm riêng; E2E file audio mất trên API thật; dọn `useIdempotencyKey`; đăng nhập khi máy chủ bận. Đăng phản hồi review #77 lên GitHub |
+| B | Tối đa 50 id dẫn chứng khác nhau mỗi ý (bỏ `xfail`); worker báo `AUDIO_EXPIRED`; mã `AUDIO_NOT_FOUND`; 7 warning còn lại về 0. Đúng 5 commit |
+| C | Test danh sách dẫn chứng trên PostgreSQL; 247 client trước/sau #81 (máy bận) kèm 4 process; 40 client; bản đồ bằng chứng, ROADMAP, thời gian phản hồi PR |
