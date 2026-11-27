@@ -89,7 +89,7 @@ def test_m1_full_flow_upload_to_transcript(
             json={"email": "m1_user@example.com", "password": raw_password},
         )
         assert login_res.status_code == 200, login_res.text
-        cookies = login_res.cookies
+        client.cookies.update(login_res.cookies)
 
         # 4. Tải lên tệp âm thanh wav
         fake_wav = io.BytesIO(b"RIFF" + b"\x00" * 400)
@@ -105,7 +105,6 @@ def test_m1_full_flow_upload_to_transcript(
             data=data,
             files=files,
             headers={"Idempotency-Key": idem_key},
-            cookies=cookies,
         )
         assert upload_res.status_code == 201, upload_res.text
         upload_data = upload_res.json()
@@ -125,7 +124,7 @@ def test_m1_full_flow_upload_to_transcript(
         assert ran is True
 
         # 6. Kiểm tra trạng thái job qua GET /jobs/{id}
-        job_res = client.get(f"/api/v1/jobs/{job_id}", cookies=cookies)
+        job_res = client.get(f"/api/v1/jobs/{job_id}")
         assert job_res.status_code == 200, job_res.text
         job_data = job_res.json()
         assert job_data["status"] == "succeeded"
@@ -134,7 +133,6 @@ def test_m1_full_flow_upload_to_transcript(
         # 7. Kiểm tra trạng thái transcript qua GET /meetings/{id}/transcript
         transcript_res = client.get(
             f"/api/v1/meetings/{meeting_id}/transcript",
-            cookies=cookies,
         )
         assert transcript_res.status_code == 200, transcript_res.text
         transcript_data = transcript_res.json()
@@ -202,7 +200,7 @@ def test_m1_full_flow_sqlite(tmp_path: Path) -> None:
                 json={"email": "m1_sqlite_user@example.com", "password": raw_password},
             )
             assert login_res.status_code == 200, login_res.text
-            cookies = login_res.cookies
+            client.cookies.update(login_res.cookies)
 
             fake_wav = io.BytesIO(b"RIFF" + b"\x00" * 400)
             files = {"file": ("meeting_m1_sqlite.wav", fake_wav, "audio/wav")}
@@ -217,7 +215,6 @@ def test_m1_full_flow_sqlite(tmp_path: Path) -> None:
                 data=data,
                 files=files,
                 headers={"Idempotency-Key": idem_key},
-                cookies=cookies,
             )
             assert upload_res.status_code == 201, upload_res.text
             upload_data = upload_res.json()
@@ -232,14 +229,13 @@ def test_m1_full_flow_sqlite(tmp_path: Path) -> None:
             )
             assert ran is True
 
-            job_res = client.get(f"/api/v1/jobs/{job_id}", cookies=cookies)
+            job_res = client.get(f"/api/v1/jobs/{job_id}")
             assert job_res.status_code == 200, job_res.text
             assert job_res.json()["status"] == "succeeded"
             assert job_res.json()["progress"] == 1.0
 
             transcript_res = client.get(
                 f"/api/v1/meetings/{meeting_id}/transcript",
-                cookies=cookies,
             )
             assert transcript_res.status_code == 200, transcript_res.text
             transcript_data = transcript_res.json()
