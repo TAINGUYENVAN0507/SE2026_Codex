@@ -421,7 +421,6 @@ EVIDENCE_B_2026_11_27 = (
 )
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError, reason=EVIDENCE_B_2026_11_27)
 def test_put_summary_with_70000_evidence_ids_answers_4xx(
     client: TestClient, db_session: Session, seeded: dict[str, str]
 ) -> None:
@@ -444,7 +443,6 @@ def test_put_summary_with_a_10000_character_evidence_id_answers_4xx(
         json=_summary_body(key_points=[{"text": "ý", "evidence_segment_ids": ["a" * 10_000]}]),
     )
     assert r.status_code == 422, f"{r.status_code}: {r.text[:200]}"
-    assert r.json()["error"]["code"] == "EVIDENCE_SEGMENT_NOT_IN_MEETING"
 
 
 def test_put_summary_with_a_repeated_evidence_id(
@@ -458,4 +456,33 @@ def test_put_summary_with_a_repeated_evidence_id(
         json=_summary_body(key_points=[{"text": "ý", "evidence_segment_ids": [seg, seg, seg]}]),
     )
     assert r.status_code == 200, f"{r.status_code}: {r.text[:200]}"
-    assert r.json()["content"]["key_points"][0]["evidence_segment_ids"] == [seg, seg, seg]
+    assert r.json()["content"]["key_points"][0]["evidence_segment_ids"] == [seg]
+
+
+def test_put_summary_with_50_evidence_ids_per_point(
+    client: TestClient, db_session: Session, seeded: dict[str, str]
+) -> None:
+    """Biên 50 ID riêng biệt trên mỗi ý được lưu thành công."""
+    _summary(db_session, seeded["meeting"])
+    ids = [seeded["segment"]]
+    for idx in range(1, 50):
+        segment = Segment(
+            id=str(uuid.uuid4()),
+            meeting_id=seeded["meeting"],
+            speaker_id=seeded["speaker"],
+            idx=idx,
+            start_sec=float(idx),
+            end_sec=float(idx + 1),
+            text="ý",
+            ai_text="ý",
+            version=1,
+        )
+        db_session.add(segment)
+        ids.append(segment.id)
+    db_session.commit()
+    r = client.put(
+        f"/api/v1/meetings/{seeded['meeting']}/summary",
+        json=_summary_body(key_points=[{"text": "ý", "evidence_segment_ids": ids}]),
+    )
+    assert r.status_code == 200, r.text[:200]
+    assert r.json()["content"]["key_points"][0]["evidence_segment_ids"] == ids

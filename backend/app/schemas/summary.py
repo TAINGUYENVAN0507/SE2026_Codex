@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
 
 
 class SummaryPointOut(BaseModel):
@@ -67,6 +67,15 @@ class SummaryPointUpdate(SummaryPointOut):
     """Giới hạn chữ khi lưu, không áp giới hạn này lên dữ liệu AI đã có."""
 
     text: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=1000)]
+    evidence_segment_ids: list[Annotated[str, StringConstraints(max_length=36)]] = Field(
+        default_factory=list, max_length=50
+    )
+
+    @field_validator("evidence_segment_ids")
+    @classmethod
+    def unique_evidence_ids(cls, ids: list[str]) -> list[str]:
+        """Giữ thứ tự và chỉ lưu một lần cho mỗi ID dẫn chứng."""
+        return list(dict.fromkeys(ids))
 
 
 class SummaryContentUpdate(BaseModel):
