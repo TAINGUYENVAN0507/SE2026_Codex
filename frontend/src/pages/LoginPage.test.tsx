@@ -15,6 +15,7 @@ import {
 } from 'vitest'
 import { authHandlers, resetMockAuth } from '../mocks/auth'
 import { LoginPage } from './LoginPage'
+import userMe from '../../../contracts/fixtures/api/user_me.json'
 
 const server = setupServer(...authHandlers)
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
@@ -121,4 +122,79 @@ describe('FE-03 API login', () => {
       await screen.findByRole('heading', { name: 'Danh sách' }),
     ).toBeInTheDocument()
   })
+})
+
+it.each(['2', null])(
+  'FE-03: 503 (Retry-After=%s) báo bận, giữ thông tin và cho gửi lại',
+  async (retryAfter) => {
+    let requests = 0
+    server.use(
+      http.post('*/api/v1/auth/login', async ({ request }) => {
+        requests++
+        const body = (await request.json()) as {
+          email: string
+          password: string
+        }
+        expect(body.email).toBe('user@example.com')
+        expect(body.password).toBe('demo-password')
+        return requests === 1
+          ? HttpResponse.json(
+              {
+                error: {
+                  code: 'SERVICE_UNAVAILABLE',
+                  message: 'CANARY_RAW_LOGIN',
+                  details: null,
+                  request_id: null,
+                },
+              },
+              {
+                status: 503,
+                headers: retryAfter ? { 'Retry-After': retryAfter } : undefined,
+              },
+            )
+          : HttpResponse.json(userMe)
+      }),
+    )
+    renderLogin()
+    const user = await fill()
+    await user.click(screen.getByRole('button', { name: 'Đăng nhập' }))
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent('Máy chủ đang bận')
+    expect(alert).toHaveTextContent(
+      retryAfter ? 'thử lại sau 2 giây' : 'thử lại sau ít giây',
+    )
+    expect(alert).not.toHaveTextContent('CANARY_RAW_LOGIN')
+    expect(screen.getByLabelText('Email')).toHaveValue('user@example.com')
+    expect(
+      screen.getByLabelText('Mật khẩu', { selector: 'input' }),
+    ).toHaveValue('demo-password')
+    expect(requests).toBe(1)
+    await user.click(screen.getByRole('button', { name: 'Đăng nhập' }))
+    expect(
+      await screen.findByRole('heading', { name: 'Trang đích' }),
+    ).toBeVisible()
+    expect(requests).toBe(2)
+  },
+)
+
+it('FE-03: lỗi 500 giữ mật khẩu để người dùng thử lại, chỉ 401 sai thông tin mới xóa', async () => {
+  server.use(
+    http.post('*/api/v1/auth/login', () =>
+      HttpResponse.json(
+        {
+          error: { code: 'INTERNAL_SERVER_ERROR', message: 'CANARY_RAW_LOGIN' },
+        },
+        { status: 500 },
+      ),
+    ),
+  )
+  renderLogin()
+  const user = await fill()
+  await user.click(screen.getByRole('button', { name: 'Đăng nhập' }))
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    'Không thể đăng nhập. Hãy thử lại.',
+  )
+  expect(screen.getByLabelText('Mật khẩu', { selector: 'input' })).toHaveValue(
+    'demo-password',
+  )
 })
