@@ -1,8 +1,9 @@
 """Pydantic schemas cho Summary (Tóm tắt cuộc họp)."""
 
 from datetime import datetime
+from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
 
 class SummaryPointOut(BaseModel):
@@ -62,10 +63,28 @@ class SummaryOut(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
+class SummaryPointUpdate(SummaryPointOut):
+    """Giới hạn chữ khi lưu, không áp giới hạn này lên dữ liệu AI đã có."""
+
+    text: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=1000)]
+
+
+class SummaryContentUpdate(BaseModel):
+    """Nội dung gửi lên có giới hạn riêng để vẫn đọc được tóm tắt cũ."""
+
+    overview: Annotated[
+        str, StringConstraints(strip_whitespace=True, min_length=1, max_length=5000)
+    ]
+    key_points: list[SummaryPointUpdate] = Field(default_factory=list, max_length=50)
+    decisions: list[SummaryPointUpdate] = Field(default_factory=list, max_length=50)
+
+    model_config = ConfigDict(extra="forbid")
+
+
 class SummaryUpdate(BaseModel):
     """Schema cập nhật nội dung tóm tắt cuộc họp."""
 
-    content: SummaryContentOut = Field(..., description="Nội dung tóm tắt mới")
+    content: SummaryContentUpdate = Field(..., description="Nội dung tóm tắt mới")
     version: int = Field(..., ge=1, description="Phiên bản hiện tại của summary ở client")
 
     model_config = ConfigDict(extra="forbid")

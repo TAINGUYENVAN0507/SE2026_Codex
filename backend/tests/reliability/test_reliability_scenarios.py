@@ -175,11 +175,13 @@ def test_reliability_worker_crash_and_reaper_reclaims_job(
     assert job.can_retry is True
 
     # 3. Giả lập audio trong storage để worker mới xử lý thành công
-    test_storage.save_upload(
+    upload = test_storage.save_upload(
         meeting_id=meeting.id,
         extension="wav",
         stream=io.BytesIO(b"RIFF" + b"\x00" * 100),
     )
+    meeting.audio_path = upload.path
+    test_db.commit()
 
     # 4. Worker mới claim và hoàn thành job
     ran = run_worker_once(
@@ -231,6 +233,8 @@ def test_reliability_retry_exhaustion_transitions_to_failed(
         created_at=now,
     )
     test_db.add(job_a)
+    # Cần audio và đường dẫn DB hợp lệ để test thực sự đi vào pipeline lỗi transient.
+    meeting_a.audio_path = test_storage.save_upload(meeting_a.id, "wav", b"RIFF").path
     test_db.commit()
 
     assert job_a.can_retry is False

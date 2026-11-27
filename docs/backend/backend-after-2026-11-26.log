@@ -1,0 +1,24 @@
+........................................................................ [ 12%]
+........................................................................ [ 25%]
+........................................................................ [ 38%]
+........................................................................ [ 50%]
+........................................................................ [ 63%]
+........................................................................ [ 76%]
+........................................................................ [ 88%]
+................................................................         [100%]
+=============================== warnings summary ===============================
+../../../app/backend/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /app/backend/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/integration/test_m1_flow.py::test_m1_full_flow_upload_to_transcript
+tests/integration/test_m1_flow.py::test_m1_full_flow_upload_to_transcript
+tests/integration/test_m1_flow.py::test_m1_full_flow_upload_to_transcript
+tests/integration/test_m1_flow.py::test_m1_full_flow_sqlite
+tests/integration/test_m1_flow.py::test_m1_full_flow_sqlite
+tests/integration/test_m1_flow.py::test_m1_full_flow_sqlite
+  /app/backend/.venv/lib/python3.12/site-packages/starlette/testclient.py:518: DeprecationWarning: Setting per-request cookies=<...> is being deprecated, because the expected behaviour on cookie persistence is ambiguous. Set cookies directly on the client instance instead.
+    return super().request(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+568 passed, 7 warnings in 148.22s (0:02:28)

@@ -1390,6 +1390,18 @@ export interface components {
       decisions?: components['schemas']['SummaryPointOut'][]
     }
     /**
+     * SummaryContentUpdate
+     * @description Nội dung gửi lên có giới hạn riêng để vẫn đọc được tóm tắt cũ.
+     */
+    SummaryContentUpdate: {
+      /** Overview */
+      overview: string
+      /** Key Points */
+      key_points?: components['schemas']['SummaryPointUpdate'][]
+      /** Decisions */
+      decisions?: components['schemas']['SummaryPointUpdate'][]
+    }
+    /**
      * SummaryOut
      * @description Hợp đồng dữ liệu tóm tắt cuộc họp.
      */
@@ -1453,12 +1465,25 @@ export interface components {
       evidence_segment_ids?: string[]
     }
     /**
+     * SummaryPointUpdate
+     * @description Giới hạn chữ khi lưu, không áp giới hạn này lên dữ liệu AI đã có.
+     */
+    SummaryPointUpdate: {
+      /** Text */
+      text: string
+      /**
+       * Evidence Segment Ids
+       * @description Danh sách UUID các segment làm bằng chứng trích xuất
+       */
+      evidence_segment_ids?: string[]
+    }
+    /**
      * SummaryUpdate
      * @description Schema cập nhật nội dung tóm tắt cuộc họp.
      */
     SummaryUpdate: {
       /** @description Nội dung tóm tắt mới */
-      content: components['schemas']['SummaryContentOut']
+      content: components['schemas']['SummaryContentUpdate']
       /**
        * Version
        * @description Phiên bản hiện tại của summary ở client

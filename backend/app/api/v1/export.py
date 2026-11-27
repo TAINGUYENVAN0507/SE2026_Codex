@@ -64,7 +64,7 @@ def export_meeting(
         raise APIError(
             code="FORMAT_NOT_SUPPORTED",
             message=f"Định dạng xuất '{format}' không được hỗ trợ.",
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         )
 
     var = variant.lower()
@@ -72,7 +72,7 @@ def export_meeting(
         raise APIError(
             code="FORMAT_NOT_SUPPORTED",
             message=f"Biến thể nội dung '{variant}' không được hỗ trợ.",
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         )
 
     meeting_export = build_meeting_export(db, meeting_id, current_user.id)

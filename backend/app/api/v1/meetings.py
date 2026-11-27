@@ -168,7 +168,7 @@ def create_meeting(
         raise APIError(
             code="CONSENT_REQUIRED",
             message="Cần xác nhận đồng ý xử lý dữ liệu trước khi tải lên.",
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         )
 
     cleaned_title = validate_meeting_title(title) if title is not None else None

@@ -138,6 +138,26 @@ def client_a(
     app.dependency_overrides.clear()
 
 
+def test_audio_rejects_path_outside_storage(
+    client_a: TestClient,
+    test_db: Session,
+    dummy_audio_meeting: tuple[Meeting, bytes],
+    mock_storage: Storage,
+    tmp_path: Path,
+) -> None:
+    """Đường dẫn dự phòng trong DB không được cho phép đọc file ngoài storage."""
+    meeting, _ = dummy_audio_meeting
+    mock_storage.get_audio_path(meeting.id, "wav").unlink()
+    outside = tmp_path / "outside.wav"
+    outside.write_bytes(b"outside-storage")
+    storage = LocalStorage(base_dir=tmp_path / "storage")
+    client_a.app.dependency_overrides[get_storage] = lambda: storage
+    meeting.audio_path = "../outside.wav"
+    test_db.commit()
+    assert client_a.get(f"/api/v1/meetings/{meeting.id}/audio").status_code == 404
+    assert storage.get_audio_size(meeting.id, "wav", meeting.audio_path) is None
+
+
 @pytest.fixture
 def client_b(
     test_db: Session, user_b: User, mock_storage: Storage

@@ -55,6 +55,21 @@ class LocalStorage(Storage):
         clean_ext = self._sanitize_extension(extension)
         return self.get_audio_dir(meeting_id) / f"original.{clean_ext}"
 
+    def resolve_audio_file(self, meeting_id: str, audio_path: str | None) -> Path | None:
+        """Dùng chung thứ tự tìm file, chặn đường dẫn và symlink thoát khỏi storage."""
+        if not audio_path:
+            return None
+        extension = audio_path.rsplit(".", 1)[-1].lower() if "." in audio_path else "wav"
+        candidates = (
+            self.get_audio_path(meeting_id, extension),
+            self.base_dir / audio_path,
+        )
+        for candidate in candidates:
+            resolved = candidate.resolve()
+            if resolved.is_relative_to(self.base_dir) and resolved.is_file():
+                return resolved
+        return None
+
     def get_audio_size(
         self,
         meeting_id: str,
@@ -62,14 +77,10 @@ class LocalStorage(Storage):
         relative_path: str | None = None,
     ) -> int | None:
         """Trả về kích thước tệp audio (bytes) bằng stat mà không mở file, hoặc None."""
-        candidate = self.get_audio_path(meeting_id, extension)
-        if candidate.is_file():
-            return candidate.stat().st_size
-        if relative_path:
-            fallback = (self.base_dir / relative_path).resolve()
-            if fallback.is_relative_to(self.base_dir) and fallback.is_file():
-                return fallback.stat().st_size
-        return None
+        candidate = self.resolve_audio_file(
+            meeting_id, relative_path or f"audio/{meeting_id}/original.{extension}"
+        )
+        return candidate.stat().st_size if candidate is not None else None
 
     def save_upload(
         self,

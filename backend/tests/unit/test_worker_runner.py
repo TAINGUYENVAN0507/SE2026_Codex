@@ -112,6 +112,30 @@ def sample_meeting_with_audio(
     return meeting
 
 
+def test_worker_rejects_audio_outside_storage(
+    test_db: Session,
+    sample_meeting_with_audio: Meeting,
+    test_storage: Storage,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Worker phải từ chối file ngoài storage trước khi gọi pipeline."""
+    meeting = sample_meeting_with_audio
+    outside = tmp_path / "outside.wav"
+    outside.write_bytes(b"outside-storage")
+    meeting.audio_path = "../outside.wav"
+    enqueue_job(test_db, meeting_id=meeting.id)
+    test_db.commit()
+    storage = LocalStorage(base_dir=tmp_path / "storage")
+    pipeline = MagicMock()
+    monkeypatch.setattr("app.worker.runner.run_job", pipeline)
+    assert run_worker_once(test_db, storage=storage, worker_id="safe-worker", backend="fake")
+    pipeline.assert_not_called()
+    job = test_db.execute(select(Job).where(Job.meeting_id == meeting.id)).scalar_one()
+    assert job.status == "failed"
+    assert job.error_code == "AUDIO_INVALID"
+
+
 def test_worker_run_queued_job_to_succeeded(
     test_db: Session,
     sample_meeting_with_audio: Meeting,
@@ -424,11 +448,13 @@ def test_process_job_stops_when_lease_lost_without_writing_results(
     assert sample_meeting_with_audio.status != "ready"
 
 
+@pytest.mark.parametrize("audio_removed", [False, True])
 def test_rt14_regenerate_summary_from_edited_transcript(
     test_db: Session,
     sample_meeting_with_audio: Meeting,
     test_storage: Storage,
     monkeypatch: pytest.MonkeyPatch,
+    audio_removed: bool,
 ) -> None:
     """RT-14: Tạo lại tóm tắt từ transcript đã sửa (BE-10).
 
@@ -480,6 +506,12 @@ def test_rt14_regenerate_summary_from_edited_transcript(
     edited_speaker_name = "Chị Lan Quản Lý Dự Án"
     speakers[0].display_name = edited_speaker_name
     test_db.commit()
+
+    # Retention có thể đã xóa audio; summarize vẫn phải dùng được transcript đã lưu.
+    if audio_removed:
+        test_storage.get_audio_path(meeting.id, "wav").unlink()
+        meeting.audio_path = None
+        test_db.commit()
 
     # 3. Retry với from_stage=summarize và kịch bản ok
     monkeypatch.setenv("FAKE_SCENARIO", "ok")
@@ -599,6 +631,9 @@ def test_worker_fallback_artifacts_use_storage_dir_not_relative_appdata(
     get_settings.cache_clear()
 
     class _FakeStorageNoBaseDir:
+        def resolve_audio_file(self, meeting_id: str, audio_path: str | None) -> Path | None:
+            return LocalStorage(base_dir=storage_root).resolve_audio_file(meeting_id, audio_path)
+
         def get_audio_path(self, meeting_id: str, extension: str) -> Path:
             audio_dir = storage_root / "audio" / meeting_id
             audio_dir.mkdir(parents=True, exist_ok=True)
