@@ -3572,11 +3572,12 @@
           },
           "evidence_segment_ids": {
             "items": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 36
             },
             "type": "array",
-            "title": "Evidence Segment Ids",
-            "description": "Danh sách UUID các segment làm bằng chứng trích xuất"
+            "maxItems": 50,
+            "title": "Evidence Segment Ids"
           }
         },
         "additionalProperties": false,

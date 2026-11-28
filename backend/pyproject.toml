@@ -42,6 +42,7 @@ packages = ["app"]
 testpaths = ["tests"]
 addopts = "-ra --strict-markers"
 filterwarnings = [
+    "error:Setting per-request cookies=.* is being deprecated:DeprecationWarning",
     "error:.*HTTP_422_UNPROCESSABLE_ENTITY.*:DeprecationWarning",
     "error:.*HTTP_413_REQUEST_ENTITY_TOO_LARGE.*:DeprecationWarning",
 ]

@@ -105,7 +105,7 @@ def get_meeting_audio(
 
     if not meeting.audio_path:
         raise APIError(
-            code="NOT_FOUND",
+            code="AUDIO_NOT_FOUND",
             message="Cuộc họp không có tệp âm thanh.",
             status_code=status.HTTP_404_NOT_FOUND,
         )
@@ -123,7 +123,7 @@ def get_meeting_audio(
                 status_code=status.HTTP_410_GONE,
             )
         raise APIError(
-            code="NOT_FOUND",
+            code="AUDIO_NOT_FOUND",
             message="Không tìm thấy tệp âm thanh trên hệ thống lưu trữ.",
             status_code=status.HTTP_404_NOT_FOUND,
         )

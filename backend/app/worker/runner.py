@@ -260,10 +260,17 @@ def process_job(
     # Xác định đường dẫn audio gốc
     audio_file = storage.resolve_audio_file(meeting.id, meeting.audio_path)
     if audio_file is None and job.from_stage != Stage.SUMMARIZE.value:
+        retention_ts = meeting.retention_until
+        if retention_ts is not None and retention_ts.tzinfo is None:
+            retention_ts = retention_ts.replace(tzinfo=UTC)
         fail_job(
             db,
             job,
-            error_code="AUDIO_INVALID",
+            error_code=(
+                "AUDIO_EXPIRED"
+                if retention_ts is not None and get_now() >= retention_ts
+                else "AUDIO_INVALID"
+            ),
             error_message="Không tìm thấy tệp âm thanh hợp lệ trong storage.",
             now=get_now(),
         )
