@@ -1,0 +1,97 @@
+$ npm.cmd run lint
+
+> vietnamese-meeting-minutes-frontend@0.0.0 lint
+> eslint . && oxlint .
+
+
+EXIT=0
+
+$ npm.cmd run format:check
+
+> vietnamese-meeting-minutes-frontend@0.0.0 format:check
+> prettier --check .
+
+Checking formatting...
+All matched files use Prettier code style!
+
+EXIT=0
+
+$ npm.cmd run gen:api
+
+> vietnamese-meeting-minutes-frontend@0.0.0 gen:api
+> openapi-typescript ../contracts/openapi.json -o src/api/schema.d.ts && prettier --write src/api/schema.d.ts
+
+✨ openapi-typescript 7.13.0
+🚀 ../contracts/openapi.json → src/api/schema.d.ts [122.5ms]
+src/api/schema.d.ts 143ms
+
+EXIT=0
+
+$ npm.cmd run build
+
+> vietnamese-meeting-minutes-frontend@0.0.0 build
+> tsc -b && vite build
+
+vite v8.3.4 building client environment for production...
+transforming...
+✓ 189 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.76 kB │ gzip:   0.44 kB
+dist/assets/index-DgSHrS1i.css   44.01 kB │ gzip:   9.86 kB
+dist/assets/index-B_0G__X-.js   485.68 kB │ gzip: 145.59 kB
+
+✓ built in 337ms
+
+EXIT=0
+
+$ npm.cmd test
+
+> vietnamese-meeting-minutes-frontend@0.0.0 test
+> vitest run
+
+
+ RUN  v5.0.5 D:/Project/CNPM/SE2026_Codex/frontend
+
+
+ Test Files  59 passed (59)
+      Tests  377 passed (377)
+   Start at  20:45:32
+   Duration  53.25s (environment 44%, tests 34%, import 12%, setup 8%, transform 2%)
+
+Environment  jsdom was created 59 times · 87.13s total, 44% of tracked time
+             create it once per worker with pool: 'vmThreads' (keeps per-file isolation) or isolate: false (shares it across files)
+             learn more: https://vitest.dev/guide/improving-performance#test-environments
+
+
+EXIT=0
+
+$ npm.cmd run test:coverage
+
+> vietnamese-meeting-minutes-frontend@0.0.0 test:coverage
+> vitest run --coverage
+
+
+ RUN  v5.0.5 D:/Project/CNPM/SE2026_Codex/frontend
+      Coverage enabled with v8
+
+
+ Test Files  59 passed (59)
+      Tests  377 passed (377)
+   Start at  20:38:25
+   Duration  51.17s (environment 40%, tests 37%, import 10%, setup 9%, transform 3%, worker 2%)
+
+Environment  jsdom was created 59 times · 73.83s total, 40% of tracked time
+             create it once per worker with pool: 'vmThreads' (keeps per-file isolation) or isolate: false (shares it across files)
+             learn more: https://vitest.dev/guide/improving-performance#test-environments
+
+ % Coverage report from v8
+
+=============================== Coverage summary ===============================
+Statements   : 86.13% ( 1410/1637 )
+Branches     : 83.75% ( 1284/1533 )
+Functions    : 83.23% ( 427/513 )
+Lines        : 88.35% ( 1298/1469 )
+================================================================================
+
+EXIT=0

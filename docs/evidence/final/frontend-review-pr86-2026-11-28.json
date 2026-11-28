@@ -1,0 +1,123 @@
+{
+  "pr": 86,
+  "head": "479b00164e39325f818efeba6d860d6c4603a292",
+  "review_url": "https://github.com/TAINGUYENVAN0507/SE2026_Codex/pull/86#issuecomment-7240189179",
+  "posted_at_utc": "2026-11-28T13:47:36Z",
+  "author": "mactuongmvt",
+  "targeted_tests": {
+    "passed": 105,
+    "failed": 0,
+    "skipped": 0,
+    "xfailed": 0,
+    "warnings": 0,
+    "files": 6,
+    "database": "PostgreSQL 16 riêng"
+  },
+  "openapi_drift": false,
+  "generated_frontend_schema_matches": true,
+  "ruff_check_exit": 0,
+  "ruff_format_files": 176,
+  "ci_checks_observed": [
+    {
+      "name": "lint",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "build (cuda)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "chromium (slow)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "chromium (permanent)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "build-api",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "test",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "chromium (summary_fail)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "lint",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "compose-smoke",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "chromium (transient_once)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "build (cpu)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "build-web",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "test",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "chromium-nginx",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "check-contracts",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "build-api",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "compose-smoke",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "lint",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "build-web",
+      "status": "completed",
+      "conclusion": "success"
+    }
+  ],
+  "container_removed": true,
+  "limitations": [
+    "Không chạy toàn bộ backend trên Linux tại local; kiểm CI và 105 test liên quan trên Windows.",
+    "Snapshot ban đầu thiếu fixture docs và basetemp không đủ quyền: 1 failed, 6 passed, 98 setup errors; sau cấu hình đủ, 105 passed.",
+    "Ruff lần đầu thiếu ngữ cảnh .gitignore/repository nên quét cả các model vốn bị ignore; khôi phục config như CI rồi lint đạt, 176 files formatted."
+  ]
+}
