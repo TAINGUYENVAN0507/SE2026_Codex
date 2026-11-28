@@ -25,6 +25,7 @@ meeting-pipeline = { path = "../pipeline", editable = true }
 dev = [
     "pytest>=8.3",
     "httpx>=0.27",
+    "httpx2>=2.16",
     "ruff>=0.6",
     "jsonschema>=4,<5",
     "allpairspy>=2.5.1",
@@ -45,6 +46,7 @@ filterwarnings = [
     "error:Setting per-request cookies=.* is being deprecated:DeprecationWarning",
     "error:.*HTTP_422_UNPROCESSABLE_ENTITY.*:DeprecationWarning",
     "error:.*HTTP_413_REQUEST_ENTITY_TOO_LARGE.*:DeprecationWarning",
+    "error:Using `httpx` with `starlette\\.testclient` is deprecated:UserWarning",
 ]
 
 [tool.ruff]

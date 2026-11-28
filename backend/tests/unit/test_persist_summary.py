@@ -323,3 +323,70 @@ def test_persist_summary_idempotent(
     assert ai_count_2 == ai_count_1 == 1
     assert sum_count_2 == sum_count_1 == 1
     assert act_count_2 == act_count_1 == 2
+
+
+def test_persist_summary_caps_and_deduplicates_point_evidence_while_keeping_raw_payload(
+    test_db: Session,
+    sample_meeting_and_job: tuple[Meeting, Job],
+    tmp_path: Path,
+) -> None:
+    """Persister giữ tối đa 50 ID khác nhau mỗi ý; giữ nguyên ai_outputs.payload."""
+    meeting, job = sample_meeting_and_job
+    # fixture sẵn idx 0..5, tạo thêm 6..59 để có tổng 60 segment
+    for idx in range(6, 60):
+        test_db.add(
+            Segment(
+                id=str(uuid.uuid4()),
+                meeting_id=meeting.id,
+                idx=idx,
+                start_sec=float(idx),
+                end_sec=float(idx + 1),
+                text=f"Segment {idx}",
+                ai_text=f"Segment {idx}",
+                version=1,
+            )
+        )
+    test_db.commit()
+
+    kp_indices = [0, 0, *range(1, 56)]  # trùng 0 ở đầu, tổng 56 phần tử (55 giá trị khác nhau)
+    dec_indices = list(reversed(range(55)))
+    raw_summary = {
+        "schema_version": "1.0",
+        "status": "ready",
+        "model": "fake-llm",
+        "prompt_version": "v1",
+        "overview": "Tổng quan có nhiều dẫn chứng.",
+        "key_points": [{"text": "Ý chính dài dẫn chứng", "evidence_segment_indices": kp_indices}],
+        "decisions": [
+            {"text": "Quyết định dài dẫn chứng", "evidence_segment_indices": dec_indices}
+        ],
+        "action_items": [],
+        "warnings": [],
+    }
+    artifact = tmp_path / "summary_over_50.json"
+    artifact.write_text(json.dumps(raw_summary, ensure_ascii=False), encoding="utf-8")
+
+    persist_summary(test_db, meeting_id=meeting.id, job_id=job.id, artifact_path=artifact)
+
+    segments = {
+        s.idx: s.id
+        for s in test_db.execute(select(Segment).where(Segment.meeting_id == meeting.id)).scalars()
+    }
+    summary = test_db.execute(select(Summary).where(Summary.meeting_id == meeting.id)).scalar_one()
+    ai_out = test_db.execute(
+        select(AIOutput).where(AIOutput.job_id == job.id, AIOutput.stage == "summarize")
+    ).scalar_one()
+
+    expected_kp = [segments[i] for i in range(50)]
+    expected_dec = [segments[i] for i in list(reversed(range(55)))[:50]]
+
+    for block in (summary.content, summary.ai_content):
+        assert block is not None
+        assert block["key_points"][0]["evidence_segment_ids"] == expected_kp
+        assert len(block["key_points"][0]["evidence_segment_ids"]) == 50
+        assert len(set(block["key_points"][0]["evidence_segment_ids"])) == 50
+        assert block["decisions"][0]["evidence_segment_ids"] == expected_dec
+        assert len(block["decisions"][0]["evidence_segment_ids"]) == 50
+
+    assert ai_out.payload["key_points"][0]["evidence_segment_indices"] == kp_indices
+    assert ai_out.payload["decisions"][0]["evidence_segment_indices"] == dec_indices

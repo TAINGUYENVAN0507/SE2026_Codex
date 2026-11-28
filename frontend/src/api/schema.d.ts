@@ -1471,7 +1471,10 @@ export interface components {
     SummaryPointUpdate: {
       /** Text */
       text: string
-      /** Evidence Segment Ids */
+      /**
+       * Evidence Segment Ids
+       * @description Danh sách UUID các segment làm bằng chứng trích xuất
+       */
       evidence_segment_ids?: string[]
     }
     /**
@@ -2572,7 +2575,7 @@ export interface operations {
           'application/json': components['schemas']['JobOut']
         }
       }
-      /** @description Không tìm thấy cuộc họp */
+      /** @description Không tìm thấy cuộc họp hoặc tệp âm thanh */
       404: {
         headers: {
           [name: string]: unknown
@@ -2583,6 +2586,15 @@ export interface operations {
       }
       /** @description Job đang chạy hoặc đã thành công hoặc có chỉnh sửa người dùng */
       409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description Tệp âm thanh đã hết hạn lưu trữ */
+      410: {
         headers: {
           [name: string]: unknown
         }

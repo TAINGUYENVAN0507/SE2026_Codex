@@ -1,7 +1,6 @@
 """Router phục vụ stream dữ liệu âm thanh cuộc họp kèm hỗ trợ HTTP Range (RFC 7233)."""
 
 from collections.abc import Generator
-from datetime import UTC, datetime
 from pathlib import Path
 from typing import Annotated
 
@@ -24,6 +23,7 @@ from app.core.errors import APIError
 from app.db.models.meeting import Meeting
 from app.db.session import get_db
 from app.schemas.common import ErrorResponse
+from app.services.retention import is_audio_retention_expired
 from app.services.storage import Storage, get_storage
 
 AUDIO_MIME_TYPES: dict[str, str] = {
@@ -91,12 +91,7 @@ def get_meeting_audio(
             status_code=status.HTTP_404_NOT_FOUND,
         )
 
-    now_utc = datetime.now(UTC)
-    retention_ts = meeting.retention_until
-    if retention_ts is not None and retention_ts.tzinfo is None:
-        retention_ts = retention_ts.replace(tzinfo=UTC)
-
-    if retention_ts is not None and now_utc >= retention_ts:
+    if is_audio_retention_expired(meeting.retention_until):
         raise APIError(
             code="AUDIO_EXPIRED",
             message="Tệp âm thanh đã hết hạn lưu trữ và đã được dọn dẹp.",
@@ -116,7 +111,7 @@ def get_meeting_audio(
     audio_path = storage.resolve_audio_file(meeting.id, meeting.audio_path)
 
     if audio_path is None:
-        if retention_ts is not None and now_utc >= retention_ts:
+        if is_audio_retention_expired(meeting.retention_until):
             raise APIError(
                 code="AUDIO_EXPIRED",
                 message="Tệp âm thanh đã hết hạn lưu trữ và đã được dọn dẹp.",

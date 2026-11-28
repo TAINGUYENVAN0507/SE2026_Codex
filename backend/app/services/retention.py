@@ -25,6 +25,24 @@ from app.services.storage import Storage
 logger = logging.getLogger("backend.services.retention")
 
 
+def is_audio_retention_expired(
+    retention_until: datetime | None,
+    now: datetime | None = None,
+) -> bool:
+    """Kiểm tra tệp âm thanh đã quá hạn lưu trữ chưa theo đồng hồ UTC."""
+    if retention_until is None:
+        return False
+    current_time = now if now is not None else datetime.now(UTC)
+    if current_time.tzinfo is None:
+        current_time = current_time.replace(tzinfo=UTC)
+    target = (
+        retention_until
+        if retention_until.tzinfo is not None
+        else retention_until.replace(tzinfo=UTC)
+    )
+    return current_time >= target
+
+
 @dataclass
 class CleanupResult:
     """Kết quả thống kê sau khi chạy tiến trình dọn dẹp dữ liệu hết hạn."""

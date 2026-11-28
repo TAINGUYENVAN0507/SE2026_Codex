@@ -35,6 +35,7 @@ from app.db.models.user import User
 from app.db.session import get_db
 from app.main import create_app
 from app.schemas.job import JobOut
+from app.services.storage import LocalStorage, Storage, get_storage
 
 
 @pytest.fixture
@@ -67,14 +68,27 @@ def test_db() -> Generator[Session, None, None]:
 
 
 @pytest.fixture
-def app_with_db(test_db: Session):
-    """Tạo FastAPI application gắn kèm database test."""
+def test_storage(tmp_path: Path) -> LocalStorage:
+    """Storage cục bộ trên thư mục tạm."""
+    return LocalStorage(base_dir=tmp_path)
+
+
+def _attach_audio(storage: Storage, meeting: Meeting) -> None:
+    """Tạo tệp audio giả lập trong storage cho meeting chạy lại từ stage cần audio."""
+    res = storage.save_upload(meeting.id, "wav", b"RIFF\x00\x00\x00\x00WAVEfmt ")
+    meeting.audio_path = res.path
+
+
+@pytest.fixture
+def app_with_db(test_db: Session, test_storage: LocalStorage):
+    """Tạo FastAPI application gắn kèm database và storage test."""
     app = create_app()
 
     def _override_get_db() -> Generator[Session, None, None]:
         yield test_db
 
     app.dependency_overrides[get_db] = _override_get_db
+    app.dependency_overrides[get_storage] = lambda: test_storage
     return app
 
 
@@ -108,7 +122,7 @@ def create_auth_client(app, user: User | None) -> TestClient:
 
 
 def test_create_job_success_all_stages(
-    app_with_db, test_db: Session, users: dict[str, User]
+    app_with_db, test_db: Session, test_storage: LocalStorage, users: dict[str, User]
 ) -> None:
     """Tạo job mới từ đầu (from_stage=None) trả về 202 ACCEPTED."""
     owner = users["a"]
@@ -120,6 +134,7 @@ def test_create_job_success_all_stages(
         status="failed",
         version=1,
     )
+    _attach_audio(test_storage, meeting)
     test_db.add(meeting)
     test_db.commit()
 
@@ -203,20 +218,21 @@ def test_rt06_concurrent_retry_requests(tmp_path: Path, users: dict[str, User]) 
     Base.metadata.create_all(bind=engine, tables=tables)
     session_factory = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+    storage = LocalStorage(base_dir=tmp_path / "storage")
     with session_factory() as s:
         s.add(
             User(id=owner.id, email=owner.email, display_name=owner.display_name, password_hash="h")
         )
-        s.add(
-            Meeting(
-                id=meeting_id,
-                owner_id=owner.id,
-                title="Cuộc họp test đồng thời RT-06",
-                source="upload",
-                status="failed",
-                version=1,
-            )
+        concurrent_meeting = Meeting(
+            id=meeting_id,
+            owner_id=owner.id,
+            title="Cuộc họp test đồng thời RT-06",
+            source="upload",
+            status="failed",
+            version=1,
         )
+        _attach_audio(storage, concurrent_meeting)
+        s.add(concurrent_meeting)
         s.commit()
 
     app = create_app()
@@ -229,6 +245,7 @@ def test_rt06_concurrent_retry_requests(tmp_path: Path, users: dict[str, User]) 
             session.close()
 
     app.dependency_overrides[get_db] = _get_db_override
+    app.dependency_overrides[get_storage] = lambda: storage
 
     def send_request(idx: int) -> tuple[int, dict]:
         client = create_auth_client(app, owner)
@@ -254,7 +271,7 @@ def test_rt06_concurrent_retry_requests(tmp_path: Path, users: dict[str, User]) 
 
 
 def test_rt10_idempotency_replay_and_succeeded(
-    app_with_db, test_db: Session, users: dict[str, User]
+    app_with_db, test_db: Session, test_storage: LocalStorage, users: dict[str, User]
 ) -> None:
     """RT-10: Gửi lại với cùng Idempotency-Key nhận kết quả cũ; gửi mới sau khi xong nhận 409."""
     owner = users["a"]
@@ -266,6 +283,7 @@ def test_rt10_idempotency_replay_and_succeeded(
         status="failed",
         version=1,
     )
+    _attach_audio(test_storage, meeting)
     test_db.add(meeting)
     test_db.commit()
 

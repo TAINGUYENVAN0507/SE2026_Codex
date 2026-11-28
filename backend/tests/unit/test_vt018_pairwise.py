@@ -33,6 +33,7 @@ from app.db.models.transcript import Segment, Speaker
 from app.db.models.user import User
 from app.db.session import get_db
 from app.main import create_app
+from app.services.storage import LocalStorage, get_storage
 
 PARAMS = [
     ("from_stage", [None, "asr", "diarize", "merge", "summarize"]),
@@ -119,10 +120,22 @@ def db() -> Generator[Session, None, None]:
         engine.dispose()
 
 
-def build(db: Session, case: dict) -> tuple[TestClient, str]:
+def build(db: Session, case: dict, storage_dir: Path | None = None) -> tuple[TestClient, str]:
     user = User(id=str(uuid.uuid4()), email="pw@example.com", display_name="PW", password_hash="x")
+    meeting_id = str(uuid.uuid4())
+    storage = LocalStorage(base_dir=storage_dir) if storage_dir is not None else None
+    audio_path = (
+        storage.save_upload(meeting_id, "wav", b"RIFF\x00\x00\x00\x00WAVEfmt ").path
+        if storage is not None
+        else None
+    )
     meeting = Meeting(
-        id=str(uuid.uuid4()), owner_id=user.id, title="PW", source="upload", status="ready"
+        id=meeting_id,
+        owner_id=user.id,
+        title="PW",
+        source="upload",
+        status="ready",
+        audio_path=audio_path,
     )
     db.add_all([user, meeting])
     db.commit()
@@ -159,14 +172,16 @@ def build(db: Session, case: dict) -> tuple[TestClient, str]:
         yield db
 
     app.dependency_overrides[get_db] = _db
+    if storage is not None:
+        app.dependency_overrides[get_storage] = lambda: storage
     client = TestClient(app)
     client.cookies.set("session_token", create_access_token(user.id))
     return client, meeting.id
 
 
 @pytest.mark.parametrize("case", CASES, ids=[f"case{i}" for i in range(1, len(CASES) + 1)])
-def test_pairwise_retry_endpoint(db: Session, case: dict) -> None:
-    client, meeting_id = build(db, case)
+def test_pairwise_retry_endpoint(db: Session, tmp_path: Path, case: dict) -> None:
+    client, meeting_id = build(db, case, storage_dir=tmp_path)
     code, err = expected(case)
     url = f"/api/v1/meetings/{meeting_id}/jobs"
     key = {"absent": None, "fresh": str(uuid.uuid4()), "replayed": str(uuid.uuid4())}[case["idem"]]
