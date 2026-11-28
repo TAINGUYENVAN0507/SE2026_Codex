@@ -1,0 +1,58 @@
+$ npm.cmd test -- src/pages/LoginPage.test.tsx
+
+> vietnamese-meeting-minutes-frontend@0.0.0 test
+> vitest run src/pages/LoginPage.test.tsx
+
+
+ RUN  v5.0.5 D:/Project/CNPM/SE2026_Codex/frontend
+
+ ❯ src/pages/LoginPage.test.tsx (8 tests | 3 failed) 5243ms
+   × FE-03: 503 (Retry-After=2) báo bận, giữ thông tin và cho gửi lại 593ms
+   × FE-03: 503 (Retry-After=null) báo bận, giữ thông tin và cho gửi lại 612ms
+   × FE-03: lỗi 500 giữ mật khẩu để người dùng thử lại, chỉ 401 sai thông tin mới xóa 638ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/LoginPage.test.tsx > FE-03: 503 (Retry-After=2) báo bận, giữ thông tin và cho gửi lại
+ FAIL  src/pages/LoginPage.test.tsx > FE-03: 503 (Retry-After=null) báo bận, giữ thông tin và cho gửi lại
+Error: expect(element).toHaveTextContent()
+
+Expected element to have text content:
+  Máy chủ đang bận
+Received:
+  Không thể đăng nhập. Hãy thử lại.
+ ❯ src/pages/LoginPage.test.tsx:162:19
+    160|     await user.click(screen.getByRole('button', { name: 'Đăng nhập' }))
+    161|     const alert = await screen.findByRole('alert')
+    162|     expect(alert).toHaveTextContent('Máy chủ đang bận')
+       |                   ^
+    163|     expect(alert).toHaveTextContent(
+    164|       retryAfter ? 'thử lại sau 2 giây' : 'thử lại sau ít giây',
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/pages/LoginPage.test.tsx > FE-03: lỗi 500 giữ mật khẩu để người dùng thử lại, chỉ 401 sai thông tin mới xóa
+Error: expect(element).toHaveValue(demo-password)
+
+Expected the element to have value:
+  demo-password
+Received:
+
+ ❯ src/pages/LoginPage.test.tsx:197:68
+    195|     'Không thể đăng nhập. Hãy thử lại.',
+    196|   )
+    197|   expect(screen.getByLabelText('Mật khẩu', { selector: 'input' })).toH…
+       |                                                                    ^
+    198|     'demo-password',
+    199|   )
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 5 passed (8)
+   Start at  20:24:18
+   Duration  41.73s (environment 54%, import 18%, setup 15%, tests 13%, transform 1%)
+
+
+EXIT=1

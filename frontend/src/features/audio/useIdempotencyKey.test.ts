@@ -44,36 +44,27 @@ describe('useIdempotencyKey', () => {
   })
 })
 
-it('đổi key khi sửa metadata nhưng giữ key nếu thử lại cùng nội dung', () => {
-  const file = new File(['synthetic'], 'date.wav')
-  const { result, rerender } = renderHook(
-    ({ metadata }) => useIdempotencyKey(file, metadata),
-    {
-      initialProps: {
-        metadata: JSON.stringify({
-          title: 'Họp',
-          date: '2026-11-24',
-          source: 'upload',
-        }),
+it.each([
+  ['title', 'Họp mới'],
+  ['date', '2026-11-27'],
+  ['source', 'recording'],
+] as const)(
+  'đổi %s tạo key mới, thử lại payload đó giữ key',
+  (field, value) => {
+    const file = new File(['synthetic'], 'meeting.wav')
+    const original = { title: 'Họp', date: '2026-11-26', source: 'upload' }
+    const { result, rerender } = renderHook(
+      ({ metadata }) => useIdempotencyKey(file, metadata),
+      {
+        initialProps: { metadata: JSON.stringify(original) },
       },
-    },
-  )
-  const original = result.current
-  rerender({
-    metadata: JSON.stringify({
-      title: 'Họp',
-      date: '2026-11-25',
-      source: 'upload',
-    }),
-  })
-  expect(result.current).not.toBe(original)
-  const changed = result.current
-  rerender({
-    metadata: JSON.stringify({
-      title: 'Họp',
-      date: '2026-11-25',
-      source: 'upload',
-    }),
-  })
-  expect(result.current).toBe(changed)
-})
+    )
+    const first = result.current
+    const changedPayload = JSON.stringify({ ...original, [field]: value })
+    rerender({ metadata: changedPayload })
+    expect(result.current).not.toBe(first)
+    const changed = result.current
+    rerender({ metadata: changedPayload })
+    expect(result.current).toBe(changed)
+  },
+)

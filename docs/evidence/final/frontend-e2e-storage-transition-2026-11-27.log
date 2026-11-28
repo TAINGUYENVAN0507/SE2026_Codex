@@ -1,0 +1,150 @@
+Các lượt chuyển tiếp được giữ nguyên trạng thái lỗi, không tính là lượt test đạt.
+
+storage-upload — phần cuối log gốc
+$ node node_modules/@playwright/test/cli.js test e2e/flows/upload.spec.ts --retries=0
+[WebServer] Resolved 55 packages in 1ms
+[WebServer] Checked 54 packages in 15ms
+[WebServer] INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+[WebServer] INFO  [alembic.runtime.migration] Will assume transactional DDL.
+[WebServer] INFO  [alembic.runtime.migration] Running upgrade  -> 0001_users_meetings, create users and meetings tables
+[WebServer] INFO  [alembic.runtime.migration] Running upgrade 0001_users_meetings -> 0002_jobs_table, create jobs table with status check and partial unique active job index
+[WebServer] INFO  [alembic.runtime.migration] Running upgrade 0002_jobs_table -> 0003_transcript_summary_audit, create transcript, summary, and audit tables with integrity guards
+[WebServer] INFO  [alembic.runtime.migration] Running upgrade 0003_transcript_summary_audit -> 0004_prevent_edit_events_delete, prevent edit_events delete trigger
+[WebServer] INFO  [alembic.runtime.migration] Running upgrade 0004_prevent_edit_events_delete -> 0005_edit_events_cascade_delete, allow edit_events delete on meeting cascade
+[WebServer] INFO  [alembic.runtime.migration] Running upgrade 0005_edit_events_cascade_delete -> 0006_segments_unique_idx, unique (meeting_id, idx) on segments
+[WebServer] INFO  [alembic.runtime.migration] Running upgrade 0006_segments_unique_idx -> 0007_jobs_started_finished, jobs.started_at and jobs.finished_at
+[WebServer] (node:10348) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:4204) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] {"timestamp": "2026-11-27T13:27:58.412857+00:00", "level": "INFO", "logger": "backend.worker", "message": "Khởi động worker loop worker-32876 (poll_interval=2.0s, backend=fake)", "request_id": null}
+[WebServer] INFO:     Started server process [5388]
+[WebServer] INFO:     Waiting for application startup.
+[WebServer] INFO:     Application startup complete.
+[WebServer] INFO:     Uvicorn running on http://127.0.0.1:18000 (Press CTRL+C to quit)
+[WebServer] {"timestamp": "2026-11-27T13:27:58.852155+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "9f1a6e23-669d-42cf-aa8b-f9e388e64339", "method": "GET", "path": "/api/v1/health", "status_code": 200, "duration_ms": 4.1}
+[WebServer] (node:29236) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] {"timestamp": "2026-11-27T13:27:59.175445+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "c02b97b1-2e6d-4c32-9f40-d900784fbbfb", "method": "GET", "path": "/api/v1/health", "status_code": 200, "duration_ms": 0.47}
+First argument must use the object destructuring pattern: _fixtures
+
+   at flows\upload.spec.ts:67
+
+  65 |
+  66 | // Đọc trước khi stack dừng; harness kiểm thư mục này đã được xóa sau khi Playwright thoát.
+> 67 | test.afterAll(async (_fixtures, info) => {
+     |      ^
+  68 |   const storage = process.env.E2E_STORAGE_DIR
+  69 |   expect(storage).toBeTruthy()
+  70 |   if (!storage) throw new Error('Thiếu E2E_STORAGE_DIR của stack.')
+
+
+EXIT=1
+
+storage-upload-on-error — phần cuối log gốc
+$ node node_modules/@playwright/test/cli.js test e2e/flows/upload.spec.ts --retries=0
+[WebServer] Resolved 55 packages in 1ms
+[WebServer] Checked 54 packages in 3ms
+[WebServer] INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+[WebServer] INFO  [alembic.runtime.migration] Will assume transactional DDL.
+[WebServer] INFO  [alembic.runtime.migration] Running upgrade  -> 0001_users_meetings, create users and meetings tables
+[WebServer] INFO  [alembic.runtime.migration] Running upgrade 0001_users_meetings -> 0002_jobs_table, create jobs table with status check and partial unique active job index
+[WebServer] INFO  [alembic.runtime.migration] Running upgrade 0002_jobs_table -> 0003_transcript_summary_audit, create transcript, summary, and audit tables with integrity guards
+[WebServer] INFO  [alembic.runtime.migration] Running upgrade 0003_transcript_summary_audit -> 0004_prevent_edit_events_delete, prevent edit_events delete trigger
+[WebServer] INFO  [alembic.runtime.migration] Running upgrade 0004_prevent_edit_events_delete -> 0005_edit_events_cascade_delete, allow edit_events delete on meeting cascade
+[WebServer] INFO  [alembic.runtime.migration] Running upgrade 0005_edit_events_cascade_delete -> 0006_segments_unique_idx, unique (meeting_id, idx) on segments
+[WebServer] INFO  [alembic.runtime.migration] Running upgrade 0006_segments_unique_idx -> 0007_jobs_started_finished, jobs.started_at and jobs.finished_at
+[WebServer] (node:20120) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:16372) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] {"timestamp": "2026-11-27T13:33:20.335854+00:00", "level": "INFO", "logger": "backend.worker", "message": "Khởi động worker loop worker-16484 (poll_interval=2.0s, backend=fake)", "request_id": null}
+[WebServer] INFO:     Started server process [12444]
+[WebServer] INFO:     Waiting for application startup.
+[WebServer] INFO:     Application startup complete.
+[WebServer] INFO:     Uvicorn running on http://127.0.0.1:18000 (Press CTRL+C to quit)
+[WebServer] {"timestamp": "2026-11-27T13:33:21.140475+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "334f86d0-0834-46c2-8402-435a2e4548ff", "method": "GET", "path": "/api/v1/health", "status_code": 200, "duration_ms": 4.56}
+[WebServer] (node:26104) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] {"timestamp": "2026-11-27T13:33:22.297683+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "be24caf8-c192-4038-9f34-99bdd2cd133b", "method": "GET", "path": "/api/v1/health", "status_code": 200, "duration_ms": 0.45}
+First argument must use the object destructuring pattern: _fixtures
+
+   at flows\upload.spec.ts:67
+
+  65 |
+  66 | // Đọc trước khi stack dừng; harness kiểm thư mục này đã được xóa sau khi Playwright thoát.
+> 67 | test.afterAll(async (_fixtures, info) => {
+     |      ^
+  68 |   const storage = process.env.E2E_STORAGE_DIR
+  69 |   expect(storage).toBeTruthy()
+  70 |   if (!storage) throw new Error('Thiếu E2E_STORAGE_DIR của stack.')
+
+
+EXIT=1
+
+storage-upload-helpers — phần cuối log gốc
+[WebServer] {"timestamp": "2026-11-27T13:37:55.419315+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "75eaf4db-6a87-4d19-a910-bae7b15dd85c", "method": "GET", "path": "/api/v1/meetings/7c8240fa-4c9e-40a4-b12d-b46c7d086ceb", "status_code": 200, "duration_ms": 10.46}
+[WebServer] {"timestamp": "2026-11-27T13:37:55.463677+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "5957ec34-4ee0-4eeb-897c-11b70ecde100", "method": "GET", "path": "/api/v1/jobs/a40d31be-e3b3-461e-902d-f10832f17416", "status_code": 200, "duration_ms": 8.13}
+[WebServer] {"timestamp": "2026-11-27T13:37:55.706458+00:00", "level": "INFO", "logger": "meeting_pipeline.runner", "message": "stage_finished", "request_id": null, "event": "stage_finished", "job_id": "a40d31be-e3b3-461e-902d-f10832f17416", "meeting_id": "7c8240fa-4c9e-40a4-b12d-b46c7d086ceb", "stage": "vad", "attempt": 1, "duration_sec": 2.593, "status": "succeeded"}
+[WebServer] {"timestamp": "2026-11-27T13:37:55.713662+00:00", "level": "INFO", "logger": "meeting_pipeline.runner", "message": "stage_started", "request_id": null, "event": "stage_started", "job_id": "a40d31be-e3b3-461e-902d-f10832f17416", "meeting_id": "7c8240fa-4c9e-40a4-b12d-b46c7d086ceb", "stage": "asr", "attempt": 1, "status": "running"}
+[WebServer] {"timestamp": "2026-11-27T13:37:56.376499+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "4f4020e9-2052-4084-aaa5-565ea8852822", "method": "GET", "path": "/api/v1/meetings/7c8240fa-4c9e-40a4-b12d-b46c7d086ceb/transcript", "status_code": 200, "duration_ms": 17.07}
+[WebServer] {"timestamp": "2026-11-27T13:37:56.434616+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "ff2dd61e-02eb-4ae0-8f69-679d0b8d2709", "method": "GET", "path": "/api/v1/meetings/7c8240fa-4c9e-40a4-b12d-b46c7d086ceb/summary", "status_code": 200, "duration_ms": 24.02}
+[WebServer] {"timestamp": "2026-11-27T13:37:57.451334+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "622d9bf5-574e-4aee-a7ea-93637b7589f9", "method": "GET", "path": "/api/v1/meetings/7c8240fa-4c9e-40a4-b12d-b46c7d086ceb", "status_code": 200, "duration_ms": 18.81}
+[WebServer] {"timestamp": "2026-11-27T13:37:57.487356+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "85cc0937-4628-494f-b579-194b1c4090ac", "method": "GET", "path": "/api/v1/jobs/a40d31be-e3b3-461e-902d-f10832f17416", "status_code": 200, "duration_ms": 13.37}
+[WebServer] {"timestamp": "2026-11-27T13:37:58.210971+00:00", "level": "INFO", "logger": "meeting_pipeline.runner", "message": "stage_finished", "request_id": null, "event": "stage_finished", "job_id": "a40d31be-e3b3-461e-902d-f10832f17416", "meeting_id": "7c8240fa-4c9e-40a4-b12d-b46c7d086ceb", "stage": "asr", "attempt": 1, "duration_sec": 2.5, "status": "succeeded"}
+[WebServer] {"timestamp": "2026-11-27T13:37:58.222842+00:00", "level": "INFO", "logger": "meeting_pipeline.runner", "message": "stage_started", "request_id": null, "event": "stage_started", "job_id": "a40d31be-e3b3-461e-902d-f10832f17416", "meeting_id": "7c8240fa-4c9e-40a4-b12d-b46c7d086ceb", "stage": "diarize", "attempt": 1, "status": "running"}
+[WebServer] {"timestamp": "2026-11-27T13:37:59.497090+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "b4548311-4bb0-462b-b1e6-ad3e00f75093", "method": "GET", "path": "/api/v1/meetings/7c8240fa-4c9e-40a4-b12d-b46c7d086ceb", "status_code": 200, "duration_ms": 22.45}
+[WebServer] {"timestamp": "2026-11-27T13:37:59.520730+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "378d427e-bcb5-45a2-acec-3173ecc8b49b", "method": "GET", "path": "/api/v1/jobs/a40d31be-e3b3-461e-902d-f10832f17416", "status_code": 200, "duration_ms": 16.73}
+[WebServer] {"timestamp": "2026-11-27T13:38:00.767170+00:00", "level": "INFO", "logger": "meeting_pipeline.runner", "message": "stage_finished", "request_id": null, "event": "stage_finished", "job_id": "a40d31be-e3b3-461e-902d-f10832f17416", "meeting_id": "7c8240fa-4c9e-40a4-b12d-b46c7d086ceb", "stage": "diarize", "attempt": 1, "duration_sec": 2.547, "status": "succeeded"}
+[WebServer] {"timestamp": "2026-11-27T13:38:00.781518+00:00", "level": "INFO", "logger": "meeting_pipeline.runner", "message": "stage_started", "request_id": null, "event": "stage_started", "job_id": "a40d31be-e3b3-461e-902d-f10832f17416", "meeting_id": "7c8240fa-4c9e-40a4-b12d-b46c7d086ceb", "stage": "merge", "attempt": 1, "status": "running"}
+[WebServer] {"timestamp": "2026-11-27T13:38:01.417050+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "2e4c5342-f484-4cff-b1f9-d9e5bba38ca7", "method": "GET", "path": "/api/v1/meetings/7c8240fa-4c9e-40a4-b12d-b46c7d086ceb/transcript", "status_code": 200, "duration_ms": 22.06}
+[WebServer] {"timestamp": "2026-11-27T13:38:01.462587+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "9521af0d-4957-488b-b0a4-5a7876a6cbc9", "method": "GET", "path": "/api/v1/meetings/7c8240fa-4c9e-40a4-b12d-b46c7d086ceb/summary", "status_code": 200, "duration_ms": 15.1}
+[WebServer] {"timestamp": "2026-11-27T13:38:01.533857+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "871c8755-5b13-4941-baf9-e53796e83823", "method": "GET", "path": "/api/v1/meetings/7c8240fa-4c9e-40a4-b12d-b46c7d086ceb", "status_code": 200, "duration_ms": 23.52}
+[WebServer] {"timestamp": "2026-11-27T13:38:01.563792+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "9d471d98-1859-4bff-8def-2ee3765d2fe5", "method": "GET", "path": "/api/v1/jobs/a40d31be-e3b3-461e-902d-f10832f17416", "status_code": 200, "duration_ms": 21.29}
+[WebServer] {"timestamp": "2026-11-27T13:38:03.593463+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "7fdd2788-8373-45fe-ad46-a36d8a9ef0b2", "method": "GET", "path": "/api/v1/meetings/7c8240fa-4c9e-40a4-b12d-b46c7d086ceb", "status_code": 200, "duration_ms": 41.57}
+[WebServer] {"timestamp": "2026-11-27T13:38:03.607476+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "04ac0eab-88bf-4152-a5fe-e2d1285ba120", "method": "GET", "path": "/api/v1/jobs/a40d31be-e3b3-461e-902d-f10832f17416", "status_code": 200, "duration_ms": 22.66}
+[WebServer] {"timestamp": "2026-11-27T13:38:03.630936+00:00", "level": "INFO", "logger": "meeting_pipeline.runner", "message": "stage_finished", "request_id": null, "event": "stage_finished", "job_id": "a40d31be-e3b3-461e-902d-f10832f17416", "meeting_id": "7c8240fa-4c9e-40a4-b12d-b46c7d086ceb", "stage": "merge", "attempt": 1, "duration_sec": 2.86, "status": "succeeded"}
+[WebServer] {"timestamp": "2026-11-27T13:38:03.718195+00:00", "level": "INFO", "logger": "backend.worker.persister", "message": "Đã persist thành công transcript cho meeting 7c8240fa-4c9e-40a4-b12d-b46c7d086ceb từ job a40d31be-e3b3-461e-902d-f10832f17416.", "request_id": null}
+[WebServer] {"timestamp": "2026-11-27T13:38:03.719284+00:00", "level": "INFO", "logger": "meeting_pipeline.runner", "message": "stage_started", "request_id": null, "event": "stage_started", "job_id": "a40d31be-e3b3-461e-902d-f10832f17416", "meeting_id": "7c8240fa-4c9e-40a4-b12d-b46c7d086ceb", "stage": "summarize", "attempt": 1, "status": "running"}
+[WebServer] {"timestamp": "2026-11-27T13:38:05.614552+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "726beac6-b478-46c4-9094-18c6a7cb2dc1", "method": "GET", "path": "/api/v1/meetings/7c8240fa-4c9e-40a4-b12d-b46c7d086ceb", "status_code": 200, "duration_ms": 10.76}
+[WebServer] {"timestamp": "2026-11-27T13:38:05.627267+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "f4f462d5-c7b8-45d4-a110-571274ddbecd", "method": "GET", "path": "/api/v1/jobs/a40d31be-e3b3-461e-902d-f10832f17416", "status_code": 200, "duration_ms": 7.42}
+[WebServer] {"timestamp": "2026-11-27T13:38:06.204537+00:00", "level": "INFO", "logger": "meeting_pipeline.runner", "message": "stage_finished", "request_id": null, "event": "stage_finished", "job_id": "a40d31be-e3b3-461e-902d-f10832f17416", "meeting_id": "7c8240fa-4c9e-40a4-b12d-b46c7d086ceb", "stage": "summarize", "attempt": 1, "duration_sec": 2.484, "status": "succeeded"}
+[WebServer] {"timestamp": "2026-11-27T13:38:06.228991+00:00", "level": "INFO", "logger": "backend.worker.persister", "message": "Đã persist thành công summary cho meeting 7c8240fa-4c9e-40a4-b12d-b46c7d086ceb từ job a40d31be-e3b3-461e-902d-f10832f17416.", "request_id": null}
+[WebServer] {"timestamp": "2026-11-27T13:38:06.242620+00:00", "level": "INFO", "logger": "backend.worker", "message": "Job a40d31be-e3b3-461e-902d-f10832f17416 đã hoàn thành thành công", "request_id": null, "event": "job_succeeded", "job_id": "a40d31be-e3b3-461e-902d-f10832f17416", "meeting_id": "7c8240fa-4c9e-40a4-b12d-b46c7d086ceb", "worker_id": "worker-22372", "stage": "summarize", "attempt": 1, "status": "succeeded"}
+[WebServer] {"timestamp": "2026-11-27T13:38:06.447986+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "dcc2ec85-6cd4-4936-82ba-307f5ceca972", "method": "GET", "path": "/api/v1/meetings/7c8240fa-4c9e-40a4-b12d-b46c7d086ceb/transcript", "status_code": 200, "duration_ms": 8.31}
+[WebServer] {"timestamp": "2026-11-27T13:38:07.640160+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "78f7d8b0-9e53-4239-b295-171e280251a5", "method": "GET", "path": "/api/v1/meetings/7c8240fa-4c9e-40a4-b12d-b46c7d086ceb", "status_code": 200, "duration_ms": 15.8}
+[WebServer] {"timestamp": "2026-11-27T13:38:09.662908+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "0e340dd2-cc5a-430b-a2af-d80552b9e9a4", "method": "GET", "path": "/api/v1/jobs/a40d31be-e3b3-461e-902d-f10832f17416", "status_code": 200, "duration_ms": 6.66}
+[WebServer] {"timestamp": "2026-11-27T13:38:10.202946+00:00", "level": "INFO", "logger": "app.access", "message": "HTTP request completed", "request_id": "a24d8f3d-afa9-4695-b730-07cf429a2b64", "method": "GET", "path": "/api/v1/meetings/7c8240fa-4c9e-40a4-b12d-b46c7d086ceb", "status_code": 200, "duration_ms": 26.67}
+  ok 3 [chromium] › e2e\flows\upload.spec.ts:31:1 › RT-11: reload khi đang xử lý, tiếp tục job cũ và không tạo thêm job (22.3s)
+
+
+  1) [chromium] › e2e\flows\retention.spec.ts:6:1 › FE-19: cleanup xóa audio/artifacts hết hạn thật, transcript vẫn đọc được
+
+    Error: Command failed: D:/KLTN/data/se-qa-tools/Scripts/uv.exe run --no-sync python D:\Project\CNPM\SE2026_Codex\frontend\e2e\expire_audio.py a4cc8ba5-08d1-411b-a19b-1d9818039732
+    Traceback (most recent call last):
+      File "D:\Project\CNPM\SE2026_Codex\frontend\e2e\expire_audio.py", line 107, in <module>
+        main()
+      File "D:\Project\CNPM\SE2026_Codex\frontend\e2e\expire_audio.py", line 31, in main
+        raise RuntimeError("Storage không khớp thư mục QA dự kiến.")
+    RuntimeError: Storage không khớp thư mục QA dự kiến.
+
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\flows-retention-FE-19-clea-9f66d-hật-transcript-vẫn-đọc-được-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\flows-retention-FE-19-clea-9f66d-hật-transcript-vẫn-đọc-được-chromium\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\flows-retention-FE-19-clea-9f66d-hật-transcript-vẫn-đọc-được-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\flows-retention-FE-19-clea-9f66d-hật-transcript-vẫn-đọc-được-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [chromium] › e2e\flows\retention.spec.ts:6:1 › FE-19: cleanup xóa audio/artifacts hết hạn thật, transcript vẫn đọc được
+  2 passed (1.4m)
+
+EXIT=1

@@ -1,4 +1,8 @@
 import { defineConfig, devices } from '@playwright/test'
+import { configureStorage } from './e2e/storage.mjs'
+
+// Config được nạp ở launcher và worker: dùng chung một đường dẫn, stack mới tạo thư mục.
+configureStorage()
 
 const scenario = process.env.FAKE_SCENARIO || 'slow'
 const cases: Record<string, string[]> = {
@@ -16,6 +20,7 @@ const cases: Record<string, string[]> = {
     'flows/accessibility.spec.ts',
     'flows/delete-account.spec.ts',
     'flows/retention.spec.ts',
+    'flows/missing-audio.spec.ts',
     'privacy/*.spec.ts',
   ],
   permanent: ['flows/permanent.spec.ts'],
@@ -33,7 +38,11 @@ export default defineConfig({
   retries: 0,
   timeout: 120_000,
   expect: { timeout: 20_000 },
-  reporter: [['list'], ['html', { open: 'never' }]],
+  reporter: [
+    ['list'],
+    ['html', { open: 'never' }],
+    ['./e2e/storage-reporter.mjs'],
+  ],
   use: {
     baseURL: 'http://127.0.0.1:14173',
     serviceWorkers: 'block',
