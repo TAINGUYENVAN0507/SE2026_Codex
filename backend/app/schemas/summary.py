@@ -68,7 +68,9 @@ class SummaryPointUpdate(SummaryPointOut):
 
     text: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=1000)]
     evidence_segment_ids: list[Annotated[str, StringConstraints(max_length=36)]] = Field(
-        default_factory=list, max_length=50
+        default_factory=list,
+        max_length=50,
+        description="Danh sách UUID các segment làm bằng chứng trích xuất",
     )
 
     @field_validator("evidence_segment_ids")

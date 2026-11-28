@@ -491,13 +491,6 @@ def test_put_summary_with_50_evidence_ids_per_point(
     assert r.json()["content"]["key_points"][0]["evidence_segment_ids"] == ids
 
 
-PERSIST_B_2026_11_28 = (
-    "persister lưu hơn 50 evidence cho một ý nên PUT summary trả 422; "
-    "giao B ngày 11-28, việc 2 (tasks/2026-11-28/member-b.md)"
-)
-
-
-@pytest.mark.xfail(strict=True, raises=AssertionError, reason=PERSIST_B_2026_11_28)
 def test_put_summary_that_keeps_the_evidence_of_an_ai_summary_answers_200(
     client: TestClient, db_session: Session, seeded: dict[str, str], tmp_path: Path
 ) -> None:

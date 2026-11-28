@@ -1471,7 +1471,10 @@ export interface components {
     SummaryPointUpdate: {
       /** Text */
       text: string
-      /** Evidence Segment Ids */
+      /**
+       * Evidence Segment Ids
+       * @description Danh sách UUID các segment làm bằng chứng trích xuất
+       */
       evidence_segment_ids?: string[]
     }
     /**

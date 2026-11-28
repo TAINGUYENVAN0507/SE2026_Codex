@@ -22,9 +22,10 @@ import logging
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 from meeting_pipeline.errors import ErrorCode, PermanentPipelineError
-from meeting_pipeline.schemas import Stage, SummaryOutput, Transcript
+from meeting_pipeline.schemas import EvidenceItem, Stage, SummaryOutput, Transcript
 from pydantic import ValidationError
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
@@ -35,6 +36,31 @@ from app.db.models.summary import Summary
 from app.db.models.transcript import Segment, Speaker
 
 logger = logging.getLogger("backend.worker.persister")
+
+MAX_SUMMARY_POINT_EVIDENCE_IDS = 50
+
+
+def _serialize_summary_points(
+    points: list[EvidenceItem],
+    index_to_segment_id: dict[int, str],
+) -> list[dict[str, Any]]:
+    """Đổi chỉ số segment sang UUID, giữ thứ tự và tối đa 50 ID khác nhau mỗi ý."""
+    serialized: list[dict[str, Any]] = []
+    for point in points:
+        evidence_ids = list(
+            dict.fromkeys(
+                index_to_segment_id[idx]
+                for idx in point.evidence_segment_indices
+                if idx in index_to_segment_id
+            )
+        )[:MAX_SUMMARY_POINT_EVIDENCE_IDS]
+        serialized.append(
+            {
+                "text": point.text,
+                "evidence_segment_ids": evidence_ids,
+            }
+        )
+    return serialized
 
 
 def _replace_previous_transcript(db: Session, meeting_id: str, new_labels: set[str]) -> None:
@@ -322,33 +348,8 @@ def persist_summary(
 
     # Chuyển đổi content cho summary
     if summary_output.status == "ready":
-        key_points = []
-        for kp in summary_output.key_points:
-            evidence_ids = [
-                index_to_segment_id[idx]
-                for idx in kp.evidence_segment_indices
-                if idx in index_to_segment_id
-            ]
-            key_points.append(
-                {
-                    "text": kp.text,
-                    "evidence_segment_ids": evidence_ids,
-                }
-            )
-
-        decisions = []
-        for dec in summary_output.decisions:
-            evidence_ids = [
-                index_to_segment_id[idx]
-                for idx in dec.evidence_segment_indices
-                if idx in index_to_segment_id
-            ]
-            decisions.append(
-                {
-                    "text": dec.text,
-                    "evidence_segment_ids": evidence_ids,
-                }
-            )
+        key_points = _serialize_summary_points(summary_output.key_points, index_to_segment_id)
+        decisions = _serialize_summary_points(summary_output.decisions, index_to_segment_id)
 
         content_dict = {
             "overview": summary_output.overview,

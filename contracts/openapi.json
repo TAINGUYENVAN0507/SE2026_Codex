@@ -3587,7 +3587,8 @@
             },
             "type": "array",
             "maxItems": 50,
-            "title": "Evidence Segment Ids"
+            "title": "Evidence Segment Ids",
+            "description": "Danh sách UUID các segment làm bằng chứng trích xuất"
           }
         },
         "additionalProperties": false,
