@@ -133,7 +133,8 @@ def test_worker_rejects_audio_outside_storage(
     pipeline.assert_not_called()
     job = test_db.execute(select(Job).where(Job.meeting_id == meeting.id)).scalar_one()
     assert job.status == "failed"
-    assert job.error_code == "AUDIO_INVALID"
+    assert job.error_code == "AUDIO_NOT_FOUND"
+    assert job.error_message == "Không tìm thấy tệp âm thanh trên hệ thống lưu trữ."
 
 
 def test_worker_reports_expired_audio_after_retention(
@@ -159,6 +160,33 @@ def test_worker_reports_expired_audio_after_retention(
     pipeline.assert_not_called()
     job = test_db.execute(select(Job).where(Job.meeting_id == meeting.id)).scalar_one()
     assert job.error_code == "AUDIO_EXPIRED"
+    assert job.error_message == "Tệp âm thanh đã hết hạn lưu trữ và đã được dọn dẹp."
+
+
+def test_worker_reports_missing_audio_before_retention_expiry(
+    test_db: Session,
+    sample_meeting_with_audio: Meeting,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """File audio bị mất khi chưa hết hạn phải báo AUDIO_NOT_FOUND kèm thông điệp khớp mã."""
+    meeting = sample_meeting_with_audio
+    meeting.retention_until = datetime(2026, 12, 31)  # naive datetime để kiểm tra chuẩn hóa UTC
+    enqueue_job(test_db, meeting_id=meeting.id)
+    test_db.commit()
+    pipeline = MagicMock()
+    monkeypatch.setattr("app.worker.runner.run_job", pipeline)
+    assert run_worker_once(
+        test_db,
+        storage=LocalStorage(base_dir=tmp_path / "empty"),
+        worker_id="missing-worker",
+        backend="fake",
+        now=datetime(2026, 1, 2, tzinfo=UTC),
+    )
+    pipeline.assert_not_called()
+    job = test_db.execute(select(Job).where(Job.meeting_id == meeting.id)).scalar_one()
+    assert job.error_code == "AUDIO_NOT_FOUND"
+    assert job.error_message == "Không tìm thấy tệp âm thanh trên hệ thống lưu trữ."
 
 
 def test_worker_run_queued_job_to_succeeded(

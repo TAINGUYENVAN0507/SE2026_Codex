@@ -33,7 +33,7 @@ from app.db.models.ai_output import AIOutput
 from app.db.models.job import Job
 from app.db.models.meeting import Meeting
 from app.db.models.transcript import Segment, Speaker
-from app.services.retention import run_retention_cleanup
+from app.services.retention import is_audio_retention_expired, run_retention_cleanup
 from app.services.storage import Storage
 from app.worker.persister import persist_summary, persist_transcript
 from app.worker.queue import (
@@ -260,22 +260,22 @@ def process_job(
     # Xác định đường dẫn audio gốc
     audio_file = storage.resolve_audio_file(meeting.id, meeting.audio_path)
     if audio_file is None and job.from_stage != Stage.SUMMARIZE.value:
-        retention_ts = meeting.retention_until
-        if retention_ts is not None and retention_ts.tzinfo is None:
-            retention_ts = retention_ts.replace(tzinfo=UTC)
+        current_time = get_now()
+        if is_audio_retention_expired(meeting.retention_until, now=current_time):
+            error_code = "AUDIO_EXPIRED"
+            error_message = "Tệp âm thanh đã hết hạn lưu trữ và đã được dọn dẹp."
+        else:
+            error_code = "AUDIO_NOT_FOUND"
+            error_message = "Không tìm thấy tệp âm thanh trên hệ thống lưu trữ."
         fail_job(
             db,
             job,
-            error_code=(
-                "AUDIO_EXPIRED"
-                if retention_ts is not None and get_now() >= retention_ts
-                else "AUDIO_INVALID"
-            ),
-            error_message="Không tìm thấy tệp âm thanh hợp lệ trong storage.",
-            now=get_now(),
+            error_code=error_code,
+            error_message=error_message,
+            now=current_time,
         )
         meeting.status = "failed"
-        meeting.updated_at = get_now()
+        meeting.updated_at = current_time
         db.commit()
         return job
 
