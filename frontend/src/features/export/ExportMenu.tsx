@@ -6,7 +6,7 @@ import {
   type ExportFormat,
   type ExportVariant,
 } from '../../api/client'
-import { ApiError } from '../../api/errors'
+import { ApiError, isServiceBusy, serviceBusyMessage } from '../../api/errors'
 import { exportFilename, saveExport } from './download'
 
 export function ExportMenu({
@@ -60,10 +60,12 @@ export function ExportMenu({
     } catch (cause) {
       restoreFocus.current = true
       setError(
-        cause instanceof ApiError &&
-          (cause.status === 409 || cause.code === 'TRANSCRIPT_NOT_READY')
-          ? 'Transcript chưa sẵn sàng. Hãy chờ xử lý xong rồi thử xuất lại.'
-          : 'Không thể xuất biên bản. Hãy thử lại.',
+        isServiceBusy(cause)
+          ? serviceBusyMessage(cause)
+          : cause instanceof ApiError &&
+              (cause.status === 409 || cause.code === 'TRANSCRIPT_NOT_READY')
+            ? 'Transcript chưa sẵn sàng. Hãy chờ xử lý xong rồi thử xuất lại.'
+            : 'Không thể xuất biên bản. Hãy thử lại.',
       )
     } finally {
       setBusy(false)
