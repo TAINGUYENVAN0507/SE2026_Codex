@@ -143,10 +143,72 @@ describe('FE-03 session guard and logout', () => {
       .setup()
       .click(screen.getByRole('button', { name: 'Đăng xuất' }))
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Chưa thể đăng xuất',
+      'Chưa thể đăng xuất. Hãy kiểm tra kết nối và thử lại.',
     )
     expect(
       screen.getByRole('heading', { name: 'Tạo cuộc họp mới' }),
     ).toBeInTheDocument()
   })
+})
+
+it.each(['2', null])(
+  'FE-03: logout 503 (Retry-After=%s) keeps the session and retries on click',
+  async (retryAfter) => {
+    let calls = 0
+    server.use(
+      http.post('*/api/v1/auth/logout', () => {
+        calls++
+        return calls === 1
+          ? HttpResponse.json(
+              {
+                error: { code: 'SERVICE_UNAVAILABLE', message: 'CANARY_BUSY' },
+              },
+              {
+                status: 503,
+                headers: retryAfter ? { 'Retry-After': retryAfter } : undefined,
+              },
+            )
+          : new HttpResponse(null, { status: 204 })
+      }),
+    )
+    const client = renderSession('/meetings/new', true)
+    client.setQueryData(['transcript', 'private'], { text: 'PRIVATE_CANARY' })
+    const user = userEvent.setup()
+    await user.click(screen.getByRole('button', { name: 'Đăng xuất' }))
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent(
+      `Máy chủ đang bận. Vui lòng thử lại sau ${retryAfter ?? 'ít'} giây.`,
+    )
+    expect(alert).not.toHaveTextContent('CANARY_BUSY')
+    expect(screen.getByLabelText('URL')).toHaveTextContent('/meetings/new')
+    expect(client.getQueryData(['me'])).toEqual(userMe)
+    expect(client.getQueryData(['transcript', 'private'])).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Đăng xuất' })).toBeEnabled()
+    expect(calls).toBe(1)
+    await user.click(screen.getByRole('button', { name: 'Đăng xuất' }))
+    await screen.findByRole('heading', { name: 'Chào mừng trở lại' })
+    expect(screen.getByLabelText('URL')).toHaveTextContent('/login')
+    await waitFor(() => expect(client.getQueryCache().getAll()).toHaveLength(0))
+    expect(calls).toBe(2)
+  },
+)
+
+it('FE-03: logout 401 keeps the existing expired-session redirect', async () => {
+  server.use(
+    http.post(
+      '*/api/v1/auth/logout',
+      () => new HttpResponse(null, { status: 401 }),
+    ),
+  )
+  renderSession('/meetings/new', true)
+  await userEvent
+    .setup()
+    .click(screen.getByRole('button', { name: 'Đăng xuất' }))
+  await screen.findByRole('heading', { name: 'Chào mừng trở lại' })
+  expect(screen.getByLabelText('URL')).toHaveTextContent(
+    '/login?next=%2Fmeetings%2Fnew',
+  )
+  expect(screen.getByRole('alert')).toHaveTextContent(
+    'Phiên đăng nhập đã hết hạn',
+  )
 })

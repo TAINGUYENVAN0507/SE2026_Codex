@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { ApiError, parseApiError, toNetworkError } from './errors'
+import {
+  ApiError,
+  parseApiError,
+  toNetworkError,
+  serviceBusyMessage,
+} from './errors'
 
 function response(body: string, contentType = 'application/json') {
   return new Response(body, {
@@ -90,3 +95,25 @@ it('giữ danh sách vị trí lỗi 422 để form gắn lỗi đúng trường
   expect(error.message).not.toContain('CANARY_RAW')
   expect(error.status).toBe(422)
 })
+
+it.each([
+  [null, 'ít'],
+  [0, '1'],
+  [1200, '2'],
+  [2000, '2'],
+] as const)(
+  'FE-03: busy message rounds %s ms to %s seconds',
+  (delay, seconds) => {
+    const error = new ApiError(
+      'SERVICE_UNAVAILABLE',
+      'CANARY_BUSY',
+      null,
+      null,
+      503,
+      delay,
+    )
+    expect(serviceBusyMessage(error)).toBe(
+      `Máy chủ đang bận. Vui lòng thử lại sau ${seconds} giây.`,
+    )
+  },
+)

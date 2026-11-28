@@ -1,0 +1,8 @@
+Các lượt chuyển tiếp không tính là E2E đạt:
+- upload-early-before: bộ lọc ^Upload có consent không khớp full title; No tests found; 0 test, exit 1. Đã bỏ dấu ^.
+- upload-early-before-selected: throw tạm trước upload tái hiện 1 test lỗi với 2 error (lỗi chủ động + ENOENT từ afterAll); storage/container dọn xong.
+- upload-early-after: chuyển block vào test làm trùng biến result; stack tsc exit 2 trước khi chạy test. Đã đổi thành storageResult.
+- upload-types: TS2451 result trùng, TS2339 audio/artifacts trên APIResponse; exit 2. upload-types-fixed vẫn đỏ vì script sửa chưa tìm đúng marker Unicode. Không coi là pass.
+- upload-types-final: typecheck đạt sau đổi biến storageResult.
+- upload-early-after-fixed: throw tạm làm code phía sau unreachable, mất narrowing trong tsc; stack exit 2, 0 test. Đổi sang assertion runtime để tái hiện cùng lỗi ở hai bản mà không làm stack fail.
+Các lượt before-assertion, after-assertion và normal mới là bộ bằng chứng cuối. Mọi nguồn tạm được khôi phục và storage/container riêng được dọn; appdata phát triển không thay đổi.

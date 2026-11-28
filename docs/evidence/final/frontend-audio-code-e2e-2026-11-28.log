@@ -1,0 +1,20 @@
+$ node node_modules/@playwright/test/cli.js test e2e/flows/missing-audio.spec.ts --retries=0
+  ok 1 [chromium] › e2e\flows\missing-audio.spec.ts:10:1 › FE-19/17: missing audio returns 404 and the UI keeps the transcript without saying expired (22.1s)
+  1 passed (45.4s)
+EXIT=0
+
+{
+  "removedFiles": 1,
+  "apiStatus": 404,
+  "errorCode": "AUDIO_NOT_FOUND",
+  "metadataUnavailable": true,
+  "retentionFuture": true,
+  "transcriptPreserved": true,
+  "missingNotice": true,
+  "cleanedMeeting": true,
+  "cleanedUser": true,
+  "retries": 0,
+  "syntheticOnly": true,
+  "apiInterception": false,
+  "pageErrors": []
+}

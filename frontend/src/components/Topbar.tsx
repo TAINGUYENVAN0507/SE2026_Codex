@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useMe } from '../features/auth/useMe'
 import { useEndSession } from '../features/auth/useEndSession'
 import { logout } from '../api/client'
+import { isServiceBusy, serviceBusyMessage } from '../api/errors'
 import { GearSixIcon } from '@phosphor-icons/react/dist/csr/GearSix'
 
 export function Topbar() {
@@ -18,8 +19,12 @@ export function Topbar() {
     try {
       await logout()
       await endSession()
-    } catch {
-      setError('Chưa thể đăng xuất. Hãy kiểm tra kết nối và thử lại.')
+    } catch (cause) {
+      setError(
+        isServiceBusy(cause)
+          ? serviceBusyMessage(cause)
+          : 'Chưa thể đăng xuất. Hãy kiểm tra kết nối và thử lại.',
+      )
       setBusy(false)
     }
   }

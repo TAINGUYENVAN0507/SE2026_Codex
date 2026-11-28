@@ -120,3 +120,58 @@ describe('FE-15 export menu', () => {
     ).toBe('bien-ban.txt')
   })
 })
+
+it.each(['2', null])(
+  'FE-15: export 503 (Retry-After=%s) explains busy and retries the same format',
+  async (retryAfter) => {
+    const save = vi.spyOn(download, 'saveExport').mockImplementation(() => {})
+    const requests: string[] = []
+    server.use(
+      http.get('*/api/v1/meetings/:id/export', ({ request }) => {
+        requests.push(request.url)
+        return requests.length === 1
+          ? HttpResponse.json(
+              {
+                error: { code: 'SERVICE_UNAVAILABLE', message: 'CANARY_BUSY' },
+              },
+              {
+                status: 503,
+                headers: retryAfter ? { 'Retry-After': retryAfter } : undefined,
+              },
+            )
+          : new HttpResponse('fixture file', {
+              headers: {
+                'Content-Disposition': 'attachment; filename="retry.md"',
+              },
+            })
+      }),
+    )
+    render(<ExportMenu meetingId={fixture.id} ready />)
+    const user = userEvent.setup()
+    await user.click(screen.getByRole('button', { name: 'Xuất biên bản' }))
+    await user.selectOptions(
+      screen.getByRole('combobox', { name: 'Phiên bản xuất' }),
+      'ai_original',
+    )
+    await user.click(screen.getByRole('button', { name: 'Markdown (.md)' }))
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent(
+      `Máy chủ đang bận. Vui lòng thử lại sau ${retryAfter ?? 'ít'} giây.`,
+    )
+    expect(alert).not.toHaveTextContent('CANARY_BUSY')
+    expect(save).not.toHaveBeenCalled()
+    expect(requests).toHaveLength(1)
+    expect(
+      screen.getByRole('combobox', { name: 'Phiên bản xuất' }),
+    ).toHaveValue('ai_original')
+    expect(screen.getByRole('button', { name: 'Markdown (.md)' })).toBeEnabled()
+    await user.click(screen.getByRole('button', { name: 'Markdown (.md)' }))
+    await waitFor(() => expect(save).toHaveBeenCalledOnce())
+    expect(requests).toHaveLength(2)
+    expect(requests[1]).toBe(requests[0])
+    expect(new URL(requests[1]).searchParams.get('format')).toBe('md')
+    expect(new URL(requests[1]).searchParams.get('variant')).toBe('ai_original')
+    expect(save).toHaveBeenCalledWith(expect.any(Blob), 'retry.md')
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  },
+)

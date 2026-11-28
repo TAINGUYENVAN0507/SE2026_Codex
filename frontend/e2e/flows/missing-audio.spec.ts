@@ -88,7 +88,7 @@ test('FE-19/17: missing audio returns 404 and the UI keeps the transcript withou
     result.apiStatus = missing.status()
     expect(result.apiStatus).toBe(404)
     result.errorCode = (await missing.json()).error.code
-    expect(['NOT_FOUND', 'AUDIO_NOT_FOUND']).toContain(result.errorCode)
+    expect(result.errorCode).toBe('AUDIO_NOT_FOUND')
     const metadataResponse = await page.request.get(base)
     expect(metadataResponse.status()).toBe(200)
     const metadata =

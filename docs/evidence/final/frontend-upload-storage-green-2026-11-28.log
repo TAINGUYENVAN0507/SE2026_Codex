@@ -1,0 +1,40 @@
+$ node node_modules/@playwright/test/cli.js test e2e/flows/upload.spec.ts --retries=0 --reporter=list,json,./e2e/storage-reporter.mjs
+  ok 1 [chromium] › e2e\flows\upload.spec.ts:6:1 › Upload có consent qua đủ sáu stage tới ready (22.6s)
+  ok 2 [chromium] › e2e\flows\upload.spec.ts:56:1 › RT-11: reload khi đang xử lý, tiếp tục job cũ và không tạo thêm job (18.8s)
+  2 passed (1.0m)
+EXIT=0
+
+{
+  "mode": "normal",
+  "head": "f720ec42bb0b5070ede18bef2b3b10884982c213",
+  "source_sha256": "1d3b8ebab84f73da39bdd85710299d0b584ff53f3ca04203ceea50201bf2336f",
+  "temporary_injection": null,
+  "exit_code": 0,
+  "stats": {
+    "startTime": "2026-11-28T13:38:41.524Z",
+    "duration": 60424.773,
+    "expected": 2,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "error_count": 0,
+  "early_error_count": 0,
+  "secondary_storage_errors": 0,
+  "source_restored": true,
+  "storage_removed": true,
+  "appdata_unchanged": true,
+  "appdata_counts": {
+    "audio": 144,
+    "artifacts": 155
+  },
+  "manual_worker_env_set": false,
+  "completed_at_utc": "2026-11-28T13:39:42.099184+00:00",
+  "storage_observed": {
+    "browser": "chromium",
+    "storageExists": true,
+    "audio": 1,
+    "artifacts": 1
+  },
+  "container_removed": true
+}

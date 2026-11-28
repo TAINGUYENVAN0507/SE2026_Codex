@@ -1,0 +1,11 @@
+$ D:/KLTN/data/se-qa-tools/Scripts/uv.exe run --no-sync pytest -q -rs --basetemp <thu-muc-QA-moi> tests/api/test_retry_meeting_job.py tests/integration/test_rerun_without_audio_postgres.py tests/integration/test_field_limits_postgres.py tests/unit/test_persist_summary.py tests/unit/test_worker_runner.py tests/unit/test_vt018_pairwise.py
+........................................................................ [ 68%]
+.................................                                        [100%]
+105 passed in 52.67s
+
+EXIT=0
+
+OpenAPI drift check: exit 0.
+Ruff (repository/.gitignore configured):
+All checks passed!
+176 files already formatted

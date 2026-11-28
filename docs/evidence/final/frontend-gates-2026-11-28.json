@@ -1,0 +1,169 @@
+{
+  "date": "2026-11-28",
+  "base_main": "14e763741c5d3f62e5223dcd2d79dd127f8c7703",
+  "head_before_documentation": "76037ab30e7a134ec96d1081b9419b9f125e8e52",
+  "checks": [
+    {
+      "head": "f720ec42bb0b5070ede18bef2b3b10884982c213",
+      "command": [
+        "npm.cmd",
+        "run",
+        "lint"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 5.97,
+      "finished_at_utc": "2026-11-28T13:40:29.821595+00:00"
+    },
+    {
+      "head": "76037ab30e7a134ec96d1081b9419b9f125e8e52",
+      "command": [
+        "npm.cmd",
+        "run",
+        "format:check"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 2.33,
+      "finished_at_utc": "2026-11-28T13:46:28.482058+00:00"
+    },
+    {
+      "head": "f720ec42bb0b5070ede18bef2b3b10884982c213",
+      "command": [
+        "npm.cmd",
+        "run",
+        "gen:api"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 6.33,
+      "finished_at_utc": "2026-11-28T13:40:40.049972+00:00"
+    },
+    {
+      "head": "f720ec42bb0b5070ede18bef2b3b10884982c213",
+      "command": [
+        "npm.cmd",
+        "run",
+        "build"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 5.07,
+      "finished_at_utc": "2026-11-28T13:40:45.203699+00:00"
+    },
+    {
+      "head": "76037ab30e7a134ec96d1081b9419b9f125e8e52",
+      "command": [
+        "npm.cmd",
+        "test"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 54.67,
+      "finished_at_utc": "2026-11-28T13:46:25.983980+00:00"
+    },
+    {
+      "head": "f720ec42bb0b5070ede18bef2b3b10884982c213",
+      "command": [
+        "npm.cmd",
+        "run",
+        "test:coverage"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "duration_sec": 54.02,
+      "finished_at_utc": "2026-11-28T13:39:17.413508+00:00"
+    }
+  ],
+  "vitest": {
+    "passed": 377,
+    "failed": 0,
+    "skipped": 0,
+    "files": 59
+  },
+  "coverage": {
+    "lines": {
+      "total": 1469,
+      "covered": 1298,
+      "skipped": 0,
+      "pct": 88.35
+    },
+    "statements": {
+      "total": 1637,
+      "covered": 1410,
+      "skipped": 0,
+      "pct": 86.13
+    },
+    "functions": {
+      "total": 513,
+      "covered": 427,
+      "skipped": 0,
+      "pct": 83.23
+    },
+    "branches": {
+      "total": 1533,
+      "covered": 1284,
+      "skipped": 0,
+      "pct": 83.75
+    },
+    "branchesTrue": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 100
+    }
+  },
+  "coverage_thresholds": {
+    "lines": 84.53,
+    "branches": 79.11
+  },
+  "e2e": {
+    "missing_audio": {
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "retries": 0,
+      "code": "AUDIO_NOT_FOUND"
+    },
+    "upload": {
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "retries": 0
+    },
+    "negative_control": {
+      "before_errors": 2,
+      "after_errors": 1,
+      "temporary_change_removed": true
+    }
+  },
+  "generated_api_drift": false,
+  "cleanup": {
+    "listening_qa_ports": [],
+    "remaining_e2e_storage": [],
+    "remaining_qa_containers": []
+  },
+  "source_sha256": {
+    "frontend/e2e/flows/missing-audio.spec.ts": "1b8aca1744157b4884d88b23e799e9f79ba884a350e516572bfd740bcbf103e7",
+    "frontend/e2e/flows/upload.spec.ts": "1d3b8ebab84f73da39bdd85710299d0b584ff53f3ca04203ceea50201bf2336f",
+    "frontend/src/api/errors.test.ts": "e0ae46154afc5871a6cecb7d9da5a4474da9eb665ed0e27aa741ba3d3a8cef79",
+    "frontend/src/api/errors.ts": "8abf8292f448677c4286b7d2048a633aebb50e049f6c934fcbcee5459bf0101b",
+    "frontend/src/components/Topbar.tsx": "cffa5cb4f7543b3b9a5d9b79a32e64060b029a74b13689bde1cfc4741d3da1ec",
+    "frontend/src/features/audio/RemoteAudioPlayer.test.tsx": "17ce3ea7c0b06327d46cbd3e90b3737d24b19e6c9a8fb5621ea3de45bd072ea6",
+    "frontend/src/features/audio/RemoteAudioPlayer.tsx": "2213e888ef6ce584b0a8d237c967f9add88b8d02b036fec5969b569a0fa251f3",
+    "frontend/src/features/auth/DeleteAccountSection.test.tsx": "6ba7941fcff5f47ac1e1a555c74c3eff5642b39f02aa60e62b6f07d971664d10",
+    "frontend/src/features/auth/DeleteAccountSection.tsx": "ac0908f1c6c7f825ed4d161db039ffbd96e31b2cc27cba1e12c2a14182f2e28d",
+    "frontend/src/features/auth/Session.test.tsx": "3e3e713cc142b571e2298dda43769f05fd20e72be89d70e1eb66ae31c8f852a3",
+    "frontend/src/features/export/ExportMenu.test.tsx": "0081387673032308fb7b00a8410cb64f8f4a0b45c6c0c3d57035288d7d61c1a0",
+    "frontend/src/features/export/ExportMenu.tsx": "bcb8c915c5aa8a01c97ac1da818b59334e87f62bc06da25b1a428dd663fb3ee9",
+    "frontend/src/pages/LoginPage.tsx": "ac08cf776812a4bc5987a97a987f2a385dd39ecbcfa286fbcc1e60e67f573d4f"
+  },
+  "source_hash_note": "Byte working tree Windows của toàn bộ source frontend thay đổi đã chạy test; Git có thể chuẩn hóa EOL. Commit cuối chỉ tài liệu.",
+  "review_pr86": "https://github.com/TAINGUYENVAN0507/SE2026_Codex/pull/86#issuecomment-7240189179",
+  "limitations": [
+    "Kiểm frontend/E2E trên Windows Chromium, PostgreSQL 16 riêng, pipeline fake; không đo chất lượng AI thật.",
+    "Chưa push hoặc mở PR đợt 28/11, CI đợt này chưa chạy.",
+    "Các negative control và lỗi cấu hình trung gian không tính vào số test xanh; xem log transition."
+  ],
+  "recorded_at_utc": "2026-11-28T13:49:20.455301+00:00"
+}

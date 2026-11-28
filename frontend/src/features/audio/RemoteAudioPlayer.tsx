@@ -42,11 +42,7 @@ export const RemoteAudioPlayer = forwardRef<PlayerHandle, Props>(
         })
         if (response.status === 404) {
           const error = await parseApiError(response)
-          // API hiện trả NOT_FOUND cho file mất; nhận cả mã chuyên biệt khi có.
-          if (
-            !controller.signal.aborted &&
-            ['AUDIO_NOT_FOUND', 'NOT_FOUND'].includes(error.code)
-          )
+          if (!controller.signal.aborted && error.code === 'AUDIO_NOT_FOUND')
             setUnavailable('missing')
         } else {
           if (response.status === 410 && !controller.signal.aborted)

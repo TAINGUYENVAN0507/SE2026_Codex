@@ -1,0 +1,38 @@
+{
+  "head": "c3664390eff3d646b39ce24af3afd3272fd20270",
+  "exit_code": 0,
+  "appdata_before": {
+    "audio": 144,
+    "artifacts": 155
+  },
+  "appdata_after": {
+    "audio": 144,
+    "artifacts": 155
+  },
+  "appdata_unchanged": true,
+  "temporary_storage_removed": true,
+  "manual_worker_env_set": false,
+  "test": {
+    "removedFiles": 1,
+    "apiStatus": 404,
+    "errorCode": "AUDIO_NOT_FOUND",
+    "metadataUnavailable": true,
+    "retentionFuture": true,
+    "transcriptPreserved": true,
+    "missingNotice": true,
+    "cleanedMeeting": true,
+    "cleanedUser": true,
+    "retries": 0,
+    "syntheticOnly": true,
+    "apiInterception": false,
+    "pageErrors": []
+  },
+  "isolation_assertion_passed": true,
+  "container_removed": true,
+  "source_sha256": {
+    "frontend/src/features/audio/RemoteAudioPlayer.tsx": "2213e888ef6ce584b0a8d237c967f9add88b8d02b036fec5969b569a0fa251f3",
+    "frontend/src/features/audio/RemoteAudioPlayer.test.tsx": "17ce3ea7c0b06327d46cbd3e90b3737d24b19e6c9a8fb5621ea3de45bd072ea6",
+    "frontend/e2e/flows/missing-audio.spec.ts": "1b8aca1744157b4884d88b23e799e9f79ba884a350e516572bfd740bcbf103e7"
+  },
+  "source_hash_note": "SHA-256 của byte working tree Windows trước commit; Git có thể chuẩn hóa EOL."
+}

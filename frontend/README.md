@@ -258,3 +258,11 @@ Stack E2E tự tạo storage tạm riêng, xuất E2E_STORAGE_DIR cho spec và �
 [E2E audio mất file](../docs/frontend/FE-19.md) đạt 3 lượt API/PostgreSQL thật, worker fake bật: player báo mất file, API trả 404, transcript còn nguyên. Upload và retention cũng đạt 3 test; storage tạm đã dọn và thư mục phát triển 144/155 không đổi.
 
 [Login 503](../docs/frontend/FE-03.md) báo máy chủ bận và giữ email/mật khẩu để bấm lại, chỉ lỗi sai thông tin đăng nhập xóa mật khẩu; thành công vẫn xóa trước chuyển trang. [Hook key](../docs/frontend/FE-05.md) memo primitive theo file/payload. [Gate local](../docs/evidence/final/frontend-gates-2026-11-27.json): 363 test/59 file, không skip; coverage lines 88.35%, branches 83.49%, build/lint/type/format đạt. Đợt này chưa push, chưa có CI PR.
+
+## Thao tác khi máy chủ bận và kiểm audio — 28/11/2026
+
+Đăng nhập, đăng xuất, xóa tài khoản và xuất biên bản dùng chung thông báo 503, có số giây từ `Retry-After` khi hợp lệ. Người dùng bấm lại để gửi request mới; lỗi bận không xóa phiên, email xác nhận hoặc lựa chọn xuất. Chi tiết và hồi quy các lỗi cũ: [FE-03](../docs/frontend/FE-03.md), [FE-19](../docs/frontend/FE-19.md), [FE-15](../docs/frontend/FE-15.md).
+
+Player chỉ nhận `AUDIO_NOT_FOUND` là mất file; `NOT_FOUND` giữ lỗi phát chung. E2E trên API/PostgreSQL riêng đạt 1 test, không manual worker. Kiểm storage upload chuyển vào cuối test đầu, vẫn ghi `upload-storage-result.json`; cả 2 test upload đạt. Cùng lỗi chủ động trước upload: trước sửa có 2 error, sau sửa còn đúng 1 error; assertion tạm đã gỡ. [Cách chạy và bằng chứng](../docs/frontend/FE-17.md).
+
+[Gate local ngày 28/11](../docs/evidence/final/frontend-gates-2026-11-28.json): 377 test/59 file, 0 skipped; coverage lines 88.35%, branches 83.75%; lint, format, typecheck qua build và production build đạt. Thư mục appdata phát triển không thay đổi, storage/container QA đã dọn. Đây là trạng thái kiểm tra local trước push, chưa có kết quả CI cho đợt này; pipeline fake không chứng minh chất lượng AI thật.

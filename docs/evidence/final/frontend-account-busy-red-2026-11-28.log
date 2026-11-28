@@ -1,0 +1,89 @@
+$ node node_modules/vitest/vitest.mjs run src/features/auth/Session.test.tsx src/features/auth/DeleteAccountSection.test.tsx
+
+ RUN  v5.0.5 D:/Project/CNPM/SE2026_Codex/frontend
+
+ ❯ src/features/auth/Session.test.tsx (9 tests | 2 failed) 898ms
+   × FE-03: logout 503 (Retry-After=2) keeps the session and retries on click 58ms
+   × FE-03: logout 503 (Retry-After=null) keeps the session and retries on click 58ms
+ ❯ src/features/auth/DeleteAccountSection.test.tsx (11 tests | 2 failed) 6046ms
+   × FE-19: delete account 503 (Retry-After=2) keeps confirmation and session for retry 531ms
+   × FE-19: delete account 503 (Retry-After=null) keeps confirmation and session for retry 472ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/features/auth/DeleteAccountSection.test.tsx > FE-19: delete account 503 (Retry-After=2) keeps confirmation and session for retry
+Error: expect(element).toHaveTextContent()
+
+Expected element to have text content:
+  Máy chủ đang bận. Vui lòng thử lại sau 2 giây.
+Received:
+  Chưa thể xóa tài khoản. Hãy kiểm tra kết nối và thử lại.
+ ❯ src/features/auth/DeleteAccountSection.test.tsx:167:19
+    165|     await user.click(screen.getByRole('button', { name: 'Xóa tài khoản…
+    166|     const alert = await screen.findByRole('alert')
+    167|     expect(alert).toHaveTextContent(
+       |                   ^
+    168|       `Máy chủ đang bận. Vui lòng thử lại sau ${retryAfter ?? 'ít'} gi…
+    169|     )
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/features/auth/DeleteAccountSection.test.tsx > FE-19: delete account 503 (Retry-After=null) keeps confirmation and session for retry
+Error: expect(element).toHaveTextContent()
+
+Expected element to have text content:
+  Máy chủ đang bận. Vui lòng thử lại sau ít giây.
+Received:
+  Chưa thể xóa tài khoản. Hãy kiểm tra kết nối và thử lại.
+ ❯ src/features/auth/DeleteAccountSection.test.tsx:167:19
+    165|     await user.click(screen.getByRole('button', { name: 'Xóa tài khoản…
+    166|     const alert = await screen.findByRole('alert')
+    167|     expect(alert).toHaveTextContent(
+       |                   ^
+    168|       `Máy chủ đang bận. Vui lòng thử lại sau ${retryAfter ?? 'ít'} gi…
+    169|     )
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/features/auth/Session.test.tsx > FE-03: logout 503 (Retry-After=2) keeps the session and retries on click
+Error: expect(element).toHaveTextContent()
+
+Expected element to have text content:
+  Máy chủ đang bận. Vui lòng thử lại sau 2 giây.
+Received:
+  Chưa thể đăng xuất. Hãy kiểm tra kết nối và thử lại.
+ ❯ src/features/auth/Session.test.tsx:175:19
+    173|     await user.click(screen.getByRole('button', { name: 'Đăng xuất' }))
+    174|     const alert = await screen.findByRole('alert')
+    175|     expect(alert).toHaveTextContent(
+       |                   ^
+    176|       `Máy chủ đang bận. Vui lòng thử lại sau ${retryAfter ?? 'ít'} gi…
+    177|     )
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/features/auth/Session.test.tsx > FE-03: logout 503 (Retry-After=null) keeps the session and retries on click
+Error: expect(element).toHaveTextContent()
+
+Expected element to have text content:
+  Máy chủ đang bận. Vui lòng thử lại sau ít giây.
+Received:
+  Chưa thể đăng xuất. Hãy kiểm tra kết nối và thử lại.
+ ❯ src/features/auth/Session.test.tsx:175:19
+    173|     await user.click(screen.getByRole('button', { name: 'Đăng xuất' }))
+    174|     const alert = await screen.findByRole('alert')
+    175|     expect(alert).toHaveTextContent(
+       |                   ^
+    176|       `Máy chủ đang bận. Vui lòng thử lại sau ${retryAfter ?? 'ít'} gi…
+    177|     )
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
+
+ Test Files  2 failed (2)
+      Tests  4 failed | 16 passed (20)
+   Start at  20:26:12
+   Duration  38.28s (environment 55%, import 20%, setup 12%, tests 10%, transform 3%)
+
+
+EXIT=1

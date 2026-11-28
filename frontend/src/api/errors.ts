@@ -173,3 +173,11 @@ export function toNetworkError(): ApiError {
 export function isServiceBusy(error: unknown): error is ApiError {
   return error instanceof ApiError && error.status === 503
 }
+
+export function serviceBusyMessage(error: ApiError): string {
+  const wait =
+    error.retryAfterMs === null
+      ? 'ít'
+      : String(Math.max(1, Math.ceil(error.retryAfterMs / 1000)))
+  return `Máy chủ đang bận. Vui lòng thử lại sau ${wait} giây.`
+}

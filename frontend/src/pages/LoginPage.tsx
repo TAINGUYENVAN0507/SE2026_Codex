@@ -7,7 +7,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { Brand } from '../components/Brand'
 import { safeNext } from '../app/safeNext'
 import { login } from '../api/client'
-import { ApiError, isServiceBusy } from '../api/errors'
+import { ApiError, isServiceBusy, serviceBusyMessage } from '../api/errors'
 import { ME_QUERY_KEY } from '../features/auth/useMe'
 
 export function LoginPage() {
@@ -36,11 +36,7 @@ export function LoginPage() {
       navigate(safeNext(searchParams.get('next')), { replace: true })
     } catch (cause) {
       if (isServiceBusy(cause)) {
-        const wait =
-          cause.retryAfterMs === null
-            ? 'ít'
-            : String(Math.max(1, Math.ceil(cause.retryAfterMs / 1000)))
-        setError(`Máy chủ đang bận. Vui lòng thử lại sau ${wait} giây.`)
+        setError(serviceBusyMessage(cause))
         return
       }
       if (cause instanceof ApiError && cause.code === 'INVALID_CREDENTIALS')

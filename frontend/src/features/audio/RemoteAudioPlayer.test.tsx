@@ -1,5 +1,12 @@
 import { createRef } from 'react'
-import { act, render, screen, fireEvent, cleanup } from '@testing-library/react'
+import {
+  act,
+  render,
+  screen,
+  fireEvent,
+  cleanup,
+  waitFor,
+} from '@testing-library/react'
 import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 import {
@@ -12,6 +19,7 @@ import {
   vi,
 } from 'vitest'
 import { RemoteAudioPlayer } from './RemoteAudioPlayer'
+import * as apiErrors from '../../api/errors'
 import type { PlayerHandle } from './AudioPlayer'
 
 const server = setupServer()
@@ -117,7 +125,7 @@ it.each(['2026-12-20T12:00:00Z', null])(
   },
 )
 
-it.each(['AUDIO_NOT_FOUND', 'NOT_FOUND'])(
+it.each(['AUDIO_NOT_FOUND'])(
   'FE-19: probe 404 %s báo mất file thay cho lỗi phát chung',
   async (code) => {
     server.use(
@@ -146,3 +154,32 @@ it.each(['AUDIO_NOT_FOUND', 'NOT_FOUND'])(
     expect(screen.queryByText('CANARY_RAW_AUDIO')).not.toBeInTheDocument()
   },
 )
+
+it('FE-19: NOT_FOUND means no meeting and keeps the generic playback error', async () => {
+  const parse = vi.spyOn(apiErrors, 'parseApiError')
+  server.use(
+    http.get('*/api/v1/meetings/test/audio', () =>
+      HttpResponse.json(
+        { error: { code: 'NOT_FOUND', message: 'CANARY_RAW_AUDIO' } },
+        { status: 404 },
+      ),
+    ),
+  )
+  const { container } = setup(true, '2026-12-20T12:00:00Z')
+  fireEvent.error(container.querySelector('audio')!)
+  await waitFor(() => expect(parse).toHaveBeenCalledOnce())
+  await act(async () => {
+    // Chờ probe đọc xong JSON trước khi kiểm nhánh không được đổi sang mất file.
+    await parse.mock.results[0].value
+  })
+  expect(screen.getByRole('alert')).toHaveTextContent(
+    'Trình duyệt không đọc được file audio này',
+  )
+  expect(
+    screen.queryByText('Không tìm thấy file audio'),
+  ).not.toBeInTheDocument()
+  expect(screen.queryByText('Audio đã hết hạn lưu trữ')).not.toBeInTheDocument()
+  expect(container.querySelector('audio')).not.toBeNull()
+  expect(screen.getByText('Transcript vẫn đọc được')).toBeVisible()
+  expect(screen.queryByText('CANARY_RAW_AUDIO')).not.toBeInTheDocument()
+})
