@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { deleteAccount } from '../../api/client'
-import { ApiError } from '../../api/errors'
+import { ApiError, isServiceBusy, serviceBusyMessage } from '../../api/errors'
 import { Dialog } from '../../components/Dialog'
 import { useEndSession } from './useEndSession'
 
@@ -30,11 +30,13 @@ export function DeleteAccountSection({
       await endSession()
     } catch (cause) {
       setError(
-        cause instanceof ApiError && [404, 405, 501].includes(cause.status)
-          ? 'Chức năng xóa tài khoản hiện chưa khả dụng. Tài khoản của bạn vẫn được giữ nguyên.'
-          : cause instanceof ApiError && cause.status === 401
-            ? 'Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại.'
-            : 'Chưa thể xóa tài khoản. Hãy kiểm tra kết nối và thử lại.',
+        isServiceBusy(cause)
+          ? serviceBusyMessage(cause)
+          : cause instanceof ApiError && [404, 405, 501].includes(cause.status)
+            ? 'Chức năng xóa tài khoản hiện chưa khả dụng. Tài khoản của bạn vẫn được giữ nguyên.'
+            : cause instanceof ApiError && cause.status === 401
+              ? 'Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại.'
+              : 'Chưa thể xóa tài khoản. Hãy kiểm tra kết nối và thử lại.',
       )
       inFlight.current = false
       setBusy(false)

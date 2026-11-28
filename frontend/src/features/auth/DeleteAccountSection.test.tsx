@@ -85,7 +85,7 @@ it('requires the email, supports cancel/Escape and clears all cached data only a
   expect(calls).toBe(1)
   expect(client.getQueryCache().getAll()).toHaveLength(0)
 })
-it.each([0, 500, 503, 405])(
+it.each([0, 500, 401, 404, 405, 501])(
   'preserves the dialog, email and cache on failure %s',
   async (status) => {
     server.use(
@@ -101,7 +101,11 @@ it.each([0, 500, 503, 405])(
       screen.getByRole('button', { name: 'Xóa tài khoản vĩnh viễn' }),
     )
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      status === 405 ? 'chưa khả dụng' : 'Chưa thể xóa tài khoản',
+      [404, 405, 501].includes(status)
+        ? 'Chức năng xóa tài khoản hiện chưa khả dụng. Tài khoản của bạn vẫn được giữ nguyên.'
+        : status === 401
+          ? 'Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại.'
+          : 'Chưa thể xóa tài khoản. Hãy kiểm tra kết nối và thử lại.',
     )
     expect(screen.getByRole('alertdialog')).toBeInTheDocument()
     expect(screen.getByRole('textbox')).toHaveValue(email)
@@ -137,3 +141,52 @@ it('sends only one request and prevents closing while deletion is in flight', as
   finish()
   await screen.findByRole('heading', { name: 'Đăng nhập' })
 })
+
+it.each(['2', null])(
+  'FE-19: delete account 503 (Retry-After=%s) keeps confirmation and session for retry',
+  async (retryAfter) => {
+    let calls = 0
+    server.use(
+      http.delete('*/api/v1/auth/me', () => {
+        calls++
+        return calls === 1
+          ? HttpResponse.json(
+              {
+                error: { code: 'SERVICE_UNAVAILABLE', message: 'CANARY_BUSY' },
+              },
+              {
+                status: 503,
+                headers: retryAfter ? { 'Retry-After': retryAfter } : undefined,
+              },
+            )
+          : new HttpResponse(null, { status: 204 })
+      }),
+    )
+    const client = setup()
+    const user = userEvent.setup()
+    await user.click(screen.getByRole('button', { name: 'Xóa tài khoản' }))
+    await user.type(screen.getByRole('textbox'), email)
+    await user.click(
+      screen.getByRole('button', { name: 'Xóa tài khoản vĩnh viễn' }),
+    )
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent(
+      `Máy chủ đang bận. Vui lòng thử lại sau ${retryAfter ?? 'ít'} giây.`,
+    )
+    expect(alert).not.toHaveTextContent('CANARY_BUSY')
+    expect(screen.getByRole('alertdialog')).toBeVisible()
+    expect(screen.getByRole('textbox')).toHaveValue(email)
+    expect(client.getQueryData(['me'])).toBeTruthy()
+    expect(client.getQueryData(['meeting', 'synthetic'])).toBeTruthy()
+    expect(
+      screen.queryByRole('heading', { name: 'Đăng nhập' }),
+    ).not.toBeInTheDocument()
+    expect(calls).toBe(1)
+    await user.click(
+      screen.getByRole('button', { name: 'Xóa tài khoản vĩnh viễn' }),
+    )
+    await screen.findByRole('heading', { name: 'Đăng nhập' })
+    expect(client.getQueryCache().getAll()).toHaveLength(0)
+    expect(calls).toBe(2)
+  },
+)
