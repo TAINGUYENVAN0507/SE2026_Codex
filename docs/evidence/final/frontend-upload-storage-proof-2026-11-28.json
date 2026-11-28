@@ -1,0 +1,98 @@
+{
+  "base": "14e763741c5d3f62e5223dcd2d79dd127f8c7703",
+  "runs": {
+    "before": {
+      "mode": "early-before",
+      "head": "f720ec42bb0b5070ede18bef2b3b10884982c213",
+      "source_sha256": "c11cb8d153cfc4283e95916d9a2189b1a286cd69db6133b465ccdb1fa6c53f45",
+      "temporary_injection": "expect(false, 'E2E_EXPECTED_EARLY_UPLOAD_FAILURE').toBe(true)",
+      "exit_code": 1,
+      "stats": {
+        "startTime": "2026-11-28T13:38:02.901Z",
+        "duration": 13616.536999999998,
+        "expected": 0,
+        "skipped": 0,
+        "unexpected": 1,
+        "flaky": 0
+      },
+      "error_count": 2,
+      "early_error_count": 1,
+      "secondary_storage_errors": 1,
+      "source_restored": true,
+      "storage_removed": true,
+      "appdata_unchanged": true,
+      "appdata_counts": {
+        "audio": 144,
+        "artifacts": 155
+      },
+      "manual_worker_env_set": false,
+      "completed_at_utc": "2026-11-28T13:38:16.665580+00:00",
+      "container_removed": true
+    },
+    "after": {
+      "mode": "early-after",
+      "head": "f720ec42bb0b5070ede18bef2b3b10884982c213",
+      "source_sha256": "1d3b8ebab84f73da39bdd85710299d0b584ff53f3ca04203ceea50201bf2336f",
+      "temporary_injection": "expect(false, 'E2E_EXPECTED_EARLY_UPLOAD_FAILURE').toBe(true)",
+      "exit_code": 1,
+      "stats": {
+        "startTime": "2026-11-28T13:38:20.125Z",
+        "duration": 17036.7,
+        "expected": 0,
+        "skipped": 0,
+        "unexpected": 1,
+        "flaky": 0
+      },
+      "error_count": 1,
+      "early_error_count": 1,
+      "secondary_storage_errors": 0,
+      "source_restored": true,
+      "storage_removed": true,
+      "appdata_unchanged": true,
+      "appdata_counts": {
+        "audio": 144,
+        "artifacts": 155
+      },
+      "manual_worker_env_set": false,
+      "completed_at_utc": "2026-11-28T13:38:37.363656+00:00",
+      "container_removed": true
+    },
+    "green": {
+      "mode": "normal",
+      "head": "f720ec42bb0b5070ede18bef2b3b10884982c213",
+      "source_sha256": "1d3b8ebab84f73da39bdd85710299d0b584ff53f3ca04203ceea50201bf2336f",
+      "temporary_injection": null,
+      "exit_code": 0,
+      "stats": {
+        "startTime": "2026-11-28T13:38:41.524Z",
+        "duration": 60424.773,
+        "expected": 2,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "error_count": 0,
+      "early_error_count": 0,
+      "secondary_storage_errors": 0,
+      "source_restored": true,
+      "storage_removed": true,
+      "appdata_unchanged": true,
+      "appdata_counts": {
+        "audio": 144,
+        "artifacts": 155
+      },
+      "manual_worker_env_set": false,
+      "completed_at_utc": "2026-11-28T13:39:42.099184+00:00",
+      "storage_observed": {
+        "browser": "chromium",
+        "storageExists": true,
+        "audio": 1,
+        "artifacts": 1
+      },
+      "container_removed": true
+    }
+  },
+  "method": "Cùng assertion runtime hỏng trước upload cho bản trước/sau; nguồn được khôi phục nguyên byte sau từng lượt. Mỗi lượt database PostgreSQL 16 mới; fake worker bật; retries 0.",
+  "log_note": "Trích command, lỗi và kết quả từ stdout thật; bỏ HTTP log dài và thay đường dẫn thư mục tạm bằng nhãn. JSON đếm errors từ report Playwright.",
+  "hash_note": "SHA-256 của nguồn sạch không có assertion tạm; byte working tree Windows, Git có thể chuẩn hóa EOL."
+}
