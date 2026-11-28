@@ -13,6 +13,7 @@ from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
@@ -25,11 +26,6 @@ from app.main import create_app
 from app.services.storage import get_storage
 from app.services.storage.local import LocalStorage
 from app.worker.runner import run_worker_once
-
-RERUN_B_2026_11_28 = (
-    "POST jobs nhận yêu cầu chạy lại cần audio khi audio không còn, làm cuộc họp thành failed; "
-    "giao B ngày 11-28, việc 1 (tasks/2026-11-28/member-b.md)"
-)
 
 
 def _ready_meeting(db: Session, retention_until: datetime) -> tuple[User, Meeting]:
@@ -114,7 +110,6 @@ def make_client(db_session: Session, storage: LocalStorage) -> Generator[object,
     app.dependency_overrides.clear()
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError, reason=RERUN_B_2026_11_28)
 @pytest.mark.parametrize(
     ("days", "status", "code"),
     [
@@ -140,6 +135,59 @@ def test_rerun_that_needs_audio_is_refused_and_the_transcript_stays(
 
     assert (r.status_code, len(transcript["segments"])) == (status, 1), r.text[:300]
     assert r.json()["error"]["code"] == code
+
+    db_session.expire_all()
+    refreshed = db_session.get(Meeting, meeting.id)
+    assert refreshed is not None and refreshed.status == "ready"
+    job_count = db_session.execute(
+        select(func.count()).select_from(Job).where(Job.meeting_id == meeting.id)
+    ).scalar_one()
+    assert job_count == 1
+
+
+@pytest.mark.parametrize("from_stage", [None, "preprocess", "vad", "asr", "diarize", "merge"])
+@pytest.mark.parametrize(
+    ("days", "status", "code"),
+    [
+        pytest.param(-1, 410, "AUDIO_EXPIRED", id="expired"),
+        pytest.param(30, 404, "AUDIO_NOT_FOUND", id="missing-file"),
+    ],
+)
+def test_all_audio_stages_refused_and_idempotency_key_reusable(
+    db_session: Session,
+    make_client,
+    from_stage: str | None,
+    days: int,
+    status: int,
+    code: str,
+) -> None:
+    """Mọi stage cần audio bị từ chối khi hết hạn/mất file và Idempotency-Key dùng lại được."""
+    user, meeting = _ready_meeting(db_session, datetime.now(UTC) + timedelta(days=days))
+    if days < 0:
+        meeting.audio_path = None
+    if from_stage is None:
+        # Chạy lại toàn bộ (null) trên job trước failed thay vì JOB_ALREADY_SUCCEEDED
+        prior_job = db_session.execute(select(Job).where(Job.meeting_id == meeting.id)).scalar_one()
+        prior_job.status = "failed"
+    db_session.commit()
+    client = make_client(user)
+
+    idem_key = f"rerun-{from_stage or 'full'}-{code}-{uuid.uuid4()}"
+    refused = client.post(
+        f"/api/v1/meetings/{meeting.id}/jobs",
+        json={"from_stage": from_stage},
+        headers={"Idempotency-Key": idem_key},
+    )
+    assert refused.status_code == status, refused.text[:300]
+    assert refused.json()["error"]["code"] == code
+
+    # Cùng Idempotency-Key dùng lại ngay cho summarize vẫn được nhận 202
+    resumed = client.post(
+        f"/api/v1/meetings/{meeting.id}/jobs",
+        json={"from_stage": "summarize"},
+        headers={"Idempotency-Key": idem_key},
+    )
+    assert resumed.status_code == 202, resumed.text[:300]
 
 
 def test_summary_rerun_still_works_after_the_audio_expired(

@@ -1345,7 +1345,7 @@
             }
           },
           "404": {
-            "description": "Không tìm thấy cuộc họp",
+            "description": "Không tìm thấy cuộc họp hoặc tệp âm thanh",
             "content": {
               "application/json": {
                 "schema": {
@@ -1356,6 +1356,16 @@
           },
           "409": {
             "description": "Job đang chạy hoặc đã thành công hoặc có chỉnh sửa người dùng",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Tệp âm thanh đã hết hạn lưu trữ",
             "content": {
               "application/json": {
                 "schema": {

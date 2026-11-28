@@ -29,8 +29,10 @@ from app.db.models.transcript import Segment
 from app.db.session import get_db
 from app.schemas.common import ErrorResponse
 from app.schemas.job import JobErrorOut, JobOut, JobRetryCreate
-from app.services.idempotency import IdempotencyService
+from app.services.idempotency import IdempotencyCheckResult, IdempotencyService
 from app.services.meetings.queries import get_latest_job_for_meeting
+from app.services.retention import is_audio_retention_expired
+from app.services.storage import Storage, get_storage
 
 logger = logging.getLogger("app.jobs")
 
@@ -41,6 +43,17 @@ router = APIRouter(
 )
 
 meeting_jobs_router = APIRouter()
+
+
+def _release_idempotency_key(
+    db: Session,
+    idempotency_service: IdempotencyService | None,
+    idem_res: IdempotencyCheckResult | None,
+) -> None:
+    """Giải phóng Idempotency-Key khi yêu cầu bị từ chối trước lúc tạo job."""
+    if idempotency_service and idem_res and idem_res.record_id:
+        idempotency_service.fail(session=db, record_id=idem_res.record_id)
+        db.commit()
 
 
 def serialize_job(job: Job) -> JobOut:
@@ -108,11 +121,12 @@ def get_job(
     response_model=JobOut,
     status_code=status.HTTP_202_ACCEPTED,
     responses={
-        404: {"model": ErrorResponse, "description": "Không tìm thấy cuộc họp"},
+        404: {"model": ErrorResponse, "description": "Không tìm thấy cuộc họp hoặc tệp âm thanh"},
         409: {
             "model": ErrorResponse,
             "description": "Job đang chạy hoặc đã thành công hoặc có chỉnh sửa người dùng",
         },
+        410: {"model": ErrorResponse, "description": "Tệp âm thanh đã hết hạn lưu trữ"},
     },
     summary="Chạy lại tiến trình xử lý cho cuộc họp",
 )
@@ -127,6 +141,7 @@ def retry_meeting_job(
     payload: JobRetryCreate,
     current_user: CurrentUser,
     db: Annotated[Session, Depends(get_db)],
+    storage: Annotated[Storage, Depends(get_storage)],
     response: Response,
     idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key", max_length=100)] = None,
 ) -> JobOut:
@@ -169,9 +184,7 @@ def retry_meeting_job(
     ).scalar_one_or_none()
     if active_job:
         active_job_out = serialize_job(active_job)
-        if idempotency_service and idem_res and idem_res.record_id:
-            idempotency_service.fail(session=db, record_id=idem_res.record_id)
-            db.commit()
+        _release_idempotency_key(db, idempotency_service, idem_res)
         raise APIError(
             code="JOB_ALREADY_ACTIVE",
             message="Cuộc họp hiện đang có một tiến trình xử lý đang chạy.",
@@ -186,9 +199,7 @@ def retry_meeting_job(
         and latest_job.status == "succeeded"
         and (payload.from_stage is None or payload.from_stage == latest_job.from_stage)
     ):
-        if idempotency_service and idem_res and idem_res.record_id:
-            idempotency_service.fail(session=db, record_id=idem_res.record_id)
-            db.commit()
+        _release_idempotency_key(db, idempotency_service, idem_res)
         raise APIError(
             code="JOB_ALREADY_SUCCEEDED",
             message="Cuộc họp đã được xử lý thành công.",
@@ -216,13 +227,31 @@ def retry_meeting_job(
         )
 
         if has_user_edits:
-            if idempotency_service and idem_res and idem_res.record_id:
-                idempotency_service.fail(session=db, record_id=idem_res.record_id)
-                db.commit()
+            _release_idempotency_key(db, idempotency_service, idem_res)
             raise APIError(
                 code="HAS_USER_EDITS",
                 message="Cuộc họp đã có chỉnh sửa thủ công, không thể chạy lại từ đầu.",
                 status_code=status.HTTP_409_CONFLICT,
+            )
+
+    # 4b. Mọi stage ngoài summarize đều cần tệp âm thanh còn hạn và còn trong storage
+    if payload.from_stage != "summarize":
+        if is_audio_retention_expired(meeting.retention_until):
+            _release_idempotency_key(db, idempotency_service, idem_res)
+            raise APIError(
+                code="AUDIO_EXPIRED",
+                message="Tệp âm thanh đã hết hạn lưu trữ và đã được dọn dẹp.",
+                status_code=status.HTTP_410_GONE,
+            )
+        if (
+            not meeting.audio_path
+            or storage.resolve_audio_file(meeting.id, meeting.audio_path) is None
+        ):
+            _release_idempotency_key(db, idempotency_service, idem_res)
+            raise APIError(
+                code="AUDIO_NOT_FOUND",
+                message="Không tìm thấy tệp âm thanh của cuộc họp.",
+                status_code=status.HTTP_404_NOT_FOUND,
             )
 
     # 5. Khởi tạo trạng thái stages và progress
@@ -272,9 +301,7 @@ def retry_meeting_job(
         )
     except IntegrityError as exc:
         db.rollback()
-        if idempotency_service and idem_res and idem_res.record_id:
-            idempotency_service.fail(session=db, record_id=idem_res.record_id)
-            db.commit()
+        _release_idempotency_key(db, idempotency_service, idem_res)
         active_job = db.execute(
             select(Job).where(
                 Job.meeting_id == meeting.id,
