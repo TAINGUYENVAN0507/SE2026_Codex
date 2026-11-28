@@ -10,6 +10,8 @@ còn lại để người dùng kiểm tra:
   hơn ngày họp; bị bỏ thì `needs_review=true`.
 - Người nhận việc trùng tên một speaker thì gắn `assignee_speaker_label`.
 - Text dài quá giới hạn của schema thì cắt.
+- Ý chính và quyết định giữ tối đa 50 evidence, lấy theo thứ tự trong transcript: API chỉ nhận
+  chừng đó khi người dùng lưu tóm tắt.
 
 Transcript quá ngắn để tóm tắt thì `insufficient_output()`, không gọi LLM. Các ngưỡng là
 giá trị khởi tạo.
@@ -36,6 +38,8 @@ MIN_SEGMENTS = 2
 MIN_WORDS = 30
 MAX_ITEMS = 50
 MAX_ITEM_CHARS = 500
+# Bằng giới hạn `evidence_segment_ids` của `PUT /meetings/{id}/summary` (backend).
+MAX_ITEM_EVIDENCE = 50
 MAX_OVERVIEW_CHARS = 5000
 MAX_DESCRIPTION_CHARS = 1000
 EVIDENCE_DROPPED = "SUMMARY_EVIDENCE_DROPPED"
@@ -65,11 +69,15 @@ class _Evidence:
     def __init__(self, valid: set[int]) -> None:
         self.valid = valid
         self.dropped = 0
+        self.over_limit = 0
 
-    def clean(self, indices: Iterable[int]) -> list[int]:
+    def clean(self, indices: Iterable[int], limit: int | None = None) -> list[int]:
         unique = set(indices)
         kept = sorted(unique & self.valid)
         self.dropped += len(unique) - len(kept)
+        if limit is not None and len(kept) > limit:
+            self.over_limit += len(kept) - limit
+            kept = kept[:limit]
         return kept
 
 
@@ -83,7 +91,8 @@ def _parse_date(value: str | None) -> date | None:
 def _items(drafts: list[DraftItem], evidence: _Evidence) -> list[EvidenceItem]:
     return [
         EvidenceItem(
-            text=_clip(d.text, MAX_ITEM_CHARS), evidence_segment_indices=evidence.clean(d.evidence)
+            text=_clip(d.text, MAX_ITEM_CHARS),
+            evidence_segment_indices=evidence.clean(d.evidence, MAX_ITEM_EVIDENCE),
         )
         for d in drafts
         if d.text.strip()
@@ -136,6 +145,16 @@ def finalize(
                 code=EVIDENCE_DROPPED,
                 stage=Stage.SUMMARIZE,
                 message=f"bỏ {evidence.dropped} evidence trỏ tới segment không tồn tại",
+            )
+        )
+    if evidence.over_limit:
+        warnings.append(
+            PipelineWarning(
+                code=EVIDENCE_DROPPED,
+                stage=Stage.SUMMARIZE,
+                message=(
+                    f"bỏ {evidence.over_limit} evidence vượt giới hạn {MAX_ITEM_EVIDENCE} mỗi ý"
+                ),
             )
         )
     return SummaryOutput(
