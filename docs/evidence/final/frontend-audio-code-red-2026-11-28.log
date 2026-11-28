@@ -1,0 +1,110 @@
+$ node node_modules/vitest/vitest.mjs run src/features/audio/RemoteAudioPlayer.test.tsx
+
+ RUN  v5.0.5 D:/Project/CNPM/SE2026_Codex/frontend
+
+ ❯ src/features/audio/RemoteAudioPlayer.test.tsx (8 tests | 1 failed) 317ms
+   × FE-19: NOT_FOUND means no meeting and keeps the generic playback error 53ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/features/audio/RemoteAudioPlayer.test.tsx > FE-19: NOT_FOUND means no meeting and keeps the generic playback error
+TestingLibraryElementError: Unable to find an accessible element with the role "alert"
+
+Here are the accessible roles:
+
+  region:
+
+  Name "Player audio cuộc họp":
+  [36m<section[39m
+    [33maria-label[39m=[32m"Player audio cuộc họp"[39m
+    [33mclass[39m=[32m"audio-expired"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  status:
+
+  Name "":
+  [36m<p[39m
+    [33mrole[39m=[32m"status"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  paragraph:
+
+  Name "":
+  [36m<p />[39m
+
+  Name "":
+  [36m<p[39m
+    [33mclass[39m=[32m"audio-retention"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<p />[39m
+
+  --------------------------------------------------
+  time:
+
+  Name "":
+  [36m<time[39m
+    [33mdatetime[39m=[32m"2026-12-20T12:00:00Z"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<section[39m
+      [33maria-label[39m=[32m"Player audio cuộc họp"[39m
+      [33mclass[39m=[32m"audio-expired"[39m
+    [36m>[39m
+      [36m<p[39m
+        [33mrole[39m=[32m"status"[39m
+      [36m>[39m
+        [0mKhông tìm thấy file audio[0m
+      [36m</p>[39m
+      [36m<p>[39m
+        [0mTranscript và nội dung cuộc họp vẫn có thể đọc được.[0m
+      [36m</p>[39m
+      [36m<p[39m
+        [33mclass[39m=[32m"audio-retention"[39m
+      [36m>[39m
+        [0mLưu audio đến[0m
+        [0m [0m
+        [36m<time[39m
+          [33mdatetime[39m=[32m"2026-12-20T12:00:00Z"[39m
+        [36m>[39m
+          [0m19:00 20/12/26[0m
+        [36m</time>[39m
+        [0m [0m
+        [0m(giờ địa phương)[0m
+      [36m</p>[39m
+    [36m</section>[39m
+    [36m<p>[39m
+      [0mTranscript vẫn đọc được[0m
+    [36m</p>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/features/audio/RemoteAudioPlayer.test.tsx:175:17
+    173|     await parse.mock.results[0].value
+    174|   })
+    175|   expect(screen.getByRole('alert')).toHaveTextContent(
+       |                 ^
+    176|     'Trình duyệt không đọc được file audio này',
+    177|   )
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 7 passed (8)
+   Start at  20:30:55
+   Duration  1.68s (environment 56%, tests 20%, import 11%, setup 10%, transform 3%)
+
+
+EXIT=1

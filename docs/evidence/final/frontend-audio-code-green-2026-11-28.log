@@ -1,0 +1,12 @@
+$ node node_modules/vitest/vitest.mjs run src/features/audio/RemoteAudioPlayer.test.tsx
+
+ RUN  v5.0.5 D:/Project/CNPM/SE2026_Codex/frontend
+
+
+ Test Files  1 passed (1)
+      Tests  8 passed (8)
+   Start at  20:31:20
+   Duration  1.74s (environment 52%, tests 23%, import 11%, setup 9%, transform 4%)
+
+
+EXIT=0
