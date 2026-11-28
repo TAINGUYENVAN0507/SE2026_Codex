@@ -15,9 +15,11 @@ from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
+from meeting_pipeline.schemas import EvidenceItem, SummaryOutput
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
+from app.db.models.job import Job
 from app.db.models.meeting import Meeting
 from app.db.models.transcript import Segment, Speaker
 from app.db.models.user import User
@@ -25,6 +27,7 @@ from app.db.session import get_db
 from app.main import create_app
 from app.services.storage import get_storage
 from app.services.storage.local import LocalStorage
+from app.worker.persister import persist_summary
 
 
 def _wav() -> bytes:
@@ -486,3 +489,69 @@ def test_put_summary_with_50_evidence_ids_per_point(
     )
     assert r.status_code == 200, r.text[:200]
     assert r.json()["content"]["key_points"][0]["evidence_segment_ids"] == ids
+
+
+PERSIST_B_2026_11_28 = (
+    "persister lưu hơn 50 evidence cho một ý nên PUT summary trả 422; "
+    "giao B ngày 11-28, việc 2 (tasks/2026-11-28/member-b.md)"
+)
+
+
+@pytest.mark.xfail(strict=True, raises=AssertionError, reason=PERSIST_B_2026_11_28)
+def test_put_summary_that_keeps_the_evidence_of_an_ai_summary_answers_200(
+    client: TestClient, db_session: Session, seeded: dict[str, str], tmp_path: Path
+) -> None:
+    """Tóm tắt AI đã lưu phải sửa được: đọc ra rồi chỉ đổi tổng quan thì lưu thành công.
+
+    Hậu kiểm pipeline giữ tối đa 50 evidence mỗi ý (C, 2026-11-28), nhưng `summary.json` sinh
+    trước đó hoặc từ provider khác vẫn có thể có hơn. Persister hiện lưu nguyên, còn
+    `PUT /summary` chỉ nhận 50, nên người dùng sửa tổng quan cũng bị 422.
+    """
+    meeting_id = seeded["meeting"]
+    for idx in range(1, 51):
+        db_session.add(
+            Segment(
+                id=str(uuid.uuid4()),
+                meeting_id=meeting_id,
+                speaker_id=seeded["speaker"],
+                idx=idx,
+                start_sec=float(idx),
+                end_sec=float(idx + 1),
+                text="ý",
+                ai_text="ý",
+                version=1,
+            )
+        )
+    job = Job(
+        id=str(uuid.uuid4()),
+        meeting_id=meeting_id,
+        status="running",
+        stage="summarize",
+        stage_status={},
+        attempt=1,
+        max_attempts=3,
+    )
+    db_session.add(job)
+    db_session.commit()
+    artifact = tmp_path / "summary.json"
+    artifact.write_text(
+        SummaryOutput(
+            status="ready",
+            model="m",
+            prompt_version="p",
+            overview="Tổng quan",
+            key_points=[EvidenceItem(text="ý", evidence_segment_indices=list(range(51)))],
+        ).model_dump_json(),
+        encoding="utf-8",
+    )
+    persist_summary(db_session, meeting_id, job.id, artifact)
+
+    stored = client.get(f"/api/v1/meetings/{meeting_id}/summary").json()
+    r = client.put(
+        f"/api/v1/meetings/{meeting_id}/summary",
+        json={
+            "content": {**stored["content"], "overview": "Tổng quan đã sửa"},
+            "version": stored["version"],
+        },
+    )
+    assert r.status_code == 200, f"{r.status_code}: {r.text[:200]}"

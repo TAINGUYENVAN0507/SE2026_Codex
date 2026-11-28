@@ -392,3 +392,26 @@ Bắt đầu từ `main` `4259a4f`. Lỗi mới C thấy khi review và soạn v
 | A | Stack E2E dùng `STORAGE_DIR` tạm riêng; E2E file audio mất trên API thật; dọn `useIdempotencyKey`; đăng nhập khi máy chủ bận. Đăng phản hồi review #77 lên GitHub |
 | B | Tối đa 50 id dẫn chứng khác nhau mỗi ý (bỏ `xfail`); worker báo `AUDIO_EXPIRED`; mã `AUDIO_NOT_FOUND`; 7 warning còn lại về 0. Đúng 5 commit |
 | C | Test danh sách dẫn chứng trên PostgreSQL; 247 client trước/sau #81 (máy bận) kèm 4 process; 40 client; bản đồ bằng chứng, ROADMAP, thời gian phản hồi PR |
+
+**Kết quả (Đợt 17):**
+- #83 (A, `03f16fb`): stack E2E dùng thư mục lưu tạm riêng, E2E file audio mất trên API thật, dọn `useIdempotencyKey`, đăng nhập khi máy chủ bận. Đúng 5 commit; phản hồi review #77 đã đăng trên GitHub. B không review; C review sau 18,7 giờ.
+- #84 (B, `af2dc6a`): tối đa 50 id dẫn chứng khác nhau mỗi ý (ca 70.000 id của C đã bỏ `xfail`), worker báo `AUDIO_EXPIRED`, mã `AUDIO_NOT_FOUND`, hết warning cookie. 6 commit (giao 5; commit thứ sáu sinh lại `schema.d.ts`). C review sau 17,9 giờ và merge khi hạn 18 giờ của A còn khoảng 8 phút; A chưa review.
+- C gộp hai PR với `main` rồi chạy lại trước khi merge:
+  - Backend trên PostgreSQL 16: 575 passed, 0 skipped, 0 xfailed, 1 warning (trước 7).
+  - Frontend: 364 passed.
+  - E2E `missing-audio`, `upload`, `retention`, `evidence-seek`, `summary-edit`: 6 test đạt; không có `backend/appdata` trong worktree sạch.
+- 247 client ngày 11-28: 2 process 4/4, 4 process 4/4 (xen kẽ).
+
+### Đợt 18 (giao ngày 2026-11-28: `tasks/2026-11-28/`, sau hạn nộp, mỗi người 5 commit)
+
+Bắt đầu từ `main` `03f16fb`. Lỗi mới C tái hiện hoặc thấy khi review:
+- **Chạy lại từ stage cần audio khi audio đã hết hạn hoặc mất** được 202; cuộc họp thành `failed` và transcript không đọc được qua API. Có từ trước #84. C bắt bằng `xfail` strict.
+- **Tóm tắt AI có ý dẫn hơn 50 đoạn không sửa được** (422) từ khi #84 đặt giới hạn theo việc C giao. C sửa hậu kiểm pipeline; phần persister giao B (`xfail` strict).
+- Đăng xuất, xóa tài khoản và xuất biên bản khi 503 báo câu chung.
+- Worker mang câu lỗi không khớp mã khi mất audio; còn 1 warning `httpx`.
+
+| Member | Việc |
+|---|---|
+| A | Đăng xuất và xóa tài khoản khi máy chủ bận; xuất biên bản khi máy chủ bận; player chỉ nhận `AUDIO_NOT_FOUND`; kiểm storage của `upload.spec.ts` ra khỏi `afterAll` |
+| B | Từ chối chạy lại khi không còn audio; persister giữ 50 dẫn chứng mỗi ý; mã và câu lỗi của worker; `httpx2` để hết warning. Đúng 5 commit |
+| C | Hậu kiểm pipeline giữ 50 dẫn chứng mỗi ý; test PostgreSQL cho hai lỗi giao B; 247 client 2/4 process xen kẽ và 40 client; bản đồ bằng chứng, ROADMAP, thời gian phản hồi PR |

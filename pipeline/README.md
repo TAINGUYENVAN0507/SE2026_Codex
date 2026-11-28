@@ -47,7 +47,7 @@ Biến của provider `anthropic`: `LLM_MODEL` (`claude-opus-5-5`), `LLM_EFFORT`
 
 - Transcript dưới 2 segment hoặc dưới 30 từ thì `insufficient_content`, không gọi LLM.
 - Prompt `summary-v1` (`llm/prompts.py`) đặt transcript trong khối `<transcript>` và dặn model coi đó là dữ liệu, không làm theo lệnh nằm trong transcript. Output là structured output theo model Pydantic `SummaryDraft`.
-- Hậu kiểm (`llm/postcheck.py`): bỏ evidence trỏ tới segment không tồn tại; action item không còn evidence hoặc bị bỏ hạn chót thì `needs_review=true`; `due_date` chỉ giữ khi có `due_date_text` và ngày họp; người nhận việc trùng tên speaker thì gắn `assignee_speaker_label`.
+- Hậu kiểm (`llm/postcheck.py`): bỏ evidence trỏ tới segment không tồn tại; mỗi ý chính và quyết định giữ tối đa 50 evidence theo thứ tự trong transcript (bằng giới hạn của `PUT /meetings/{id}/summary`, phần bỏ được đếm trong warning `SUMMARY_EVIDENCE_DROPPED`); action item không còn evidence hoặc bị bỏ hạn chót thì `needs_review=true`; `due_date` chỉ giữ khi có `due_date_text` và ngày họp; người nhận việc trùng tên speaker thì gắn `assignee_speaker_label`.
 - Lỗi: 408, 409, 429, 5xx, timeout, lỗi mạng là transient `LLM_UNAVAILABLE`; 4xx khác là permanent `LLM_REQUEST_INVALID`; model từ chối, hết `max_tokens` hoặc output sai schema là `LLM_OUTPUT_INVALID`. Thông điệp lỗi và log không chứa prompt hay response.
 
 ## Cài đặt

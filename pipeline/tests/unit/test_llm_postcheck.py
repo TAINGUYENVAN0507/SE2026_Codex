@@ -25,6 +25,21 @@ def transcript():
     return t
 
 
+def long_transcript(count: int):
+    """Transcript đúng `count` segment liền nhau, không chồng lấn."""
+    t = transcript()
+    last = t.segments[-1]
+    for i in range(1, count - len(t.segments) + 1):
+        start = last.end_sec + i
+        t.segments.append(
+            last.model_copy(
+                update={"index": last.index + i, "start_sec": start, "end_sec": start + 0.5}
+            )
+        )
+    assert len(t.segments) == count
+    return t
+
+
 def action(**overrides) -> DraftActionItem:
     base = dict(
         description="Hoàn thiện API upload",
@@ -68,6 +83,40 @@ def test_unknown_evidence_is_dropped_with_count_only():
     assert [(w.code, w.message) for w in out.warnings] == [
         (EVIDENCE_DROPPED, "bỏ 2 evidence trỏ tới segment không tồn tại")
     ]
+
+
+@pytest.mark.parametrize("field", ["key_points", "decisions"])
+def test_item_keeps_at_most_50_evidence_segments(field):
+    """API chỉ nhận 50 dẫn chứng mỗi ý khi lưu, nên tóm tắt AI không được sinh nhiều hơn."""
+    long = long_transcript(60)
+    indices = [s.index for s in long.segments]
+    cited = [*reversed(indices), indices[0]]  # đảo thứ tự, có một index lặp
+    out = finalize(
+        draft(**{field: [DraftItem(text="Ý dẫn nhiều đoạn", evidence=cited)]}),
+        long,
+        MEETING,
+        "test-model",
+        "summary-v1",
+    )
+    assert getattr(out, field)[0].evidence_segment_indices == sorted(indices)[:50]
+    assert [(w.code, w.message) for w in out.warnings] == [
+        (EVIDENCE_DROPPED, f"bỏ {len(indices) - 50} evidence vượt giới hạn 50 mỗi ý")
+    ]
+
+
+def test_item_with_exactly_50_evidence_segments_keeps_all_without_warning():
+    long = long_transcript(50)
+    indices = [s.index for s in long.segments]
+    assert len(indices) == 50
+    out = finalize(
+        draft(key_points=[DraftItem(text="Ý", evidence=indices)]),
+        long,
+        MEETING,
+        "test-model",
+        "summary-v1",
+    )
+    assert out.key_points[0].evidence_segment_indices == indices
+    assert out.warnings == []
 
 
 def test_action_without_evidence_needs_review():
